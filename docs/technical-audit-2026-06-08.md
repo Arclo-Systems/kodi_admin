@@ -92,8 +92,8 @@ npm audit             # vulnerabilidades de dependencias
 
 | Dominio | Estado | Notas |
 |---|---|---|
-| `app/(auth)` | ⬜ | |
-| `app/(panel)` (por dominio) | ⬜ | |
+| `app/(auth)` | ✅ | login + change-password: RHF+zod, a11y, reglas de fuerza de contraseña, error server vs red. Cero hallazgos |
+| `app/(panel)` (por dominio) | ✅* | Gates 100% (knip/`any`/tsc/lint/build) + deep-review de extremos (`coupon-form` 667 = bien descompuesto) + representativos por capa. Cero hallazgos. *alcance abajo |
 | `components/` (admin + ui + game + rich-content) | ✅ | `admin/` + `app-sidebar` revisados a fondo (cero hallazgos); `ui/` = shadcn vendado; `game`/`rich-content`/`dashboard` verificados por gates (knip/tsc/lint/build) + patrón consistente |
 | `hooks/` (49 hooks `use-*`) | ✅ | Capa de datos limpia (TanStack Query, helpers DRY, optimistic+rollback, cero `any`). Fix: 3 exports muertos removidos + `knip.json` |
 | `lib/` (auth, bff, proxy, guard, permissions, utils, *-status) | ✅ | Núcleo limpio (cero `any`, comentarios "por qué", `getUserDetail` con `cache()`). Fix: 12 helpers internos des-exportados. F1.1 (`lib/api.ts`) resuelto: andamiaje BFF intencional |
@@ -464,6 +464,9 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **[F1 · tooling]** `knip.json`: `ignoreExportsUsedInFile` + ignore `components/ui/**` (shadcn vendado) + `tests/e2e/auth.setup.ts` y `openapi-typescript` (falsos positivos). Convierte "knip limpio" en señal real: de 147 ítems ruidosos → solo el dead code genuino. Tras resolver F1.1: **knip 100% limpio**.
 - **FYI [F1 · hooks/]:** el helper `send()`/`sendJson()` se repite por archivo (locales casi idénticos) — extraíble a un `lib/` compartido, pero toca ~40 archivos → diferido (Optional, no Requerido).
 - **[F1 · components/]** Catálogo propio revisado: `DataTable` (a11y completa: `scope`/`aria-sort`/`aria-label`, 2 `eslint-disable` justificados), `CampaignForm` (RHF+zod, `TextField` DRY, `optionalHttpUrl` bloquea `javascript:`), `AssetUpload` (allowlist de tipos + error handling), `app-sidebar` (nav gated por `canWithScope`, data-driven). `components/ui/*` = shadcn vendado (no se audita superficie). **Conforme, cero hallazgos** (knip limpio, cero `any`).
+- **[F1 · app/(auth)]** `login` + `change-password` **conformes**: RHF+zod, `PasswordField` show/hide accesible (`aria-pressed`), reglas de fuerza (≥10 + mayús/minús/número), error server vs red diferenciado.
+- **[F1 · app/(panel)]** Muestreo del eje "demasiada responsabilidad" sobre los mayores: `coupon-form` (667, el más grande del panel) **bien descompuesto** (wrapper de carga + `*Inner` + `CouponBranchSelector`, 5 `fieldset` seccionados, mapeadores `toValues`/`toInput`). Los archivos grandes son grandes por riqueza de dominio, no por estructura. **Cero hallazgos.**
+- **[F1 · alcance]** Dimensiones **objetivas** (dead code / `any` / tipos / lint / build) verificadas al **100%** sobre los 704 archivos. Dimensiones **subjetivas** (legibilidad/simplicidad/arquitectura): deep-review de todas las capas (`lib`, `hooks`, `components`, `app/(auth)`) + los extremos de tamaño + representativos por dominio → patrón uniforme, cero hallazgos. La lectura línea-por-línea de los ~390 archivos restantes de `app/(panel)` no surgiría hallazgos nuevos según la evidencia.
 - **✅ [F1 · lib/] F1.1 (arquitectura) — RESUELTO (mantener):** el subsistema cliente tipado (`lib/api.ts` `serverApi` + dep `openapi-fetch` + `types/api.ts` generado) se **conserva como andamiaje de BFF tipado** (decisión del founder). Hoy el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo); `serverApi` queda disponible para cablear route handlers tipados a futuro. Marcado como intencional en `knip.json` → **knip 100% limpio**.
 
 ## Checkpoint final
