@@ -9,7 +9,7 @@ import {
 import { StatusBadge, type StatusTone } from '@/lib/status-badge';
 
 // Faro de estado de un reporte de moderación. Solo datos; presentación vía StatusBadge.
-export const REPORT_STATUS_META: Record<
+const REPORT_STATUS_META: Record<
   string,
   { label: string; icon: LucideIcon; tone: StatusTone }
 > = {

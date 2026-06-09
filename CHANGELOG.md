@@ -12,6 +12,9 @@ Base de producción reconstruida en un historial limpio por fases (2026-06-08).
 La historia previa (20+ ramas de desarrollo) quedó archivada en un backup `git bundle`
 fuera del repositorio.
 
+### Changed
+- **Auditoría Fase 1 (calidad) · `lib/`:** reduce la superficie pública — helpers y metadata de uso interno único (`*_STATUS_META`, `LEAGUE_META`, `ROLE_META`, `PLAN_COLOR`, `STATUS_TONE_CLASS`, `gameStatusTone`, `readAccessToken`, tipos `LeagueTier`/`LeagueMeta`/`PlanKey`) dejan de exportarse, consistente con el patrón `DIFFICULTY_META` ya privado. Sin cambio de comportamiento.
+
 ### Added
 - Fundación del proyecto: scaffold Next 16 + TypeScript estricto + tooling (ESLint, Vitest, Playwright, Sentry, CI).
 - Principios de ingeniería y estándares de release ([`PRINCIPLES.md`](./PRINCIPLES.md)).

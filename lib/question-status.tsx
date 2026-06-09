@@ -9,7 +9,7 @@ import { StatusBadge, type StatusTone } from '@/lib/status-badge';
 import type { Difficulty, QuestionStatus } from '@/hooks/use-questions';
 
 // Faro de estados de pregunta. Solo datos; la presentación la define StatusBadge.
-export const QUESTION_STATUS_META: Record<
+const QUESTION_STATUS_META: Record<
   QuestionStatus,
   { label: string; icon: LucideIcon; tone: StatusTone }
 > = {

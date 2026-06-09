@@ -96,7 +96,7 @@ npm audit             # vulnerabilidades de dependencias
 | `app/(panel)` (por dominio) | ⬜ | |
 | `components/` (admin + ui + game + rich-content) | ⬜ | |
 | `hooks/` (~60 hooks `use-*`) | ⬜ | |
-| `lib/` (auth, bff, proxy, guard, permissions, utils, *-status) | ⬜ | |
+| `lib/` (auth, bff, proxy, guard, permissions, utils, *-status) | ✅ | Núcleo limpio (cero `any`, comentarios "por qué", `getUserDetail` con `cache()`). Fix: 12 helpers internos des-exportados. ⚠️ F1.1 (`lib/api.ts`) pendiente de decisión |
 
 ---
 
@@ -455,7 +455,11 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 
 > Se completa al ejecutar cada fase. Formato: `- **[Fase N · Fxx]** descripción del arreglo (verificación).`
 
-_(vacía — pendiente de ejecución)_
+### Fase 1 · Calidad de código
+
+- **[F1 · lib/]** Revisión 5-ejes de `lib/` (núcleo + data + status). Núcleo (`guard`/`permissions`/`bff`/`proxy`/`auth`/`signed-asset`/`utils`) y data (`user-detail` con `cache()`, `countries`) **conformes**: cero `any`, comentarios solo "por qué", sin código muerto. (typecheck verde)
+- **[F1 · lib/]** Hallazgo F1.3 (sobre-exportación): 12 helpers/metadata de uso interno único des-exportados (`*_STATUS_META`, `LEAGUE_META`, `ROLE_META`, `PLAN_COLOR`, `STATUS_TONE_CLASS`, `gameStatusTone`, `readAccessToken`, `LeagueTier`, `LeagueMeta`, `PlanKey`) → superficie pública mínima, consistente con `DIFFICULTY_META`. Sin cambio de comportamiento.
+- **⚠️ [F1 · lib/] HALLAZGO ABIERTO — F1.1 (arquitectura):** subsistema cliente sin usar. `lib/api.ts` (`serverApi` vía `openapi-fetch`) + dep `openapi-fetch` + `types/api.ts` (generado, solo lo consume `lib/api.ts`) no los usa nadie: el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo). **Decisión pendiente:** (a) cablear `serverApi` en los route handlers, o (b) eliminar el cliente sin usar (`lib/api.ts` + `openapi-fetch`) reevaluando si `types/api.ts`/`gen:types` se conservan para tipar respuestas.
 
 ## Checkpoint final
 

@@ -3,7 +3,7 @@ import type { AdminRole } from '@/lib/auth';
 
 // Color secundario por rol (paleta DESIGN): teal · cielo · dorado · durazno.
 // Fuente única para el badge de rol (tabla de admins + menú de usuario).
-export const ROLE_META: Record<AdminRole, { label: string; color: string }> = {
+const ROLE_META: Record<AdminRole, { label: string; color: string }> = {
   admin: { label: 'Admin', color: '#408D99' },
   editor: { label: 'Editor', color: '#5DB7E8' },
   support: { label: 'Soporte', color: '#E3B23C' },

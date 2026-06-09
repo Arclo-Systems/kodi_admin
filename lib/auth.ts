@@ -17,7 +17,7 @@ export type AdminUser = {
 };
 
 /** Lee la cookie del access token (server-side). */
-export async function readAccessToken(): Promise<string | null> {
+async function readAccessToken(): Promise<string | null> {
   const store = await cookies();
   return store.get('admin_at')?.value ?? null;
 }

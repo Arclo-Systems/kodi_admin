@@ -3,7 +3,7 @@ import { StatusBadge, type StatusTone } from '@/lib/status-badge';
 import type { CutoffStatus } from '@/hooks/use-cutoffs';
 
 // Faro de estado de una subida de cortes. Solo datos; presentación vía StatusBadge.
-export const CUTOFF_STATUS_META: Record<
+const CUTOFF_STATUS_META: Record<
   CutoffStatus,
   { label: string; icon: LucideIcon; tone: StatusTone }
 > = {

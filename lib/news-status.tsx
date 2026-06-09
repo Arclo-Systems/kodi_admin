@@ -3,7 +3,7 @@ import { StatusBadge, type StatusTone } from '@/lib/status-badge';
 import type { NewsStatus } from '@/hooks/use-news';
 
 // Faro de estados de noticia. Solo datos; presentación vía StatusBadge.
-export const NEWS_STATUS_META: Record<
+const NEWS_STATUS_META: Record<
   NewsStatus,
   { label: string; icon: LucideIcon; tone: StatusTone }
 > = {

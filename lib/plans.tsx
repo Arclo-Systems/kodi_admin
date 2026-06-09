@@ -1,11 +1,11 @@
 import { cn } from '@/lib/utils';
 
-export type PlanKey = 'free' | 'basico' | 'plus' | 'pro';
+type PlanKey = 'free' | 'basico' | 'plus' | 'pro';
 
 // Color por tier (mismo criterio que el gráfico "Suscriptores por plan" del dashboard): cielo → teal
 // → dorado. Se muestra como punto de color + label en texto normal (no chip con fondo): el color va
 // en el punto, el texto queda legible siempre. Fuente única; nadie más declara estos colores.
-export const PLAN_COLOR: Record<PlanKey, { label: string; dot: string }> = {
+const PLAN_COLOR: Record<PlanKey, { label: string; dot: string }> = {
   free: { label: 'Free', dot: '#7C8698' },
   basico: { label: 'Básico', dot: '#5DB7E8' },
   plus: { label: 'Plus', dot: '#408D99' },

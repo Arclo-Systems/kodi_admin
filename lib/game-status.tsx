@@ -36,7 +36,7 @@ export function gameStatusLabel(entity: GameEntity, value: string): string {
 }
 
 // Tono e icono del faro por palabra clave del valor (mismo criterio semántico).
-export function gameStatusTone(value: string): StatusTone {
+function gameStatusTone(value: string): StatusTone {
   if (/annull/i.test(value)) return 'destructive';
   if (/(won|completed|finished|passed)/i.test(value)) return 'success';
   if (/(cancel|timeout|abandon|expired|failed)/i.test(value)) return 'muted';
