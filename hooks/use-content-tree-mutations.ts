@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-async function send(url: string, method: 'POST' | 'PATCH', body?: unknown): Promise<void> {
+async function send(url: string, method: 'POST' | 'PATCH' | 'DELETE', body?: unknown): Promise<void> {
   const res = await fetch(url, {
     method,
     headers: body !== undefined ? { 'content-type': 'application/json' } : undefined,
@@ -19,14 +19,12 @@ export type CreateModuleInput = {
   examType: string;
   shortName: string;
   fullName: string;
-  icon: string;
   version: string;
   hasAdmissionCutoffs: boolean;
 };
 export type UpdateModuleInput = {
   shortName?: string;
   fullName?: string;
-  icon?: string;
   version?: string;
   hasAdmissionCutoffs?: boolean;
 };
@@ -34,14 +32,12 @@ export type CreateSubjectInput = {
   moduleId: string;
   name: string;
   shortName: string;
-  icon: string;
   colorHex: string;
   region?: string | null;
 };
 export type UpdateSubjectInput = {
   name?: string;
   shortName?: string;
-  icon?: string;
   colorHex?: string;
   region?: string | null;
 };
@@ -56,6 +52,10 @@ export function useContentTreeMutations() {
   return {
     createModule: useMutation({
       mutationFn: (b: CreateModuleInput) => send('/api/admin/content/modules', 'POST', b),
+      onSuccess,
+    }),
+    deleteModule: useMutation({
+      mutationFn: (id: string) => send(`/api/admin/content/modules/${id}`, 'DELETE'),
       onSuccess,
     }),
     updateModule: useMutation({

@@ -133,6 +133,7 @@ function ModuleForm({
 }) {
   const m = useContentTreeMutations();
   const isNew = view.kind === 'new-module';
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const existing = view.kind === 'module' ? tree.find((x) => x.id === view.id) : undefined;
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
 
@@ -155,7 +156,7 @@ function ModuleForm({
   async function submit(v: ModuleValues): Promise<void> {
     try {
       if (view.kind === 'new-module') {
-        await m.createModule.mutateAsync({ ...v, icon: '📚' });
+        await m.createModule.mutateAsync({ ...v });
         toast.success('Módulo creado (inactivo)');
       } else {
         await m.updateModule.mutateAsync({
@@ -299,6 +300,17 @@ function ModuleForm({
       </div>
 
       <DialogFooter>
+        {!isNew && canWriteModules && (
+          <Button
+            type="button"
+            variant="destructive"
+            className="mr-auto"
+            onClick={() => setConfirmDelete(true)}
+          >
+            <Trash2Icon className="size-4" />
+            Eliminar
+          </Button>
+        )}
         <Button type="button" variant="outline" onClick={onDone}>
           Cancelar
         </Button>
@@ -307,6 +319,26 @@ function ModuleForm({
           {isNew ? 'Crear' : 'Guardar'}
         </Button>
       </DialogFooter>
+
+      {view.kind === 'module' && (
+        <ConfirmDialog
+          open={confirmDelete}
+          onOpenChange={setConfirmDelete}
+          title="Eliminar módulo"
+          description="Solo se puede eliminar un módulo vacío (sin materias, preguntas ni usuarios registrados)."
+          destructive
+          confirmLabel="Eliminar"
+          onConfirm={async () => {
+            try {
+              await m.deleteModule.mutateAsync(view.id);
+              toast.success('Módulo eliminado');
+              onDone();
+            } catch (e) {
+              toast.error((e as Error).message);
+            }
+          }}
+        />
+      )}
     </form>
   );
 }
@@ -371,7 +403,6 @@ function SubjectForm({
           moduleId: view.moduleId,
           name: v.name,
           shortName: v.shortName,
-          icon: '📘',
           colorHex: v.colorHex,
           region: v.region || null,
         });
