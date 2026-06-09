@@ -468,6 +468,15 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **[F1 · app/(panel)]** Muestreo del eje "demasiada responsabilidad" sobre los mayores: `coupon-form` (667, el más grande del panel) **bien descompuesto** (wrapper de carga + `*Inner` + `CouponBranchSelector`, 5 `fieldset` seccionados, mapeadores `toValues`/`toInput`). Los archivos grandes son grandes por riqueza de dominio, no por estructura. **Cero hallazgos.**
 - **[F1 · alcance]** Dimensiones **objetivas** (dead code / `any` / tipos / lint / build) verificadas al **100%** sobre los 704 archivos. Dimensiones **subjetivas** (legibilidad/simplicidad/arquitectura): deep-review de todas las capas (`lib`, `hooks`, `components`, `app/(auth)`) + los extremos de tamaño + representativos por dominio → patrón uniforme, cero hallazgos. La lectura línea-por-línea de los ~390 archivos restantes de `app/(panel)` no surgiría hallazgos nuevos según la evidencia.
 - **⚠️→✅ [F1 gate / F0] HALLAZGO + FIX (robustez de CI):** en el `npm run ci` de cierre, el step `test` salió **0 sin correr tests** (`Failed to start forks worker / Timeout waiting for worker to respond`). Riesgo grave: CI en verde sin ejecutar tests. **Fix:** `vitest pool: 'threads'`. Verificado: tests 9/9 en aislamiento y dentro del `ci`.
+
+### Fase 1 · Barrido línea-por-línea de `app/(panel)` (266 archivos)
+
+> A pedido del founder: lectura **individual** de cada archivo, no muestreo. Se marca cada dominio al completarlo.
+
+- ✅ **Sistema** — dashboard, audit-log, health, jobs, me, leagues (10): conforme. Patrón uniforme (Server Component + `requireAction` + metadata; tablas vía `DataTable`; helpers DRY `numberField`/`bracket`/`fmt*`).
+- ✅ **launches** (6) · **features** (3) · **tickets** (4) · **moderation** (6) — 19: conforme. Forms zod (`optionalHttpUrl` bloquea `javascript:`), kanban dnd-kit, triage con color/ícono por acción, UX por riesgo (activar directo / desactivar con confirm).
+- **FYI (DRY menor):** mapas de labels repetidos entre hermanos — `REASON_LABELS` (moderation-table + report-detail, idénticos) y `COUNTRY_NAME` (2 archivos de launches ≈ `COUNTRIES.label` de `lib`). Extraíbles al hook/`lib`; Optional, no Requerido.
+- ⬜ Pendientes: admins (7), bots (7), finance (11), messaging (11), game (19), users (24), content (64), economy (93).
 - **✅ [F1 · lib/] F1.1 (arquitectura) — RESUELTO (mantener):** el subsistema cliente tipado (`lib/api.ts` `serverApi` + dep `openapi-fetch` + `types/api.ts` generado) se **conserva como andamiaje de BFF tipado** (decisión del founder). Hoy el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo); `serverApi` queda disponible para cablear route handlers tipados a futuro. Marcado como intencional en `knip.json` → **knip 100% limpio**.
 
 ## Checkpoint final
