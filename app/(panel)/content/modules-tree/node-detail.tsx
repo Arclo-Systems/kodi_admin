@@ -155,7 +155,7 @@ function ModuleForm({
   async function submit(v: ModuleValues): Promise<void> {
     try {
       if (view.kind === 'new-module') {
-        await m.createModule.mutateAsync({ ...v, icon: '' });
+        await m.createModule.mutateAsync({ ...v, icon: '📚' });
         toast.success('Módulo creado (inactivo)');
       } else {
         await m.updateModule.mutateAsync({
@@ -371,7 +371,7 @@ function SubjectForm({
           moduleId: view.moduleId,
           name: v.name,
           shortName: v.shortName,
-          icon: '',
+          icon: '📘',
           colorHex: v.colorHex,
           region: v.region || null,
         });
