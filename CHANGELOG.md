@@ -12,6 +12,7 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 - **Indexación · panel interno:** `X-Robots-Tag: noindex, nofollow` (next.config) + `app/robots.ts` con `Disallow: /` → el admin nunca se indexa en buscadores, independiente del dominio (Vercel solo agrega noindex en `*.vercel.app`; con dominio propio hay que declararlo). Detectado en `/seo-audit`.
 
 ### Changed
+- **Dependencias:** Dependabot (`npm` + `github-actions`, semanal, PRs agrupados por minor/patch; major de Next/React ignorados) para mantener el árbol al día; los PRs pasan por el CI.
 - **Metadatos:** OpenGraph + Twitter Card con título/descripción e imagen 1200×630 (`public/open-graph.png`) para previews de link del panel; `metadataBase` derivado del dominio de producción de Vercel.
 - **Deploy:** `vercel.json` (región `iad1`) para servir el panel desde us-east, cerca del backend.
 

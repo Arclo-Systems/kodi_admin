@@ -1,0 +1,34 @@
+version: 2
+updates:
+  # Dependencias npm del panel. Semanal, PRs agrupados por minor/patch para no spamear.
+  # Los major de Next/React/react-dom se ignoran: son riesgosos y se hacen a mano.
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: next
+        update-types:
+          - version-update:semver-major
+      - dependency-name: react
+        update-types:
+          - version-update:semver-major
+      - dependency-name: react-dom
+        update-types:
+          - version-update:semver-major
+
+  # GitHub Actions (mantiene checkout/setup-node al día → silencia el aviso de Node 20).
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - "*"
