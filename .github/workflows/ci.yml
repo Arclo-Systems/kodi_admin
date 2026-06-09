@@ -8,6 +8,8 @@ on:
 jobs:
   lint-typecheck-test:
     runs-on: ubuntu-latest
+    env:
+      STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,10 +24,13 @@ jobs:
       - run: npm test
       # Gate de dead code: falla si hay archivos/exports/deps huérfanos.
       - run: npx knip@6
-      # Falla si types/api.ts está desactualizado respecto al spec del backend.
-      - run: npm run gen:types:check
+      # Falla si types/api.ts está desactualizado respecto al spec del backend. Necesita el
+      # backend (STAGING_API_URL); se omite hasta que esté deployado y el secret configurado.
+      - name: gen:types:check
+        if: env.STAGING_API_URL != ''
+        run: npm run gen:types:check
         env:
-          KODI_API_URL: ${{ secrets.STAGING_API_URL }}
+          KODI_API_URL: ${{ env.STAGING_API_URL }}
           OPENAPI_TOKEN: ${{ secrets.OPENAPI_TOKEN }}
 
   build:
@@ -46,6 +51,8 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     needs: lint-typecheck-test
+    env:
+      STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,9 +60,14 @@ jobs:
           node-version: '24'
           cache: 'npm'
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npm run e2e
+      # e2e necesita el backend (STAGING_API_URL); se omite hasta que esté deployado.
+      - name: Install Playwright
+        if: env.STAGING_API_URL != ''
+        run: npx playwright install --with-deps chromium
+      - name: e2e
+        if: env.STAGING_API_URL != ''
+        run: npm run e2e
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.STAGING_API_URL }}
+          NEXT_PUBLIC_API_URL: ${{ env.STAGING_API_URL }}
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
           E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}

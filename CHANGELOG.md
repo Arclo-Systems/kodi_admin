@@ -15,6 +15,9 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 - **Metadatos:** OpenGraph + Twitter Card con título/descripción e imagen 1200×630 (`public/open-graph.png`) para previews de link del panel; `metadataBase` derivado del dominio de producción de Vercel.
 - **Deploy:** `vercel.json` (región `iad1`) para servir el panel desde us-east, cerca del backend.
 
+### Fixed
+- **CI:** los gates que dependen del backend (`gen:types:check`, `e2e`) se omiten si no está el secret `STAGING_API_URL` → CI verde hasta deployar el backend; se activan solos al configurarlo. (Antes CI fallaba en cada push: esos pasos requieren un backend que todavía no existe.)
+
 ## [0.2.0] - 2026-06-09
 
 Endurecimiento para producción: auditoría técnica por fases (calidad, arquitectura, seguridad,
