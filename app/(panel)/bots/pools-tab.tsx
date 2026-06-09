@@ -24,7 +24,7 @@ import {
   type BotAvatar,
   type BotName,
 } from '@/hooks/use-bots';
-import { COUNTRIES } from './bots-tabs';
+import { COUNTRIES } from '@/lib/countries';
 
 function AvatarsCard({ canWrite }: { canWrite: boolean }) {
   const { data } = useAvatars();
@@ -145,8 +145,8 @@ function NamesCard({ canWrite }: { canWrite: boolean }) {
           </SelectTrigger>
           <SelectContent>
             {COUNTRIES.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
+              <SelectItem key={c.code} value={c.code}>
+                {c.code}
               </SelectItem>
             ))}
           </SelectContent>

@@ -47,5 +47,3 @@ export function BotsTabs({ canWrite }: { canWrite: boolean }) {
     </Tabs>
   );
 }
-
-export const COUNTRIES = ['CR', 'GT', 'SV', 'HN', 'PA', 'CL', 'MX', 'AR'];

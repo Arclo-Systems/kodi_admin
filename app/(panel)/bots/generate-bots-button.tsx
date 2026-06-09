@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useBotMutations, useTemplates } from '@/hooks/use-bots';
-import { COUNTRIES } from './bots-tabs';
+import { COUNTRIES } from '@/lib/countries';
 
 export function GenerateBotsButton() {
   const { bulk } = useBotMutations();
@@ -62,8 +62,8 @@ export function GenerateBotsButton() {
               </SelectTrigger>
               <SelectContent>
                 {COUNTRIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
+                  <SelectItem key={c.code} value={c.code}>
+                    {c.code}
                   </SelectItem>
                 ))}
               </SelectContent>
