@@ -344,6 +344,15 @@ function DraftLineEditor({ invoice }: { invoice: TInvoiceDetail }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
+            {items.fields.length > 0 && (
+              <div className="text-muted-foreground grid grid-cols-12 items-center gap-2 px-1 text-xs font-medium">
+                <span className="col-span-5">Descripción</span>
+                <span className="col-span-2">Origen</span>
+                <span className="col-span-1">Cant.</span>
+                <span className="col-span-3">P. Unit.</span>
+                <span className="col-span-1" aria-hidden />
+              </div>
+            )}
             {items.fields.map((f, i) => (
               <div key={f.id} className="grid grid-cols-12 items-center gap-2">
                 <Controller
@@ -404,15 +413,19 @@ function DraftLineEditor({ invoice }: { invoice: TInvoiceDetail }) {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Controller
-              name="dueDate"
-              control={form.control}
-              render={({ field }) => (
-                <DatePicker value={field.value} onChange={field.onChange} aria-label="Vencimiento" />
-              )}
-            />
-            <div className="sm:col-span-2">
+          <div className="grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <span className="text-muted-foreground text-xs font-medium">Vencimiento</span>
+              <Controller
+                name="dueDate"
+                control={form.control}
+                render={({ field }) => (
+                  <DatePicker value={field.value} onChange={field.onChange} aria-label="Vencimiento" />
+                )}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-muted-foreground text-xs font-medium">Período facturado</span>
               <DateRangePicker
                 from={periodStart}
                 to={periodEnd}
@@ -420,7 +433,7 @@ function DraftLineEditor({ invoice }: { invoice: TInvoiceDetail }) {
                   form.setValue('periodStart', f);
                   form.setValue('periodEnd', t);
                 }}
-                placeholder="Período facturado"
+                placeholder="Seleccionar rango"
                 aria-label="Período facturado"
               />
             </div>
