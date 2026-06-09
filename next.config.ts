@@ -7,6 +7,19 @@ import { dirname } from "node:path";
 // usuario que hace que Next infiera mal el workspace root (warning en dev/build).
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 
+// Cabeceras de seguridad de línea base. Anti-clickjacking (el panel nunca se embebe),
+// anti-MIME-sniffing, HSTS y referrer/permissions mínimos. NO incluye CSP a propósito:
+// una CSP correcta exige inventariar los orígenes externos (API backend, CDN de assets,
+// Sentry, tiles de mapa) y aplicarla mal rompe cargas en producción → se implementa
+// aparte con ese inventario (ver auditoría F3.1).
+const securityHeaders = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()' },
+  { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+];
+
 const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
@@ -15,6 +28,9 @@ const nextConfig: NextConfig = {
     // El default de Next es [75]; habilitamos 90 para la imagen hero del login
     // (con `sizes` ya no se sobre-descarga, así que subir la calidad casi no pesa).
     qualities: [75, 90],
+  },
+  async headers() {
+    return [{ source: '/:path*', headers: securityHeaders }];
   },
 };
 

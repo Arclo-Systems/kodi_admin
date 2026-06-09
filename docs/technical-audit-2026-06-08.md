@@ -148,11 +148,12 @@ npm audit             # vulnerabilidades de dependencias
 
 | Área | Estado | Notas |
 |---|---|---|
-| Autorización (`can`/`requireAction`) por endpoint | ⬜ | |
-| Validación zod en bordes | ⬜ | |
-| Sesión/cookies/2FA | ⬜ | |
-| Sanitización (rich-content) | ⬜ | |
-| Secretos / `.env` / signed-assets | ⬜ | |
+| Autorización (`can`/`requireAction`) por endpoint | ✅ | 97/109 pages con `requireAction` directo; las 12 restantes gateadas por layout (`users/[id]` con `user:read`) o self-service (`me/sessions`). `(panel)/layout.tsx` exige auth global. Authz real = backend (defensa en profundidad) |
+| Validación zod en bordes | ✅ | Forms con zod en el borde de entrada; route handlers = proxies finos → el backend valida (no se confía en validación de cliente como frontera) |
+| Sesión/cookies/2FA | ✅ | Tokens solo en cookies HTTP-only (cero `localStorage`); `adaptBackendCookie` preserva `Secure`/`HttpOnly`/`SameSite` (solo reescribe `Path`); 2FA obligatorio en acciones de riesgo (borrar usuario, cambiar email, PATCH admin) |
+| Sanitización (rich-content) | ✅ | `markdown-view` sin `rehype-raw` (no HTML crudo); Mermaid `securityLevel:'strict'`; `chart.tsx dangerouslySetInnerHTML` = CSS de config dev-controlada (shadcn vendado), sin input de usuario |
+| Secretos / `.env` / signed-assets | ✅ | Cero `.env`/`*.pem`/`*.key` trackeados; cero secretos en código; Sentry sin `sendDefaultPii`; assets sensibles vía `openSignedAsset` (firma temporal). `npm audit`: 2 moderate (Fase 8), cero críticas/altas |
+| Headers de seguridad (`next.config`) | ✅ | **Fix F3.1**: baseline (nosniff, `X-Frame-Options: DENY`, Referrer-Policy, Permissions-Policy, HSTS). CSP = Required-diferido (necesita inventario de orígenes) |
 
 ---
 
@@ -509,6 +510,16 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **[F2 · frontera BFF] Sin fugas cross-origin.** El browser pega **siempre** a `/api/admin/*` relativo (same-origin) — verificado en los 49 hooks: cero URLs absolutas, cero uso de `NEXT_PUBLIC_API_URL` fuera del server (solo `lib/proxy`, `lib/auth`, `lib/api`). Las cookies HTTP-only nunca salen al cliente. **Conforme.**
 - **[F2 · acoplamiento] Dirección de dependencias correcta.** `lib/`→`app/` = **cero imports** (sin dependencia invertida). Authz **centralizada en el backend** vía cookie reenviada — NO duplicada en los 220 proxies (single-source-of-truth; evita drift). La UI gatea con `requireAction`/`can` en las páginas (defensa en profundidad), pero la autoridad real es el backend. **Conforme.**
 - **FYI [F2 · validación de respuestas]:** los hooks desenvuelven con `unwrapData<T>` + cast desde los tipos OpenAPI (codegen), **sin** validación zod en runtime de las respuestas del backend. Tradeoff aceptado: backend first-party + contrato OpenAPI compartido → zod-validar cada respuesta sería over-engineering. La validación zod **sí** está en los bordes de entrada (forms). Optional, no Requerido. (Se reevalúa en Fase 3 si hay superficie no confiable.)
+
+### Fase 3 · Seguridad & hardening (OWASP)
+
+- **[F3 · authz] Cobertura verificada, sin gaps.** 97/109 pages con `requireAction` directo; las 12 sin guard propio están **gateadas por layout**: las 11 tabs de `users/[id]/*` + su `page.tsx` heredan `requireAction('user:read')` de `users/[id]/layout.tsx`, y `me/sessions` es self-service (solo exige login vía `getCurrentAdmin`). Además `(panel)/layout.tsx` exige autenticación + cambio de contraseña forzado para **todo** el panel. La autoridad real es el backend (`can()` es solo gating de UX, documentado en `permissions.ts`). **Conforme.**
+- **[F3 · XSS] Tres superficies de HTML crudo, las tres mitigadas.** `markdown-view` no usa `rehype-raw` (cero HTML crudo); `mermaid.tsx` inicializa con `securityLevel:'strict'` (SVG sin scripts ni click handlers) antes del `innerHTML`; `chart.tsx` (`dangerouslySetInnerHTML`) inyecta **CSS derivado de `chartConfig`** (colores dev-controlados, no input de usuario) y es shadcn vendado. **Conforme.**
+- **[F3 · sesión] Tokens nunca en el cliente.** Cero `localStorage`/`sessionStorage` para credenciales (los `sessionStorage` son del workflow de import CSV, no tokens). `admin_at`/`admin_rt` viven en cookies HTTP-only; `adaptBackendCookie` solo reescribe `Path` → preserva `Secure`/`HttpOnly`/`SameSite` del backend. 2FA obligatorio en borrar-usuario / cambiar-email / PATCH-admin. **Conforme.**
+- **[F3 · secretos] Superficie limpia.** Cero `.env`/`*.pem`/`*.key`/`*.p12` trackeados; cero secretos hardcodeados; cero `console.*` en `lib/`+`app/api` (sin leak por logs). Sentry **sin `sendDefaultPii`** (no captura cookies/IP), `tracesSampleRate` 0.1 prod. Assets sensibles (docs/facturas) vía firma temporal `openSignedAsset`. **Conforme.**
+- **[F3 · errores] Sin fuga de internals.** `error.tsx` muestra `error.message` pero (a) Next redacta errores de Server Components en prod y (b) el panel es interno/autenticado → aceptable para herramienta interna. `global-error.tsx` usa `NextError` genérico. Ambos capturan a Sentry. **Conforme.**
+- **🔧 F3.1 (FIX, hardening) — `next.config.ts`:** no había **ningún** header de seguridad. Agregada línea base: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` (anti-clickjacking; el panel nunca se embebe), `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` (deniega cámara/micrófono/geo/topics), `Strict-Transport-Security` (HSTS, `includeSubDomains`, sin `preload` para no comprometerse irreversiblemente). Aplicado a `/:path*`. (build verde)
+- **⏳ F3.2 (Required, DIFERIDO) — Content-Security-Policy:** sin CSP. Una CSP correcta exige inventariar los orígenes externos reales (API `NEXT_PUBLIC_API_URL`, CDN de assets/imágenes del backend, ingest de Sentry, tiles de Leaflet, fuentes) y manejar nonces para el `<style>` inline de `chart.tsx` + scripts de Next. Aplicarla a ciegas rompe producción → se implementa **con el inventario de infra a la vista** (idealmente report-only primero). Marcado Required, pendiente de entorno de despliegue.
 
 ## Checkpoint final
 
