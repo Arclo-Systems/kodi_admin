@@ -6,13 +6,6 @@ import { unwrapData } from '@/lib/bff';
 export const LEAGUE_TIERS = ['aprendiz', 'avanzado', 'experto', 'genio'] as const;
 export type LeagueTier = (typeof LEAGUE_TIERS)[number];
 
-export const LEAGUE_TIER_LABELS: Record<LeagueTier, string> = {
-  aprendiz: 'Aprendiz',
-  avanzado: 'Avanzado',
-  experto: 'Experto',
-  genio: 'Genio',
-};
-
 export type RewardSpec = {
   kokos: number;
   kolones: number;

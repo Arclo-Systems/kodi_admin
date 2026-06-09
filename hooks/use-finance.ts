@@ -6,7 +6,6 @@ import { unwrapData } from '@/lib/bff';
 export type FinanceKind = 'expense' | 'income';
 export const KIND_LABELS: Record<FinanceKind, string> = { expense: 'Gasto', income: 'Ingreso' };
 export const FINANCE_CURRENCIES = ['CRC', 'USD'] as const;
-export type FinanceCurrency = (typeof FINANCE_CURRENCIES)[number];
 
 export type FinanceCategory = {
   id: string;

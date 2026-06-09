@@ -23,16 +23,6 @@ export const STATUS_LABELS: Record<CampaignStatus, string> = {
   failed: 'Fallida',
   cancelled: 'Cancelada',
 };
-export const STATUS_VARIANT: Record<CampaignStatus, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  draft: 'outline',
-  pending_approval: 'secondary',
-  approved: 'secondary',
-  sending: 'secondary',
-  sent: 'default',
-  failed: 'destructive',
-  cancelled: 'outline',
-};
-
 export type Campaign = {
   id: string;
   kind: CampaignKind;
