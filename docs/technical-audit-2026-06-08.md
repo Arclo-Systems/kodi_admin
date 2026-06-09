@@ -480,7 +480,8 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - ✅ **bots** (7): conforme salvo F1.4. Tabs (bots/plantillas/pools/métricas), generación masiva, edición inline.
 - **🔧 F1.4 (FIX, arquitectura/DRY) — `bots/bots-tabs.tsx`:** `export const COUNTRIES` (string[] de códigos) duplicaba `lib/countries.ts` **desde un componente** y colisionaba en nombre con el canónico. Reapuntado a `@/lib/countries` en `pools-tab` y `generate-bots-button`; duplicado eliminado. knip no lo detectaba (estaba "en uso"). (typecheck verde)
 - ✅ **finance** (11): conforme. P&L recharts por moneda/mes/categoría; layout con tabs solo en rutas-tab; form wrapper+inner con sentinel `KEEP` (mantiene comprobante en edición); uploads con allowlist. (FYI: `viewReceipt` podría reusar `lib/signed-asset.ts`.)
-- ⬜ Pendientes: messaging (11), game (19), users (24), content (64), economy (93).
+- ✅ **messaging** (11): conforme. Nav con tabs gated, acciones inline por estado (aprobar/enviar/cancelar), detalle editable solo si draft+broadcast (resto read-only con Loading/Error accesibles), segmentos con preview de conteo, editor de transaccionales con vars permitidas.
+- ⬜ Pendientes: game (19), users (24), content (64), economy (93).
 - **✅ [F1 · lib/] F1.1 (arquitectura) — RESUELTO (mantener):** el subsistema cliente tipado (`lib/api.ts` `serverApi` + dep `openapi-fetch` + `types/api.ts` generado) se **conserva como andamiaje de BFF tipado** (decisión del founder). Hoy el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo); `serverApi` queda disponible para cablear route handlers tipados a futuro. Marcado como intencional en `knip.json` → **knip 100% limpio**.
 
 ## Checkpoint final
