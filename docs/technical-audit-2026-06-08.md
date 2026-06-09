@@ -96,7 +96,7 @@ npm audit             # vulnerabilidades de dependencias
 | `app/(panel)` (por dominio) | ⬜ | |
 | `components/` (admin + ui + game + rich-content) | ⬜ | |
 | `hooks/` (49 hooks `use-*`) | ✅ | Capa de datos limpia (TanStack Query, helpers DRY, optimistic+rollback, cero `any`). Fix: 3 exports muertos removidos + `knip.json` |
-| `lib/` (auth, bff, proxy, guard, permissions, utils, *-status) | ✅ | Núcleo limpio (cero `any`, comentarios "por qué", `getUserDetail` con `cache()`). Fix: 12 helpers internos des-exportados. ⚠️ F1.1 (`lib/api.ts`) pendiente de decisión |
+| `lib/` (auth, bff, proxy, guard, permissions, utils, *-status) | ✅ | Núcleo limpio (cero `any`, comentarios "por qué", `getUserDetail` con `cache()`). Fix: 12 helpers internos des-exportados. F1.1 (`lib/api.ts`) resuelto: andamiaje BFF intencional |
 
 ---
 
@@ -461,9 +461,9 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **[F1 · lib/]** Hallazgo F1.3 (sobre-exportación): 12 helpers/metadata de uso interno único des-exportados (`*_STATUS_META`, `LEAGUE_META`, `ROLE_META`, `PLAN_COLOR`, `STATUS_TONE_CLASS`, `gameStatusTone`, `readAccessToken`, `LeagueTier`, `LeagueMeta`, `PlanKey`) → superficie pública mínima, consistente con `DIFFICULTY_META`. Sin cambio de comportamiento.
 - **[F1 · hooks/]** Revisión de la capa de datos (49 hooks `use-*`). **Conforme**: TanStack Query consistente (`queryKey` namespaced, invalidación correcta), helpers DRY (`send`/`sendJson`/`fetchItems`/`Paged<T>`), optimistic update con rollback (`useUpdatePipeline`), cero `any`. Archivos grandes (`use-sponsors` 373, `use-coupons` 328) = capa de dominio bien seccionada, no "demasiada responsabilidad".
 - **[F1 · hooks/]** Dead code real removido: `LEAGUE_TIER_LABELS`, `STATUS_VARIANT`, `FinanceCurrency` (usados en ningún lado). (typecheck verde)
-- **[F1 · tooling]** `knip.json`: `ignoreExportsUsedInFile` + ignore `components/ui/**` (shadcn vendado) + `tests/e2e/auth.setup.ts` y `openapi-typescript` (falsos positivos). Convierte "knip limpio" en señal real: de 147 ítems ruidosos → solo el dead code genuino. Único restante: F1.1.
+- **[F1 · tooling]** `knip.json`: `ignoreExportsUsedInFile` + ignore `components/ui/**` (shadcn vendado) + `tests/e2e/auth.setup.ts` y `openapi-typescript` (falsos positivos). Convierte "knip limpio" en señal real: de 147 ítems ruidosos → solo el dead code genuino. Tras resolver F1.1: **knip 100% limpio**.
 - **FYI [F1 · hooks/]:** el helper `send()`/`sendJson()` se repite por archivo (locales casi idénticos) — extraíble a un `lib/` compartido, pero toca ~40 archivos → diferido (Optional, no Requerido).
-- **⚠️ [F1 · lib/] HALLAZGO ABIERTO — F1.1 (arquitectura):** subsistema cliente sin usar. `lib/api.ts` (`serverApi` vía `openapi-fetch`) + dep `openapi-fetch` + `types/api.ts` (generado, solo lo consume `lib/api.ts`) no los usa nadie: el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo). **Decisión pendiente:** (a) cablear `serverApi` en los route handlers, o (b) eliminar el cliente sin usar (`lib/api.ts` + `openapi-fetch`) reevaluando si `types/api.ts`/`gen:types` se conservan para tipar respuestas.
+- **✅ [F1 · lib/] F1.1 (arquitectura) — RESUELTO (mantener):** el subsistema cliente tipado (`lib/api.ts` `serverApi` + dep `openapi-fetch` + `types/api.ts` generado) se **conserva como andamiaje de BFF tipado** (decisión del founder). Hoy el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo); `serverApi` queda disponible para cablear route handlers tipados a futuro. Marcado como intencional en `knip.json` → **knip 100% limpio**.
 
 ## Checkpoint final
 

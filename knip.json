@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "ignoreExportsUsedInFile": true,
-  "ignore": ["components/ui/**", "tests/e2e/auth.setup.ts"],
-  "ignoreDependencies": ["openapi-typescript"]
+  "ignore": ["components/ui/**", "tests/e2e/auth.setup.ts", "lib/api.ts", "types/api.ts"],
+  "ignoreDependencies": ["openapi-typescript", "openapi-fetch"]
 }

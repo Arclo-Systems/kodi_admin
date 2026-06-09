@@ -13,7 +13,7 @@ La historia previa (20+ ramas de desarrollo) quedó archivada en un backup `git 
 fuera del repositorio.
 
 ### Changed
-- **Auditoría Fase 1 (calidad) · `hooks/` + tooling:** elimina 3 exports muertos (`LEAGUE_TIER_LABELS`, `STATUS_VARIANT`, `FinanceCurrency`) y agrega `knip.json` para que la detección de dead code sea fiable (ignora exports usados en su propio archivo + primitivos shadcn vendados + falsos positivos).
+- **Auditoría Fase 1 (calidad) · `hooks/` + tooling:** elimina 3 exports muertos (`LEAGUE_TIER_LABELS`, `STATUS_VARIANT`, `FinanceCurrency`) y agrega `knip.json` para que la detección de dead code sea fiable (ignora exports usados en su propio archivo + primitivos shadcn vendados + falsos positivos). El subsistema BFF tipado (`lib/api.ts`) se conserva como intencional → **knip 100% limpio**.
 - **Auditoría Fase 1 (calidad) · `lib/`:** reduce la superficie pública — helpers y metadata de uso interno único (`*_STATUS_META`, `LEAGUE_META`, `ROLE_META`, `PLAN_COLOR`, `STATUS_TONE_CLASS`, `gameStatusTone`, `readAccessToken`, tipos `LeagueTier`/`LeagueMeta`/`PlanKey`) dejan de exportarse, consistente con el patrón `DIFFICULTY_META` ya privado. Sin cambio de comportamiento.
 
 ### Added
