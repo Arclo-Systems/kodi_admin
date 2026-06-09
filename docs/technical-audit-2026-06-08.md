@@ -485,7 +485,8 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - ✅ **users** (24): conforme. Ficha completa — Profile tab con `Promise.all` (sin waterfall), `user-actions` con confirmaciones por riesgo + 2FA (borrar-cuenta/cambiar-email), 10 tab-pages Server Component limpias.
 - 🔬 **content** (64) — en curso:
   - ✅ hub + **questions** (17): conforme. Form `useFieldArray` + `MarkdownField`, import CSV con preview (válidas/inválidas + plantilla con BOM Excel), `review-selected` con máquina de estados de transiciones.
-  - ⬜ resto de content: news (12), careers (12), ai-prompts (7), admission-cutoffs (6), modules-tree (4), vocational-items (3), riasec-types (3).
+  - ✅ **news** (12): conforme. Publish/schedule/duplicate, bulk bar, form con preview; `markdown-view` SIN `rehype-raw` (XSS-safe) y memoización con refs `AUD-L6`.
+  - ⬜ resto de content: careers (12), ai-prompts (7), admission-cutoffs (6), modules-tree (4), vocational-items (3), riasec-types (3).
 - ⬜ Pendientes: economy (93).
 - **✅ [F1 · lib/] F1.1 (arquitectura) — RESUELTO (mantener):** el subsistema cliente tipado (`lib/api.ts` `serverApi` + dep `openapi-fetch` + `types/api.ts` generado) se **conserva como andamiaje de BFF tipado** (decisión del founder). Hoy el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo); `serverApi` queda disponible para cablear route handlers tipados a futuro. Marcado como intencional en `knip.json` → **knip 100% limpio**.
 
