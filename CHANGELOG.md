@@ -8,6 +8,13 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 
 ## [Unreleased]
 
+### Security
+- **Indexación · panel interno:** `X-Robots-Tag: noindex, nofollow` (next.config) + `app/robots.ts` con `Disallow: /` → el admin nunca se indexa en buscadores, independiente del dominio (Vercel solo agrega noindex en `*.vercel.app`; con dominio propio hay que declararlo). Detectado en `/seo-audit`.
+
+### Changed
+- **Metadatos:** OpenGraph + Twitter Card con título/descripción e imagen 1200×630 (`public/open-graph.png`) para previews de link del panel; `metadataBase` derivado del dominio de producción de Vercel.
+- **Deploy:** `vercel.json` (región `iad1`) para servir el panel desde us-east, cerca del backend.
+
 ## [0.2.0] - 2026-06-09
 
 Endurecimiento para producción: auditoría técnica por fases (calidad, arquitectura, seguridad,

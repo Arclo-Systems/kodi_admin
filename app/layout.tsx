@@ -13,10 +13,38 @@ const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
 });
 
+const DESCRIPTION =
+  "Acceso restringido. Panel interno de Kodi para gestionar usuarios, contenido, economía y operaciones. Uso confidencial de Arclo Systems.";
+
 export const metadata: Metadata = {
+  // Resuelve las URLs absolutas de la imagen OG. En Vercel usa el dominio de producción;
+  // en local, localhost.
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : "http://localhost:3001",
+  ),
   title: { default: "Kodi Inc.", template: "%s · Kodi Inc." },
-  description: "Panel administrativo de Kodi",
+  description: DESCRIPTION,
   icons: { icon: "/favicon.ico" },
+  // Panel interno: nunca se indexa (refuerza el X-Robots-Tag de next.config y robots.txt).
+  robots: { index: false, follow: false },
+  openGraph: {
+    type: "website",
+    siteName: "Kodi",
+    title: "Kodi · Panel de administración",
+    description: DESCRIPTION,
+    locale: "es_CR",
+    images: [
+      { url: "/open-graph.png", width: 1200, height: 630, alt: "Panel de administración de Kodi" },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kodi · Panel de administración",
+    description: DESCRIPTION,
+    images: ["/open-graph.png"],
+  },
 };
 
 export const viewport: Viewport = {
