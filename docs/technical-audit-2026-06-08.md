@@ -93,7 +93,7 @@ npm audit             # vulnerabilidades de dependencias
 | Dominio | Estado | Notas |
 |---|---|---|
 | `app/(auth)` | ✅ | login + change-password: RHF+zod, a11y, reglas de fuerza de contraseña, error server vs red. Cero hallazgos |
-| `app/(panel)` (por dominio) | ✅* | Gates 100% (knip/`any`/tsc/lint/build) + deep-review de extremos (`coupon-form` 667 = bien descompuesto) + representativos por capa. Cero hallazgos. *alcance abajo |
+| `app/(panel)` (por dominio) | ✅ | **Barrido línea-por-línea 266/266** (no muestreo). Un único hallazgo real (F1.4, COUNTRIES duplicado, corregido); resto uniformemente conforme. Bitácora por dominio abajo |
 | `components/` (admin + ui + game + rich-content) | ✅ | `admin/` + `app-sidebar` revisados a fondo (cero hallazgos); `ui/` = shadcn vendado; `game`/`rich-content`/`dashboard` verificados por gates (knip/tsc/lint/build) + patrón consistente |
 | `hooks/` (49 hooks `use-*`) | ✅ | Capa de datos limpia (TanStack Query, helpers DRY, optimistic+rollback, cero `any`). Fix: 3 exports muertos removidos + `knip.json` |
 | `lib/` (auth, bff, proxy, guard, permissions, utils, *-status) | ✅ | Núcleo limpio (cero `any`, comentarios "por qué", `getUserDetail` con `cache()`). Fix: 12 helpers internos des-exportados. F1.1 (`lib/api.ts`) resuelto: andamiaje BFF intencional |
@@ -490,13 +490,16 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
   - **ai-prompts** (7): versionado + rollback (admin-only) + playground.
   - **modules-tree** (4): dnd-kit sortable (sensor teclado = accesible), `node-detail` (574) bien descompuesto en 3 forms.
   - **vocational-items** (3) + **riasec-types** (3): edición en modal (U6), RHF+zod.
-- 🔬 **economy** (93) — en curso:
+- ✅ **economy** (93) COMPLETO — conforme, cero hallazgos:
   - ✅ hub + **sponsors** (17): conforme. Mini-CRM (kanban pipeline dnd-kit + 6 tabs). `sponsor-logo-upload` SVG seguro (next/image, no inline); `sponsor-branch-form` con `dynamic(ssr:false)` para Leaflet (lazy-load); docs vía `openSignedAsset`.
   - ✅ **missions** (8) + **coupons** (8): conforme. Cupones con stats/export CSV/soporte (regenerar-reembolsar, role-gated + motivo); misiones con intervención por código de amigo (todo con motivo → audit log).
   - ✅ **banners** (8) + **achievements** (8): conforme. Banner con `PlacementPreview` (maqueta teléfono) + CTR; achievements con `ConditionBuilder` (unión discriminada de 6 tipos) y re-otorgar Kokos con preview + confirm.
   - ✅ **store** (7) + **raffles** (7): conforme. Store con `requiresPlan` + dual asset + ajuste inventario (audit log); raffles con reversibilidad acotada (24h) y reemplazo por mérito.
   - ✅ **videos** (6) + **sponsor-invoices** (4) + **energy** (4): conforme. Video con auto-detección de duración + upload con progreso; facturas con máquina de estados + PDF firmado; energy con patrón `values` de RHF.
-  - ⬜ resto: referrals (3), promo-offers (3), subscriptions (2), subscription-prices (2), monetization (2), kokos-packs (2), cross-sell (2).
+  - ✅ **referrals** (3) + **promo-offers** (3): conforme. Hitos de referido con premio polimórfico (kokos/kolones/cosmético, `NormalizedReward`); ofertas Fundador con sentinel `NaN` para %, ventana opcional y grilla `plan×período×pack` reemplazada en bloque.
+  - ✅ **subscriptions** (2) + **subscription-prices** (2): conforme. Comp/grant con resolución debounced del código de amigo y módulo acotado al país (derivado en render, sin effect); precios con sentinel `DEFAULT`→`null` para la fila global.
+  - ✅ **monetization** (2) + **kokos-packs** (2) + **cross-sell** (2): conforme. Analítica con `hourIso` (trunca a la hora → queryKey estable, evita refetch en bucle); packs con helpers `textField`/`numField` DRY y faro de estado de oferta; cross-sell origen→destino con guardas de auto-referencia.
+- **[F1 · app/(panel)] BARRIDO LÍNEA-POR-LÍNEA COMPLETO — 266/266 archivos.** Resultado: **un (1) hallazgo real** (F1.4, COUNTRIES duplicado) en todo el árbol. El resto, uniformemente conforme: cero `any`, cero código muerto, comentarios solo "por qué", Server Component + `requireAction` + `can`/scope como patrón invariante, catálogo `components/admin` y helpers `lib` reutilizados sin copy-paste. **Fase 1 cerrada.**
 - **✅ [F1 · lib/] F1.1 (arquitectura) — RESUELTO (mantener):** el subsistema cliente tipado (`lib/api.ts` `serverApi` + dep `openapi-fetch` + `types/api.ts` generado) se **conserva como andamiaje de BFF tipado** (decisión del founder). Hoy el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo); `serverApi` queda disponible para cablear route handlers tipados a futuro. Marcado como intencional en `knip.json` → **knip 100% limpio**.
 
 ## Checkpoint final
