@@ -493,7 +493,8 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - 🔬 **economy** (93) — en curso:
   - ✅ hub + **sponsors** (17): conforme. Mini-CRM (kanban pipeline dnd-kit + 6 tabs). `sponsor-logo-upload` SVG seguro (next/image, no inline); `sponsor-branch-form` con `dynamic(ssr:false)` para Leaflet (lazy-load); docs vía `openSignedAsset`.
   - ✅ **missions** (8) + **coupons** (8): conforme. Cupones con stats/export CSV/soporte (regenerar-reembolsar, role-gated + motivo); misiones con intervención por código de amigo (todo con motivo → audit log).
-  - ⬜ resto: banners (8), achievements (8), store (7), raffles (7), videos (6), sponsor-invoices (4), energy (4), referrals (3), promo-offers (3), subscriptions (2), subscription-prices (2), monetization (2), kokos-packs (2), cross-sell (2).
+  - ✅ **banners** (8) + **achievements** (8): conforme. Banner con `PlacementPreview` (maqueta teléfono) + CTR; achievements con `ConditionBuilder` (unión discriminada de 6 tipos) y re-otorgar Kokos con preview + confirm.
+  - ⬜ resto: store (7), raffles (7), videos (6), sponsor-invoices (4), energy (4), referrals (3), promo-offers (3), subscriptions (2), subscription-prices (2), monetization (2), kokos-packs (2), cross-sell (2).
 - **✅ [F1 · lib/] F1.1 (arquitectura) — RESUELTO (mantener):** el subsistema cliente tipado (`lib/api.ts` `serverApi` + dep `openapi-fetch` + `types/api.ts` generado) se **conserva como andamiaje de BFF tipado** (decisión del founder). Hoy el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo); `serverApi` queda disponible para cablear route handlers tipados a futuro. Marcado como intencional en `knip.json` → **knip 100% limpio**.
 
 ## Checkpoint final
