@@ -206,10 +206,10 @@ npm audit             # vulnerabilidades de dependencias
 
 | Ruta/componente | Estado | Notas |
 |---|---|---|
-| Tablas grandes (DataTable + ~30 tablas) | ⬜ | |
-| Charts (recharts) / mapas (leaflet) / mermaid / katex | ⬜ | |
-| `modules-tree` (árbol con dnd-kit) | ⬜ | |
-| Dashboard (KPIs + charts) | ⬜ | |
+| Tablas grandes (DataTable + ~30 tablas) | ✅ | Paginadas server-side (`pageSize`) → sin virtualización necesaria; columnas memoizadas con `useMemo` donde corresponde |
+| Charts (recharts) / mapas (leaflet) / mermaid / katex | ✅ | leaflet (`dynamic ssr:false` + `import('leaflet')`) y mermaid (`import('mermaid')`) ya lazy; katex solo en rutas de contenido (aislado por route-split). **Fix F5.1**: recharts del dashboard → `next/dynamic` |
+| `modules-tree` (árbol con dnd-kit) | ✅ | dnd-kit (sensor teclado), árbol acotado (contenido admin); sin render masivo |
+| Dashboard (KPIs + charts) | ✅ | 7 queries en paralelo (sin waterfall); KPIs above-the-fold; **Fix F5.1**: charts (recharts ~308 KB) extraídos a chunk lazy below-the-fold |
 
 ---
 
@@ -530,6 +530,14 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **[F4 · errores] Shape único y accionable.** Los helpers `send`/`sendJson`/`sendDelete` extraen `message` del cuerpo de error del backend (`b.message ?? 'Error'`) y lo lanzan como `Error` → la UI consumidora lo muestra en toast/Alert. Las queries lanzan mensaje genérico → la UI rinde estado `isError`. **Conforme.**
 - **FYI [F4 · contratos] (= raíz del tradeoff F1.1, Optional):** los tipos de los hooks (`CouponDetail`, `StoreItem`, …) están **hand-rolled**, no derivados de `types/api.ts` (OpenAPI). Riesgo de drift: un cambio de DTO en el backend no da error de compilación (sí `undefined` en runtime). Aceptado porque el panel pega vía fetch crudo (no el `serverApi` tipado); `types/api.ts` y el andamiaje `serverApi` quedan disponibles para cablear handlers tipados cuando se priorice. Mismo origen que el FYI de zod (Fase 2).
 - **FYI [F4 · DRY] (= FYI de Fase 1, Optional-diferido):** el helper `send*` se repite en ~33 hooks con variaciones menores (métodos soportados, `credentials:'include'` redundante en same-origin pero inofensivo). Consolidable a un `lib/` compartido, pero toca ~33 archivos → refactor propio y separado, no dentro de la auditoría (Rule of 500). Sin impacto funcional.
+
+### Fase 5 · Performance & Core Web Vitals
+
+- **[F5 · medición primero] Tamaños reales medidos de los artefactos** (`.next/static/chunks`, porque el build con Turbopack no imprime la tabla de tamaños por ruta): recharts = chunk de **308 KB**, leaflet = **571 KB**, mermaid en chunk propio. Base objetiva para decidir, no a ciegas.
+- **[F5 · lazy] leaflet y mermaid ya correctamente diferidos.** `sponsor-branch-form` carga el mapa con `dynamic(ssr:false)` + `import('leaflet')`; `mermaid.tsx` con `import('mermaid')` perezoso. Ambos (los 2 más pesados) **fuera del bundle inicial**. katex/rehype-katex solo en `rich-content` (rutas de contenido) → aislado por route-splitting. **Conforme.**
+- **🔧 F5.1 (FIX, bundle) — dashboard:** recharts (308 KB) entraba **estático** en `dashboard-overview` (la landing post-login), aunque los 3 charts están below-the-fold (debajo de los KPIs). Extraídos a `dashboard-charts.tsx`, cargado con `next/dynamic({ ssr: false })` + fallback de igual alto (sin CLS). **Verificado:** el código de charts quedó en un chunk async de 42 KB que arrastra recharts por la frontera dinámica → fuera del bundle inicial del dashboard. Las 7 queries siguen en el parent (data-fetching idéntico, en paralelo, sin waterfall); solo se difiere el render. (ci + knip verdes). *Nota:* monetization y finance/pnl mantienen recharts estático a propósito (rutas de navegación intencional, charts = contenido principal).
+- **[F5 · render/datos] Sin anti-patrones.** Tablas paginadas server-side (`pageSize`) → no requieren virtualización; `DataTable` y los managers memoizan `columns` con `useMemo`; dashboard dispara sus 7 queries en paralelo (sin waterfall); `React.cache()` en `user-detail` dedupea el fetch entre layout y tabs; único `<img>` crudo justificado (preview de URL externa con `loading=lazy`). lucide-react/@radix se tree-shakean por los defaults de `optimizePackageImports` de Next 16. **Conforme.**
+- **FYI [F5 · medición de campo]:** los Core Web Vitals reales (LCP/INP/CLS de campo) requieren un entorno desplegado + Lighthouse/RUM. El análisis acá es estático + tamaños de bundle (lo accionable sin deploy). La validación de campo se hace en staging (cruza con F3.2/infra).
 
 ## Checkpoint final
 
