@@ -304,9 +304,9 @@ npm audit             # vulnerabilidades de dependencias
 
 | Ítem | Estado | Notas |
 |---|---|---|
-| Error/not-found boundaries | ⬜ | |
-| Sentry (3 runtimes) | ⬜ | |
-| Estados de error en mutaciones | ⬜ | |
+| Error/not-found boundaries | ✅ | `app/error.tsx` (captura a Sentry + retry), `app/global-error.tsx` (NextError genérico + Sentry), `app/not-found.tsx` (404 con retorno). Los 3 presentes y útiles |
+| Sentry (3 runtimes) | ✅ | `instrumentation.register()` carga server/edge según runtime + `onRequestError=captureRequestError` (RSC/middleware/handlers); `instrumentation-client` + `onRouterTransitionStart`. DSN-gated (inerte sin DSN, off en test), sin `sendDefaultPii` |
+| Estados de error en mutaciones | ✅ | `send*` lanza `Error(message del backend)` → toast/Alert accionable (no genérico); cero `catch {}` silenciosos; los 107 `.catch(()=>({}))` son fallbacks de parseo JSON que igual lanzan/chequean status |
 
 ---
 
@@ -565,6 +565,14 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **🔧 F8.1 (FIX, supply chain) — `npm audit` a cero:** las 2 moderate eran una sola vuln (`postcss <8.5.10`, XSS en el stringify de CSS) **bundleada por Next** (`next/node_modules/postcss@8.4.31`). **No alcanzable**: postcss procesa el CSS propio (Tailwind), nunca input de usuario; y es build-time. El árbol propio ya corría `postcss@8.5.15`. Resuelto con `overrides: { postcss: "^8.5.15" }` (Next dedupea a 8.5.15) en vez de `audit fix --force` (que tocaría la versión de Next). **`npm audit` → 0 vulnerabilidades**; build verde con Next sobre postcss 8.5.15. *No reachable, pero limpiar el audit mantiene la señal útil para futuros avisos.*
 - **🔧 F8.2 (FIX, engines) — `package.json` sin `engines`:** agregado `"engines": { "node": "^22.22.2 || ^24.15.0 || >=26.0.0" }` (alineado a lo que exige el árbol de deps) para hacer explícito el requisito en CI/onboarding. El `EBADENGINE` restante es de `mute-stream@4.0.0` (transitiva) vs el Node local **24.13.0** → **recomendación: actualizar Node a ≥24.15** (a 2 patches); es warning no bloqueante, se va solo al hacer el bump.
 - **[F8 · lockfile] Reproducible.** `package-lock.json` regenerado consistente tras el override (`npm install` → `removed 1 package`, sin cambios espurios); `npm ci` reproducible.
+
+### Fase 9 · Observabilidad, errores & resiliencia
+
+- **[F9 · boundaries] Los 3 fallbacks presentes y útiles.** `app/error.tsx` (captura a Sentry + botón Reintentar), `app/global-error.tsx` (`NextError` genérico + Sentry, no filtra), `app/not-found.tsx` (404 con link de retorno al panel). Toda ruta tiene fallback. **Conforme.**
+- **[F9 · Sentry 3 runtimes] Cobertura completa.** `instrumentation.register()` importa `sentry.server.config` (runtime `nodejs`) o `sentry.edge.config` (runtime `edge`) condicionalmente; `onRequestError = Sentry.captureRequestError` captura errores de Server Components / middleware / route handlers; `instrumentation-client` inicializa el cliente + `onRouterTransitionStart` (tracing de navegación del App Router). Todos **DSN-gated** (`enabled: Boolean(dsn) && NODE_ENV!=='test'`) → inerte sin DSN, apagado en test; **sin `sendDefaultPii`** → no captura cookies/IP. **Conforme.**
+- **[F9 · sin fallas silenciosas] Cero catches vacíos.** No hay `catch {}`/`catch(e){}` que traguen errores en `app`/`components`/`lib`/`hooks`. Los 107 `.catch(() => ({}))` son fallbacks de **parseo JSON** (cuerpo no-JSON en 204/errores) que luego **igual lanzan** (`throw new Error(b.message ?? 'Error')`) o chequean `res.ok`/status — manejo intencional, no silencio. **Conforme.**
+- **[F9 · UX de error] Errores accionables.** Mutaciones → `Error` con el `message` del backend → toast/`Alert` concreto (no "algo salió mal" genérico); queries → estado `isError` con mensaje en la UI. Stack traces tratados como datos (mostrados/enviados a Sentry, nunca ejecutados ni inyectados en comandos). **Conforme.**
+- **[F9 · resultado] Cero hallazgos.** Observabilidad integral: 3 runtimes + RSC capture + navegación, 3 boundaries, sin PII, sin silencios. Sin fixes.
 
 ## Checkpoint final
 
