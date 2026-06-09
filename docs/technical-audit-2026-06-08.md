@@ -495,7 +495,8 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
   - ✅ **missions** (8) + **coupons** (8): conforme. Cupones con stats/export CSV/soporte (regenerar-reembolsar, role-gated + motivo); misiones con intervención por código de amigo (todo con motivo → audit log).
   - ✅ **banners** (8) + **achievements** (8): conforme. Banner con `PlacementPreview` (maqueta teléfono) + CTR; achievements con `ConditionBuilder` (unión discriminada de 6 tipos) y re-otorgar Kokos con preview + confirm.
   - ✅ **store** (7) + **raffles** (7): conforme. Store con `requiresPlan` + dual asset + ajuste inventario (audit log); raffles con reversibilidad acotada (24h) y reemplazo por mérito.
-  - ⬜ resto: videos (6), sponsor-invoices (4), energy (4), referrals (3), promo-offers (3), subscriptions (2), subscription-prices (2), monetization (2), kokos-packs (2), cross-sell (2).
+  - ✅ **videos** (6) + **sponsor-invoices** (4) + **energy** (4): conforme. Video con auto-detección de duración + upload con progreso; facturas con máquina de estados + PDF firmado; energy con patrón `values` de RHF.
+  - ⬜ resto: referrals (3), promo-offers (3), subscriptions (2), subscription-prices (2), monetization (2), kokos-packs (2), cross-sell (2).
 - **✅ [F1 · lib/] F1.1 (arquitectura) — RESUELTO (mantener):** el subsistema cliente tipado (`lib/api.ts` `serverApi` + dep `openapi-fetch` + `types/api.ts` generado) se **conserva como andamiaje de BFF tipado** (decisión del founder). Hoy el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo); `serverApi` queda disponible para cablear route handlers tipados a futuro. Marcado como intencional en `knip.json` → **knip 100% limpio**.
 
 ## Checkpoint final
