@@ -483,11 +483,13 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - ✅ **messaging** (11): conforme. Nav con tabs gated, acciones inline por estado (aprobar/enviar/cancelar), detalle editable solo si draft+broadcast (resto read-only con Loading/Error accesibles), segmentos con preview de conteo, editor de transaccionales con vars permitidas.
 - ✅ **game** (19): conforme + **ejemplar en reuso**. Los 4 modos comparten `GameTable<T>` y `GameDetailShell` (render-prop), helpers `game-bits` (`AccuracyBar`/`durationLabel`/`UserRef`). `schedule-especial-form` con `useFieldArray`, validación de solape/topes, mapeo camelCase→snake.
 - ✅ **users** (24): conforme. Ficha completa — Profile tab con `Promise.all` (sin waterfall), `user-actions` con confirmaciones por riesgo + 2FA (borrar-cuenta/cambiar-email), 10 tab-pages Server Component limpias.
-- 🔬 **content** (64) — en curso:
-  - ✅ hub + **questions** (17): conforme. Form `useFieldArray` + `MarkdownField`, import CSV con preview (válidas/inválidas + plantilla con BOM Excel), `review-selected` con máquina de estados de transiciones.
-  - ✅ **news** (12): conforme. Publish/schedule/duplicate, bulk bar, form con preview; `markdown-view` SIN `rehype-raw` (XSS-safe) y memoización con refs `AUD-L6`.
-  - ✅ **careers** (12): conforme. Workflow editor→admin (editor sube CSV con diff, admin aprueba/rechaza), `careers/page` redirige al editor a su pestaña, plantilla con BOM Excel, validación RIASEC.
-  - ⬜ resto de content: ai-prompts (7), admission-cutoffs (6), modules-tree (4), vocational-items (3), riasec-types (3).
+- ✅ **content** (64) COMPLETO — conforme, cero hallazgos:
+  - hub + **questions** (17): form `useFieldArray` + `MarkdownField`, import CSV con preview + plantilla BOM Excel, `review-selected` con máquina de estados.
+  - **news** (12): `markdown-view` SIN `rehype-raw` (XSS-safe) + memoización `AUD-L6`.
+  - **careers** (12) + **admission-cutoffs** (6): workflow editor→admin con diff (insert/update/delete/inválidas), plantillas BOM Excel.
+  - **ai-prompts** (7): versionado + rollback (admin-only) + playground.
+  - **modules-tree** (4): dnd-kit sortable (sensor teclado = accesible), `node-detail` (574) bien descompuesto en 3 forms.
+  - **vocational-items** (3) + **riasec-types** (3): edición en modal (U6), RHF+zod.
 - ⬜ Pendientes: economy (93).
 - **✅ [F1 · lib/] F1.1 (arquitectura) — RESUELTO (mantener):** el subsistema cliente tipado (`lib/api.ts` `serverApi` + dep `openapi-fetch` + `types/api.ts` generado) se **conserva como andamiaje de BFF tipado** (decisión del founder). Hoy el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo); `serverApi` queda disponible para cablear route handlers tipados a futuro. Marcado como intencional en `knip.json` → **knip 100% limpio**.
 
