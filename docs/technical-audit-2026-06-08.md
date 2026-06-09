@@ -280,9 +280,9 @@ npm audit             # vulnerabilidades de dependencias
 
 | Ítem | Estado | Notas |
 |---|---|---|
-| `knip` deps | ⬜ | |
-| `npm audit` (2 moderadas) | ⬜ | |
-| `engines`/Node | ⬜ | |
+| `knip` deps | ✅ | `knip --dependencies` vacío → cero deps/devDeps sin usar |
+| `npm audit` (2 moderadas) | ✅ | **Fix F8.1**: las 2 moderate eran `postcss@8.4.31` **bundleado por Next** (XSS build-time, no alcanzable: solo procesa CSS propio). `overrides: postcss ^8.5.15` → Next dedupea a 8.5.15. **`npm audit` → 0 vulnerabilidades** |
+| `engines`/Node | ◑ | **Fix F8.2**: agregado campo `engines` (`^22.22.2 \|\| ^24.15.0 \|\| >=26`) — antes no existía. El `EBADENGINE` restante es de `mute-stream` (transitiva) vs Node local 24.13 → **recomendado bump a ≥24.15** (a 2 patches), no bloqueante |
 
 ---
 
@@ -558,6 +558,13 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
   - **`gen:types:check`** → detectó **drift real** (el contrato `types/api.ts` estaba desactualizado vs el backend: nuevos endpoints como `LeaguesAdminController_upsert`, cambios de path/status). Regenerado con `openapi-typescript`, typecheck verde, **commit `4a5a5aa`**. Hallazgo solo detectable con el backend disponible — justo el riesgo de drift que se anotó como FYI en F2/F4.
   - **`npm run e2e`** → la suite **pasa** (verificado en serie: login/dashboard/users 5/5 en 24s contra el dev server tibio). En la corrida full-parallel hubo 17 fallas + 10 flaky, **todas por saturación**: `fullyParallel:true` golpea 24 rutas a la vez contra `next dev`, que compila on-demand → timeouts de 30s. **No son bugs de la app.**
 - **🔧 F7.2 (FIX, fiabilidad e2e) — `playwright.config.ts`:** el `webServer` corría `npm run dev` también en CI → mismas timeouts de compilación bajo carga paralela (ni 2 retries alcanzan). Cambiado a `npm run build && npm run start` **en CI** (rutas pre-compiladas, sin compile-timeouts; además testea el comportamiento de producción), manteniendo `npm run dev` en local para iterar rápido. `timeout` del webServer subido a 300s en CI para cubrir el build.
+
+### Fase 8 · Dependencias & supply chain
+
+- **[F8 · knip] Cero deps sin usar.** `knip --dependencies` vacío: ningún paquete de `dependencies`/`devDependencies` huérfano. La superficie de `package.json` está justificada. **Conforme.**
+- **🔧 F8.1 (FIX, supply chain) — `npm audit` a cero:** las 2 moderate eran una sola vuln (`postcss <8.5.10`, XSS en el stringify de CSS) **bundleada por Next** (`next/node_modules/postcss@8.4.31`). **No alcanzable**: postcss procesa el CSS propio (Tailwind), nunca input de usuario; y es build-time. El árbol propio ya corría `postcss@8.5.15`. Resuelto con `overrides: { postcss: "^8.5.15" }` (Next dedupea a 8.5.15) en vez de `audit fix --force` (que tocaría la versión de Next). **`npm audit` → 0 vulnerabilidades**; build verde con Next sobre postcss 8.5.15. *No reachable, pero limpiar el audit mantiene la señal útil para futuros avisos.*
+- **🔧 F8.2 (FIX, engines) — `package.json` sin `engines`:** agregado `"engines": { "node": "^22.22.2 || ^24.15.0 || >=26.0.0" }` (alineado a lo que exige el árbol de deps) para hacer explícito el requisito en CI/onboarding. El `EBADENGINE` restante es de `mute-stream@4.0.0` (transitiva) vs el Node local **24.13.0** → **recomendación: actualizar Node a ≥24.15** (a 2 patches); es warning no bloqueante, se va solo al hacer el bump.
+- **[F8 · lockfile] Reproducible.** `package-lock.json` regenerado consistente tras el override (`npm install` → `removed 1 package`, sin cambios espurios); `npm ci` reproducible.
 
 ## Checkpoint final
 

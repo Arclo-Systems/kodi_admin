@@ -20,6 +20,7 @@ fuera del repositorio.
 - **Auditoría Fase 1 (calidad) · `lib/`:** reduce la superficie pública — helpers y metadata de uso interno único (`*_STATUS_META`, `LEAGUE_META`, `ROLE_META`, `PLAN_COLOR`, `STATUS_TONE_CLASS`, `gameStatusTone`, `readAccessToken`, tipos `LeagueTier`/`LeagueMeta`/`PlanKey`) dejan de exportarse, consistente con el patrón `DIFFICULTY_META` ya privado. Sin cambio de comportamiento.
 
 ### Security
+- **Auditoría Fase 8 (supply chain) · dependencias:** `overrides` de `postcss ^8.5.15` para subir el postcss que Next bundlea (advisory `<8.5.10`, XSS build-time no alcanzable) → `npm audit` queda en **0 vulnerabilidades**. Agregado campo `engines` (Node `^22.22.2 || ^24.15.0 || >=26`).
 - **Auditoría Fase 3 (hardening) · `next.config.ts`:** agrega cabeceras de seguridad de línea base — `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` (anti-clickjacking), `Referrer-Policy`, `Permissions-Policy` (deniega cámara/micrófono/geo) y HSTS (`Strict-Transport-Security`). CSP queda pendiente (requiere inventario de orígenes externos; ver F3.2 en la auditoría).
 
 ### Fixed
