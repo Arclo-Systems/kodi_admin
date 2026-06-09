@@ -176,10 +176,11 @@ npm audit             # vulnerabilidades de dependencias
 
 | Grupo de hooks | Estado | Notas |
 |---|---|---|
-| Dashboard / analytics | ⬜ | |
-| Contenido (questions, news, careers, modules-tree…) | ⬜ | |
-| Economía (coupons, store, raffles, sponsors…) | ⬜ | |
-| Sistema (admins, audit, jobs, moderation) | ⬜ | |
+| Infraestructura compartida (`QueryProvider`) | ✅ | `staleTime: 30s` + `refetchOnWindowFocus: false` + `retry: 1`; client vía `useState(() => new QueryClient())` (estable); devtools solo en dev |
+| Dashboard / analytics | ✅ | Rangos estables (`hourIso` evita refetch en bucle); KPIs con `isLoading`/`isError` en la UI |
+| Contenido (questions, news, careers, modules-tree…) | ✅ | queryKeys namespaced, `enabled:!!id`, invalidación targeted; `ai-prompts` con versionado |
+| Economía (coupons, store, raffles, sponsors…) | ✅ | `sponsors` con optimistic update + rollback (pipeline kanban); paginación en todos los listados |
+| Sistema (admins, audit, jobs, moderation) | ✅ | `features` con optimistic update + rollback (kanban); comandos sin caché (schedule/playground) correctamente sin invalidación |
 
 ---
 
@@ -520,6 +521,15 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **[F3 · errores] Sin fuga de internals.** `error.tsx` muestra `error.message` pero (a) Next redacta errores de Server Components en prod y (b) el panel es interno/autenticado → aceptable para herramienta interna. `global-error.tsx` usa `NextError` genérico. Ambos capturan a Sentry. **Conforme.**
 - **🔧 F3.1 (FIX, hardening) — `next.config.ts`:** no había **ningún** header de seguridad. Agregada línea base: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` (anti-clickjacking; el panel nunca se embebe), `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` (deniega cámara/micrófono/geo/topics), `Strict-Transport-Security` (HSTS, `includeSubDomains`, sin `preload` para no comprometerse irreversiblemente). Aplicado a `/:path*`. (build verde)
 - **⏳ F3.2 (Required, DIFERIDO) — Content-Security-Policy:** sin CSP. Una CSP correcta exige inventariar los orígenes externos reales (API `NEXT_PUBLIC_API_URL`, CDN de assets/imágenes del backend, ingest de Sentry, tiles de Leaflet, fuentes) y manejar nonces para el `<style>` inline de `chart.tsx` + scripts de Next. Aplicarla a ciegas rompe producción → se implementa **con el inventario de infra a la vista** (idealmente report-only primero). Marcado Required, pendiente de entorno de despliegue.
+
+### Fase 4 · Datos, API & estado (TanStack Query)
+
+- **[F4 · infra] `QueryProvider` correcto.** `staleTime: 30s` + `refetchOnWindowFocus: false` + `retry: 1` (intencional para panel admin: evita tormentas de refetch). Client creado con `useState(() => new QueryClient())` → estable entre renders, no se recrea (`rerender-lazy-state-init`). Devtools solo en dev. **Conforme.**
+- **[F4 · caché] queryKeys + invalidación verificados en los 49 hooks.** Todos los `queryKey` namespaced (array con prefijo string); detalles con `enabled:!!id` (sin fetch con id vacío); listados con paginación (`page`/`pageSize`); **toda mutación de estado invalida** las queries afectadas (targeted: lista + detalle). Los "off-by-N" del escaneo son la línea `import { useMutation }` + mutaciones-comando legítimas que no tocan caché (`useScheduleEspecial`, `usePlayground`, `useInventoryAdjust`). **Conforme, cero bugs de UI stale.**
+- **[F4 · optimistic] Dos optimistic updates, ambos de manual.** `use-features` (drag de etapa kanban) y `use-sponsors` (pipeline) usan el patrón completo: `cancelQueries` → snapshot con `getQueriesData` → `setQueryData` optimista → **rollback en `onError`** desde el contexto → `invalidateQueries` en `onSettled` para reconciliar. **Conforme.**
+- **[F4 · errores] Shape único y accionable.** Los helpers `send`/`sendJson`/`sendDelete` extraen `message` del cuerpo de error del backend (`b.message ?? 'Error'`) y lo lanzan como `Error` → la UI consumidora lo muestra en toast/Alert. Las queries lanzan mensaje genérico → la UI rinde estado `isError`. **Conforme.**
+- **FYI [F4 · contratos] (= raíz del tradeoff F1.1, Optional):** los tipos de los hooks (`CouponDetail`, `StoreItem`, …) están **hand-rolled**, no derivados de `types/api.ts` (OpenAPI). Riesgo de drift: un cambio de DTO en el backend no da error de compilación (sí `undefined` en runtime). Aceptado porque el panel pega vía fetch crudo (no el `serverApi` tipado); `types/api.ts` y el andamiaje `serverApi` quedan disponibles para cablear handlers tipados cuando se priorice. Mismo origen que el FYI de zod (Fase 2).
+- **FYI [F4 · DRY] (= FYI de Fase 1, Optional-diferido):** el helper `send*` se repite en ~33 hooks con variaciones menores (métodos soportados, `credentials:'include'` redundante en same-origin pero inofensivo). Consolidable a un `lib/` compartido, pero toca ~33 archivos → refactor propio y separado, no dentro de la auditoría (Rule of 500). Sin impacto funcional.
 
 ## Checkpoint final
 
