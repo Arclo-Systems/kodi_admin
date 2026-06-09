@@ -1,0 +1,15 @@
+# Normalización de fin de línea: LF en el repo, auto en el working tree
+* text=auto eol=lf
+
+# Binarios (sin normalizar)
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.avif binary
+*.woff  binary
+*.woff2 binary
+*.zip   binary
+*.bundle binary
