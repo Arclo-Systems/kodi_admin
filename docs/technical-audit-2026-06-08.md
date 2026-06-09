@@ -121,10 +121,10 @@ npm audit             # vulnerabilidades de dependencias
 
 | Capa | Estado | Notas |
 |---|---|---|
-| Route handlers `app/api/admin/*` | ⬜ | |
-| Cliente BFF (`lib/api.ts`, `lib/bff.ts`, `lib/proxy.ts`) | ⬜ | |
-| Frontera Server/Client Components | ⬜ | |
-| `lib/` (responsabilidades, acoplamiento) | ⬜ | |
+| Route handlers `app/api/admin/*` (220) | ✅ | 214/220 vía `forwardToBackend` canónico; 5 desvíos justificados (login Set-Cookie, logout, change-password, request-2fa allowlist, coupons CSV). Fix F2.1: 2 handlers que reinventaban el proxy → forma canónica |
+| Cliente BFF (`lib/api.ts`, `lib/bff.ts`, `lib/proxy.ts`) | ✅ | `forwardToBackend` propaga cookie+query+status, maneja 204; `unwrapData`/`adaptBackendCookie` con el "por qué" documentado. `lib/api.ts` = andamiaje tipado server-only (F1.1) |
+| Frontera Server/Client Components | ✅ | Browser→`/api/admin/*` relativo (same-origin) en 100% de hooks; cero URLs absolutas; `NEXT_PUBLIC_API_URL` solo server-side; `'use client'` solo en islas |
+| `lib/` (responsabilidades, acoplamiento) | ✅ | `lib/`→`app/` = cero imports (sin dependencia invertida); authz centralizada en backend (no duplicada en 220 proxies) |
 
 ---
 
@@ -501,6 +501,14 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
   - ✅ **monetization** (2) + **kokos-packs** (2) + **cross-sell** (2): conforme. Analítica con `hourIso` (trunca a la hora → queryKey estable, evita refetch en bucle); packs con helpers `textField`/`numField` DRY y faro de estado de oferta; cross-sell origen→destino con guardas de auto-referencia.
 - **[F1 · app/(panel)] BARRIDO LÍNEA-POR-LÍNEA COMPLETO — 266/266 archivos.** Resultado: **un (1) hallazgo real** (F1.4, COUNTRIES duplicado) en todo el árbol. El resto, uniformemente conforme: cero `any`, cero código muerto, comentarios solo "por qué", Server Component + `requireAction` + `can`/scope como patrón invariante, catálogo `components/admin` y helpers `lib` reutilizados sin copy-paste. **Fase 1 cerrada.**
 - **✅ [F1 · lib/] F1.1 (arquitectura) — RESUELTO (mantener):** el subsistema cliente tipado (`lib/api.ts` `serverApi` + dep `openapi-fetch` + `types/api.ts` generado) se **conserva como andamiaje de BFF tipado** (decisión del founder). Hoy el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo); `serverApi` queda disponible para cablear route handlers tipados a futuro. Marcado como intencional en `knip.json` → **knip 100% limpio**.
+
+### Fase 2 · Arquitectura & límites (BFF · RSC)
+
+- **[F2 · route handlers] Patrón proxy verificado en los 220 handlers.** 214/220 usan `forwardToBackend` (proxy fino: reenvía cookie + body + query + status, maneja 204). Los 5 desvíos legítimos están **documentados en su archivo**: `auth/login` (reescribe Set-Cookie con `adaptBackendCookie`), `auth/logout` (limpia cookies), `auth/change-password` (204→`{ok}`), `auth/request-2fa` (allowlist `/v1/admin/` anti open-proxy), `coupons/[id]/export` (respuesta `text/csv`, no-JSON). **Conforme.**
+- **🔧 F2.1 (FIX, arquitectura/DRY) — `admins/route.ts` + `audit-log/by-resource/route.ts`:** reinventaban `forwardToBackend` con `fetch` a mano (duplicaban extracción de cookie, parseo JSON y forwardeo de status) y, peor, su bucle `searchParams.set` **colapsaba query params repetidos** (`?country=CR&country=GT` → uno solo). Reescritos a la forma canónica `forwardToBackend(req, m, \`…${qs ? '?'+qs : ''}\`)`, idéntica a sus 214 hermanos (p.ej. el vecino `audit-log/route.ts`). `toString()` preserva params repetidos. (typecheck + lint verdes)
+- **[F2 · frontera BFF] Sin fugas cross-origin.** El browser pega **siempre** a `/api/admin/*` relativo (same-origin) — verificado en los 49 hooks: cero URLs absolutas, cero uso de `NEXT_PUBLIC_API_URL` fuera del server (solo `lib/proxy`, `lib/auth`, `lib/api`). Las cookies HTTP-only nunca salen al cliente. **Conforme.**
+- **[F2 · acoplamiento] Dirección de dependencias correcta.** `lib/`→`app/` = **cero imports** (sin dependencia invertida). Authz **centralizada en el backend** vía cookie reenviada — NO duplicada en los 220 proxies (single-source-of-truth; evita drift). La UI gatea con `requireAction`/`can` en las páginas (defensa en profundidad), pero la autoridad real es el backend. **Conforme.**
+- **FYI [F2 · validación de respuestas]:** los hooks desenvuelven con `unwrapData<T>` + cast desde los tipos OpenAPI (codegen), **sin** validación zod en runtime de las respuestas del backend. Tradeoff aceptado: backend first-party + contrato OpenAPI compartido → zod-validar cada respuesta sería over-engineering. La validación zod **sí** está en los bordes de entrada (forms). Optional, no Requerido. (Se reevalúa en Fase 3 si hay superficie no confiable.)
 
 ## Checkpoint final
 
