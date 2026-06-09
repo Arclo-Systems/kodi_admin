@@ -232,9 +232,10 @@ npm audit             # vulnerabilidades de dependencias
 
 | Componente | Estado | Notas |
 |---|---|---|
-| `components/ui/*` (shadcn primitivos) | ⬜ | |
-| `components/admin/*` (DataTable, KpiCard, ConfirmDialog, TwoFaDialog, AssetUpload, AuditTrail…) | ⬜ | |
-| `components/rich-content/*` | ⬜ | |
+| `components/ui/*` (shadcn primitivos) | ✅ | Radix por debajo (focus-trap, teclado, roles ARIA en dialog/popover/select/tabs/checkbox); `Alert` + `Field` error con `role="alert"`; 7 `sr-only` para nombres accesibles; `Toaster` (sonner) montado en root |
+| `components/admin/*` (DataTable, KpiCard, ConfirmDialog, TwoFaDialog, AssetUpload…) | ✅ | DataTable a11y completo (`aria-sort`/`scope`/`aria-label` en checkboxes y orden, loading→Skeleton, empty con icono `aria-hidden`); dialogs sobre Radix con `DialogTitle`/`Description`; 11 `aria-label`; estado por texto+icono (no color-only) |
+| `components/rich-content/*` | ✅ | `alt` del autor preservado; sanitizado (rehype-sanitize); mermaid→SVG con title; sin `dangerouslySetInnerHTML` de input de usuario |
+| Layout / navegación | ✅ | Skip-link "Saltar al contenido"→`#main-content` (`tabIndex=-1`); nav gateada con `aria` heredado de Radix sidebar; 48 `aria-hidden` en decorativos |
 
 ---
 
@@ -538,6 +539,14 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **🔧 F5.1 (FIX, bundle) — dashboard:** recharts (308 KB) entraba **estático** en `dashboard-overview` (la landing post-login), aunque los 3 charts están below-the-fold (debajo de los KPIs). Extraídos a `dashboard-charts.tsx`, cargado con `next/dynamic({ ssr: false })` + fallback de igual alto (sin CLS). **Verificado:** el código de charts quedó en un chunk async de 42 KB que arrastra recharts por la frontera dinámica → fuera del bundle inicial del dashboard. Las 7 queries siguen en el parent (data-fetching idéntico, en paralelo, sin waterfall); solo se difiere el render. (ci + knip verdes). *Nota:* monetization y finance/pnl mantienen recharts estático a propósito (rutas de navegación intencional, charts = contenido principal).
 - **[F5 · render/datos] Sin anti-patrones.** Tablas paginadas server-side (`pageSize`) → no requieren virtualización; `DataTable` y los managers memoizan `columns` con `useMemo`; dashboard dispara sus 7 queries en paralelo (sin waterfall); `React.cache()` en `user-detail` dedupea el fetch entre layout y tabs; único `<img>` crudo justificado (preview de URL externa con `loading=lazy`). lucide-react/@radix se tree-shakean por los defaults de `optimizePackageImports` de Next 16. **Conforme.**
 - **FYI [F5 · medición de campo]:** los Core Web Vitals reales (LCP/INP/CLS de campo) requieren un entorno desplegado + Lighthouse/RUM. El análisis acá es estático + tamaños de bundle (lo accionable sin deploy). La validación de campo se hace en staging (cruza con F3.2/infra).
+
+### Fase 6 · Accesibilidad técnica & componentes compartidos
+
+- **[F6 · primitivos] Base Radix sólida.** Los `components/ui/*` (shadcn vendado) heredan de Radix: focus-trap + retorno de foco en dialogs, navegación por teclado y roles ARIA correctos en dialog/popover/select/tabs/checkbox. `Alert` y `Field` (error de validación) llevan `role="alert"` → los errores de RHF+zod se **anuncian** sin `aria-live` manual. `Toaster` (sonner, live-region built-in) montado en `app/layout.tsx`. **Conforme.**
+- **[F6 · catálogo] `components/admin/*` con a11y deliberada.** `DataTable`: `aria-sort` + `scope` en headers, `aria-label` en orden y en checkboxes select-all/row, loading→Skeleton, empty con icono `aria-hidden`. `ConfirmDialog`/`TwoFaDialog` sobre Radix `Dialog` con `DialogTitle`+`DialogDescription`. 11 `aria-label` en icon-buttons. Estado comunicado por **texto+icono** (StatusBadge, KpiCard con `%` firmado), nunca solo color. **Conforme.**
+- **[F6 · análisis] `aria-live: 0` NO es un gap.** Los cambios dinámicos se anuncian por live-regions **implícitas** (`role="alert"` en errores/alerts + la live-region de sonner para toasts) — el patrón idiomático, superior a divs `aria-live` manuales. Verificado que no hay `onClick` en `div`/`span` no-interactivos (toda interacción en `button`/`a`/Radix → teclado garantizado). Skip-link "Saltar al contenido" en el layout. **Conforme.**
+- **[F6 · resultado] Cero hallazgos.** El catálogo compartido (que heredan las 94 rutas) está bien construido en a11y: Radix da el cimiento, el catálogo añade nombres accesibles, roles de alerta, skip-link y 48 `aria-hidden` en decorativos. Sin fixes. (La validación de campo con axe-core/lector de pantalla real se hace en `ui-ux-audit`/staging.)
+- **FYI [F6 · decorativos, Optional]:** algunos íconos lucide decorativos (chip de KpiCard, flecha de tendencia) no llevan `aria-hidden`. No es violación axe (los `<svg>` sin role/title se ignoran), y el `%` firmado + label ya transmiten el dato → cosmético, sin impacto. Aplicar `aria-hidden` a todos sería churn sin ganancia.
 
 ## Checkpoint final
 
