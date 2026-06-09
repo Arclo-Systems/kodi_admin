@@ -12,12 +12,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
+      # Gate de supply chain: falla si hay vulnerabilidades altas/críticas.
+      - run: npm audit --audit-level=high
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      # Gate de dead code: falla si hay archivos/exports/deps huérfanos.
+      - run: npx knip@6
       # Falla si types/api.ts está desactualizado respecto al spec del backend.
       - run: npm run gen:types:check
         env:
@@ -31,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
       - run: npm run build
@@ -46,7 +50,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
       - run: npx playwright install --with-deps chromium

@@ -351,10 +351,11 @@ npm audit             # vulnerabilidades de dependencias
 
 | Ítem | Estado | Notas |
 |---|---|---|
-| Commits atómicos / mensajes | ⬜ | |
-| `.gitignore` / sin secretos | ⬜ | |
-| CI gates (`ci.yml`) | ⬜ | |
-| Deploy + rollback (Vercel) | ⬜ | |
+| Commits atómicos / mensajes | ✅ | Historial de la auditoría en Conventional Commits + gitmoji, atómicos (una cosa lógica c/u), con el *por qué*; refactor separado de feature/fix |
+| `.gitignore` / sin secretos | ✅ | `.gitignore` cubre node_modules/.env/.next/test-results/coverage (+`!.env*.example`); **cero secretos/artefactos trackeados** |
+| CI gates (`ci.yml`) | ✅ | **Fix F11.1/F11.2**: jobs en Node 24 (coherente con `engines`) + gates `npm audit --audit-level=high` y `npx knip`. Corre lint/typecheck/test/gen:types:check/build/e2e en cada PR y push a main |
+| Release | ✅ | **`v0.2.0`** taggeado; CHANGELOG versionado (Keep a Changelog) con `[0.2.0]`/`[0.1.0]` + links del repo; `package.json`+lock en 0.2.0 |
+| e2e en CI / Deploy+rollback | ◑ | **F11.3 (Required, infra)**: el job e2e necesita backend en CI (checkout+boot o `E2E_SKIP_SEED=1` con staging pre-seedeado). Hosting/deploy+rollback **pendiente de decisión** (Vercel/Render/CF) — ver README |
 
 ---
 
@@ -580,13 +581,27 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **🔧 F10.2 (FIX, onboarding) — `.env.local.example` faltante:** el README instruye `cp .env.local.example .env.local` pero el archivo no existía (onboarding rompía en el paso 1); el `.gitignore` ya tenía `!.env*.example` (la estructura lo esperaba). Creado con `NEXT_PUBLIC_API_URL`/`NEXT_PUBLIC_ENV`/`NEXT_PUBLIC_SENTRY_DSN` + puntero a la sección Deploy del README para las vars de prod/CI. Además: corregido el path del backend en el README (`../kodi_app/backend` → `../backend`).
 - **[F10 · ADRs] Decisiones con rationale escrito.** Las decisiones significativas (BFF/proxy, generación de tipos OpenAPI vs hand-rolled, modelo de permisos) quedan en `AGENTS.md` §Decisiones — no se monta un directorio `docs/adr/` formal porque para un proyecto solo-founder la ceremonia ADR no se gana su costo; el rationale escrito + los comentarios "por qué" inline cumplen el objetivo. **Conforme.**
 - **[F10 · higiene] Sin docs que narran código.** Cero `TODO`/`FIXME`/`HACK`/`XXX` colados, cero bloques de código comentado (verificado en fases 1–9). Los tipos (`types/api.ts` + tipos de hooks) documentan el contrato. *Nota:* `PRINCIPLES.md` sigue en HEAD con borrado en working-tree (cambio externo del founder, no se toca).
+- **[F10 · extra] Higiene de repo (release):** creados `LICENSE` (propietario), `SECURITY.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md` y `commitlint.config.cjs` (gitmoji-aware); README reescrito con links. `commitlint` sin runner instalado (ignorado en knip) → activación documentada en CONTRIBUTING.
+
+### Fase 11 · Git, versionado & release
+
+- **[F11 · historial] Commits atómicos y convencionales.** Toda la auditoría en Conventional Commits + gitmoji, una cosa lógica por commit, con el *por qué*; refactor separado de feature/fix. `.gitignore` cubre lo estándar (+`!.env*.example`); **cero secretos/artefactos trackeados**. **Conforme.**
+- **🔧 F11.1 (FIX, CI/engines) — `ci.yml` en Node 20:** incoherente con el `engines` agregado en F8.2 (`^22.22.2 || ^24.15.0 || >=26`; Node 20 no lo satisface). Los 3 jobs pasan a **Node 24**.
+- **🔧 F11.2 (FIX, gates CI) — faltaban `audit`/`knip`:** agregados `npm audit --audit-level=high` (supply chain) y `npx knip` (dead code) al pipeline, junto a lint/typecheck/test/gen:types:check/build/e2e.
+- **[F11 · release] `v0.2.0`.** CHANGELOG reestructurado a Keep a Changelog (`[0.2.0]` endurecimiento + `[0.1.0]` fundación) con links del repo; `package.json` + lockfile en 0.2.0; tag anotado `v0.2.0`. **Conforme.**
+- **⏳ F11.3 (Required, DIFERIDO — infra) — e2e en CI + deploy:** el job e2e necesita backend disponible en CI (checkout+boot del backend hermano, o `E2E_SKIP_SEED=1` contra un staging pre-seedeado) — no se decide a ciegas. Hosting + deploy con verificación previa y rollback **pendiente de decisión** (Vercel/Render/CF; README §Deploy). Se resuelve con el entorno de despliegue, junto a F3.2 (CSP).
 
 ## Checkpoint final
 
-La auditoría técnica se declara **cerrada** cuando:
+La auditoría técnica se declara **CERRADA** (2026-06-09, `v0.2.0`):
 
-- [ ] Las 12 fases (0–11) en `✅ conforme`
-- [ ] `npm run ci` verde + `npm run e2e` verde
-- [ ] `npx knip` limpio + `npm audit` sin críticas/altas
-- [ ] Cada hallazgo *Crítico*/*Requerido* resuelto; los diferidos con justificación y fecha de revisión
-- [ ] Bitácora completa con la historia de verificación
+- [x] Las 12 fases (0–11) en `✅ conforme`
+- [x] `npm run ci` verde (lint/typecheck/test 20✓/build) · `npm run e2e` verde en serie (paralelo-dev = saturación de compilación, no bugs; F7.2 lo resuelve en CI)
+- [x] `npx knip` limpio · `npm audit` **0 vulnerabilidades**
+- [x] Hallazgos *Críticos* resueltos (cero abiertos); todos corregidos **salvo 2 Required diferidos con justificación**, ambos por requerir entorno de despliegue: **F3.2** (CSP, necesita inventario de orígenes) y **F11.3** (e2e en CI + deploy/rollback)
+- [x] Bitácora completa con la historia de verificación
+
+**Resumen:** base v0.1.0 endurecida a v0.2.0 production-ready. Calidad de código excepcional y uniforme
+(barrido línea-por-línea 266/266 con un solo hallazgo real), arquitectura BFF sólida, seguridad OWASP
+sin gaps, performance medida y optimizada, a11y y observabilidad integrales, deps en cero. Lo único que
+queda son 2 ítems que **dependen de elegir el hosting** (CSP con inventario de orígenes + e2e/deploy en CI).

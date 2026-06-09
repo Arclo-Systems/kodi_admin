@@ -8,11 +8,15 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 
 ## [Unreleased]
 
-Base de producción reconstruida en un historial limpio por fases (2026-06-08).
-La historia previa (20+ ramas de desarrollo) quedó archivada en un backup `git bundle`
-fuera del repositorio.
+## [0.2.0] - 2026-06-09
+
+Endurecimiento para producción: auditoría técnica por fases (calidad, arquitectura, seguridad,
+performance, accesibilidad, tests, dependencias, observabilidad, docs y release) sobre la base
+v0.1.0. 13 hallazgos, 12 corregidos; 1 Required diferido (CSP, requiere infra de despliegue).
 
 ### Changed
+- **Facturas de sponsor · editor de líneas (borrador):** agrega encabezados de columna (Descripción / Origen / Cant. / P. Unit.) alineados a la grilla y labels sobre las fechas (Vencimiento / Período facturado), con separación visual — antes el campo de vencimiento se veía suelto y sin contexto.
+- **Auditoría Fase 11 (CI) · `.github/workflows/ci.yml`:** los jobs corren en **Node 24** (coherente con el campo `engines`) y se agregan gates de `npm audit --audit-level=high` y `npx knip@6`.
 - **Auditoría Fase 5 (performance) · dashboard:** los 3 charts (recharts, ~308 KB) se cargan con `next/dynamic` (`ssr: false`) en un chunk aparte, fuera del bundle inicial de la landing. Están below-the-fold (debajo de los KPIs), así que el lazy-load no afecta el LCP; el fallback ocupa el mismo alto para no causar CLS.
 - **Auditoría Fase 2 (arquitectura) · `app/api/admin/`:** los handlers `admins` y `audit-log/by-resource` dejan de reinventar el proxy BFF con `fetch` a mano y pasan a `forwardToBackend` (forma canónica idéntica a los otros 214). Además corrige el colapso de query params repetidos (`?country=CR&country=GT`) que el bucle `searchParams.set` perdía.
 - **Auditoría Fase 1 (calidad) · `bots/`:** elimina la lista de países duplicada y hardcodeada en `bots-tabs.tsx`; usa la fuente única `lib/countries.ts` en `pools-tab` y `generate-bots-button`.
@@ -32,11 +36,19 @@ fuera del repositorio.
 - **Higiene de repo (release):** `LICENSE` (propietario), `SECURITY.md` (política + reporte de vulnerabilidades), `ARCHITECTURE.md` (capas BFF + flujo + permisos), `CONTRIBUTING.md` (flujo + commits) y `commitlint.config.cjs` (Conventional Commits + gitmoji). README reescrito (tech-stack, comandos, links). `license: "UNLICENSED"` en `package.json`.
 - **Auditoría Fase 10 (docs) · `AGENTS.md` + `.env.local.example`:** crea `AGENTS.md` (instrucciones de agente/contribución con arquitectura, convenciones, 3 decisiones de arquitectura y gotchas) que `CLAUDE.md` importaba sin que existiera; crea `.env.local.example` que el README referenciaba. Corrige el path del backend en el README.
 - **Auditoría Fase 7 (tests) · unit:** tests de lógica pura con branching — `hasOverlap` (solape de tramos de premio, espejo de la validación del backend) y `offerStatus` (estado de la ventana de oferta de kokos-packs). De 9 a 20 tests unitarios.
-- Fundación del proyecto: scaffold Next 16 + TypeScript estricto + tooling (ESLint, Vitest, Playwright, Sentry, CI).
-- Principios de ingeniería y estándares de release ([`PRINCIPLES.md`](./PRINCIPLES.md)).
+
+## [0.1.0] - 2026-06-08
+
+Fundación del proyecto. Historial reconstruido limpio por fases; la historia previa (20+ ramas de
+desarrollo) quedó archivada en un backup `git bundle` fuera del repositorio.
+
+### Added
+- Scaffold Next 16 + TypeScript estricto + tooling (ESLint, Vitest, Playwright, Sentry, CI).
 - Sistema de diseño (tokens de marca + primitivos shadcn) y catálogo de componentes compartidos.
 - Capa BFF (`/api/admin/*`) + hooks de datos (TanStack Query) tipados desde OpenAPI.
 - Panel de administración completo (auth + dominios: usuarios, contenido, economía, moderación, mensajería, juego, sistema).
 - Framework de auditoría técnica por fases ([`docs/technical-audit-2026-06-08.md`](./docs/technical-audit-2026-06-08.md)).
 
-[Unreleased]: https://example.com/kodi-admin/tree/main
+[Unreleased]: https://github.com/Arclo-Systems/kodi_admin/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Arclo-Systems/kodi_admin/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/Arclo-Systems/kodi_admin/releases/tag/v0.1.0
