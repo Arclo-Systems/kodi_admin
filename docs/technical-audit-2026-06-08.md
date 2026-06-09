@@ -257,9 +257,9 @@ npm audit             # vulnerabilidades de dependencias
 
 | Suite | Estado | Notas |
 |---|---|---|
-| Unit (vitest) — lib/hooks puros | ⬜ | |
-| e2e (playwright) — flujos críticos | ⬜ | |
-| Cobertura tracking | ⬜ | |
+| Unit (vitest) — lib/hooks puros | ✅ | 5 archivos / 20 tests. **Fix F7.1**: +`hasOverlap` (solape de tramos) y +`offerStatus` (ventana de oferta) — lógica pura con branching, espejo de validaciones del backend. Sin `skip`/`only` |
+| e2e (playwright) — flujos críticos | ✅* | 24 specs (auth + todos los dominios + acciones de riesgo); `auth.setup` como setup-project (storageState reusado), `global-setup` seedea fixtures, selectores `getByRole`, repetible. *Ejecución requiere backend+server (limitación de entorno, igual que Fase 0) |
+| Cobertura tracking | ◑ | Sin gate de cobertura `%` (Optional, no Requerido): e2e amplio + unit dirigido a lógica con ramas cubren lo crítico; un `@vitest/coverage-v8` se puede sumar si se quiere número |
 
 ---
 
@@ -547,6 +547,14 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **[F6 · análisis] `aria-live: 0` NO es un gap.** Los cambios dinámicos se anuncian por live-regions **implícitas** (`role="alert"` en errores/alerts + la live-region de sonner para toasts) — el patrón idiomático, superior a divs `aria-live` manuales. Verificado que no hay `onClick` en `div`/`span` no-interactivos (toda interacción en `button`/`a`/Radix → teclado garantizado). Skip-link "Saltar al contenido" en el layout. **Conforme.**
 - **[F6 · resultado] Cero hallazgos.** El catálogo compartido (que heredan las 94 rutas) está bien construido en a11y: Radix da el cimiento, el catálogo añade nombres accesibles, roles de alerta, skip-link y 48 `aria-hidden` en decorativos. Sin fixes. (La validación de campo con axe-core/lector de pantalla real se hace en `ui-ux-audit`/staging.)
 - **FYI [F6 · decorativos, Optional]:** algunos íconos lucide decorativos (chip de KpiCard, flecha de tendencia) no llevan `aria-hidden`. No es violación axe (los `<svg>` sin role/title se ignoran), y el `%` firmado + label ya transmiten el dato → cosmético, sin impacto. Aplicar `aria-hidden` a todos sería churn sin ganancia.
+
+### Fase 7 · Tests & cobertura
+
+- **[F7 · estructura] Suite sana.** Unit (vitest, jsdom, pool `threads`) excluye `tests/e2e`; e2e (playwright) con setup-project (`auth.setup` loguea una vez → `storageState` reusado, evita flake de logins concurrentes), `global-setup` que seedea fixtures, y `fixtures.ts` compartido. **Cero `skip`/`only`/`xit` colados** en todo el repo. **Conforme.**
+- **[F7 · e2e calidad] Prueban conducta, no implementación.** Ej. `coupons.spec`: lista→detalle→KPIs de stats→drill-down de canjes (join de usuario seedeado)→acción de riesgo "Regenerar" vía `ConfirmDialog`→toast. Selectores `getByRole`/`getByText` (accesibles, no CSS frágil); repetible (no asierta el código que la propia acción muta). 24 specs cubren auth + cada dominio + acciones de riesgo. **Conforme.**
+- **🔧 F7.1 (FIX, cobertura) — +2 archivos unit de lógica pura con branching:** `use-arena-especial.test.ts` (`hasOverlap`: vacío/único/adyacente/solapado/límite-inclusivo/desordenado — espejo de la validación AUD-API2 del backend) y `use-kokos-packs.test.ts` (`offerStatus`: sin-precio/abierta/programada/expirada/vigente/sin-fin — la función que decide qué precio ve el usuario). De 9 → **20 tests** (5 archivos), todos verdes. Lockean dos invariantes de negocio que un cambio descuidado rompería sin que el typecheck lo note.
+- **◑ [F7 · cobertura %, Optional]:** no hay gate de cobertura numérico (`vitest.config` sin `coverage`). Para un panel interno, el e2e amplio (24 specs) + el unit dirigido a la lógica con ramas cubren lo crítico; un `@vitest/coverage-v8` con umbral se puede sumar si se quiere el número de campo. No Requerido.
+- **FYI [F7 · ejecución e2e]:** `npm run e2e` necesita backend Kodi + server `:3001` corriendo (igual que `gen:types:check` de Fase 0). La auditoría valida la **estructura y calidad** de las specs; la corrida verde queda para CI/staging con el backend levantado.
 
 ## Checkpoint final
 
