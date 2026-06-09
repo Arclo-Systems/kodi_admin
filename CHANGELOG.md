@@ -23,6 +23,8 @@ fuera del repositorio.
 - **Auditoría Fase 3 (hardening) · `next.config.ts`:** agrega cabeceras de seguridad de línea base — `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` (anti-clickjacking), `Referrer-Policy`, `Permissions-Policy` (deniega cámara/micrófono/geo) y HSTS (`Strict-Transport-Security`). CSP queda pendiente (requiere inventario de orígenes externos; ver F3.2 en la auditoría).
 
 ### Fixed
+- **Auditoría Fase 7 (e2e) · `playwright.config.ts`:** en CI el `webServer` pasa a `npm run build && npm run start` (build de producción, rutas pre-compiladas) en vez de `npm run dev`. Bajo carga paralela, `next dev` compila on-demand y se satura → timeouts masivos que no son bugs (verificado: la suite pasa en serie). En local sigue reusando el dev server.
+- **Contrato de tipos:** `types/api.ts` re-sincronizado con el spec OpenAPI del backend (`gen:types:check` detectó drift al validar con el backend arriba).
 - **CI / tests:** vitest pasa al pool `threads`. El pool `forks` por defecto a veces no arrancaba sus workers en Windows (`Timeout waiting for worker to respond`) y dejaba `npm run ci` **en verde sin correr los tests** — agujero de CI peligroso, detectado en el gate de salida de la Fase 1.
 
 ### Added

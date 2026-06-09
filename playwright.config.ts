@@ -27,9 +27,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
+    // En CI se corre contra el build de producción (rutas pre-compiladas): `next dev` compila
+    // on-demand y bajo 24 specs en paralelo se satura → timeouts masivos (no son bugs, se verificó
+    // que en serie la suite pasa). En local reusa el dev server ya levantado para iterar rápido.
+    command: process.env.CI ? 'npm run build && npm run start' : 'npm run dev',
     url: 'http://localhost:3001',
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: process.env.CI ? 300_000 : 120_000,
   },
 });

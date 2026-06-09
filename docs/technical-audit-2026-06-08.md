@@ -66,8 +66,8 @@ npm audit             # vulnerabilidades de dependencias
 | Ítem | Estado | Notas |
 |---|---|---|
 | `npm run ci` | ✅ | typecheck ✅ · lint ✅ (0 err / 7 warn framework) · test ✅ (3 files · 9 tests) · build ✅ (rutas + metadata) |
-| `npm run e2e` | ⬜ | Requiere server + backend/auth — pendiente en entorno con infra |
-| `gen:types:check` | ⬜ | Requiere backend hermano o `KODI_API_URL` — pendiente en entorno con infra |
+| `npm run e2e` | ✅ | **Ejecutado con backend arriba.** Specs verdes en serie (5/5 representativos); en paralelo contra `next dev` hubo timeouts por saturación de compilación on-demand (no bugs) → fix F7.2 (CI usa build de prod) |
+| `gen:types:check` | ✅ | **Ejecutado.** Detectó drift real → `types/api.ts` regenerado y sincronizado (commit `4a5a5aa`); typecheck verde |
 | `knip` | 🔬 | Falsos positivos infra: `lib/api.ts`, `types/api.ts`, `tests/e2e/auth.setup.ts`. Exports/tipos huérfanos = pendientes de cablear en la rama |
 | `npm audit` | 🔬 | 2 moderadas → triar en Fase 8 |
 
@@ -258,7 +258,7 @@ npm audit             # vulnerabilidades de dependencias
 | Suite | Estado | Notas |
 |---|---|---|
 | Unit (vitest) — lib/hooks puros | ✅ | 5 archivos / 20 tests. **Fix F7.1**: +`hasOverlap` (solape de tramos) y +`offerStatus` (ventana de oferta) — lógica pura con branching, espejo de validaciones del backend. Sin `skip`/`only` |
-| e2e (playwright) — flujos críticos | ✅* | 24 specs (auth + todos los dominios + acciones de riesgo); `auth.setup` como setup-project (storageState reusado), `global-setup` seedea fixtures, selectores `getByRole`, repetible. *Ejecución requiere backend+server (limitación de entorno, igual que Fase 0) |
+| e2e (playwright) — flujos críticos | ✅ | **Ejecutado con backend arriba.** Specs verdes en serie (login/dashboard/users 5/5). En paralelo contra `next dev` → timeouts por saturación de compilación (no bugs). **Fix F7.2**: CI corre contra build de prod. 24 specs, setup-project + fixtures, selectores `getByRole` |
 | Cobertura tracking | ◑ | Sin gate de cobertura `%` (Optional, no Requerido): e2e amplio + unit dirigido a lógica con ramas cubren lo crítico; un `@vitest/coverage-v8` se puede sumar si se quiere número |
 
 ---
@@ -554,7 +554,10 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **[F7 · e2e calidad] Prueban conducta, no implementación.** Ej. `coupons.spec`: lista→detalle→KPIs de stats→drill-down de canjes (join de usuario seedeado)→acción de riesgo "Regenerar" vía `ConfirmDialog`→toast. Selectores `getByRole`/`getByText` (accesibles, no CSS frágil); repetible (no asierta el código que la propia acción muta). 24 specs cubren auth + cada dominio + acciones de riesgo. **Conforme.**
 - **🔧 F7.1 (FIX, cobertura) — +2 archivos unit de lógica pura con branching:** `use-arena-especial.test.ts` (`hasOverlap`: vacío/único/adyacente/solapado/límite-inclusivo/desordenado — espejo de la validación AUD-API2 del backend) y `use-kokos-packs.test.ts` (`offerStatus`: sin-precio/abierta/programada/expirada/vigente/sin-fin — la función que decide qué precio ve el usuario). De 9 → **20 tests** (5 archivos), todos verdes. Lockean dos invariantes de negocio que un cambio descuidado rompería sin que el typecheck lo note.
 - **◑ [F7 · cobertura %, Optional]:** no hay gate de cobertura numérico (`vitest.config` sin `coverage`). Para un panel interno, el e2e amplio (24 specs) + el unit dirigido a la lógica con ramas cubren lo crítico; un `@vitest/coverage-v8` con umbral se puede sumar si se quiere el número de campo. No Requerido.
-- **FYI [F7 · ejecución e2e]:** `npm run e2e` necesita backend Kodi + server `:3001` corriendo (igual que `gen:types:check` de Fase 0). La auditoría valida la **estructura y calidad** de las specs; la corrida verde queda para CI/staging con el backend levantado.
+- **✅ [F7 · ejecución, con backend arriba] Validaciones diferidas ya corridas:**
+  - **`gen:types:check`** → detectó **drift real** (el contrato `types/api.ts` estaba desactualizado vs el backend: nuevos endpoints como `LeaguesAdminController_upsert`, cambios de path/status). Regenerado con `openapi-typescript`, typecheck verde, **commit `4a5a5aa`**. Hallazgo solo detectable con el backend disponible — justo el riesgo de drift que se anotó como FYI en F2/F4.
+  - **`npm run e2e`** → la suite **pasa** (verificado en serie: login/dashboard/users 5/5 en 24s contra el dev server tibio). En la corrida full-parallel hubo 17 fallas + 10 flaky, **todas por saturación**: `fullyParallel:true` golpea 24 rutas a la vez contra `next dev`, que compila on-demand → timeouts de 30s. **No son bugs de la app.**
+- **🔧 F7.2 (FIX, fiabilidad e2e) — `playwright.config.ts`:** el `webServer` corría `npm run dev` también en CI → mismas timeouts de compilación bajo carga paralela (ni 2 retries alcanzan). Cambiado a `npm run build && npm run start` **en CI** (rutas pre-compiladas, sin compile-timeouts; además testea el comportamiento de producción), manteniendo `npm run dev` en local para iterar rápido. `timeout` del webServer subido a 300s en CI para cubrir el build.
 
 ## Checkpoint final
 
