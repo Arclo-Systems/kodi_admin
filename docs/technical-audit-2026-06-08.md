@@ -482,7 +482,8 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - ✅ **finance** (11): conforme. P&L recharts por moneda/mes/categoría; layout con tabs solo en rutas-tab; form wrapper+inner con sentinel `KEEP` (mantiene comprobante en edición); uploads con allowlist. (FYI: `viewReceipt` podría reusar `lib/signed-asset.ts`.)
 - ✅ **messaging** (11): conforme. Nav con tabs gated, acciones inline por estado (aprobar/enviar/cancelar), detalle editable solo si draft+broadcast (resto read-only con Loading/Error accesibles), segmentos con preview de conteo, editor de transaccionales con vars permitidas.
 - ✅ **game** (19): conforme + **ejemplar en reuso**. Los 4 modos comparten `GameTable<T>` y `GameDetailShell` (render-prop), helpers `game-bits` (`AccuracyBar`/`durationLabel`/`UserRef`). `schedule-especial-form` con `useFieldArray`, validación de solape/topes, mapeo camelCase→snake.
-- ⬜ Pendientes: users (24), content (64), economy (93).
+- ✅ **users** (24): conforme. Ficha completa — Profile tab con `Promise.all` (sin waterfall), `user-actions` con confirmaciones por riesgo + 2FA (borrar-cuenta/cambiar-email), 10 tab-pages Server Component limpias.
+- ⬜ Pendientes: content (64), economy (93).
 - **✅ [F1 · lib/] F1.1 (arquitectura) — RESUELTO (mantener):** el subsistema cliente tipado (`lib/api.ts` `serverApi` + dep `openapi-fetch` + `types/api.ts` generado) se **conserva como andamiaje de BFF tipado** (decisión del founder). Hoy el panel pega vía `lib/proxy.ts`/`lib/auth.ts` (fetch crudo); `serverApi` queda disponible para cablear route handlers tipados a futuro. Marcado como intencional en `knip.json` → **knip 100% limpio**.
 
 ## Checkpoint final
