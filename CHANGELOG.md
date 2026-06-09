@@ -29,6 +29,7 @@ fuera del repositorio.
 - **CI / tests:** vitest pasa al pool `threads`. El pool `forks` por defecto a veces no arrancaba sus workers en Windows (`Timeout waiting for worker to respond`) y dejaba `npm run ci` **en verde sin correr los tests** — agujero de CI peligroso, detectado en el gate de salida de la Fase 1.
 
 ### Added
+- **Higiene de repo (release):** `LICENSE` (propietario), `SECURITY.md` (política + reporte de vulnerabilidades), `ARCHITECTURE.md` (capas BFF + flujo + permisos), `CONTRIBUTING.md` (flujo + commits) y `commitlint.config.cjs` (Conventional Commits + gitmoji). README reescrito (tech-stack, comandos, links). `license: "UNLICENSED"` en `package.json`.
 - **Auditoría Fase 10 (docs) · `AGENTS.md` + `.env.local.example`:** crea `AGENTS.md` (instrucciones de agente/contribución con arquitectura, convenciones, 3 decisiones de arquitectura y gotchas) que `CLAUDE.md` importaba sin que existiera; crea `.env.local.example` que el README referenciaba. Corrige el path del backend en el README.
 - **Auditoría Fase 7 (tests) · unit:** tests de lógica pura con branching — `hasOverlap` (solape de tramos de premio, espejo de la validación del backend) y `offerStatus` (estado de la ventana de oferta de kokos-packs). De 9 a 20 tests unitarios.
 - Fundación del proyecto: scaffold Next 16 + TypeScript estricto + tooling (ESLint, Vitest, Playwright, Sentry, CI).
