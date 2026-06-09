@@ -1,7 +1,7 @@
 # kodi-admin
 
 Panel administrativo de Kodi — Next.js 16 (App Router) + shadcn/ui (Tailwind v4).
-Consume el namespace `/v1/admin/*` del backend NestJS (`../kodi_app/backend`).
+Consume el namespace `/v1/admin/*` del backend NestJS hermano (`../backend`).
 
 ## Setup
 

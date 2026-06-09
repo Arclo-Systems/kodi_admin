@@ -327,9 +327,9 @@ npm audit             # vulnerabilidades de dependencias
 
 | Ítem | Estado | Notas |
 |---|---|---|
-| ADRs (BFF, tipos, permisos) | ⬜ | |
-| README / AGENTS / DESIGN | ⬜ | |
-| Gotchas inline | ⬜ | |
+| ADRs (BFF, tipos, permisos) | ✅ | Las 3 decisiones clave (BFF+authz-backend, OpenAPI+hand-rolled, 2FA/audit en riesgo) documentadas con rationale en `AGENTS.md` §Decisiones (ADR-lite, sin ceremonia de directorio ADR para proyecto solo-founder) |
+| README / AGENTS / DESIGN | ✅ | README bueno (setup/estructura/convenciones/comandos/CI/deploy). **Fix F10.1**: `AGENTS.md` creado (CLAUDE.md lo importaba y no existía). **Fix F10.2**: `.env.local.example` creado (el README lo referenciaba). README: path del backend corregido a `../backend` |
+| Gotchas inline | ✅ | Comentarios "por qué" en todo el código (verificado fases 1–9); gotchas clave consolidados en `AGENTS.md` §Gotchas. Cero TODO/FIXME/HACK colados, cero código comentado |
 
 ---
 
@@ -573,6 +573,13 @@ Verificación de que el framework contempla **cada** pieza de `addyosmani/agent-
 - **[F9 · sin fallas silenciosas] Cero catches vacíos.** No hay `catch {}`/`catch(e){}` que traguen errores en `app`/`components`/`lib`/`hooks`. Los 107 `.catch(() => ({}))` son fallbacks de **parseo JSON** (cuerpo no-JSON en 204/errores) que luego **igual lanzan** (`throw new Error(b.message ?? 'Error')`) o chequean `res.ok`/status — manejo intencional, no silencio. **Conforme.**
 - **[F9 · UX de error] Errores accionables.** Mutaciones → `Error` con el `message` del backend → toast/`Alert` concreto (no "algo salió mal" genérico); queries → estado `isError` con mensaje en la UI. Stack traces tratados como datos (mostrados/enviados a Sentry, nunca ejecutados ni inyectados en comandos). **Conforme.**
 - **[F9 · resultado] Cero hallazgos.** Observabilidad integral: 3 runtimes + RSC capture + navegación, 3 boundaries, sin PII, sin silencios. Sin fixes.
+
+### Fase 10 · Documentación & ADRs
+
+- **🔧 F10.1 (FIX, docs) — `AGENTS.md` faltante:** `CLAUDE.md` consiste solo en `@AGENTS.md` (import), pero `AGENTS.md` **no existía** → las instrucciones de agente estaban vacías/rotas. Creado: overview, definición de "hecho" (`npm run ci`), arquitectura por capas, convenciones (cero `any`, shadcn/Field, BFF, TanStack Query), **3 decisiones de arquitectura con rationale** (ADR-lite: BFF+authz-backend, OpenAPI+hand-rolled, 2FA/audit en riesgo) y gotchas (query repetida, sentinels `NaN`/`DEFAULT`, `hourIso`, recharts lazy, sanitización). Referencia README/DESIGN para no duplicar.
+- **🔧 F10.2 (FIX, onboarding) — `.env.local.example` faltante:** el README instruye `cp .env.local.example .env.local` pero el archivo no existía (onboarding rompía en el paso 1); el `.gitignore` ya tenía `!.env*.example` (la estructura lo esperaba). Creado con `NEXT_PUBLIC_API_URL`/`NEXT_PUBLIC_ENV`/`NEXT_PUBLIC_SENTRY_DSN` + puntero a la sección Deploy del README para las vars de prod/CI. Además: corregido el path del backend en el README (`../kodi_app/backend` → `../backend`).
+- **[F10 · ADRs] Decisiones con rationale escrito.** Las decisiones significativas (BFF/proxy, generación de tipos OpenAPI vs hand-rolled, modelo de permisos) quedan en `AGENTS.md` §Decisiones — no se monta un directorio `docs/adr/` formal porque para un proyecto solo-founder la ceremonia ADR no se gana su costo; el rationale escrito + los comentarios "por qué" inline cumplen el objetivo. **Conforme.**
+- **[F10 · higiene] Sin docs que narran código.** Cero `TODO`/`FIXME`/`HACK`/`XXX` colados, cero bloques de código comentado (verificado en fases 1–9). Los tipos (`types/api.ts` + tipos de hooks) documentan el contrato. *Nota:* `PRINCIPLES.md` sigue en HEAD con borrado en working-tree (cambio externo del founder, no se toca).
 
 ## Checkpoint final
 
