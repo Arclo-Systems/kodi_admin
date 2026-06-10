@@ -30,7 +30,7 @@ const SITES = [
     dirEnv: 'TECH_DOCS_REPO_DIR',
     sibling: 'kodi-docs-tecnica',
     urlEnv: 'TECH_DOCS_REPO_URL',
-    defaultUrl: 'https://github.com/Arclo-Systems/Kodi_docs_tecnica.git',
+    defaultUrl: 'https://github.com/Arclo-Systems/kodi_docs_tecnica.git',
     out: 'tecnica-dist',
     route: '/tecnica',
   },
