@@ -38,11 +38,12 @@ import type { AdminUser } from '@/lib/auth';
 import { RoleBadge } from '@/lib/roles';
 
 // Enlaces del panel, centralizados acá. El manual se sirve same-origin bajo /docs (detrás de
-// la sesión); el resto son placeholders hasta que esos sitios estén desplegados.
+// la sesión); la doc de API es el Swagger del backend (Basic Auth, deriva de NEXT_PUBLIC_API_URL
+// para seguir al backend donde viva); el resto son placeholders hasta que existan.
 const LINKS = {
   panelDocs: '/docs/',
   techDocs: 'https://docs.appkodi.com/tecnica',
-  apiDocs: 'https://docs.appkodi.com/api',
+  apiDocs: `${process.env.NEXT_PUBLIC_API_URL ?? ''}/docs`,
   brandBook: 'https://docs.appkodi.com/marca',
   website: 'https://appkodi.com',
 } as const;
