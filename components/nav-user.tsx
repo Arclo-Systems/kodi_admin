@@ -37,10 +37,10 @@ import {
 import type { AdminUser } from '@/lib/auth';
 import { RoleBadge } from '@/lib/roles';
 
-// Enlaces externos del panel. Centralizados acá: reemplazar por las URLs reales de los sitios
-// de documentación cuando estén desplegados (placeholders por ahora).
+// Enlaces del panel, centralizados acá. El manual se sirve same-origin bajo /docs (detrás de
+// la sesión); el resto son placeholders hasta que esos sitios estén desplegados.
 const LINKS = {
-  panelDocs: 'https://docs.appkodi.com',
+  panelDocs: '/docs/',
   techDocs: 'https://docs.appkodi.com/tecnica',
   apiDocs: 'https://docs.appkodi.com/api',
   brandBook: 'https://docs.appkodi.com/marca',

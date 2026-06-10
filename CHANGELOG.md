@@ -8,6 +8,9 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 
 ## [Unreleased]
 
+### Added
+- **Manual del panel bajo `/docs`:** route handler que sirve el build estático de kodi-docs detrás de la sesión del panel (`getCurrentAdmin`; sin sesión → `/login`). Anti path-traversal, MIME map, caché immutable para `_astro` y `no-cache` para HTML; ubicación del build configurable con `DOCS_SITE_DIR` (default `../kodi-docs/dist`). El ítem "Documentación" del menú de usuario pasa del placeholder externo a `/docs/`.
+
 ### Security
 - **Indexación · panel interno:** `X-Robots-Tag: noindex, nofollow` (next.config) + `app/robots.ts` con `Disallow: /` → el admin nunca se indexa en buscadores, independiente del dominio (Vercel solo agrega noindex en `*.vercel.app`; con dominio propio hay que declararlo). Detectado en `/seo-audit`.
 
