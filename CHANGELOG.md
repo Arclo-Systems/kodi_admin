@@ -13,6 +13,9 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
   para configurar cuánto paga cada modo —práctica, modos rápidos, examen sorpresa, simulacro,
   Partida Kodi, arena, XP de liga, meta diaria, racha, logros y videos— en XP/Kolones/Kokos.
   Permiso nuevo `economy:rewards:write` (admin). Con e2e read-only (`rewards.spec.ts`).
+  Iteraciones del mismo día: **un solo XP** (sección "XP (todo XP suma a la liga)" — lo
+  mostrado = lo acreditado, sin campos duplicados) y **matriz completa** (cada modo con
+  XP + Kolones + Kokos; regla visible "0 = no aplica").
 - **Documentación técnica bajo `/tecnica`:** segundo sitio Starlight (kodi-docs-tecnica) servido
   detrás de la sesión con el helper compartido `lib/static-site.ts`; `bundle-docs.mjs` construye
   ambos sitios en el deploy y el link "Documentación técnica" del menú deja de ser placeholder.
