@@ -12597,9 +12597,7 @@ export interface components {
         };
         RewardConfigResponse: {
             data: {
-                practiceXpPerCorrect: number;
                 practiceKolonesPerCorrect: number;
-                quickXpPerCorrect: number;
                 quickKolonesPerCorrect: number;
                 surpriseExamBaseXp: number;
                 surpriseExamWindowFactor: number;
@@ -12617,7 +12615,6 @@ export interface components {
                 leagueXpDuelWon: number;
                 goalKolones: number;
                 goalXp: number;
-                goalLeagueXp: number;
                 streakKolones: number;
                 streakLeagueXp: number;
                 achievementKolones: number;
@@ -12633,9 +12630,7 @@ export interface components {
         RewardConfigDto: {
             /** @enum {string|null} */
             country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
-            practiceXpPerCorrect: number;
             practiceKolonesPerCorrect: number;
-            quickXpPerCorrect: number;
             quickKolonesPerCorrect: number;
             surpriseExamBaseXp: number;
             surpriseExamWindowFactor: number;
@@ -12653,7 +12648,6 @@ export interface components {
             leagueXpDuelWon: number;
             goalKolones: number;
             goalXp: number;
-            goalLeagueXp: number;
             streakKolones: number;
             streakLeagueXp: number;
             achievementKolones: number;

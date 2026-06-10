@@ -25,9 +25,7 @@ const kolones = z.number().int().min(0).max(1000);
 const kokos = z.number().int().min(0).max(500);
 
 const FormSchema = z.object({
-  practiceXpPerCorrect: xp,
   practiceKolonesPerCorrect: kolones,
-  quickXpPerCorrect: xp,
   quickKolonesPerCorrect: kolones,
   surpriseExamBaseXp: xp,
   surpriseExamWindowFactor: z.number().int().min(1).max(10),
@@ -45,7 +43,6 @@ const FormSchema = z.object({
   leagueXpDuelWon: xp,
   goalKolones: kolones,
   goalXp: xp,
-  goalLeagueXp: xp,
   streakKolones: kolones,
   streakLeagueXp: xp,
   achievementKolones: kolones,
@@ -54,9 +51,7 @@ const FormSchema = z.object({
 type FormValues = z.infer<typeof FormSchema>;
 
 const pick = (data: RewardConfigValues): FormValues => ({
-  practiceXpPerCorrect: data.practiceXpPerCorrect,
   practiceKolonesPerCorrect: data.practiceKolonesPerCorrect,
-  quickXpPerCorrect: data.quickXpPerCorrect,
   quickKolonesPerCorrect: data.quickKolonesPerCorrect,
   surpriseExamBaseXp: data.surpriseExamBaseXp,
   surpriseExamWindowFactor: data.surpriseExamWindowFactor,
@@ -74,39 +69,41 @@ const pick = (data: RewardConfigValues): FormValues => ({
   leagueXpDuelWon: data.leagueXpDuelWon,
   goalKolones: data.goalKolones,
   goalXp: data.goalXp,
-  goalLeagueXp: data.goalLeagueXp,
   streakKolones: data.streakKolones,
   streakLeagueXp: data.streakLeagueXp,
   achievementKolones: data.achievementKolones,
   kokosPerVideo: data.kokosPerVideo,
 });
 
+// TODO XP del juego suma a la liga (no hay "dos XP"): la sección XP define cuánto
+// acredita cada acción; las secciones de modo definen solo la moneda.
 const SECTIONS: { title: string; fields: [keyof FormValues, string][] }[] = [
   {
-    title: 'Práctica normal',
+    title: 'XP (todo XP suma a la liga)',
     fields: [
-      ['practiceXpPerCorrect', 'XP por correcta'],
-      ['practiceKolonesPerCorrect', 'Kolones por correcta'],
+      ['leagueXpPerCorrect', 'Por respuesta correcta (todos los modos)'],
+      ['leagueXpSimulacro', 'Por simulacro completado'],
+      ['leagueXpGameMode', 'Por modo de juego completado'],
+      ['leagueXpDuelWon', 'Por duelo ganado'],
+      ['surpriseExamBaseXp', 'Examen sorpresa: XP al completar'],
+      ['surpriseExamWindowFactor', 'Examen sorpresa: multiplicador en ventana (×)'],
+      ['goalXp', 'Meta diaria: XP'],
+      ['streakLeagueXp', 'Racha: XP por día'],
     ],
   },
   {
-    title: 'Modos rápidos (contrarreloj / supervivencia)',
+    title: 'Práctica y modos rápidos',
     fields: [
-      ['quickXpPerCorrect', 'XP por correcta'],
-      ['quickKolonesPerCorrect', 'Kolones por correcta'],
+      ['practiceKolonesPerCorrect', 'Práctica: Kolones por correcta'],
+      ['quickKolonesPerCorrect', 'Rápidos: Kolones por correcta'],
     ],
   },
   {
-    title: 'Examen sorpresa',
+    title: 'Examen sorpresa y simulacro',
     fields: [
-      ['surpriseExamBaseXp', 'XP base al completar'],
-      ['surpriseExamWindowFactor', 'Multiplicador dentro de la ventana (×)'],
-      ['surpriseExamKolones', 'Kolones al completar (0 = sin premio)'],
+      ['surpriseExamKolones', 'Examen sorpresa: Kolones (0 = sin premio)'],
+      ['simulacroKolones', 'Simulacro: Kolones al completar'],
     ],
-  },
-  {
-    title: 'Simulacro',
-    fields: [['simulacroKolones', 'Kolones al completar']],
   },
   {
     title: 'Partida Kodi (duelo)',
@@ -125,22 +122,10 @@ const SECTIONS: { title: string; fields: [keyof FormValues, string][] }[] = [
     ],
   },
   {
-    title: 'XP de liga',
-    fields: [
-      ['leagueXpPerCorrect', 'Por respuesta correcta'],
-      ['leagueXpSimulacro', 'Por simulacro completado'],
-      ['leagueXpGameMode', 'Por modo de juego completado'],
-      ['leagueXpDuelWon', 'Por duelo ganado'],
-    ],
-  },
-  {
     title: 'Hábito diario',
     fields: [
       ['goalKolones', 'Meta diaria: Kolones'],
-      ['goalXp', 'Meta diaria: XP'],
-      ['goalLeagueXp', 'Meta diaria: XP de liga'],
       ['streakKolones', 'Racha: Kolones por día'],
-      ['streakLeagueXp', 'Racha: XP de liga por día'],
     ],
   },
   {

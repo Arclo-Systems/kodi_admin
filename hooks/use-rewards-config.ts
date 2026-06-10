@@ -3,10 +3,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
 
+// Regla del modelo (unificación 2026-06-10): TODO XP acredita a la liga — un solo
+// campo por concepto; el XP por correcta de práctica/rápidos es leagueXpPerCorrect.
 export type RewardConfigValues = {
-  practiceXpPerCorrect: number;
   practiceKolonesPerCorrect: number;
-  quickXpPerCorrect: number;
   quickKolonesPerCorrect: number;
   surpriseExamBaseXp: number;
   surpriseExamWindowFactor: number;
@@ -24,7 +24,6 @@ export type RewardConfigValues = {
   leagueXpDuelWon: number;
   goalKolones: number;
   goalXp: number;
-  goalLeagueXp: number;
   streakKolones: number;
   streakLeagueXp: number;
   achievementKolones: number;
@@ -42,9 +41,7 @@ export type RewardConfigInput = RewardConfigValues & { country: string | null };
 // Defaults del schema (= valores históricos hardcodeados): lo que rige cuando el GET
 // devuelve null para ese país.
 export const REWARD_DEFAULTS: RewardConfigValues = {
-  practiceXpPerCorrect: 10,
   practiceKolonesPerCorrect: 1,
-  quickXpPerCorrect: 5,
   quickKolonesPerCorrect: 1,
   surpriseExamBaseXp: 30,
   surpriseExamWindowFactor: 2,
@@ -62,7 +59,6 @@ export const REWARD_DEFAULTS: RewardConfigValues = {
   leagueXpDuelWon: 8,
   goalKolones: 10,
   goalXp: 15,
-  goalLeagueXp: 15,
   streakKolones: 5,
   streakLeagueXp: 5,
   achievementKolones: 15,
