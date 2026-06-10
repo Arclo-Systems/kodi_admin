@@ -3830,7 +3830,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["ModulesAdminController_remove"];
         options?: never;
         head?: never;
         patch: operations["ModulesAdminController_update"];
@@ -5868,6 +5868,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/economy/rewards/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RewardsAdminController_getConfig"];
+        put: operations["RewardsAdminController_upsertConfig"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/economy/videos/upload-url": {
         parameters: {
             query?: never;
@@ -6831,7 +6847,7173 @@ export interface paths {
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        RegisterDto: {
+            /** Format: email */
+            email: string;
+            password?: unknown & unknown;
+            social_ticket?: string;
+            display_name: string;
+            birth_date: string;
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA";
+            referred_by_code?: string;
+            module_ids?: string[];
+            daily_goal_target?: number;
+            goal_streak_days?: number;
+            /** @enum {string} */
+            discovery_source?: "tiktok" | "google" | "youtube" | "instagram" | "tv" | "app_store" | "noticias" | "recomendacion" | "otro";
+        };
+        RegisterResponse: {
+            data: {
+                /** Format: uuid */
+                user_id: string;
+                access_token: string;
+                refresh_token: string;
+                requires_parental_consent: boolean;
+            };
+        };
+        LoginDto: {
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        LoginResponse: {
+            data: {
+                access_token: string;
+                refresh_token: string;
+                user: {
+                    /** Format: uuid */
+                    id: string;
+                    display_name: string;
+                    /** Format: uuid */
+                    active_module_id: string | null;
+                    /** @enum {string} */
+                    plan: "free" | "basico" | "plus" | "pro";
+                    email_verified: boolean;
+                };
+            };
+        };
+        SocialLoginDto: {
+            id_token: string;
+        };
+        SocialLoginResponse: {
+            data: {
+                /** @enum {string} */
+                status: "authenticated";
+                access_token: string;
+                refresh_token: string;
+                user: {
+                    /** Format: uuid */
+                    id: string;
+                    display_name: string;
+                    /** Format: uuid */
+                    active_module_id: string | null;
+                    /** @enum {string} */
+                    plan: "free" | "basico" | "plus" | "pro";
+                    email_verified: boolean;
+                };
+            } | {
+                /** @enum {string} */
+                status: "needs_onboarding";
+                social_ticket: string;
+                email: string | null;
+                name: string | null;
+            };
+        };
+        RefreshDto: {
+            refresh_token: string;
+        };
+        TokenPairResponse: {
+            data: {
+                access_token: string;
+                refresh_token: string;
+            };
+        };
+        LogoutDto: {
+            refresh_token: string;
+        };
+        PasswordResetRequestDto: {
+            /** Format: email */
+            email: string;
+        };
+        PasswordResetRequestedResponse: {
+            data: {
+                /** @enum {string} */
+                code: "EMAIL_SENT_IF_EXISTS";
+            };
+        };
+        PasswordResetConfirmDto: {
+            token: string;
+            new_password: unknown & unknown;
+        };
+        PasswordUpdatedResponse: {
+            data: {
+                /** @enum {string} */
+                code: "PASSWORD_UPDATED";
+            };
+        };
+        ChangePasswordDto: {
+            currentPassword: string;
+            newPassword: unknown & unknown & unknown;
+        };
+        ParentalConsentSendDto: {
+            /** Format: email */
+            parent_email: string;
+        };
+        ParentalConsentSentResponse: {
+            data: {
+                sent: boolean;
+                expires_at: string;
+            };
+        };
+        EmailVerificationResentResponse: {
+            data: {
+                sent: boolean;
+                expires_at: string | null;
+            };
+        };
+        ModuleListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                exam_type: string;
+                short_name: string;
+                full_name: string;
+                is_active: boolean;
+                version: string;
+                has_admission_cutoffs: boolean;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        SubjectListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                name: string;
+                short_name: string;
+                order: number;
+                color_hex: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        AdmissionCutoffListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                university: string;
+                faculty: string;
+                career: string;
+                campus: string | null;
+                cutoff_score: number;
+                year: number;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        TopicListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                subject_id: string;
+                /** Format: uuid */
+                module_id: string;
+                name: string;
+                order: number;
+                exam_weight: number | null;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        TopicQuestionListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                text: string;
+                options: {
+                    id: string;
+                    text: string;
+                }[];
+                /** @enum {string} */
+                difficulty: "easy" | "medium" | "hard";
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        DemoQuestionListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                text: string;
+                options: {
+                    id: string;
+                    text: string;
+                }[];
+                /** @enum {string} */
+                difficulty: "easy" | "medium" | "hard";
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        NewsListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                title: string;
+                summary: string;
+                image_url: string | null;
+                published_at: string;
+                /** Format: uuid */
+                module_id: string | null;
+                /** @enum {string} */
+                category: "module" | "education";
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        LearningPathResponse: {
+            data: {
+                /** Format: uuid */
+                module_id: string;
+                recommended_topics: {
+                    /** Format: uuid */
+                    topic_id: string;
+                    topic_name: string;
+                    subject_name: string;
+                    /** @enum {string} */
+                    state: "untried" | "insufficient_data" | "weak" | "in_progress" | "mastered";
+                    accuracy: string | null;
+                    priority_order: number;
+                }[];
+            };
+        };
+        TopicPerformanceListResponse: {
+            data: {
+                /** Format: uuid */
+                topic_id: string;
+                topic_name: string;
+                subject_name: string;
+                total_attempts: number;
+                correct_last_10: number;
+                accuracy: string;
+                /** @enum {string} */
+                state: "untried" | "insufficient_data" | "weak" | "in_progress" | "mastered";
+                last_attempted_at: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        RegionalCharacterListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string;
+                region: string | null;
+                name: string;
+                character_type: string;
+                description: string | null;
+                sprite_neutral_url: string | null;
+                messages: unknown;
+            }[];
+        };
+        EnergyResponse: {
+            data: {
+                energy: number | null;
+                max: number | null;
+                unlimited: boolean;
+            };
+        };
+        PracticeQuotaResponse: {
+            data: {
+                answered: number;
+                unlocked: number;
+                limit: number;
+                videos_used: number;
+                videos_max: number;
+            };
+        };
+        VideoBoostResponse: {
+            data: {
+                used: number;
+                max: number;
+            };
+        };
+        BalanceResponse: {
+            data: {
+                kolones_balance: number;
+                kokos_balance: number;
+            };
+        };
+        TransactionListResponse: {
+            data: {
+                id: string;
+                /** @enum {string} */
+                currency: "kolones" | "kokos";
+                amount: number;
+                reason: string;
+                balance_after: number;
+                created_at: string;
+                reference_id: string | null;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        ClaimVideoKokosDto: {
+            /** @enum {boolean} */
+            video_completed: true;
+        };
+        VideoKokosClaimedResponse: {
+            data: {
+                kokos_earned: number;
+                videos_remaining_today: number;
+            };
+        };
+        KokosPackCatalogResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                slug: string;
+                name: string;
+                amount: number;
+                price_usd_cents: number;
+                offer_price_usd_cents: number | null;
+            }[];
+        };
+        PurchaseDto: {
+            /** @enum {string} */
+            provider: "apple" | "google" | "test";
+            store_product_id: string;
+            store_transaction_id: string;
+        };
+        KokosPurchaseResponse: {
+            data: {
+                /** Format: uuid */
+                purchase_id: string;
+                amount_credited: number;
+                kokos_balance: number;
+            };
+        };
+        UsernameAvailableResponse: {
+            data: {
+                available: boolean;
+                /** @enum {string} */
+                reason?: "invalid" | "reserved" | "prohibited" | "taken";
+            };
+        };
+        FullProfileResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                display_name: string;
+                friend_code: string;
+                username: string | null;
+                country: string;
+                birth_date: string;
+                account_status: string;
+                /** Format: uuid */
+                active_module_id: string | null;
+                daily_goal_target: number;
+                streak_days: number;
+                streak_last_date: string | null;
+                kolones_balance: number;
+                kokos_balance: number;
+                title_active: string | null;
+                /** Format: uuid */
+                avatar_item_id: string | null;
+                /** Format: uuid */
+                frame_item_id: string | null;
+                exam_passed: boolean;
+                sounds_enabled: boolean;
+                goal_streak_days: number;
+                discovery_source: string | null;
+                cross_sell_dismissed: unknown;
+                onboarding_flags: unknown;
+                email_verified: boolean;
+                /** @enum {string} */
+                plan: "free" | "basico" | "plus" | "pro";
+                created_at: string;
+            };
+        };
+        ProfileStatsResponse: {
+            data: {
+                current_streak: number;
+                longest_streak: number;
+                questions_total: number;
+                accuracy: number;
+                accuracy_delta: number;
+                duels_played: number;
+                duels_won: number;
+            };
+        };
+        UpdateProfileDto: {
+            display_name?: string;
+            daily_goal_target?: number;
+            sounds_enabled?: boolean;
+            username?: string;
+            onboarding_flags?: {
+                [key: string]: boolean;
+            };
+            cross_sell_dismissed?: {
+                [key: string]: boolean;
+            };
+            goal_streak_days?: number;
+            /** @enum {string} */
+            discovery_source?: "tiktok" | "google" | "youtube" | "instagram" | "tv" | "app_store" | "noticias" | "recomendacion" | "otro";
+            profile_public?: boolean;
+            show_in_rankings?: boolean;
+            /** @enum {string} */
+            friend_request_policy?: "everyone" | "nobody";
+            reminder_hour?: number;
+        };
+        UpdatedProfileResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                display_name: string;
+                username: string | null;
+                daily_goal_target: number;
+                sounds_enabled: boolean;
+                onboarding_flags: unknown;
+                cross_sell_dismissed: unknown;
+                goal_streak_days: number;
+                discovery_source: string | null;
+            };
+        };
+        DeleteAccountDto: {
+            reason: string;
+            twoFaToken?: string;
+        };
+        SetActiveModuleDto: {
+            /** Format: uuid */
+            module_id: string;
+        };
+        ActiveModuleResponse: {
+            data: {
+                /** Format: uuid */
+                active_module_id: string;
+            };
+        };
+        MarkExamPassedDto: {
+            /** Format: uuid */
+            module_id?: string;
+        };
+        ExamPassedResponse: {
+            data: {
+                exam_passed: boolean;
+                exam_passed_at: string;
+                /** Format: uuid */
+                module_id: string | null;
+                cross_sell_suggestion: {
+                    /** Format: uuid */
+                    module_id: string;
+                    message: string;
+                } | null;
+            };
+        };
+        PublicProfileResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                display_name: string;
+                friend_code: string;
+                streak_days: number;
+                title_active: string | null;
+                /** Format: uuid */
+                avatar_item_id: string | null;
+                /** Format: uuid */
+                frame_item_id: string | null;
+                exam_passed: boolean;
+                created_at: string | null;
+                is_friend: boolean;
+                is_blocked: boolean;
+            };
+        };
+        UserModuleListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                module: {
+                    short_name: string;
+                    full_name: string;
+                };
+                registered_at: string;
+                has_subscription: boolean;
+                /** @enum {string} */
+                plan: "free" | "basico" | "plus" | "pro";
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        RegisterModuleDto: {
+            /** Format: uuid */
+            module_id: string;
+        };
+        UserModuleRegisteredResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                registered_at: string;
+            };
+        };
+        SubscriptionListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                /** @enum {string} */
+                plan: "free" | "basico" | "plus" | "pro";
+                /** @enum {string} */
+                period: "monthly" | "quarterly" | "yearly";
+                /** @enum {string} */
+                status: "trial" | "active" | "cancelled" | "expired" | "grace";
+                started_at: string;
+                expires_at: string;
+                grace_ends_at: string | null;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        ActivateTrialDto: {
+            /** Format: uuid */
+            module_id: string;
+            /** @enum {string} */
+            plan: "basico" | "plus" | "pro";
+        };
+        TrialActivatedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                plan: "free" | "basico" | "plus" | "pro";
+                /** @enum {string} */
+                status: "trial" | "active" | "cancelled" | "expired" | "grace";
+                expires_at: string;
+            };
+        };
+        SubscriptionCancelledResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                status: "trial" | "active" | "cancelled" | "expired" | "grace";
+                expires_at: string;
+            };
+        };
+        IapWebhookDto: {
+            /** @enum {string} */
+            provider: "apple" | "google" | "test";
+            store_transaction_id: string;
+            store_product_id: string;
+            /** Format: uuid */
+            user_id: string;
+            /** Format: uuid */
+            module_id: string;
+            /** @enum {string} */
+            plan: "basico" | "plus" | "pro";
+            /** @enum {string} */
+            period: "monthly" | "quarterly" | "yearly";
+            /** @enum {string} */
+            status: "active" | "trial" | "cancelled" | "expired" | "grace";
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            grace_ends_at?: string | null;
+        };
+        WebhookReceivedResponse: {
+            data: {
+                received: boolean;
+            };
+        };
+        PricingResponse: {
+            data: {
+                currency: string | null;
+                max_packs: number;
+                prices: {
+                    plan: string;
+                    period: string;
+                    pack_size: number;
+                    price_cents: number;
+                }[];
+            };
+        };
+        ActiveOfferResponse: {
+            data: {
+                active: {
+                    slug: string;
+                    label: string;
+                    slots_total: number;
+                    slots_remaining: number;
+                    /** @enum {string} */
+                    price_mode: "explicit" | "percent";
+                    discount_percent: number | null;
+                    prices: {
+                        plan: string;
+                        period: string;
+                        pack_size: number;
+                        price_cents: number;
+                    }[];
+                } | null;
+            };
+        };
+        CreateSessionDto: {
+            /** Format: uuid */
+            module_id: string;
+        };
+        PracticeSessionCreatedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                started_at: string;
+                first_questions: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                    options: {
+                        id: string;
+                        text: string;
+                    }[];
+                    /** @enum {string} */
+                    difficulty: "easy" | "medium" | "hard";
+                    /** Format: uuid */
+                    topic_id: string;
+                    topic_name?: string;
+                }[];
+            };
+        };
+        SubmitAnswerDto: {
+            /** Format: uuid */
+            question_id: string;
+            selected_option_id: string;
+            time_taken_ms?: number;
+        };
+        PracticeAnswerResponse: {
+            data: {
+                is_correct: boolean;
+                correct_option_id: string;
+                xp_earned: number;
+                kolones_earned: number;
+                combo_count: number;
+                daily_progress: {
+                    questions_answered: number;
+                    goal_met: boolean;
+                };
+                explanation?: string;
+                proactive_diagnostic?: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                };
+            };
+        };
+        PracticeCompletedResponse: {
+            data: {
+                questions_answered: number;
+                questions_correct: number;
+                xp_earned: number;
+                kolones_earned: number;
+                ai_debrief: string | null;
+            };
+        };
+        PracticeSessionResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                /** @enum {string} */
+                status: "in_progress" | "completed";
+                started_at: string;
+                ended_at: string | null;
+                questions_answered: number;
+                questions_correct: number;
+                xp_earned: number;
+                kolones_earned: number;
+                ai_debrief: string | null;
+            };
+        };
+        ExplainDto: {
+            /** Format: uuid */
+            question_id: string;
+            follow_up_text?: string;
+        };
+        ExplainResponse: {
+            data: {
+                explanation: string;
+                follow_up_count: number;
+                daily_uses_remaining: number;
+            };
+        };
+        WeeklySummaryResponse: {
+            data: {
+                analysis_text: string;
+                week_start: string;
+                generated_at: string;
+                dismissed_at: string | null;
+            } | null;
+        };
+        SessionDebriefResponse: {
+            data: {
+                ai_debrief: string | null;
+            };
+        };
+        SetExamDateDto: {
+            /** Format: uuid */
+            module_id: string;
+            exam_date: string;
+        };
+        ExamDateSetResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                exam_date: string;
+                ai_plan_text: string | null;
+                ai_plan_generated_at: string | null;
+            };
+        };
+        ExamPlanResponse: {
+            data: {
+                exam_date: string;
+                ai_plan_text: string | null;
+                ai_plan_generated_at: string | null;
+                days_remaining: number;
+            } | null;
+        };
+        DailyPlanResponse: {
+            data: {
+                /** Format: uuid */
+                topic_id: string | null;
+                recommendation: string;
+                reasoning_text: string;
+                estimated_impact: number | null;
+                generated_at: string;
+            };
+        };
+        SimulacroAnalysisResponse: {
+            data: {
+                analysis_text: string | null;
+                generated_at: string | null;
+            };
+        };
+        StoreItemListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                description: string;
+                /** @enum {string} */
+                category: "cosmetic" | "functional";
+                /** @enum {string} */
+                item_type: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                /** @enum {string} */
+                tier: "basico" | "estandar" | "premium";
+                kokos_price: number;
+                preview_url: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        PurchaseResponse: {
+            data: {
+                /** Format: uuid */
+                inventory_item_id: string;
+                /** Format: uuid */
+                item_id: string;
+                quantity: number;
+                acquired_at: string;
+            };
+        };
+        InventoryListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                item: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    /** @enum {string} */
+                    category: "cosmetic" | "functional";
+                    /** @enum {string} */
+                    item_type: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                    preview_url: string;
+                };
+                /** @enum {string} */
+                source: "purchased" | "league_reward" | "achievement_reward" | "arena_reward" | "admin_gift" | "referral_reward" | "founder_reward";
+                quantity: number;
+                is_equipped: boolean;
+                acquired_at: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        EquipItemDto: {
+            equip: boolean;
+        };
+        ItemEquippedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                is_equipped: boolean;
+            };
+        };
+        DailyProgressResponse: {
+            data: {
+                date: string;
+                questions_answered: number;
+                goal_met: boolean;
+                goal_claimed: boolean;
+                practice_done: boolean;
+                videos_practice_count: number;
+                videos_kokos_count: number;
+                xp_earned: number;
+                kolones_earned: number;
+            };
+        };
+        DailyGoalResponse: {
+            data: {
+                target: number;
+                current: number;
+                met: boolean;
+                claimed: boolean;
+            };
+        };
+        UpdateDailyGoalDto: {
+            target: number;
+        };
+        DailyGoalUpdatedResponse: {
+            data: {
+                target: number;
+            };
+        };
+        DailyGoalClaimedResponse: {
+            data: {
+                kolones_earned: number;
+                xp_earned: number;
+            };
+        };
+        MissionListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                /** @enum {string} */
+                cadence: "daily" | "weekly";
+                target_count: number;
+                progress: number;
+                completed: boolean;
+                kolones_reward: number;
+                /** Format: uuid */
+                target_subject_id: string | null;
+                target_subject_name: string | null;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        StreakResponse: {
+            data: {
+                streak_days: number;
+                streak_last_date: string | null;
+                streak_freeze_used_this_week: boolean;
+            };
+        };
+        StreakFrozenResponse: {
+            data: {
+                streak_days: number;
+                freeze_applied: boolean;
+            };
+        };
+        LeagueCurrentResponse: {
+            data: {
+                cycle: {
+                    /** Format: uuid */
+                    id: string;
+                    iso_year: number;
+                    iso_week: number;
+                    started_at: string;
+                    ends_at: string;
+                } | null;
+                membership: {
+                    /** @enum {string} */
+                    league_level: "aprendiz" | "avanzado" | "experto" | "genio";
+                    xp_this_cycle: number;
+                    rank: number | null;
+                    total: number;
+                    is_first_cycle: boolean;
+                    reward_claimed: boolean;
+                    promote_count: number;
+                    demote_count: number;
+                } | null;
+                sponsor: {
+                    sponsor_name: string;
+                    sponsor_logo_url: string | null;
+                    prize_description: string;
+                    top_places_awarded: number;
+                } | null;
+            };
+        };
+        LeagueLeaderboardResponse: {
+            /** @enum {string|null} */
+            level: "aprendiz" | "avanzado" | "experto" | "genio" | null;
+            data: {
+                rank: number;
+                /** Format: uuid */
+                user_id: string;
+                display_name: string;
+                username: string | null;
+                /** Format: uuid */
+                avatar_item_id: string | null;
+                xp_this_cycle: number;
+                is_me: boolean;
+            }[];
+            neighborhood: {
+                rank: number;
+                /** Format: uuid */
+                user_id: string;
+                display_name: string;
+                username: string | null;
+                /** Format: uuid */
+                avatar_item_id: string | null;
+                xp_this_cycle: number;
+                is_me: boolean;
+            }[];
+            meta: {
+                total: number;
+            };
+            promote_count: number;
+            demote_count: number;
+        };
+        FriendsLeaderboardResponse: {
+            data: {
+                rank: number;
+                /** Format: uuid */
+                user_id: string;
+                display_name: string;
+                username: string | null;
+                /** Format: uuid */
+                avatar_item_id: string | null;
+                xp_this_cycle: number;
+                is_me: boolean;
+                /** @enum {string} */
+                league_level: "aprendiz" | "avanzado" | "experto" | "genio";
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        ClaimRewardDto: {
+            /** Format: uuid */
+            cycle_id: string;
+        };
+        RewardClaimedResponse: {
+            data: {
+                claimed: boolean;
+            };
+        };
+        CouponListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                sponsor_name: string;
+                sponsor_logo_url: string | null;
+                sponsor_color: string | null;
+                title: string;
+                description: string;
+                /** @enum {string} */
+                tier: "basico" | "estandar" | "premium";
+                kolones_cost: number;
+                is_pro_exclusive: boolean;
+                /** @enum {string} */
+                category: "academico" | "libreria" | "restaurante" | "tecnologia" | "autoescuela" | "universidad" | "transporte";
+                stock_remaining: number | null;
+                valid_until: string | null;
+                available_at: string | null;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        CouponBranchesResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                sponsor_name: string;
+                sponsor_initial: string;
+                sponsor_color: string | null;
+                branch_label: string;
+                country: string;
+                latitude: number;
+                longitude: number;
+                coupons: {
+                    /** Format: uuid */
+                    coupon_id: string;
+                    /** @enum {string} */
+                    category: "academico" | "libreria" | "restaurante" | "tecnologia" | "autoescuela" | "universidad" | "transporte";
+                    beneficio: string;
+                    cost_kolones: number;
+                    is_pro_exclusive: boolean;
+                    stock_left: number | null;
+                }[];
+            }[];
+        };
+        RedeemedCouponListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                coupon: {
+                    sponsor_name: string;
+                    title: string;
+                    sponsor_logo_url: string | null;
+                };
+                code: string;
+                redeemed_at: string;
+                expires_at: string;
+                used_at: string | null;
+                kolones_spent: number;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        CouponDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                sponsor_name: string;
+                sponsor_logo_url: string | null;
+                sponsor_color: string | null;
+                title: string;
+                description: string;
+                /** @enum {string} */
+                tier: "basico" | "estandar" | "premium";
+                kolones_cost: number;
+                is_pro_exclusive: boolean;
+                /** @enum {string} */
+                category: "academico" | "libreria" | "restaurante" | "tecnologia" | "autoescuela" | "universidad" | "transporte";
+                stock_remaining: number | null;
+                valid_until: string | null;
+                available_at: string | null;
+                conditions: string[];
+                valid_days_after_redeem: number;
+                branches: {
+                    /** Format: uuid */
+                    id: string;
+                    branch_label: string;
+                    latitude: number;
+                    longitude: number;
+                    address: string | null;
+                    stock_left: number | null;
+                }[];
+            };
+        };
+        /** @default {} */
+        RedeemCouponDto: {
+            /** Format: uuid */
+            branchId?: string;
+        };
+        CouponRedeemedResponse: {
+            data: {
+                /** Format: uuid */
+                user_coupon_id: string;
+                code: string;
+                expires_at: string;
+                qr_code_data: string;
+            };
+        };
+        ValidateCouponDto: {
+            code: string;
+        };
+        CouponValidatedResponse: {
+            data: {
+                valid: boolean;
+                coupon_title: string | null;
+                user_display_name: string | null;
+                expires_at: string | null;
+            };
+        };
+        MyReferralsResponse: {
+            data: {
+                friend_code: string | null;
+                link: string | null;
+                invited_count: number;
+                qualified_count: number;
+                milestones: {
+                    threshold: number;
+                    label: string;
+                    reward: unknown;
+                    reached: boolean;
+                    claimed: boolean;
+                }[];
+            };
+        };
+        CreateQuickSessionDto: {
+            /** Format: uuid */
+            module_id: string;
+            /** @enum {string} */
+            type: "contrarreloj" | "supervivencia";
+        };
+        QuickSessionCreatedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                type: "contrarreloj" | "supervivencia";
+                /** Format: uuid */
+                module_id: string;
+                started_at: string;
+                lives_remaining: number | null;
+                first_questions: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                    options: {
+                        id: string;
+                        text: string;
+                    }[];
+                    /** @enum {string} */
+                    difficulty: "easy" | "medium" | "hard";
+                    /** Format: uuid */
+                    topic_id: string;
+                    topic_name?: string;
+                }[];
+            };
+        };
+        SubmitQuickAnswerDto: {
+            /** Format: uuid */
+            question_id: string;
+            selected_option_id: string;
+            time_taken_ms?: number;
+        };
+        QuickAnswerResponse: {
+            data: {
+                is_correct: boolean;
+                correct_option_id: string;
+                lives_remaining: number | null;
+                game_over: boolean;
+                xp_earned: number;
+                combo_count: number;
+            };
+        };
+        QuickSessionEndedResponse: {
+            data: {
+                questions_answered: number;
+                questions_correct: number;
+                max_combo: number;
+                xp_earned: number;
+                kolones_earned: number;
+            };
+        };
+        NextVideoResponse: {
+            data: {
+                /** Format: uuid */
+                impression_id: string;
+                token: string;
+                video: {
+                    /** Format: uuid */
+                    id: string;
+                    sponsor_name: string;
+                    sponsor_logo_url: string | null;
+                    video_url: string;
+                    duration_sec: number;
+                };
+            };
+        };
+        CompleteVideoDto: {
+            token: string;
+            watch_time_ms: number;
+        };
+        VideoCompletedResponse: {
+            data: {
+                rewarded: boolean;
+                details: unknown;
+            };
+        };
+        CreateSimulacroDto: {
+            /** Format: uuid */
+            module_id: string;
+            /** Format: uuid */
+            subject_id?: string | null;
+            total_questions: number;
+            duration_minutes: number;
+        };
+        SimulacroCreatedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                /** Format: uuid */
+                subject_id: string | null;
+                total_questions: number;
+                duration_minutes: number;
+                started_at: string;
+                questions: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                    options: {
+                        id: string;
+                        text: string;
+                    }[];
+                    /** @enum {string} */
+                    difficulty: "easy" | "medium" | "hard";
+                }[];
+            };
+        };
+        SimulacroDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                /** Format: uuid */
+                subject_id: string | null;
+                /** @enum {string} */
+                status: "active" | "completed" | "abandoned" | "annulled";
+                total_questions: number;
+                duration_minutes: number;
+                started_at: string;
+                questions_answered: number;
+                questions: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                    options: {
+                        id: string;
+                        text: string;
+                    }[];
+                    /** @enum {string} */
+                    difficulty: "easy" | "medium" | "hard";
+                }[];
+            };
+        };
+        SubmitSimulacroAnswerDto: {
+            /** Format: uuid */
+            question_id: string;
+            selected_option_id: string;
+            time_taken_ms?: number;
+        };
+        SimulacroAnswerReceivedResponse: {
+            data: {
+                /** Format: uuid */
+                question_id: string;
+                received: boolean;
+            };
+        };
+        SimulacroResultResponse: {
+            data: {
+                score: number;
+                xp_earned: number;
+                kolones_earned: number;
+                subject_results: {
+                    /** Format: uuid */
+                    subject_id: string;
+                    subject_name: string;
+                    questions_total: number;
+                    questions_correct: number;
+                    score: number;
+                }[];
+                ai_analysis: string | null;
+            };
+        };
+        SimulacroAbandonedResponse: {
+            data: {
+                /** @enum {string} */
+                status: "active" | "completed" | "abandoned" | "annulled";
+            };
+        };
+        FriendListResponse: {
+            data: {
+                friend: {
+                    /** Format: uuid */
+                    id: string;
+                    display_name: string;
+                    /** Format: uuid */
+                    avatar_item_id: string | null;
+                    streak_days: number;
+                    last_active_at: string;
+                    shared_streak: {
+                        /** @enum {string|null} */
+                        state: "pending" | "active" | "broken" | null;
+                        days: number;
+                        started_at: string | null;
+                        invited_at: string | null;
+                    };
+                };
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        SendFriendRequestDto: {
+            friend_code?: string;
+            /** Format: uuid */
+            user_id?: string;
+            /** @enum {string} */
+            source?: "friend_code" | "contacts" | "social" | "post_match";
+        };
+        FriendRequestSentResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                to_user_id: string;
+                /** @enum {string} */
+                status: "pending" | "accepted" | "rejected" | "cancelled";
+                /** @enum {string} */
+                source: "friend_code" | "contacts" | "social" | "post_match";
+            };
+        };
+        ContactsMatchDto: {
+            phone_hashes: string[];
+            persist_mine?: boolean;
+            my_phone_hashes?: string[];
+        };
+        FriendMatchesResponse: {
+            data: {
+                matches: {
+                    /** Format: uuid */
+                    id: string;
+                    display_name: string;
+                    friend_code: string;
+                }[];
+            };
+        };
+        SocialMatchDto: {
+            /** @enum {string} */
+            provider: "facebook" | "google" | "apple";
+            provider_ids: string[];
+            register_self_provider_id?: string;
+        };
+        ReceivedRequestListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                from_user: {
+                    /** Format: uuid */
+                    id: string;
+                    display_name: string;
+                    /** Format: uuid */
+                    avatar_item_id: string | null;
+                };
+                created_at: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        RequestAcceptedResponse: {
+            data: {
+                /** Format: uuid */
+                friendship_id: string;
+                friend: {
+                    /** Format: uuid */
+                    id: string;
+                    display_name: string;
+                } | null;
+            };
+        };
+        RequestDeclinedResponse: {
+            data: {
+                /** @enum {string} */
+                status: "pending" | "accepted" | "rejected" | "cancelled";
+            };
+        };
+        BlockUserDto: {
+            /** Format: uuid */
+            user_id: string;
+        };
+        UserBlockedResponse: {
+            data: {
+                /** Format: uuid */
+                blocked_user_id: string;
+                created_at: string;
+            };
+        };
+        FeedListResponse: {
+            data: {
+                id: string;
+                user: {
+                    /** Format: uuid */
+                    id: string;
+                    display_name: string;
+                    /** Format: uuid */
+                    avatar_item_id: string | null;
+                };
+                /** @enum {string} */
+                event_type: "league_promotion" | "streak_milestone" | "achievement" | "simulacro_completed" | "shared_streak";
+                data: unknown;
+                created_at: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        SharedStreakResponse: {
+            data: {
+                /** @enum {string|null} */
+                state: "pending" | "active" | "broken" | null;
+                days: number;
+                started_at: string | null;
+                invited_at: string | null;
+            };
+        };
+        AchievementCatalogListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+                description: string;
+                tier: string;
+                kokosReward: number;
+                iconUrl: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        AchievementUnlockedListResponse: {
+            data: {
+                /** Format: uuid */
+                achievementId: string;
+                earnedAt: string;
+                kokosAwarded: number;
+                achievement: {
+                    code: string;
+                    name: string;
+                    tier: string;
+                    iconUrl: string;
+                };
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        SurpriseExamResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                /** @enum {string} */
+                status: "pending" | "completed" | "expired";
+                sent_at: string;
+                expires_at: string;
+                questions: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                    options: {
+                        id: string;
+                        text: string;
+                    }[];
+                    /** @enum {string} */
+                    difficulty: "easy" | "medium" | "hard";
+                }[];
+            } | null;
+        };
+        SubmitSurpriseAnswerDto: {
+            /** Format: uuid */
+            question_id: string;
+            selected_option_id: string;
+            time_taken_ms?: number;
+        };
+        SurpriseAnswerResponse: {
+            data: {
+                is_correct: boolean;
+                correct_option_id: string;
+                questions_remaining: number;
+            };
+        };
+        SurpriseExamCompletedResponse: {
+            data: {
+                score: number;
+                xp_awarded: number;
+                completed_within_window: boolean;
+            };
+        };
+        CreateMatchDto: {
+            /** Format: uuid */
+            module_id: string;
+            /** @enum {string} */
+            mode: "vs_random" | "vs_friend";
+            /** Format: uuid */
+            opponent_friend_id?: string;
+        };
+        MatchResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                /** @enum {string} */
+                mode: "vs_friend" | "vs_random";
+                /** @enum {string} */
+                status: "pending" | "active" | "player1_won" | "player2_won" | "cancelled_timeout" | "cancelled" | "annulled";
+                /** Format: uuid */
+                player1_id: string;
+                /** Format: uuid */
+                player2_id: string | null;
+                /** Format: uuid */
+                current_turn_player_id: string | null;
+                turn_started_at: string | null;
+                started_at: string;
+            };
+        };
+        MatchListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                /** @enum {string} */
+                mode: "vs_friend" | "vs_random";
+                /** @enum {string} */
+                status: "pending" | "active" | "player1_won" | "player2_won" | "cancelled_timeout" | "cancelled" | "annulled";
+                /** Format: uuid */
+                player1_id: string;
+                /** Format: uuid */
+                player2_id: string | null;
+                /** Format: uuid */
+                current_turn_player_id: string | null;
+                turn_started_at: string | null;
+                started_at: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        MatchDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                module_id: string;
+                /** @enum {string} */
+                mode: "vs_friend" | "vs_random";
+                /** @enum {string} */
+                status: "pending" | "active" | "player1_won" | "player2_won" | "cancelled_timeout" | "cancelled" | "annulled";
+                /** Format: uuid */
+                player1_id: string;
+                /** Format: uuid */
+                player2_id: string | null;
+                /** Format: uuid */
+                current_turn_player_id: string | null;
+                turn_started_at: string | null;
+                started_at: string;
+                subjects: {
+                    /** Format: uuid */
+                    subject_id: string;
+                    subject_name: string;
+                    /** Format: uuid */
+                    crown_holder_id: string | null;
+                }[];
+                recent_turns: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    player_id: string;
+                    /** Format: uuid */
+                    subject_id: string;
+                    turn_number: number;
+                    questions_answered: number;
+                    all_correct: boolean;
+                    /** @enum {string} */
+                    status: "active" | "completed" | "expired";
+                }[];
+            };
+        };
+        MatchAcceptedResponse: {
+            data: {
+                /** @enum {string} */
+                status: "pending" | "active" | "player1_won" | "player2_won" | "cancelled_timeout" | "cancelled" | "annulled";
+                /** Format: uuid */
+                current_turn_player_id: string | null;
+            };
+        };
+        MatchDeclinedResponse: {
+            data: {
+                /** @enum {string} */
+                status: "pending" | "active" | "player1_won" | "player2_won" | "cancelled_timeout" | "cancelled" | "annulled";
+            };
+        };
+        SpinResponse: {
+            data: {
+                /** Format: uuid */
+                turn_id: string;
+                /** Format: uuid */
+                subject_id: string;
+                subject_name: string;
+                questions: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                    options: {
+                        id: string;
+                        text: string;
+                    }[];
+                    /** @enum {string} */
+                    difficulty: "easy" | "medium" | "hard";
+                    question_number: number;
+                    total_questions: number;
+                }[];
+            };
+        };
+        SubmitDuelAnswerDto: {
+            /** Format: uuid */
+            question_id: string;
+            selected_option_id: string;
+            time_taken_ms?: number;
+        };
+        DuelAnswerResponse: {
+            data: {
+                is_correct: boolean;
+                correct_option_id: string;
+                all_correct_so_far: boolean;
+            };
+        };
+        MatchResultResponse: {
+            data: {
+                /** @enum {string} */
+                status: "pending" | "active" | "player1_won" | "player2_won" | "cancelled_timeout" | "cancelled" | "annulled";
+                /** Format: uuid */
+                winner_id: string | null;
+                player1_crowns: number;
+                player2_crowns: number;
+                xp_awarded: number;
+                kolones_awarded: number;
+                subjects: {
+                    /** Format: uuid */
+                    subject_id: string;
+                    subject_name: string;
+                    /** Format: uuid */
+                    crown_holder_id: string | null;
+                }[];
+            };
+        };
+        CreateArenaDto: {
+            /** Format: uuid */
+            module_id: string;
+            /** @enum {string} */
+            type: "amigos";
+        };
+        ArenaCreatedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                type: string;
+                status: string;
+                /** Format: uuid */
+                hostUserId: string | null;
+                inviteCode: string | null;
+                questionIds: unknown;
+                scheduledAt: string | null;
+                startedAt: string | null;
+                endedAt: string | null;
+                /** Format: uuid */
+                winnerId: string | null;
+                participantCount: number;
+                annulledAt: string | null;
+                /** Format: uuid */
+                annulledBy: string | null;
+                annulReason: string | null;
+                prizes: unknown;
+            };
+        };
+        QuickArenaDto: {
+            /** Format: uuid */
+            module_id: string;
+        };
+        ArenaJoinedResponse: {
+            data: {
+                /** Format: uuid */
+                arena_id: string;
+                participant_count: number;
+            };
+        };
+        ArenaEspecialJoinedResponse: {
+            data: {
+                /** Format: uuid */
+                arena_id: string;
+                scheduled_at: string | null;
+                participant_count: number;
+            };
+        };
+        ArenaListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                type: "rapida" | "especial" | "amigos";
+                /** @enum {string} */
+                status: "waiting" | "active" | "finished" | "annulled";
+                /** Format: uuid */
+                module_id: string;
+                participant_count: number;
+                scheduled_at: string | null;
+                /** Format: uuid */
+                host_user_id: string | null;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        ArenaDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                type: "rapida" | "especial" | "amigos";
+                /** @enum {string} */
+                status: "waiting" | "active" | "finished" | "annulled";
+                /** Format: uuid */
+                module_id: string;
+                participant_count: number;
+                scheduled_at: string | null;
+                /** Format: uuid */
+                host_user_id: string | null;
+                participants: {
+                    /** Format: uuid */
+                    user_id: string;
+                    display_name: string;
+                    /** Format: uuid */
+                    avatar_item_id: string | null;
+                    eliminated: boolean;
+                    final_rank: number | null;
+                }[];
+            };
+        };
+        JoinArenaDto: {
+            invite_code?: string;
+        };
+        ArenaStartedResponse: {
+            data: {
+                /** @enum {string} */
+                status: "waiting" | "active" | "finished" | "annulled";
+                started_at: string;
+            };
+        };
+        ArenaQuestionResponse: {
+            data: {
+                /** Format: uuid */
+                arena_id: string;
+                question_index: number;
+                total_questions: number;
+                question: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                    options: {
+                        id: string;
+                        text: string;
+                    }[];
+                    /** @enum {string} */
+                    difficulty: "easy" | "medium" | "hard";
+                };
+            };
+        };
+        SubmitArenaAnswerDto: {
+            /** Format: uuid */
+            question_id: string;
+            selected_option_id: string;
+            time_taken_ms?: number;
+        };
+        ArenaAnswerResponse: {
+            data: {
+                is_correct: boolean;
+                correct_option_id: string;
+                eliminated: boolean;
+                final_rank: number | null;
+            };
+        };
+        CreateShareDto: {
+            /** Format: uuid */
+            reference_id: string;
+        };
+        CreateShareResponse: {
+            data: {
+                /** Format: uuid */
+                share_id: string;
+                share_url: string;
+                preview_image_url: string | null;
+            };
+        };
+        SharePreviewResponse: {
+            data: {
+                /** @enum {string} */
+                type: "simulacro" | "streak" | "league" | "duel" | "exam";
+                preview_image_url: string | null;
+                share_message: string;
+                deep_link: string;
+            };
+        };
+        RegisterPushTokenDto: {
+            token: string;
+            /** @enum {string} */
+            platform: "ios" | "android";
+        };
+        PushTokenRegisteredResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                token: string;
+                platform: string;
+                created_at: string;
+            };
+        };
+        NotificationSettingsResponse: {
+            data: {
+                streak_reminder: boolean;
+                daily_goal_reminder: boolean;
+                duel_your_turn: boolean;
+                mission_completed: boolean;
+                league_updates: boolean;
+                surprise_exam: boolean;
+                friend_requests: boolean;
+                friend_streak_invites: boolean;
+                friend_activity: boolean;
+                news_promos: boolean;
+            };
+        };
+        UpdateNotificationSettingsDto: {
+            [key: string]: boolean;
+        };
+        GradePredictionResponse: {
+            data: {
+                available: boolean;
+                attempts_count: number;
+                min_attempts_required: number;
+                estimated_score: number | null;
+                top_weak_topics: {
+                    /** Format: uuid */
+                    topic_id: string;
+                    topic_name: string;
+                    subject_name: string;
+                    accuracy: number;
+                    attempts: number;
+                    estimated_impact: number;
+                }[];
+                computed_at: string | null;
+            };
+        };
+        VocationalTestResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                    order: number;
+                }[];
+            };
+        };
+        SubmitTestDto: {
+            /** Format: uuid */
+            moduleId?: string;
+            answers: {
+                /** Format: uuid */
+                item_id: string;
+                value: number;
+            }[];
+        };
+        VocationalSubmitResponse: {
+            data: {
+                riasec_code: string;
+                scores: {
+                    [key: string]: number;
+                };
+                top_careers: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    area: string | null;
+                    fit_score: number;
+                }[];
+            };
+        };
+        VocationalResultResponse: {
+            data: {
+                /** @enum {boolean} */
+                available: false;
+            } | {
+                /** @enum {boolean} */
+                available: true;
+                riasec_code: string;
+                scores: {
+                    [key: string]: number;
+                };
+                top_careers: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    area: string | null;
+                    fit_score: number;
+                }[];
+            };
+        };
+        BrowseCareersResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    area: string | null;
+                    riasec_code: string | null;
+                    demand_level: string | null;
+                    avg_salary_monthly: number | null;
+                    employment_rate: number | null;
+                    duration_years: number | null;
+                }[];
+                total: number;
+                page: number;
+                page_size: number;
+            };
+        };
+        RiasecTypesResponse: {
+            data: {
+                types: {
+                    dimension: string;
+                    title: string;
+                    summary: string;
+                    description: string;
+                    strengths: unknown;
+                }[];
+            };
+        };
+        CompareCareersResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    area: string | null;
+                    riasec_code: string | null;
+                    duration_years: number | null;
+                    avg_salary_monthly: number | null;
+                    demand_level: string | null;
+                    employment_rate: number | null;
+                    cutoff_min: number | null;
+                    riasec_fit: number | null;
+                }[];
+            };
+        };
+        CareerDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                area: string | null;
+                riasec_code: string | null;
+                description: string | null;
+                field_of_work: string | null;
+                duration_years: number | null;
+                market: {
+                    employment_rate: number | null;
+                    avg_salary_monthly: number | null;
+                    demand_level: string | null;
+                    note: string | null;
+                    olap_year: number | null;
+                };
+                universities: {
+                    university: string;
+                    faculty: string;
+                    campus: string | null;
+                    cutoff_score: number;
+                    year: number;
+                }[];
+            };
+        };
+        CareerFitResponse: {
+            data: {
+                /** @enum {boolean} */
+                available: false;
+                attempts_count: number;
+                min_attempts_required: number;
+            } | {
+                /** @enum {boolean} */
+                available: true;
+                estimated_score: number;
+                cutoff_min: number | null;
+                gap: number | null;
+                weak_topics: {
+                    /** Format: uuid */
+                    topic_id: string;
+                    topic_name: string;
+                    subject_name: string;
+                    accuracy: number;
+                    attempts: number;
+                    estimated_impact: number;
+                }[];
+            };
+        };
+        RaffleListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string;
+                /** Format: uuid */
+                module_id: string;
+                module_short_name: string;
+                cycle_year: number;
+                cycle_month: number;
+                name: string;
+                description: string;
+                prize_description: string;
+                sponsor_name: string | null;
+                prizes_count: number;
+                status: string;
+                draw_at: string;
+                drawn_at: string | null;
+            }[];
+        };
+        RaffleResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string;
+                /** Format: uuid */
+                module_id: string;
+                module_short_name: string;
+                cycle_year: number;
+                cycle_month: number;
+                name: string;
+                description: string;
+                prize_description: string;
+                sponsor_name: string | null;
+                prizes_count: number;
+                status: string;
+                draw_at: string;
+                drawn_at: string | null;
+            };
+        };
+        RaffleEligibilityResponse: {
+            data: {
+                eligible: boolean;
+                reason?: string;
+                /** Format: uuid */
+                entryId?: string;
+            };
+        };
+        RaffleWinnersResponse: {
+            data: {
+                position: number;
+                /** Format: uuid */
+                user_id: string | null;
+                display_name: string | null;
+            }[];
+        };
+        NextBannerResponse: {
+            data: {
+                banner: {
+                    /** Format: uuid */
+                    id: string;
+                    sponsor_name: string;
+                    image_url: string;
+                    click_url: string | null;
+                    placement: string;
+                } | null;
+            };
+        };
+        CreateReportDto: {
+            /** Format: uuid */
+            reported_user_id: string;
+            /** @enum {string} */
+            target: "user_profile" | "duel_behavior";
+            /** @enum {string} */
+            reason: "offensive_name" | "inappropriate_avatar" | "impersonation" | "cheating_speed" | "cheating_pattern" | "abandonment" | "other";
+            /** Format: uuid */
+            duel_id?: string;
+            detail?: string;
+        };
+        ReportCreatedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                createdAt: string;
+            };
+        };
+        CreateTicketDto: {
+            /** @enum {string} */
+            type: "question_report";
+            /** Format: uuid */
+            question_id: string;
+            /** @enum {string} */
+            category: "respuesta_incorrecta" | "typo" | "ambigua" | "desactualizada" | "ofensiva" | "otro";
+            message: string;
+            context?: {
+                app_version?: string;
+                screen?: string;
+                device?: string;
+                /** @enum {string} */
+                platform?: "ios" | "android";
+            };
+        } | {
+            /** @enum {string} */
+            type: "suggestion";
+            message: string;
+            context?: {
+                app_version?: string;
+                screen?: string;
+                device?: string;
+                /** @enum {string} */
+                platform?: "ios" | "android";
+            };
+        } | {
+            /** @enum {string} */
+            type: "bug_report";
+            message: string;
+            context?: {
+                app_version?: string;
+                screen?: string;
+                device?: string;
+                /** @enum {string} */
+                platform?: "ios" | "android";
+            };
+        };
+        TicketCreatedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                status: "open" | "triaging" | "resolved" | "dismissed";
+                created_at: string;
+            };
+        };
+        HealthLiveResponse: {
+            data: {
+                /** @enum {string} */
+                status: "ok";
+                uptime_seconds: number;
+            };
+        };
+        HealthReadyResponse: {
+            data: {
+                /** @enum {string} */
+                status: "ok" | "degraded";
+                uptime_seconds: number;
+                checks: {
+                    /** @enum {string} */
+                    database: "ok" | "down";
+                    /** @enum {string} */
+                    redis: "ok" | "down";
+                };
+                version?: string;
+                commit?: string;
+            };
+        };
+        JobTriggeredResponse: {
+            data: {
+                jobId: string;
+            };
+        };
+        AdminLoginResponse: {
+            data: {
+                user: {
+                    /** Format: uuid */
+                    id: string;
+                    email: string;
+                    role: string;
+                    isGlobalScope: boolean;
+                    assignedCountries: string[];
+                };
+                requirePasswordChange: boolean;
+            };
+        };
+        AdminRefreshResponse: {
+            data: {
+                /** @enum {boolean} */
+                ok: true;
+            };
+        };
+        AdminMeResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                displayName: string;
+                role: string;
+                isGlobalScope: boolean;
+                assignedCountries: string[];
+                adminActiveStatus: string | null;
+                requirePasswordChange: boolean;
+            };
+        };
+        AdminSessionsResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                deviceLabel: string | null;
+                ipAddress: string | null;
+                userAgent: string | null;
+                lastSeenAt: string;
+                createdAt: string;
+                revokedAt: string | null;
+            }[];
+        };
+        AdminSessionsRevokedResponse: {
+            data: {
+                revoked: number;
+            };
+        };
+        AdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    email: string;
+                    displayName: string;
+                    /** @enum {string} */
+                    role: "user" | "admin" | "editor" | "support" | "commercial";
+                    isGlobalScope: boolean;
+                    assignedCountries: string[];
+                    /** @enum {string|null} */
+                    adminActiveStatus: "active" | "inactive" | "pending_first_login" | null;
+                    invitedAt: string | null;
+                    lastActiveAt: string | null;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        AdminDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                displayName: string;
+                /** @enum {string} */
+                role: "user" | "admin" | "editor" | "support" | "commercial";
+                isGlobalScope: boolean;
+                assignedCountries: string[];
+                /** @enum {string|null} */
+                adminActiveStatus: "active" | "inactive" | "pending_first_login" | null;
+                invitedAt: string | null;
+                lastActiveAt: string | null;
+                createdAt: string;
+                requirePasswordChange: boolean;
+            };
+        };
+        CreateAdminDto: {
+            /** Format: email */
+            email: string;
+            displayName: string;
+            /** @enum {string} */
+            role: "admin" | "editor" | "support" | "commercial";
+            /** @default false */
+            isGlobalScope: boolean;
+            /** @default [] */
+            assignedCountries: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+        };
+        AdminInvitedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                email: string;
+                temporaryPassword: string;
+                expiresAt: string;
+            };
+        };
+        UpdateAdminDto: {
+            displayName?: string;
+            /** @enum {string} */
+            role?: "admin" | "editor" | "support" | "commercial" | "user";
+            isGlobalScope?: boolean;
+            assignedCountries?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+            twoFaToken?: string;
+        };
+        AdminUpdatedResponse: {
+            data: {
+                updated: boolean;
+            };
+        };
+        AdminSessionListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                deviceLabel: string | null;
+                ipAddress: string | null;
+                userAgent: string | null;
+                lastSeenAt: string;
+                createdAt: string;
+                revokedAt: string | null;
+            }[];
+        };
+        UserAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    email: string | null;
+                    displayName: string;
+                    username: string | null;
+                    friendCode: string;
+                    country: string;
+                    /** Format: uuid */
+                    activeModuleId: string | null;
+                    accountStatus: string;
+                    streakDays: number;
+                    isBot: boolean;
+                    createdAt: string;
+                    lastActiveAt: string | null;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        UserAdminDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                email: string | null;
+                displayName: string;
+                username: string | null;
+                friendCode: string;
+                role: string;
+                country: string;
+                birthDate: string;
+                accountStatus: string;
+                /** Format: uuid */
+                activeModuleId: string | null;
+                activeModule: {
+                    shortName: string;
+                    fullName: string;
+                } | null;
+                dailyGoalTarget: number;
+                streakDays: number;
+                streakFreezeUsedThisWeek: boolean;
+                kolonesBalance: number;
+                kokosBalance: number;
+                titleActive: string | null;
+                /** Format: uuid */
+                avatarItemId: string | null;
+                /** Format: uuid */
+                frameItemId: string | null;
+                examPassed: boolean;
+                examPassedAt: string | null;
+                soundsEnabled: boolean;
+                isBot: boolean;
+                goalStreakDays: number;
+                notificationSettings: unknown;
+                emailVerifiedAt: string | null;
+                createdAt: string;
+                lastActiveAt: string | null;
+                deletedAt: string | null;
+                bannedAt: string | null;
+                banReason: string | null;
+                /** Format: uuid */
+                bannedBy: string | null;
+                bannedUntil: string | null;
+                deleteRequestedAt: string | null;
+                requirePasswordChange: boolean;
+                temporaryPasswordExpiresAt: string | null;
+                longestStreakDays: number;
+                discoverySource: string | null;
+                profilePublic: boolean;
+                showInRankings: boolean;
+                friendRequestPolicy: string;
+                reminderHour: number | null;
+                userModules: {
+                    module: {
+                        shortName: string;
+                        fullName: string;
+                        examType: string;
+                    };
+                }[];
+                examDates: {
+                    /** Format: uuid */
+                    moduleId: string;
+                    examDate: string;
+                    module: {
+                        shortName: string;
+                    };
+                }[];
+                subscriptions: {
+                    plan: string;
+                    /** Format: uuid */
+                    moduleId: string;
+                    module: {
+                        shortName: string;
+                    };
+                }[];
+                _count: {
+                    userAchievements: number;
+                    subscriptions: number;
+                    inventory: number;
+                    questionAttempts: number;
+                    kodiMatchesAsPlayer1: number;
+                    kodiMatchesAsPlayer2: number;
+                    simulacros: number;
+                };
+                /** @enum {string} */
+                plan: "free" | "basico" | "plus" | "pro";
+                streakProtectors: number;
+            };
+        };
+        UpdateUserDto: {
+            displayName?: string;
+            username?: string;
+            /** Format: uuid */
+            avatarItemId?: string | null;
+            /** Format: uuid */
+            frameItemId?: string | null;
+            titleActive?: string | null;
+            dailyGoalTarget?: number;
+            goalStreakDays?: number;
+            notificationSettings?: {
+                [key: string]: boolean;
+            };
+            soundsEnabled?: boolean;
+            reminderHour?: number;
+            /** Format: uuid */
+            activeModuleId?: string | null;
+            reason: string;
+        };
+        UserUpdatedResponse: {
+            data: {
+                updated: boolean;
+            };
+        };
+        UserTransactionsResponse: {
+            data: {
+                items: {
+                    id: number;
+                    /** Format: uuid */
+                    userId: string | null;
+                    currency: string;
+                    amount: number;
+                    reason: string;
+                    referenceId: string | null;
+                    balanceAfter: number;
+                    createdAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        UserInventoryResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                userId: string;
+                /** Format: uuid */
+                itemId: string;
+                source: string;
+                quantity: number;
+                isEquipped: boolean;
+                acquiredAt: string;
+                updatedAt: string;
+                item: {
+                    name: string;
+                    itemType: string;
+                    tier: string;
+                    previewUrl: string | null;
+                };
+            }[];
+        };
+        UserAchievementAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                userId: string;
+                /** Format: uuid */
+                achievementId: string;
+                earnedAt: string;
+                kokosAwarded: number;
+                achievement: {
+                    code: string;
+                    name: string;
+                    description: string;
+                    tier: string;
+                    iconUrl: string;
+                };
+            }[];
+        };
+        UserLeaguesResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                userId: string;
+                /** Format: uuid */
+                moduleId: string;
+                country: string;
+                /** Format: uuid */
+                cycleId: string;
+                leagueLevel: string;
+                xpThisCycle: number;
+                isFirstCycle: boolean;
+                finalRank: number | null;
+                outcome: string | null;
+                rewardClaimed: boolean;
+                updatedAt: string;
+                cycle: {
+                    isoYear: number;
+                    isoWeek: number;
+                    startedAt: string;
+                    endsAt: string;
+                };
+            }[];
+        };
+        UserSubscriptionsResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                userId: string;
+                /** Format: uuid */
+                moduleId: string;
+                plan: string;
+                period: string;
+                status: string;
+                startedAt: string;
+                expiresAt: string;
+                graceEndsAt: string | null;
+                storeProductId: string;
+                storeTransactionId: string;
+                updatedAt: string;
+                module: {
+                    shortName: string;
+                };
+            }[];
+        };
+        UserSocialResponse: {
+            data: {
+                friendsCount: number;
+                friendRequestsIn: {
+                    [key: string]: unknown;
+                }[];
+                friendRequestsOut: {
+                    [key: string]: unknown;
+                }[];
+                blocksReceived: number;
+                blocksMade: number;
+            };
+        };
+        UserAiResponse: {
+            data: {
+                latestPrediction: {
+                    [key: string]: unknown;
+                } | null;
+                latestDailyPlan: {
+                    [key: string]: unknown;
+                } | null;
+                recentDiagnostics: {
+                    [key: string]: unknown;
+                }[];
+            };
+        };
+        UserActivityResponse: {
+            data: {
+                practice: {
+                    /** Format: uuid */
+                    id: string;
+                    startedAt: string;
+                    endedAt: string | null;
+                    /** Format: uuid */
+                    moduleId: string;
+                }[];
+                matches: {
+                    /** Format: uuid */
+                    id: string;
+                    mode: string;
+                    status: string;
+                    startedAt: string;
+                    endedAt: string | null;
+                    /** Format: uuid */
+                    winnerId: string | null;
+                }[];
+            };
+        };
+        UserStatsResponse: {
+            data: {
+                accuracyPct: number;
+                accuracyDeltaPct: number;
+                questionsTotal: number;
+                longestStreakDays: number;
+                matchesPlayed: number;
+                matchesWon: number;
+                simulacros: number;
+            };
+        };
+        UserCouponsResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                redeemedAt: string;
+                expiresAt: string;
+                usedAt: string | null;
+                invalidatedAt: string | null;
+                invalidateReason: string | null;
+                kolonesSpent: number;
+                coupon: {
+                    title: string;
+                    sponsor: {
+                        name: string;
+                    };
+                };
+            }[];
+        };
+        UserAdvancedStatsResponse: {
+            data: {
+                masteryBySubject: {
+                    subject: string;
+                    accuracyPct: number;
+                    topics: number;
+                }[];
+                simulacroAvgScore: number | null;
+                simulacrosCompleted: number;
+                weakestTopics: {
+                    topic: string;
+                    accuracyPct: number;
+                }[];
+                weeklyAccuracy: {
+                    week: string;
+                    accuracyPct: number;
+                    total: number;
+                }[];
+            };
+        };
+        EmailChangeDto: {
+            /** Format: email */
+            newEmail: string;
+            reason: string;
+            twoFaToken?: string;
+        };
+        BanDto: {
+            reason: string;
+            until?: string;
+        };
+        ToggleBotDto: {
+            isBot: boolean;
+            reason: string;
+        };
+        ReasonDto: {
+            reason: string;
+        };
+        AdjustBalanceDto: {
+            /** @enum {string} */
+            currency: "kokos" | "kolones";
+            delta: number | string;
+            reason: string;
+        };
+        UserBalanceAdjustedResponse: {
+            data: {
+                newBalance: number;
+            };
+        };
+        ResetStreakDto: {
+            newValue: number;
+            reason: string;
+        };
+        GrantItemDto: {
+            /** Format: uuid */
+            itemId: string;
+            /** @default 1 */
+            quantity: number;
+            reason: string;
+        };
+        UserItemGrantedResponse: {
+            data: {
+                granted: boolean;
+            };
+        };
+        AuditLogListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    actorId: string;
+                    actorRole: string;
+                    actorCountries: string[];
+                    action: string;
+                    resourceType: string;
+                    resourceId: string | null;
+                    before: unknown;
+                    after: unknown;
+                    reason: string | null;
+                    ipAddress: string | null;
+                    userAgent: string | null;
+                    /** Format: uuid */
+                    sessionId: string | null;
+                    createdAt: string;
+                    actor: {
+                        /** Format: uuid */
+                        id: string;
+                        email: string;
+                        displayName: string;
+                    };
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        AuditArchiveListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                year: number;
+                month: number;
+                fileUrl: string;
+                rowCount: number;
+                archivedAt: string;
+            }[];
+        };
+        HealthSummaryResponse: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        SlowQueriesResponse: {
+            data: unknown[];
+        };
+        IntegrationCheckResponse: {
+            data: {
+                ok: boolean;
+                latencyMs: number;
+                message?: string;
+            };
+        };
+        IapFailuresResponse: {
+            data: {
+                apple: number;
+                google: number;
+                total: number;
+                details: unknown[];
+            };
+        };
+        QuestionAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                    difficulty: string;
+                    status: string;
+                    generationSource: string;
+                    /** Format: uuid */
+                    moduleId: string;
+                    /** Format: uuid */
+                    subjectId: string;
+                    /** Format: uuid */
+                    topicId: string;
+                    createdAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        QuestionUploadImageResponse: {
+            data: {
+                url: string;
+            };
+        };
+        BulkImportDto: {
+            /** Format: uuid */
+            moduleId: string;
+            csv: string;
+            selectedRows?: number[];
+        };
+        QuestionBulkPreviewResponse: {
+            data: {
+                total: number;
+                validCount: number;
+                errors: {
+                    row: number;
+                    message: string;
+                }[];
+                rows: {
+                    row: number;
+                    valid: boolean;
+                    error: string | null;
+                    subjectId: string;
+                    topicId: string;
+                    text: string;
+                    options: unknown;
+                    correct: string;
+                    difficulty: string;
+                    explanation: string;
+                }[];
+            };
+        };
+        QuestionBulkImportResponse: {
+            data: {
+                inserted: number;
+                errors: {
+                    row: number;
+                    message: string;
+                }[];
+            };
+        };
+        BulkStatusDto: {
+            ids: string[];
+            /** @enum {string} */
+            status: "draft" | "review" | "active" | "inactive";
+        };
+        QuestionBulkStatusResponse: {
+            data: {
+                updated: number;
+            };
+        };
+        BulkIdsDto: {
+            ids: string[];
+        };
+        QuestionBulkDeleteResponse: {
+            data: {
+                deleted: number;
+                skipped: number;
+            };
+        };
+        AiGenerateDto: {
+            /** Format: uuid */
+            moduleId: string;
+            /** Format: uuid */
+            subjectId: string;
+            /** Format: uuid */
+            topicId: string;
+            /** @enum {string} */
+            difficulty: "easy" | "medium" | "hard";
+            count: number;
+        };
+        QuestionAiGeneratedResponse: {
+            data: {
+                created: number;
+            };
+        };
+        QuestionAdminDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                /** Format: uuid */
+                subjectId: string;
+                /** Format: uuid */
+                topicId: string;
+                text: string;
+                options: unknown;
+                correctOptionId: string;
+                explanation: string | null;
+                difficulty: string;
+                status: string;
+                generationSource: string;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                reviewedBy: string | null;
+                reviewedAt: string | null;
+                version: number;
+                createdAt: string;
+                module: {
+                    shortName: string;
+                    country: string;
+                };
+                subject: {
+                    name: string;
+                };
+                topic: {
+                    name: string;
+                };
+            };
+        };
+        CreateQuestionDto: {
+            /** Format: uuid */
+            moduleId: string;
+            /** Format: uuid */
+            subjectId: string;
+            /** Format: uuid */
+            topicId: string;
+            text: string;
+            options: {
+                id: string;
+                text: string;
+            }[];
+            correctOptionId: string;
+            explanation?: string;
+            /** @enum {string} */
+            difficulty: "easy" | "medium" | "hard";
+        };
+        QuestionAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                /** Format: uuid */
+                subjectId: string;
+                /** Format: uuid */
+                topicId: string;
+                text: string;
+                options: unknown;
+                correctOptionId: string;
+                explanation: string | null;
+                difficulty: string;
+                status: string;
+                generationSource: string;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                reviewedBy: string | null;
+                reviewedAt: string | null;
+                version: number;
+                createdAt: string;
+            };
+        };
+        UpdateQuestionDto: {
+            text?: string;
+            options?: {
+                id: string;
+                text: string;
+            }[];
+            correctOptionId?: string;
+            explanation?: string | null;
+            /** @enum {string} */
+            difficulty?: "easy" | "medium" | "hard";
+        };
+        ModuleAdminListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string;
+                examType: string;
+                shortName: string;
+                fullName: string;
+                isActive: boolean;
+                version: string;
+                hasAdmissionCutoffs: boolean;
+                updatedAt: string;
+            }[];
+        };
+        ModuleTreeResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string;
+                shortName: string;
+                fullName: string;
+                isActive: boolean;
+                questionCount: number;
+                subjects: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    order: number;
+                    questionCount: number;
+                    topics: {
+                        /** Format: uuid */
+                        id: string;
+                        name: string;
+                        order: number;
+                        examWeight: string | null;
+                        questionCount: number;
+                    }[];
+                }[];
+            }[];
+        };
+        CreateModuleDto: {
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            examType: string;
+            shortName: string;
+            fullName: string;
+            version: string;
+            /** @default false */
+            hasAdmissionCutoffs: boolean;
+        };
+        ModuleAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string;
+                examType: string;
+                shortName: string;
+                fullName: string;
+                isActive: boolean;
+                version: string;
+                hasAdmissionCutoffs: boolean;
+                updatedAt: string;
+            };
+        };
+        UpdateModuleDto: {
+            shortName?: string;
+            fullName?: string;
+            version?: string;
+            /** @default false */
+            hasAdmissionCutoffs: boolean;
+        };
+        DuplicateModuleDto: {
+            /** @enum {string} */
+            targetCountry: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+        };
+        CreateSubjectDto: {
+            /** Format: uuid */
+            moduleId: string;
+            name: string;
+            shortName: string;
+            colorHex: string;
+            region?: string | null;
+        };
+        SubjectAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                name: string;
+                shortName: string;
+                order: number;
+                colorHex: string;
+                region: string | null;
+            };
+        };
+        ReorderDto: {
+            /** Format: uuid */
+            parentId: string;
+            orderedIds: string[];
+        };
+        SubjectsReorderedResponse: {
+            data: {
+                reordered: number;
+            };
+        };
+        UpdateSubjectDto: {
+            name?: string;
+            shortName?: string;
+            colorHex?: string;
+            region?: string | null;
+        };
+        CreateTopicDto: {
+            /** Format: uuid */
+            subjectId: string;
+            name: string;
+            examWeight?: number | null;
+        };
+        TopicAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                subjectId: string;
+                /** Format: uuid */
+                moduleId: string;
+                name: string;
+                order: number;
+                examWeight: string | null;
+            };
+        };
+        TopicsReorderedResponse: {
+            data: {
+                reordered: number;
+            };
+        };
+        UpdateTopicDto: {
+            name?: string;
+            examWeight?: number | null;
+        };
+        NewsAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    country: string;
+                    category: string;
+                    /** Format: uuid */
+                    moduleId: string | null;
+                    title: string;
+                    summary: string;
+                    body: string;
+                    imageUrl: string | null;
+                    status: string;
+                    /** Format: uuid */
+                    createdBy: string | null;
+                    /** Format: uuid */
+                    publishedBy: string | null;
+                    publishedAt: string;
+                    createdAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        NewsAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string;
+                category: string;
+                /** Format: uuid */
+                moduleId: string | null;
+                title: string;
+                summary: string;
+                body: string;
+                imageUrl: string | null;
+                status: string;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                publishedBy: string | null;
+                publishedAt: string;
+                createdAt: string;
+            };
+        };
+        NewsBulkPublishedResponse: {
+            data: {
+                published: number;
+            };
+        };
+        NewsBulkDeletedResponse: {
+            data: {
+                deleted: number;
+            };
+        };
+        CreateNewsDto: {
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            /**
+             * @default module
+             * @enum {string}
+             */
+            category: "module" | "education";
+            /** Format: uuid */
+            moduleId?: string | null;
+            title: string;
+            summary: string;
+            body: string;
+            /** Format: uri */
+            imageUrl?: string | null;
+            /**
+             * @default draft
+             * @enum {string}
+             */
+            status: "draft" | "scheduled" | "published";
+            /** Format: date-time */
+            publishedAt?: string;
+        };
+        NewsUploadImageResponse: {
+            data: {
+                url: string;
+            };
+        };
+        UpdateNewsDto: {
+            title?: string;
+            summary?: string;
+            body?: string;
+            /** Format: uri */
+            imageUrl?: string | null;
+        };
+        UploadCutoffsDto: {
+            /** Format: uuid */
+            moduleId: string;
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            year: number;
+            csv: string;
+        };
+        CutoffUploadResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                country: string;
+                year: number;
+                status: string;
+                blobUrl: string;
+                /** Format: uuid */
+                uploadedBy: string;
+                /** Format: uuid */
+                reviewedBy: string | null;
+                reviewedAt: string | null;
+                rejectionReason: string | null;
+                rowsToInsert: unknown;
+                diffSummary: unknown;
+                createdAt: string;
+            };
+        };
+        CutoffUploadListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                country: string;
+                year: number;
+                status: string;
+                blobUrl: string;
+                /** Format: uuid */
+                uploadedBy: string;
+                /** Format: uuid */
+                reviewedBy: string | null;
+                reviewedAt: string | null;
+                rejectionReason: string | null;
+                rowsToInsert: unknown;
+                diffSummary: unknown;
+                createdAt: string;
+                module: {
+                    shortName: string;
+                };
+            }[];
+        };
+        CutoffUploadDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                country: string;
+                year: number;
+                status: string;
+                blobUrl: string;
+                /** Format: uuid */
+                uploadedBy: string;
+                /** Format: uuid */
+                reviewedBy: string | null;
+                reviewedAt: string | null;
+                rejectionReason: string | null;
+                rowsToInsert: unknown;
+                diffSummary: unknown;
+                createdAt: string;
+                currentCutoffs: {
+                    university: string;
+                    faculty: string | null;
+                    career: string;
+                    campus: string | null;
+                    cutoffScore: number;
+                }[];
+            };
+        };
+        RejectDto: {
+            reason: string;
+        };
+        CutoffUploadDeletedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+            };
+        };
+        AiPromptListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                country: string | null;
+                description: string;
+                /** Format: uuid */
+                activeVersionId: string | null;
+                createdAt: string;
+                updatedAt: string;
+                _count: {
+                    versions: number;
+                };
+            }[];
+        };
+        AiPromptDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                country: string | null;
+                description: string;
+                /** Format: uuid */
+                activeVersionId: string | null;
+                createdAt: string;
+                updatedAt: string;
+                versions: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    promptId: string;
+                    version: number;
+                    systemText: string;
+                    variables: unknown;
+                    note: string | null;
+                    /** Format: uuid */
+                    createdBy: string | null;
+                    createdAt: string;
+                }[];
+            };
+        };
+        UpsertPromptDto: {
+            key: string;
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            description: string;
+        };
+        AiPromptResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                country: string | null;
+                description: string;
+                /** Format: uuid */
+                activeVersionId: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        PlaygroundDto: {
+            systemText: string;
+            userMessage: string;
+            /** @default {} */
+            variables: {
+                [key: string]: string;
+            };
+        };
+        PlaygroundRunResponse: {
+            data: {
+                output: string;
+                usage: {
+                    inputTokens: number;
+                    outputTokens: number;
+                } | null;
+            };
+        };
+        CreateVersionDto: {
+            systemText: string;
+            /** @default [] */
+            variables: string[];
+            note?: string;
+        };
+        AiPromptVersionResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                promptId: string;
+                version: number;
+                systemText: string;
+                variables: unknown;
+                note: string | null;
+                /** Format: uuid */
+                createdBy: string | null;
+                createdAt: string;
+            };
+        };
+        ActivateVersionDto: {
+            /** Format: uuid */
+            versionId: string;
+        };
+        CareerAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    moduleId: string;
+                    country: string;
+                    name: string;
+                    area: string | null;
+                    riasecCode: string;
+                    description: string | null;
+                    fieldOfWork: string | null;
+                    durationYears: number | null;
+                    employmentRate: string | null;
+                    avgSalaryMonthly: number | null;
+                    demandLevel: string | null;
+                    marketNote: string | null;
+                    olapYear: number | null;
+                    isActive: boolean;
+                    /** Format: uuid */
+                    createdBy: string | null;
+                    /** Format: uuid */
+                    updatedBy: string | null;
+                    updatedAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        CareerAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                country: string;
+                name: string;
+                area: string | null;
+                riasecCode: string;
+                description: string | null;
+                fieldOfWork: string | null;
+                durationYears: number | null;
+                employmentRate: string | null;
+                avgSalaryMonthly: number | null;
+                demandLevel: string | null;
+                marketNote: string | null;
+                olapYear: number | null;
+                isActive: boolean;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+            };
+        };
+        CreateCareerDto: {
+            /** Format: uuid */
+            moduleId: string;
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            name: string;
+            area?: string | null;
+            riasecCode: string;
+            description?: string | null;
+            fieldOfWork?: string | null;
+            durationYears?: number | null;
+            employmentRate?: number | null;
+            avgSalaryMonthly?: number | null;
+            /** @enum {string|null} */
+            demandLevel?: "alta" | "media" | "baja" | "saturada" | null;
+            marketNote?: string | null;
+            olapYear?: number | null;
+            /** @default true */
+            isActive: boolean;
+        };
+        UpdateCareerDto: {
+            /** Format: uuid */
+            moduleId?: string;
+            /** @enum {string} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            name?: string;
+            area?: string | null;
+            riasecCode?: string;
+            description?: string | null;
+            fieldOfWork?: string | null;
+            durationYears?: number | null;
+            employmentRate?: number | null;
+            avgSalaryMonthly?: number | null;
+            /** @enum {string|null} */
+            demandLevel?: "alta" | "media" | "baja" | "saturada" | null;
+            marketNote?: string | null;
+            olapYear?: number | null;
+            /** @default true */
+            isActive: boolean;
+        };
+        UploadCareersDto: {
+            /** Format: uuid */
+            moduleId: string;
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            csv: string;
+        };
+        CareerUploadResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                country: string;
+                status: string;
+                blobUrl: string;
+                /** Format: uuid */
+                uploadedBy: string;
+                /** Format: uuid */
+                reviewedBy: string | null;
+                reviewedAt: string | null;
+                rejectionReason: string | null;
+                rowsToApply: unknown;
+                diffSummary: unknown;
+                createdAt: string;
+            };
+        };
+        CareerUploadListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                country: string;
+                status: string;
+                blobUrl: string;
+                /** Format: uuid */
+                uploadedBy: string;
+                /** Format: uuid */
+                reviewedBy: string | null;
+                reviewedAt: string | null;
+                rejectionReason: string | null;
+                rowsToApply: unknown;
+                diffSummary: unknown;
+                createdAt: string;
+                module: {
+                    shortName: string;
+                };
+            }[];
+        };
+        CareerUploadDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                country: string;
+                status: string;
+                blobUrl: string;
+                /** Format: uuid */
+                uploadedBy: string;
+                /** Format: uuid */
+                reviewedBy: string | null;
+                reviewedAt: string | null;
+                rejectionReason: string | null;
+                rowsToApply: unknown;
+                diffSummary: unknown;
+                createdAt: string;
+                rowsToInsert: {
+                    [key: string]: unknown;
+                }[];
+                rowsToUpdate: {
+                    [key: string]: unknown;
+                }[];
+            };
+        };
+        RejectCareersDto: {
+            reason: string;
+        };
+        CareerUploadDeletedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+            };
+        };
+        VocationalItemListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                    dimension: string;
+                    order: number;
+                    isActive: boolean;
+                    updatedAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        CreateItemDto: {
+            text: string;
+            /** @enum {string} */
+            dimension: "R" | "I" | "A" | "S" | "E" | "C";
+            /** @default 0 */
+            order: number;
+            /** @default true */
+            isActive: boolean;
+        };
+        VocationalItemResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                text: string;
+                dimension: string;
+                order: number;
+                isActive: boolean;
+                updatedAt: string;
+            };
+        };
+        UpdateItemDto: {
+            text?: string;
+            /** @enum {string} */
+            dimension?: "R" | "I" | "A" | "S" | "E" | "C";
+            /** @default 0 */
+            order: number;
+            /** @default true */
+            isActive: boolean;
+        };
+        VocationalItemDeletedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+            };
+        };
+        RiasecTypeListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                dimension: string;
+                title: string;
+                summary: string;
+                description: string;
+                isActive: boolean;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+            }[];
+        };
+        UpdateRiasecTypeDto: {
+            title?: string;
+            summary?: string;
+            description?: string;
+            strengths?: string[];
+            isActive?: boolean;
+        };
+        RiasecTypeResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                dimension: string;
+                title: string;
+                summary: string;
+                description: string;
+                isActive: boolean;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+            };
+        };
+        ModerationReportListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    source: string;
+                    /** @enum {string} */
+                    target: "user_profile" | "duel_behavior";
+                    reason: string;
+                    /** @enum {string} */
+                    status: "open" | "in_review" | "dismissed" | "actioned" | "escalated";
+                    /** @enum {string} */
+                    severity: "low" | "medium" | "high" | "critical";
+                    detail: string | null;
+                    evidence: unknown;
+                    /** Format: uuid */
+                    duelId: string | null;
+                    resolutionAction: string | null;
+                    resolutionNote: string | null;
+                    /** Format: uuid */
+                    resolvedBy: string | null;
+                    resolvedAt: string | null;
+                    createdAt: string;
+                    reportedUser: {
+                        /** Format: uuid */
+                        id: string;
+                        displayName: string;
+                        email: string;
+                        country: string;
+                        accountStatus: string;
+                    };
+                    reporter: {
+                        /** Format: uuid */
+                        id: string;
+                        displayName: string;
+                    } | null;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        ModerationStatsResponse: {
+            data: {
+                open: number;
+                bySeverity: {
+                    [key: string]: number;
+                };
+            };
+        };
+        ModerationReportResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                source: string;
+                /** @enum {string} */
+                target: "user_profile" | "duel_behavior";
+                reason: string;
+                /** @enum {string} */
+                status: "open" | "in_review" | "dismissed" | "actioned" | "escalated";
+                /** @enum {string} */
+                severity: "low" | "medium" | "high" | "critical";
+                detail: string | null;
+                evidence: unknown;
+                /** Format: uuid */
+                duelId: string | null;
+                resolutionAction: string | null;
+                resolutionNote: string | null;
+                /** Format: uuid */
+                resolvedBy: string | null;
+                resolvedAt: string | null;
+                createdAt: string;
+                reportedUser: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                    email: string;
+                    country: string;
+                    accountStatus: string;
+                };
+                reporter: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                } | null;
+            };
+        };
+        ResolveReportDto: {
+            /** @enum {string} */
+            status: "in_review" | "dismissed" | "actioned" | "escalated";
+            resolutionAction?: string;
+            resolutionNote?: string;
+        };
+        ProhibitedWordListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                word: string;
+                /** @enum {string} */
+                severity: "low" | "medium" | "high" | "critical";
+                isActive: boolean;
+                /** Format: uuid */
+                createdBy: string | null;
+                createdAt: string;
+            }[];
+        };
+        CreateProhibitedWordDto: {
+            word: string;
+            /**
+             * @default medium
+             * @enum {string}
+             */
+            severity: "low" | "medium" | "high" | "critical";
+            /** @default true */
+            isActive: boolean;
+        };
+        ProhibitedWordResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                word: string;
+                /** @enum {string} */
+                severity: "low" | "medium" | "high" | "critical";
+                isActive: boolean;
+                /** Format: uuid */
+                createdBy: string | null;
+                createdAt: string;
+            };
+        };
+        UpdateProhibitedWordDto: {
+            word?: string;
+            /** @enum {string} */
+            severity?: "low" | "medium" | "high" | "critical";
+            isActive?: boolean;
+        };
+        ProhibitedWordDeletedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                deleted: boolean;
+            };
+        };
+        MessageSegmentListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                description: string | null;
+                filters: unknown;
+                lastCount: number;
+                lastCountAt: string | null;
+                /** Format: uuid */
+                createdBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            }[];
+        };
+        PreviewCountDto: {
+            filters: {
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                plan?: ("free" | "basico" | "plus" | "pro")[];
+                /** @enum {string} */
+                accountStatus?: "pending_parental" | "active" | "suspended";
+                lastActiveWithinDays?: number;
+            };
+        };
+        SegmentPreviewCountResponse: {
+            data: {
+                count: number;
+            };
+        };
+        MessageSegmentResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                description: string | null;
+                filters: unknown;
+                lastCount: number;
+                lastCountAt: string | null;
+                /** Format: uuid */
+                createdBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        CreateSegmentDto: {
+            name: string;
+            description?: string;
+            filters: {
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                plan?: ("free" | "basico" | "plus" | "pro")[];
+                /** @enum {string} */
+                accountStatus?: "pending_parental" | "active" | "suspended";
+                lastActiveWithinDays?: number;
+            };
+        };
+        UpdateSegmentDto: {
+            name?: string;
+            description?: string;
+            filters?: {
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                plan?: ("free" | "basico" | "plus" | "pro")[];
+                /** @enum {string} */
+                accountStatus?: "pending_parental" | "active" | "suspended";
+                lastActiveWithinDays?: number;
+            };
+        };
+        MessageSegmentDeletedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                deleted: boolean;
+            };
+        };
+        MessageTemplateListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                channel: string;
+                subject: string | null;
+                body: string;
+                isActive: boolean;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            }[];
+        };
+        MessageTemplateResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                channel: string;
+                subject: string | null;
+                body: string;
+                isActive: boolean;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        CreateTemplateDto: {
+            key: string;
+            /** @enum {string} */
+            channel: "email" | "push";
+            subject?: string;
+            body: string;
+            /** @default true */
+            isActive: boolean;
+        };
+        UpdateTemplateDto: {
+            subject?: string;
+            body?: string;
+            isActive?: boolean;
+        };
+        MessageTemplateDeletedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                deleted: boolean;
+            };
+        };
+        MessageCampaignListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    kind: string;
+                    channel: string;
+                    status: string;
+                    subject: string | null;
+                    body: string;
+                    headline: string | null;
+                    assetUrl: string | null;
+                    ctaLabel: string | null;
+                    ctaUrl: string | null;
+                    secondaryText: string | null;
+                    /** Format: uuid */
+                    targetUserId: string | null;
+                    /** Format: uuid */
+                    segmentId: string | null;
+                    estimatedCount: number;
+                    sentCount: number;
+                    failedCount: number;
+                    /** Format: uuid */
+                    createdBy: string;
+                    /** Format: uuid */
+                    approvedBy: string | null;
+                    approvedAt: string | null;
+                    sentAt: string | null;
+                    createdAt: string;
+                    updatedAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        MessageCampaignDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                kind: string;
+                channel: string;
+                status: string;
+                subject: string | null;
+                body: string;
+                headline: string | null;
+                assetUrl: string | null;
+                ctaLabel: string | null;
+                ctaUrl: string | null;
+                secondaryText: string | null;
+                /** Format: uuid */
+                targetUserId: string | null;
+                /** Format: uuid */
+                segmentId: string | null;
+                estimatedCount: number;
+                sentCount: number;
+                failedCount: number;
+                /** Format: uuid */
+                createdBy: string;
+                /** Format: uuid */
+                approvedBy: string | null;
+                approvedAt: string | null;
+                sentAt: string | null;
+                createdAt: string;
+                updatedAt: string;
+                segment: {
+                    name: string;
+                } | null;
+                targetUser: {
+                    displayName: string;
+                    email: string | null;
+                } | null;
+            };
+        };
+        CreateCampaignDto: {
+            /** @enum {string} */
+            kind: "direct" | "broadcast";
+            /** @enum {string} */
+            channel: "email" | "push";
+            subject?: string;
+            body: string;
+            /** Format: uuid */
+            targetUserId?: string;
+            /** Format: uuid */
+            segmentId?: string;
+            headline?: string;
+            /** Format: uri */
+            assetUrl?: string;
+            ctaLabel?: string;
+            /** Format: uri */
+            ctaUrl?: string;
+            secondaryText?: string;
+        };
+        MessageCampaignResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                kind: string;
+                channel: string;
+                status: string;
+                subject: string | null;
+                body: string;
+                headline: string | null;
+                assetUrl: string | null;
+                ctaLabel: string | null;
+                ctaUrl: string | null;
+                secondaryText: string | null;
+                /** Format: uuid */
+                targetUserId: string | null;
+                /** Format: uuid */
+                segmentId: string | null;
+                estimatedCount: number;
+                sentCount: number;
+                failedCount: number;
+                /** Format: uuid */
+                createdBy: string;
+                /** Format: uuid */
+                approvedBy: string | null;
+                approvedAt: string | null;
+                sentAt: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        UploadCampaignAssetDto: {
+            filename: string;
+            /** @enum {string} */
+            contentType: "image/png" | "image/jpeg" | "image/webp";
+            dataBase64: string;
+        };
+        CampaignUploadAssetResponse: {
+            data: {
+                url: string;
+            };
+        };
+        UpdateCampaignDto: {
+            /** @enum {string} */
+            channel?: "email" | "push";
+            subject?: string;
+            body?: string;
+            /** Format: uuid */
+            segmentId?: string;
+            headline?: string;
+            /** Format: uri */
+            assetUrl?: string;
+            ctaLabel?: string;
+            /** Format: uri */
+            ctaUrl?: string;
+            secondaryText?: string;
+        };
+        CampaignSendResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                status: string;
+            };
+        };
+        TxTemplateListResponse: {
+            data: {
+                key: string;
+                subject: string;
+                headline: string;
+                body: string;
+                ctaLabel: string;
+                secondary: string | null;
+                allowedVars: string[];
+            }[];
+        };
+        UpdateTxTemplateDto: {
+            subject: string;
+            headline: string;
+            body: string;
+            ctaLabel: string;
+            secondary?: string | null;
+        };
+        TxTemplateResponse: {
+            data: {
+                key: string;
+                subject: string;
+                headline: string;
+                body: string;
+                ctaLabel: string;
+                secondary: string | null;
+                allowedVars: string[];
+                /** Format: uuid */
+                updatedBy: string;
+            };
+        };
+        BotTemplateListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                difficulty: string;
+                name: string;
+                accuracyMin: number;
+                accuracyMax: number;
+                responseTimeMsMin: number;
+                responseTimeMsMax: number;
+                isActive: boolean;
+                updatedAt: string;
+            }[];
+        };
+        UpdateBotTemplateDto: {
+            name?: string;
+            accuracyMin?: number;
+            accuracyMax?: number;
+            responseTimeMsMin?: number;
+            responseTimeMsMax?: number;
+            isActive?: boolean;
+        };
+        BotTemplateResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                difficulty: string;
+                name: string;
+                accuracyMin: number;
+                accuracyMax: number;
+                responseTimeMsMin: number;
+                responseTimeMsMax: number;
+                isActive: boolean;
+                updatedAt: string;
+            };
+        };
+        BotAvatarListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                url: string;
+                isActive: boolean;
+            }[];
+        };
+        UploadAssetDto: {
+            filename: string;
+            /** @enum {string} */
+            contentType: "image/png" | "image/jpeg" | "image/webp" | "image/avif";
+            dataBase64: string;
+        };
+        BotAvatarUploadResponse: {
+            data: {
+                url: string;
+            };
+        };
+        CreateBotAvatarDto: {
+            /** Format: uri */
+            url: string;
+        };
+        BotAvatarResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                url: string;
+                isActive: boolean;
+            };
+        };
+        ToggleDto: {
+            isActive: boolean;
+        };
+        BotNameListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                country: string;
+                isActive: boolean;
+            }[];
+        };
+        CreateBotNameDto: {
+            name: string;
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+        };
+        BotNameResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                country: string;
+                isActive: boolean;
+            };
+        };
+        BotAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                    country: string;
+                    accountStatus: string;
+                    createdAt: string;
+                    botConfig: {
+                        accuracy: number;
+                        isActive: boolean;
+                        template: {
+                            difficulty: string;
+                            name: string;
+                        };
+                    } | null;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        BulkBotsDto: {
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            count: number;
+            /** Format: uuid */
+            templateId: string;
+        };
+        BotBulkResponse: {
+            data: {
+                created: number;
+            };
+        };
+        CreateBotDto: {
+            displayName: string;
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            /** Format: uuid */
+            templateId: string;
+        };
+        BotCreatedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+            };
+        };
+        UpdateBotDto: {
+            /** Format: uuid */
+            templateId?: string;
+            responseTimeMsMin?: number | null;
+            responseTimeMsMax?: number | null;
+            isActive?: boolean;
+        };
+        BotUpdatedResponse: {
+            data: {
+                updated: boolean;
+            };
+        };
+        BotMetricsResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string;
+                date: string;
+                botWins: number;
+                total: number;
+                winRate: number;
+                alarmed: boolean;
+            }[];
+        };
+        AchievementUploadIconResponse: {
+            data: {
+                url: string;
+            };
+        };
+        AchievementAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    code: string;
+                    name: string;
+                    description: string;
+                    tier: string;
+                    kokosReward: number;
+                    iconUrl: string;
+                    condition: {
+                        [key: string]: unknown;
+                    };
+                    isOneTime: boolean;
+                    isActive: boolean;
+                    /** Format: uuid */
+                    updatedBy: string | null;
+                    updatedAt: string;
+                    unlockedBy: number;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        AchievementAdminDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+                description: string;
+                tier: string;
+                kokosReward: number;
+                iconUrl: string;
+                condition: {
+                    [key: string]: unknown;
+                };
+                isOneTime: boolean;
+                isActive: boolean;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+                unlockedBy: number;
+            };
+        };
+        AchievementRegrantPreviewResponse: {
+            data: {
+                /** Format: uuid */
+                achievementId: string;
+                kokosPerUser: number;
+                affectedUsers: number;
+                totalKokos: number;
+            };
+        };
+        CreateAchievementDto: {
+            code: string;
+            name: string;
+            description: string;
+            /** @enum {string} */
+            tier: "common" | "uncommon" | "rare" | "epic";
+            kokosReward: number;
+            iconUrl: string;
+            condition: {
+                /** @enum {string} */
+                type: "counter_gte";
+                /** @enum {string} */
+                field: "streak_days" | "goal_streak_days";
+                value: number;
+            } | {
+                /** @enum {string} */
+                type: "count_gte";
+                /** @enum {string} */
+                entity: "correct_answers" | "simulacros_completed" | "practice_sessions_completed" | "quick_sessions_completed" | "duels_won" | "arenas_won" | "videos_watched";
+                value: number;
+            } | {
+                /** @enum {string} */
+                type: "event_once";
+                event: string;
+            } | {
+                /** @enum {string} */
+                type: "combo_reached";
+                value: number;
+            } | {
+                /** @enum {string} */
+                type: "league_reached";
+                /** @enum {string} */
+                level: "aprendiz" | "avanzado" | "experto" | "genio";
+            } | {
+                /** @enum {string} */
+                type: "manual";
+            };
+            /** @default true */
+            isOneTime: boolean;
+            /** @default true */
+            isActive: boolean;
+        };
+        AchievementAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+                description: string;
+                tier: string;
+                kokosReward: number;
+                iconUrl: string;
+                condition: {
+                    [key: string]: unknown;
+                };
+                isOneTime: boolean;
+                isActive: boolean;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+            };
+        };
+        UpdateAchievementDto: {
+            name?: string;
+            description?: string;
+            iconUrl?: string;
+            isActive?: boolean;
+            /** @enum {string} */
+            tier?: "common" | "uncommon" | "rare" | "epic";
+            kokosReward?: number;
+            condition?: {
+                /** @enum {string} */
+                type: "counter_gte";
+                /** @enum {string} */
+                field: "streak_days" | "goal_streak_days";
+                value: number;
+            } | {
+                /** @enum {string} */
+                type: "count_gte";
+                /** @enum {string} */
+                entity: "correct_answers" | "simulacros_completed" | "practice_sessions_completed" | "quick_sessions_completed" | "duels_won" | "arenas_won" | "videos_watched";
+                value: number;
+            } | {
+                /** @enum {string} */
+                type: "event_once";
+                event: string;
+            } | {
+                /** @enum {string} */
+                type: "combo_reached";
+                value: number;
+            } | {
+                /** @enum {string} */
+                type: "league_reached";
+                /** @enum {string} */
+                level: "aprendiz" | "avanzado" | "experto" | "genio";
+            } | {
+                /** @enum {string} */
+                type: "manual";
+            };
+            isOneTime?: boolean;
+        };
+        AchievementRegrantResponse: {
+            data: {
+                /** Format: uuid */
+                achievementId: string;
+                granted: number;
+                kokosPerUser: number;
+                totalKokos: number;
+                /** Format: uuid */
+                actorId: string;
+            };
+        };
+        MissionTemplateListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** @enum {string} */
+                    type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                    /** @enum {string} */
+                    cadence: "daily" | "weekly";
+                    title: string;
+                    description: string;
+                    target: number;
+                    xpReward: number;
+                    kokosReward: number;
+                    kolonesReward: number;
+                    country: string | null;
+                    isActive: boolean;
+                    /** Format: uuid */
+                    createdBy: string | null;
+                    /** Format: uuid */
+                    updatedBy: string | null;
+                    createdAt: string;
+                    updatedAt: string;
+                    timesAssigned: number;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        MissionTemplateResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                /** @enum {string} */
+                cadence: "daily" | "weekly";
+                title: string;
+                description: string;
+                target: number;
+                xpReward: number;
+                kokosReward: number;
+                kolonesReward: number;
+                country: string | null;
+                isActive: boolean;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        CreateMissionTemplateDto: {
+            /** @enum {string} */
+            type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+            /**
+             * @default daily
+             * @enum {string}
+             */
+            cadence: "daily" | "weekly";
+            title: string;
+            description: string;
+            target: number;
+            /** @default 0 */
+            xpReward: number;
+            /** @default 0 */
+            kokosReward: number;
+            /** @default 0 */
+            kolonesReward: number;
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            /** @default true */
+            isActive: boolean;
+        };
+        UpdateMissionTemplateDto: {
+            title?: string;
+            description?: string;
+            target?: number;
+            xpReward?: number;
+            kokosReward?: number;
+            kolonesReward?: number;
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            isActive?: boolean;
+        };
+        MissionRefreshConfigResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string | null;
+                kokosCost: number;
+                dailyLimit: number;
+                videoLimit: number;
+                updatedAt: string;
+            } | null;
+        };
+        RefreshConfigDto: {
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            kokosCost: number;
+            dailyLimit: number;
+            videoLimit: number;
+        };
+        UserMissionListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                userId: string;
+                /** Format: uuid */
+                moduleId: string;
+                date: string;
+                /** @enum {string} */
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                /** @enum {string} */
+                cadence: "daily" | "weekly";
+                /** Format: uuid */
+                targetSubjectId: string | null;
+                targetCount: number;
+                progress: number;
+                completed: boolean;
+                completedAt: string | null;
+                kolonesReward: number;
+                xpReward: number;
+                kokosReward: number;
+                /** Format: uuid */
+                templateId: string | null;
+            }[];
+        };
+        MissionOkResponse: {
+            data: {
+                ok: boolean;
+            };
+        };
+        UserMissionResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                userId: string;
+                /** Format: uuid */
+                moduleId: string;
+                date: string;
+                /** @enum {string} */
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                /** @enum {string} */
+                cadence: "daily" | "weekly";
+                /** Format: uuid */
+                targetSubjectId: string | null;
+                targetCount: number;
+                progress: number;
+                completed: boolean;
+                completedAt: string | null;
+                kolonesReward: number;
+                xpReward: number;
+                kokosReward: number;
+                /** Format: uuid */
+                templateId: string | null;
+            };
+        };
+        StoreItemAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    description: string;
+                    /** @enum {string} */
+                    category: "cosmetic" | "functional";
+                    itemType: string;
+                    /** @enum {string} */
+                    tier: "basico" | "estandar" | "premium";
+                    kokosPrice: number;
+                    requiresPlan: string | null;
+                    country: string | null;
+                    previewUrl: string;
+                    assetUrl: string | null;
+                    releaseAt: string | null;
+                    expiresAt: string | null;
+                    isActive: boolean;
+                    purchasable: boolean;
+                    /** Format: uuid */
+                    createdBy: string | null;
+                    /** Format: uuid */
+                    updatedBy: string | null;
+                    updatedAt: string;
+                    ownedBy: number;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        UploadStoreAssetDto: {
+            filename: string;
+            /** @enum {string} */
+            contentType: "image/png" | "image/jpeg" | "image/webp" | "image/avif";
+            dataBase64: string;
+        };
+        StoreUploadAssetResponse: {
+            data: {
+                url: string;
+            };
+        };
+        AdjustInventoryDto: {
+            /** Format: uuid */
+            itemId: string;
+            /** @enum {string} */
+            action: "grant" | "revoke";
+            reason: string;
+        };
+        InventoryAdjustedResponse: {
+            data: {
+                /** @enum {boolean} */
+                removed: true;
+            } | {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                userId: string;
+                /** Format: uuid */
+                itemId: string;
+                source: string;
+                quantity: number;
+                isEquipped: boolean;
+                acquiredAt: string;
+                updatedAt: string;
+            };
+        };
+        StoreItemAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                description: string;
+                /** @enum {string} */
+                category: "cosmetic" | "functional";
+                itemType: string;
+                /** @enum {string} */
+                tier: "basico" | "estandar" | "premium";
+                kokosPrice: number;
+                requiresPlan: string | null;
+                country: string | null;
+                previewUrl: string;
+                assetUrl: string | null;
+                releaseAt: string | null;
+                expiresAt: string | null;
+                isActive: boolean;
+                purchasable: boolean;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+                ownedBy: number;
+            };
+        };
+        CreateStoreItemDto: {
+            name: string;
+            description: string;
+            /** @enum {string} */
+            category: "cosmetic" | "functional";
+            /** @enum {string} */
+            itemType: "frame" | "avatar" | "title" | "app_icon" | "streak_protector" | "second_chance" | "insignia";
+            /** @enum {string} */
+            tier: "basico" | "estandar" | "premium";
+            kokosPrice: number;
+            /** @enum {string|null} */
+            requiresPlan?: "basico" | "plus" | "pro" | null;
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            previewUrl: string;
+            assetUrl?: string | null;
+            /** Format: date-time */
+            releaseAt?: string | null;
+            /** Format: date-time */
+            expiresAt?: string | null;
+            /** @default true */
+            isActive: boolean;
+            /** @default true */
+            purchasable: boolean;
+        };
+        UpdateStoreItemDto: {
+            name?: string;
+            description?: string;
+            /** @enum {string} */
+            itemType?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+            /** @enum {string} */
+            tier?: "basico" | "estandar" | "premium";
+            kokosPrice?: number;
+            /** @enum {string|null} */
+            requiresPlan?: "basico" | "plus" | "pro" | null;
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            previewUrl?: string;
+            assetUrl?: string | null;
+            /** Format: date-time */
+            releaseAt?: string | null;
+            /** Format: date-time */
+            expiresAt?: string | null;
+            isActive?: boolean;
+            purchasable?: boolean;
+        };
+        CouponAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    sponsorId: string;
+                    title: string;
+                    description: string;
+                    /** @enum {string} */
+                    tier: "basico" | "estandar" | "premium";
+                    kolonesCost: number;
+                    country: string;
+                    /** Format: uuid */
+                    moduleId: string | null;
+                    isProExclusive: boolean;
+                    category: string;
+                    conditions: string[];
+                    validDaysAfterRedeem: number;
+                    stockTotal: number | null;
+                    stockRemaining: number | null;
+                    validUntil: string | null;
+                    isActive: boolean;
+                    codePrefix: string | null;
+                    codeSuffixLen: number;
+                    limitPerUser: number | null;
+                    /** Format: uuid */
+                    createdBy: string | null;
+                    /** Format: uuid */
+                    updatedBy: string | null;
+                    updatedAt: string;
+                    sponsorName: string;
+                    redeemedCount: number;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        CouponStatsResponse: {
+            data: {
+                /** Format: uuid */
+                couponId: string;
+                redeemed: number;
+                used: number;
+                redemptionRate: number;
+                kolonesSpent: number;
+            };
+        };
+        UserCouponAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    code: string;
+                    /** Format: uuid */
+                    userId: string;
+                    redeemedAt: string;
+                    usedAt: string | null;
+                    kolonesSpent: number;
+                    regeneratedAt: string | null;
+                    invalidatedAt: string | null;
+                    invalidateReason: string | null;
+                    userDisplayName: string;
+                    userEmail: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        CouponAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                sponsorId: string;
+                title: string;
+                description: string;
+                /** @enum {string} */
+                tier: "basico" | "estandar" | "premium";
+                kolonesCost: number;
+                country: string;
+                /** Format: uuid */
+                moduleId: string | null;
+                isProExclusive: boolean;
+                category: string;
+                conditions: string[];
+                validDaysAfterRedeem: number;
+                stockTotal: number | null;
+                stockRemaining: number | null;
+                validUntil: string | null;
+                isActive: boolean;
+                codePrefix: string | null;
+                codeSuffixLen: number;
+                limitPerUser: number | null;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+            };
+        };
+        CreateCouponDto: {
+            /** Format: uuid */
+            sponsorId: string;
+            title: string;
+            description: string;
+            /** @enum {string} */
+            tier: "basico" | "estandar" | "premium";
+            kolonesCost: number;
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            /** Format: uuid */
+            moduleId?: string | null;
+            /** @default false */
+            isProExclusive: boolean;
+            /** @enum {string} */
+            category: "academico" | "libreria" | "restaurante" | "tecnologia" | "autoescuela" | "universidad" | "transporte";
+            /** @default [] */
+            conditions: string[];
+            /** @default 30 */
+            validDaysAfterRedeem: number;
+            stockTotal?: number | null;
+            /** Format: date-time */
+            validUntil?: string | null;
+            codePrefix?: string | null;
+            /** @default 6 */
+            codeSuffixLen: number;
+            limitPerUser?: number | null;
+        };
+        UpdateCouponDto: {
+            /** Format: uuid */
+            sponsorId?: string;
+            title?: string;
+            description?: string;
+            /** @enum {string} */
+            tier?: "basico" | "estandar" | "premium";
+            kolonesCost?: number;
+            /** @enum {string} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            /** Format: uuid */
+            moduleId?: string | null;
+            isProExclusive?: boolean;
+            /** @enum {string} */
+            category?: "academico" | "libreria" | "restaurante" | "tecnologia" | "autoescuela" | "universidad" | "transporte";
+            conditions?: string[];
+            validDaysAfterRedeem?: number;
+            stockTotal?: number | null;
+            /** Format: date-time */
+            validUntil?: string | null;
+            codePrefix?: string | null;
+            codeSuffixLen?: number;
+            limitPerUser?: number | null;
+            isActive?: boolean;
+        };
+        SetCouponBranchesDto: {
+            branches: {
+                /** Format: uuid */
+                branchId: string;
+                stockRemaining: number | null;
+            }[];
+        };
+        CouponBranchesSetResponse: {
+            data: {
+                count: number;
+            };
+        };
+        UserCouponActionResponse: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        InvalidateUserCouponDto: {
+            reason: string;
+        };
+        RaffleAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    country: string;
+                    /** Format: uuid */
+                    moduleId: string;
+                    cycleYear: number;
+                    cycleMonth: number;
+                    name: string;
+                    description: string;
+                    prizeDescription: string;
+                    /** Format: uuid */
+                    sponsorId: string | null;
+                    prizesCount: number;
+                    prizeImageUrl: string | null;
+                    status: string;
+                    drawAt: string;
+                    drawnAt: string | null;
+                    awardedAt: string | null;
+                    finalizedAt: string | null;
+                    reversibleUntil: string | null;
+                    unresponsiveDays: number;
+                    createdAt: string;
+                    moduleShortName: string;
+                    winnersCount: number;
+                    entriesCount: number;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        UploadPrizeAssetDto: {
+            filename: string;
+            /** @enum {string} */
+            contentType: "image/png" | "image/jpeg" | "image/webp" | "image/avif";
+            dataBase64: string;
+        };
+        RaffleUploadResponse: {
+            data: {
+                url: string;
+            };
+        };
+        RaffleAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string;
+                /** Format: uuid */
+                moduleId: string;
+                cycleYear: number;
+                cycleMonth: number;
+                name: string;
+                description: string;
+                prizeDescription: string;
+                /** Format: uuid */
+                sponsorId: string | null;
+                prizesCount: number;
+                prizeImageUrl: string | null;
+                status: string;
+                drawAt: string;
+                drawnAt: string | null;
+                awardedAt: string | null;
+                finalizedAt: string | null;
+                reversibleUntil: string | null;
+                unresponsiveDays: number;
+                createdAt: string;
+                moduleShortName: string;
+            };
+        };
+        CompleteRaffleDto: {
+            name?: string;
+            description?: string;
+            prizeDescription: string;
+            prizeImageUrl?: string | null;
+            /** Format: uuid */
+            sponsorId?: string | null;
+            prizesCount: number;
+        };
+        RaffleActionResponse: {
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        UpdateWinnerDto: {
+            /** @enum {string} */
+            deliveryStatus?: "notified" | "contacted" | "delivered" | "unresponsive";
+            contactInfo?: string | null;
+            prizeNotes?: string | null;
+            /** Format: date-time */
+            prizeDeliveredAt?: string | null;
+        };
+        RaffleWinnerResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                raffleId: string;
+                /** Format: uuid */
+                userId: string;
+                position: number;
+                awardedAt: string;
+                deliveryStatus: string;
+                contactInfo: string | null;
+                prizeDeliveredAt: string | null;
+                prizeNotes: string | null;
+                isReplacement: boolean;
+            };
+        };
+        SponsorAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    logoUrl: string | null;
+                    brandColor: string | null;
+                    website: string | null;
+                    country: string | null;
+                    isActive: boolean;
+                    pipelineStatus: string;
+                    currency: string;
+                    appliesIva: boolean;
+                    contactName: string | null;
+                    contactEmail: string | null;
+                    contactPhone: string | null;
+                    legalName: string | null;
+                    taxId: string | null;
+                    billingEmail: string | null;
+                    contractStartsAt: string | null;
+                    contractEndsAt: string | null;
+                    /** Format: uuid */
+                    createdBy: string | null;
+                    /** Format: uuid */
+                    updatedBy: string | null;
+                    createdAt: string;
+                    updatedAt: string;
+                    usage: {
+                        banners: number;
+                        coupons: number;
+                        raffles: number;
+                    };
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        UploadSponsorLogoDto: {
+            filename: string;
+            /** @enum {string} */
+            contentType: "image/png" | "image/jpeg" | "image/webp" | "image/avif" | "image/svg+xml";
+            dataBase64: string;
+        };
+        UploadUrlResponse: {
+            data: {
+                url: string;
+            };
+        };
+        SponsorAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                logoUrl: string | null;
+                brandColor: string | null;
+                website: string | null;
+                country: string | null;
+                isActive: boolean;
+                pipelineStatus: string;
+                currency: string;
+                appliesIva: boolean;
+                contactName: string | null;
+                contactEmail: string | null;
+                contactPhone: string | null;
+                legalName: string | null;
+                taxId: string | null;
+                billingEmail: string | null;
+                contractStartsAt: string | null;
+                contractEndsAt: string | null;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+                _count?: {
+                    banners: number;
+                    coupons: number;
+                    raffles: number;
+                    videos: number;
+                };
+            };
+        };
+        CreateSponsorDto: {
+            name: string;
+            logoUrl?: string | null;
+            brandColor?: string | null;
+            /** Format: uri */
+            website?: string | null;
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            /** @default true */
+            isActive: boolean;
+            /** @enum {string} */
+            pipelineStatus?: "prospect" | "active" | "lost";
+            /** @enum {string} */
+            currency?: "CRC" | "USD";
+            appliesIva?: boolean;
+            contactName?: string | null;
+            /** Format: email */
+            contactEmail?: string | null;
+            contactPhone?: string | null;
+            legalName?: string | null;
+            taxId?: string | null;
+            /** Format: email */
+            billingEmail?: string | null;
+            /** Format: date-time */
+            contractStartsAt?: string | null;
+            /** Format: date-time */
+            contractEndsAt?: string | null;
+        };
+        UpdateSponsorDto: {
+            name?: string;
+            logoUrl?: string | null;
+            brandColor?: string | null;
+            /** Format: uri */
+            website?: string | null;
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            isActive?: boolean;
+            /** @enum {string} */
+            pipelineStatus?: "prospect" | "active" | "lost";
+            /** @enum {string} */
+            currency?: "CRC" | "USD";
+            appliesIva?: boolean;
+            contactName?: string | null;
+            /** Format: email */
+            contactEmail?: string | null;
+            contactPhone?: string | null;
+            legalName?: string | null;
+            taxId?: string | null;
+            /** Format: email */
+            billingEmail?: string | null;
+            /** Format: date-time */
+            contractStartsAt?: string | null;
+            /** Format: date-time */
+            contractEndsAt?: string | null;
+        };
+        BranchListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                sponsorId: string;
+                label: string;
+                latitude: number;
+                longitude: number;
+                country: string;
+                address: string | null;
+                isActive: boolean;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                _count: {
+                    couponBranches: number;
+                };
+            }[];
+        };
+        CreateBranchDto: {
+            label: string;
+            latitude: number;
+            longitude: number;
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            address?: string | null;
+            isActive?: boolean;
+        };
+        BranchResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                sponsorId: string;
+                label: string;
+                latitude: number;
+                longitude: number;
+                country: string;
+                address: string | null;
+                isActive: boolean;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+            };
+        };
+        UpdateBranchDto: {
+            label?: string;
+            latitude?: number;
+            longitude?: number;
+            /** @enum {string} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            address?: string | null;
+            isActive?: boolean;
+        };
+        BranchDeletedResponse: {
+            data: {
+                deleted: boolean;
+            };
+        };
+        ReferralMilestoneListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                threshold: number;
+                reward: {
+                    [key: string]: unknown;
+                };
+                label: string | null;
+                isActive: boolean;
+                sortOrder: number;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+                grantsCount: number;
+            }[];
+        };
+        ReferralStatsAdminResponse: {
+            data: {
+                referrersCount: number;
+                qualifiedReferrals: number;
+                top: {
+                    /** Format: uuid */
+                    referrerId: string | null;
+                    displayName: string | null;
+                    qualifiedCount: number;
+                }[];
+            };
+        };
+        CreateMilestoneDto: {
+            threshold: number;
+            label?: string | null;
+            isActive?: boolean;
+            reward: {
+                kokos?: number;
+                kolones?: number;
+                /** Format: uuid */
+                itemId?: string;
+            };
+        };
+        ReferralMilestoneResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                threshold: number;
+                reward: {
+                    [key: string]: unknown;
+                };
+                label: string | null;
+                isActive: boolean;
+                sortOrder: number;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        UpdateMilestoneDto: {
+            threshold?: number;
+            label?: string | null;
+            isActive?: boolean;
+            reward?: {
+                kokos?: number;
+                kolones?: number;
+                /** Format: uuid */
+                itemId?: string;
+            };
+        };
+        ReferralMilestoneDeletedResponse: {
+            data: {
+                deleted: boolean;
+            };
+        };
+        BannerAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    sponsorId: string;
+                    imageUrl: string;
+                    clickUrl: string | null;
+                    country: string;
+                    /** Format: uuid */
+                    moduleId: string | null;
+                    placement: string;
+                    weight: number;
+                    startsAt: string;
+                    endsAt: string;
+                    isActive: boolean;
+                    /** Format: uuid */
+                    createdBy: string | null;
+                    /** Format: uuid */
+                    updatedBy: string | null;
+                    createdAt: string;
+                    sponsorName: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        BannerUploadResponse: {
+            data: {
+                url: string;
+            };
+        };
+        BannerStatsResponse: {
+            data: {
+                /** Format: uuid */
+                bannerId: string;
+                impressions: number;
+                clicks: number;
+                ctr: number;
+                daily: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    bannerId: string;
+                    date: string;
+                    impressions: number;
+                    clicks: number;
+                }[];
+            };
+        };
+        BannerAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                sponsorId: string;
+                imageUrl: string;
+                clickUrl: string | null;
+                country: string;
+                /** Format: uuid */
+                moduleId: string | null;
+                placement: string;
+                weight: number;
+                startsAt: string;
+                endsAt: string;
+                isActive: boolean;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+            };
+        };
+        CreateBannerDto: {
+            /** Format: uuid */
+            sponsorId: string;
+            imageUrl: string;
+            /** Format: uri */
+            clickUrl?: string | null;
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            /** Format: uuid */
+            moduleId?: string | null;
+            /** @enum {string} */
+            placement: "practice_home" | "jugar_home" | "rankings_home" | "benefits_home" | "session_complete";
+            /** @default 1 */
+            weight: number;
+            /** Format: date-time */
+            startsAt: string;
+            /** Format: date-time */
+            endsAt: string;
+            /** @default true */
+            isActive: boolean;
+        };
+        UpdateBannerDto: {
+            /** Format: uuid */
+            sponsorId?: string;
+            imageUrl?: string;
+            /** Format: uri */
+            clickUrl?: string | null;
+            /** @enum {string} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            /** Format: uuid */
+            moduleId?: string | null;
+            /** @enum {string} */
+            placement?: "practice_home" | "jugar_home" | "rankings_home" | "benefits_home" | "session_complete";
+            weight?: number;
+            /** Format: date-time */
+            startsAt?: string;
+            /** Format: date-time */
+            endsAt?: string;
+            isActive?: boolean;
+        };
+        SponsorInvoiceAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    sponsorId: string;
+                    sponsor: {
+                        /** Format: uuid */
+                        id: string;
+                        name: string;
+                    };
+                    number: string;
+                    status: string;
+                    currency: string;
+                    issueDate: string;
+                    dueDate: string;
+                    total: number;
+                    itemCount: number;
+                    createdAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        SponsorInvoiceAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                sponsorId: string;
+                sponsor: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    legalName: string | null;
+                    taxId: string | null;
+                };
+                number: string;
+                status: string;
+                currency: string;
+                appliesIva: boolean;
+                issueDate: string;
+                dueDate: string;
+                periodStart: string | null;
+                periodEnd: string | null;
+                subtotal: number;
+                ivaAmount: number;
+                total: number;
+                notes: string | null;
+                pdfUrl: string | null;
+                paidAt: string | null;
+                createdAt: string;
+                updatedAt: string;
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    description: string;
+                    quantity: number;
+                    unitPrice: number;
+                    lineTotal: number;
+                    sourceType: string;
+                    sourceId: string | null;
+                    cabysCode: string | null;
+                }[];
+            };
+        };
+        CreateInvoiceDto: {
+            /** Format: uuid */
+            sponsorId: string;
+            /** Format: date-time */
+            issueDate?: string;
+            /** Format: date-time */
+            dueDate: string;
+            /** Format: date-time */
+            periodStart?: string;
+            /** Format: date-time */
+            periodEnd?: string;
+            /** @default false */
+            includeAuto: boolean;
+            notes?: string;
+            manualItems?: {
+                description: string;
+                /** @default 1 */
+                quantity: number;
+                unitPrice: number;
+                cabysCode?: string;
+            }[];
+        };
+        UpdateInvoiceDto: {
+            /** Format: date-time */
+            dueDate?: string;
+            /** Format: date-time */
+            periodStart?: string | null;
+            /** Format: date-time */
+            periodEnd?: string | null;
+            notes?: string | null;
+            items?: {
+                description: string;
+                /** @default 1 */
+                quantity: number;
+                unitPrice: number;
+                sourceType?: string;
+                /** Format: uuid */
+                sourceId?: string | null;
+                cabysCode?: string;
+            }[];
+        };
+        SponsorInvoicePdfUrlResponse: {
+            data: {
+                url: string | null;
+            };
+        };
+        SponsorActivityListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    sponsorId: string;
+                    type: string;
+                    summary: string;
+                    /** Format: uuid */
+                    actorId: string | null;
+                    metadata: unknown;
+                    createdAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        SponsorNoteListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    sponsorId: string;
+                    body: string;
+                    /** Format: uuid */
+                    authorId: string | null;
+                    createdAt: string;
+                    updatedAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        CreateNoteDto: {
+            body: string;
+        };
+        SponsorNoteResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                sponsorId: string;
+                body: string;
+                /** Format: uuid */
+                authorId: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        UpdateNoteDto: {
+            body: string;
+        };
+        SponsorCrmDeletedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                deleted: boolean;
+            };
+        };
+        SponsorDocumentListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    sponsorId: string;
+                    name: string;
+                    url: string;
+                    mimeType: string | null;
+                    sizeBytes: number | null;
+                    /** Format: uuid */
+                    uploadedBy: string | null;
+                    createdAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        UploadDocumentDto: {
+            filename: string;
+            /** @enum {string} */
+            contentType: "application/pdf" | "image/png" | "image/jpeg" | "image/webp" | "application/msword" | "application/vnd.openxmlformats-officedocument.wordprocessingml.document" | "application/vnd.ms-excel" | "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            dataBase64: string;
+        };
+        SponsorDocumentResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                sponsorId: string;
+                name: string;
+                url: string;
+                mimeType: string | null;
+                sizeBytes: number | null;
+                /** Format: uuid */
+                uploadedBy: string | null;
+                createdAt: string;
+            };
+        };
+        SponsorDocumentUrlResponse: {
+            data: {
+                url: string;
+            };
+        };
+        EnergyConfigResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string | null;
+                maxEnergy: number;
+                regenMinutes: number;
+                costPerMatch: number;
+                adBonus: number;
+                refillCostKokos: number;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+            } | null;
+        };
+        EnergyConfigDto: {
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            maxEnergy: number;
+            regenMinutes: number;
+            costPerMatch: number;
+            adBonus: number;
+            refillCostKokos: number;
+        };
+        FreeLimitConfigResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string | null;
+                questionsPerVideo: number;
+                maxVideosPerDay: number;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+            } | null;
+        };
+        FreeLimitConfigDto: {
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            questionsPerVideo: number;
+            maxVideosPerDay: number;
+        };
+        RewardConfigResponse: {
+            data: {
+                practiceXpPerCorrect: number;
+                practiceKolonesPerCorrect: number;
+                quickXpPerCorrect: number;
+                quickKolonesPerCorrect: number;
+                surpriseExamBaseXp: number;
+                surpriseExamWindowFactor: number;
+                surpriseExamKolones: number;
+                simulacroKolones: number;
+                duelCompletionKolones: number;
+                duelWinKolones: number;
+                arenaRapidaKolones: number;
+                arenaRapidaKokos: number;
+                arenaAmigosKolones: number;
+                arenaAmigosKokos: number;
+                leagueXpPerCorrect: number;
+                leagueXpSimulacro: number;
+                leagueXpGameMode: number;
+                leagueXpDuelWon: number;
+                goalKolones: number;
+                goalXp: number;
+                goalLeagueXp: number;
+                streakKolones: number;
+                streakLeagueXp: number;
+                achievementKolones: number;
+                kokosPerVideo: number;
+                /** Format: uuid */
+                id: string;
+                country: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+            } | null;
+        };
+        RewardConfigDto: {
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            practiceXpPerCorrect: number;
+            practiceKolonesPerCorrect: number;
+            quickXpPerCorrect: number;
+            quickKolonesPerCorrect: number;
+            surpriseExamBaseXp: number;
+            surpriseExamWindowFactor: number;
+            surpriseExamKolones: number;
+            simulacroKolones: number;
+            duelCompletionKolones: number;
+            duelWinKolones: number;
+            arenaRapidaKolones: number;
+            arenaRapidaKokos: number;
+            arenaAmigosKolones: number;
+            arenaAmigosKokos: number;
+            leagueXpPerCorrect: number;
+            leagueXpSimulacro: number;
+            leagueXpGameMode: number;
+            leagueXpDuelWon: number;
+            goalKolones: number;
+            goalXp: number;
+            goalLeagueXp: number;
+            streakKolones: number;
+            streakLeagueXp: number;
+            achievementKolones: number;
+            kokosPerVideo: number;
+        };
+        PresignVideoDto: {
+            filename: string;
+            /** @enum {string} */
+            contentType: "video/mp4" | "video/webm";
+        };
+        SponsorVideoUploadUrlResponse: {
+            data: {
+                uploadUrl: string;
+                publicUrl: string;
+            };
+        };
+        SponsorVideoAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    sponsorId: string;
+                    sponsorName: string;
+                    videoUrl: string;
+                    durationSec: number;
+                    country: string;
+                    /** Format: uuid */
+                    moduleId: string | null;
+                    moduleShortName: string | null;
+                    context: string;
+                    weight: number;
+                    startsAt: string | null;
+                    endsAt: string | null;
+                    isActive: boolean;
+                    impressionCount: number;
+                    completionCount: number;
+                    createdAt: string;
+                    updatedAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        SponsorVideoAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                sponsorId: string;
+                sponsorName: string;
+                videoUrl: string;
+                durationSec: number;
+                country: string;
+                /** Format: uuid */
+                moduleId: string | null;
+                moduleShortName: string | null;
+                context: string;
+                weight: number;
+                startsAt: string | null;
+                endsAt: string | null;
+                isActive: boolean;
+                impressionCount: number;
+                completionCount: number;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        CreateVideoDto: {
+            /** Format: uuid */
+            sponsorId: string;
+            /** Format: uri */
+            videoUrl: string;
+            durationSec: 15 | 30 | 60 | 120 | 180;
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            /** Format: uuid */
+            moduleId?: string | null;
+            /** @enum {string} */
+            context: "practice" | "game" | "kokos" | "any";
+            /** @default 1 */
+            weight: number;
+            startsAt?: string | null;
+            endsAt?: string | null;
+            /** @default true */
+            isActive: boolean;
+        };
+        UpdateVideoDto: {
+            /** Format: uri */
+            videoUrl?: string;
+            durationSec?: 15 | 30 | 60 | 120 | 180;
+            /** Format: uuid */
+            moduleId?: string | null;
+            /** @enum {string} */
+            context?: "practice" | "game" | "kokos" | "any";
+            weight?: number;
+            startsAt?: string | null;
+            endsAt?: string | null;
+            isActive?: boolean;
+        };
+        SponsorVideoRemovedResponse: {
+            data: {
+                removed: boolean;
+            };
+        };
+        DashboardEngagementResponse: {
+            data: {
+                activeUsers: {
+                    dau: number;
+                    wau: number;
+                    mau: number;
+                };
+                newUsers: number;
+                practiceSessions: number;
+                questionsAnswered: number;
+                range: {
+                    from: string;
+                    to: string;
+                };
+            };
+        };
+        DashboardEconomyResponse: {
+            data: {
+                kokos: {
+                    granted: number;
+                    spent: number;
+                };
+                storePurchases: number;
+                couponRedemptions: number;
+                raffleAwards: number;
+                range: {
+                    from: string;
+                    to: string;
+                };
+            };
+        };
+        DashboardSubscribersResponse: {
+            data: {
+                byPlan: {
+                    plan: string;
+                    count: number;
+                }[];
+                total: number;
+            };
+        };
+        DashboardTimeseriesResponse: {
+            data: {
+                points: {
+                    date: string;
+                    newUsers: number;
+                    practiceSessions: number;
+                }[];
+                range: {
+                    from: string;
+                    to: string;
+                };
+            };
+        };
+        DashboardRetentionResponse: {
+            data: {
+                cohortSize: number;
+                d1: {
+                    count: number;
+                    rate: number;
+                };
+                d7: {
+                    count: number;
+                    rate: number;
+                };
+                range: {
+                    from: string;
+                    to: string;
+                };
+            };
+        };
+        DashboardAcquisitionResponse: {
+            data: {
+                breakdown: {
+                    source: string;
+                    count: number;
+                }[];
+                range: {
+                    from: string;
+                    to: string;
+                };
+            };
+        };
+        DashboardExamsPassedResponse: {
+            data: {
+                passed: number;
+                total: number;
+                rate: number;
+            };
+        };
+        SubscriptionAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    userId: string;
+                    user: {
+                        email: string | null;
+                        displayName: string;
+                        country: string;
+                    };
+                    /** Format: uuid */
+                    moduleId: string | null;
+                    plan: string;
+                    period: string;
+                    status: string;
+                    startedAt: string;
+                    expiresAt: string;
+                    graceEndsAt: string | null;
+                    isComp: boolean;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        SubscriptionAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                userId: string;
+                user: {
+                    email: string | null;
+                    displayName: string;
+                    country: string;
+                };
+                /** Format: uuid */
+                moduleId: string | null;
+                plan: string;
+                period: string;
+                status: string;
+                startedAt: string;
+                expiresAt: string;
+                graceEndsAt: string | null;
+                isComp: boolean;
+            };
+        };
+        GrantSubDto: {
+            friendCode: string;
+            /** Format: uuid */
+            moduleId: string;
+            /** @enum {string} */
+            plan: "free" | "basico" | "plus" | "pro";
+            /** @enum {string} */
+            period: "monthly" | "quarterly" | "yearly";
+            expiresAt: string;
+        };
+        ExtendSubDto: {
+            expiresAt: string;
+        };
+        ChangeStatusDto: {
+            /** @enum {string} */
+            status: "trial" | "active" | "cancelled" | "expired" | "grace";
+        };
+        CrossSellListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                sourceModuleId: string;
+                /** Format: uuid */
+                targetModuleId: string;
+                message: string;
+                priority: number;
+                isActive: boolean;
+            }[];
+        };
+        CrossSellResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                sourceModuleId: string;
+                /** Format: uuid */
+                targetModuleId: string;
+                message: string;
+                priority: number;
+                isActive: boolean;
+            };
+        };
+        CrossSellDeletedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                deleted: boolean;
+            };
+        };
+        SubscriptionAnalyticsResponse: {
+            data: {
+                newSubscriptions: number;
+                cancelled: number;
+                expired: number;
+                trials: number;
+                activePaid: number;
+                paidShare: number;
+                mrrEstimatedCents: {
+                    [key: string]: number;
+                };
+                mrrByCountry: {
+                    country: string;
+                    currency: string;
+                    mrrCents: number;
+                }[];
+                range: {
+                    from: string;
+                    to: string;
+                };
+            };
+        };
+        KokosPackListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                slug: string;
+                name: string;
+                amount: number;
+                storeProductId: string;
+                priceUsdCents: number;
+                offerPriceUsdCents: number | null;
+                offerStartsAt: string | null;
+                offerEndsAt: string | null;
+                isActive: boolean;
+                sortOrder: number;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            }[];
+        };
+        KokosPackResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                slug: string;
+                name: string;
+                amount: number;
+                storeProductId: string;
+                priceUsdCents: number;
+                offerPriceUsdCents: number | null;
+                offerStartsAt: string | null;
+                offerEndsAt: string | null;
+                isActive: boolean;
+                sortOrder: number;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        SubscriptionPriceListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string | null;
+                plan: string;
+                period: string;
+                packSize: number;
+                priceCents: number;
+                currency: string;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            }[];
+        };
+        SubscriptionPriceResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string | null;
+                plan: string;
+                period: string;
+                packSize: number;
+                priceCents: number;
+                currency: string;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        PromoOfferListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                slug: string;
+                label: string;
+                country: string;
+                priceMode: string;
+                discountPercent: number | null;
+                slotsTotal: number;
+                slotsClaimed: number;
+                startsAt: string | null;
+                endsAt: string | null;
+                /** Format: uuid */
+                badgeItemId: string | null;
+                isActive: boolean;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+                _count: {
+                    claims: number;
+                    prices: number;
+                };
+            }[];
+        };
+        PromoOfferDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                slug: string;
+                label: string;
+                country: string;
+                priceMode: string;
+                discountPercent: number | null;
+                slotsTotal: number;
+                slotsClaimed: number;
+                startsAt: string | null;
+                endsAt: string | null;
+                /** Format: uuid */
+                badgeItemId: string | null;
+                isActive: boolean;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+                prices: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    offerId: string;
+                    plan: string;
+                    period: string;
+                    packSize: number;
+                    priceCents: number;
+                }[];
+            };
+        };
+        PromoOfferResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                slug: string;
+                label: string;
+                country: string;
+                priceMode: string;
+                discountPercent: number | null;
+                slotsTotal: number;
+                slotsClaimed: number;
+                startsAt: string | null;
+                endsAt: string | null;
+                /** Format: uuid */
+                badgeItemId: string | null;
+                isActive: boolean;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        PromoOfferPricesSetResponse: {
+            data: {
+                count: number;
+            };
+        };
+        JobCountsResponse: {
+            data: {
+                [key: string]: number;
+            };
+        };
+        JobListResponse: {
+            data: {
+                items: {
+                    id: string;
+                    name: string;
+                    state: string;
+                    attemptsMade: number;
+                    failedReason: string | null;
+                    data: unknown;
+                    timestamp: number | null;
+                    processedOn: number | null;
+                    finishedOn: number | null;
+                }[];
+                state: string;
+                page: number;
+                pageSize: number;
+            };
+        };
+        JobsRetryAllResponse: {
+            data: {
+                retried: number;
+            };
+        };
+        JobDetailResponse: {
+            data: {
+                id: string;
+                name: string;
+                state: string;
+                attemptsMade: number;
+                failedReason: string | null;
+                data: unknown;
+                timestamp: number | null;
+                processedOn: number | null;
+                finishedOn: number | null;
+            };
+        };
+        JobRetriedResponse: {
+            data: {
+                id: string;
+                retried: boolean;
+            };
+        };
+        JobRemovedResponse: {
+            data: {
+                id: string;
+                removed: boolean;
+            };
+        };
+        TicketAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    type: string;
+                    status: string;
+                    category: string | null;
+                    message: string;
+                    context: unknown;
+                    /** Format: uuid */
+                    questionId: string | null;
+                    /** Format: uuid */
+                    assignedTo: string | null;
+                    resolution: string | null;
+                    resolvedAt: string | null;
+                    createdAt: string;
+                    user: {
+                        /** Format: uuid */
+                        id: string;
+                        displayName: string;
+                        email: string | null;
+                        country: string;
+                    };
+                    question: {
+                        /** Format: uuid */
+                        id: string;
+                    } | null;
+                    /** Format: uuid */
+                    promotedIdeaId: string | null;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        TicketAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                type: string;
+                status: string;
+                category: string | null;
+                message: string;
+                context: unknown;
+                /** Format: uuid */
+                questionId: string | null;
+                /** Format: uuid */
+                assignedTo: string | null;
+                resolution: string | null;
+                resolvedAt: string | null;
+                createdAt: string;
+                user: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                    email: string | null;
+                    country: string;
+                };
+                question: {
+                    /** Format: uuid */
+                    id: string;
+                } | null;
+                /** Format: uuid */
+                promotedIdeaId: string | null;
+            };
+        };
+        TriageTicketDto: {
+            /** @enum {string} */
+            status: "triaging" | "resolved" | "dismissed";
+            /** Format: uuid */
+            assignedTo?: string | null;
+            resolution?: string;
+        };
+        FeatureBoardResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    title: string;
+                    description: string | null;
+                    /** @enum {string} */
+                    status: "idea" | "construccion" | "lanzado" | "descartado";
+                    /** @enum {string} */
+                    priority: "low" | "medium" | "high";
+                    author: {
+                        /** Format: uuid */
+                        id: string;
+                        displayName: string;
+                    } | null;
+                    /** Format: uuid */
+                    sourceTicketId: string | null;
+                    createdAt: string;
+                    updatedAt: string;
+                }[];
+            };
+        };
+        CreateFeatureIdeaDto: {
+            title: string;
+            description?: string;
+            /**
+             * @default medium
+             * @enum {string}
+             */
+            priority: "low" | "medium" | "high";
+            /** Format: uuid */
+            sourceTicketId?: string;
+        };
+        FeatureIdeaResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                title: string;
+                description: string | null;
+                /** @enum {string} */
+                status: "idea" | "construccion" | "lanzado" | "descartado";
+                /** @enum {string} */
+                priority: "low" | "medium" | "high";
+                author: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                } | null;
+                /** Format: uuid */
+                sourceTicketId: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        UpdateFeatureIdeaDto: {
+            title?: string;
+            description?: string;
+            /** @enum {string} */
+            status?: "idea" | "construccion" | "lanzado" | "descartado";
+            /** @enum {string} */
+            priority?: "low" | "medium" | "high";
+        };
+        FeatureDeletedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+            };
+        };
+        AppVersionListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                platform: string;
+                version: string;
+                releaseDate: string;
+                releaseNotes: string | null;
+                storeUrl: string | null;
+                /** Format: uuid */
+                createdBy: string;
+                createdAt: string;
+            }[];
+        };
+        CreateAppVersionDto: {
+            /** @enum {string} */
+            platform: "ios" | "android";
+            version: string;
+            releaseDate: string;
+            releaseNotes?: string;
+            /** Format: uri */
+            storeUrl?: string;
+        };
+        AppVersionResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                platform: string;
+                version: string;
+                releaseDate: string;
+                releaseNotes: string | null;
+                storeUrl: string | null;
+                /** Format: uuid */
+                createdBy: string;
+                createdAt: string;
+            };
+        };
+        UpdateAppVersionDto: {
+            /** @enum {string} */
+            platform?: "ios" | "android";
+            version?: string;
+            releaseDate?: string;
+            releaseNotes?: string;
+            /** Format: uri */
+            storeUrl?: string;
+        };
+        AppVersionDeletedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                deleted: boolean;
+            };
+        };
+        CountryRolloutListResponse: {
+            data: {
+                country: string;
+                /** @enum {string} */
+                status: "planned" | "in_preparation" | "live" | "paused";
+                targetDate: string | null;
+                launchedAt: string | null;
+                notes: string | null;
+                userGoal: number | null;
+                registeredUsers: number | null;
+            }[];
+        };
+        UpdateCountryRolloutDto: {
+            /** @enum {string} */
+            status?: "planned" | "in_preparation" | "live" | "paused";
+            targetDate?: string | null;
+            launchedAt?: string | null;
+            notes?: string | null;
+            userGoal?: number | null;
+        };
+        CountryRolloutResponse: {
+            data: {
+                country: string;
+                /** @enum {string} */
+                status: "planned" | "in_preparation" | "live" | "paused";
+                targetDate: string | null;
+                launchedAt: string | null;
+                notes: string | null;
+                userGoal: number | null;
+                registeredUsers: number | null;
+            };
+        };
+        FinanceCategoryListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                kind: string;
+                sortOrder: number;
+                isActive: boolean;
+                createdAt: string;
+                updatedAt: string;
+            }[];
+        };
+        CreateFinanceCategoryDto: {
+            name: string;
+            /** @enum {string} */
+            kind: "expense" | "income";
+            /** @default 0 */
+            sortOrder: number;
+        };
+        FinanceCategoryResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                kind: string;
+                sortOrder: number;
+                isActive: boolean;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        UpdateFinanceCategoryDto: {
+            name?: string;
+            sortOrder?: number;
+            isActive?: boolean;
+        };
+        FinanceRemovedResponse: {
+            data: {
+                removed: boolean;
+            };
+        };
+        FinanceEntryListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    categoryId: string;
+                    categoryName: string;
+                    kind: string;
+                    amount: number;
+                    currency: string;
+                    date: string;
+                    vendor: string | null;
+                    note: string | null;
+                    hasReceipt: boolean;
+                    createdAt: string;
+                    updatedAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        UploadReceiptDto: {
+            filename: string;
+            /** @enum {string} */
+            contentType: "application/pdf" | "image/png" | "image/jpeg" | "image/webp";
+            dataBase64: string;
+        };
+        FinanceUrlResponse: {
+            data: {
+                url: string;
+            };
+        };
+        FinanceEntryResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                categoryId: string;
+                categoryName: string;
+                kind: string;
+                amount: number;
+                currency: string;
+                date: string;
+                vendor: string | null;
+                note: string | null;
+                hasReceipt: boolean;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        CreateFinanceEntryDto: {
+            /** Format: uuid */
+            categoryId: string;
+            amount: number;
+            /** @enum {string} */
+            currency: "CRC" | "USD";
+            date: string;
+            vendor?: string | null;
+            note?: string | null;
+            receiptKey?: string | null;
+        };
+        UpdateFinanceEntryDto: {
+            /** Format: uuid */
+            categoryId?: string;
+            amount?: number;
+            /** @enum {string} */
+            currency?: "CRC" | "USD";
+            date?: string;
+            vendor?: string | null;
+            note?: string | null;
+            receiptKey?: string | null;
+        };
+        FinancePnlResponse: {
+            data: {
+                byCurrency: {
+                    currency: string;
+                    income: number;
+                    expense: number;
+                    net: number;
+                }[];
+                byCategory: {
+                    currency: string;
+                    categoryName: string;
+                    kind: string;
+                    total: number;
+                }[];
+                byMonth: {
+                    currency: string;
+                    month: string;
+                    income: number;
+                    expense: number;
+                }[];
+                range: {
+                    from: string;
+                    to: string;
+                };
+            };
+        };
+        MatchAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    status: string;
+                    mode: string;
+                    startedAt: string;
+                    endedAt: string | null;
+                    /** Format: uuid */
+                    winnerId: string | null;
+                    annulledAt: string | null;
+                    module: {
+                        shortName: string;
+                        country: string;
+                    };
+                    player1: {
+                        /** Format: uuid */
+                        id: string;
+                        displayName: string;
+                        isBot: boolean;
+                    } | null;
+                    player2: {
+                        /** Format: uuid */
+                        id: string;
+                        displayName: string;
+                        isBot: boolean;
+                    } | null;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        MatchAdminDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                player1Id: string | null;
+                /** Format: uuid */
+                player2Id: string | null;
+                /** Format: uuid */
+                moduleId: string;
+                mode: string;
+                status: string;
+                /** Format: uuid */
+                currentTurnPlayerId: string | null;
+                turnStartedAt: string;
+                /** Format: uuid */
+                winnerId: string | null;
+                xpAwarded: boolean;
+                startedAt: string;
+                endedAt: string | null;
+                updatedAt: string;
+                annulledAt: string | null;
+                /** Format: uuid */
+                annulledBy: string | null;
+                annulReason: string | null;
+                module: {
+                    shortName: string;
+                    fullName: string;
+                    country: string;
+                };
+                player1: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                    isBot: boolean;
+                } | null;
+                player2: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                    isBot: boolean;
+                } | null;
+                winner: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                } | null;
+                subjects: {
+                    /** Format: uuid */
+                    subjectId: string;
+                    /** Format: uuid */
+                    crownHolderId: string | null;
+                    capturedAt: string | null;
+                    subject: {
+                        name: string;
+                    };
+                }[];
+                turns: {
+                    turnNumber: number;
+                    /** Format: uuid */
+                    playerId: string;
+                    /** Format: uuid */
+                    subjectId: string;
+                    startedAt: string;
+                    endedAt: string | null;
+                    status: string;
+                    questionsAnswered: number;
+                    allCorrect: boolean;
+                }[];
+                suspicion: {
+                    /** Format: uuid */
+                    userId: string;
+                    total: number;
+                    fastCorrect: number;
+                    fastCorrectRate: number;
+                    maxFastStreak: number;
+                    speedSuspicious: boolean;
+                    patternSuspicious: boolean;
+                }[];
+            };
+        };
+        AnnulDto: {
+            reason: string;
+        };
+        GameAnnulledResponse: {
+            data: {
+                annulled: boolean;
+            };
+        };
+        ArenaAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    type: string;
+                    status: string;
+                    startedAt: string | null;
+                    endedAt: string | null;
+                    /** Format: uuid */
+                    winnerId: string | null;
+                    participantCount: number;
+                    annulledAt: string | null;
+                    module: {
+                        shortName: string;
+                        country: string;
+                    };
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        ArenaAdminDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                moduleId: string;
+                type: string;
+                status: string;
+                /** Format: uuid */
+                hostUserId: string | null;
+                inviteCode: string | null;
+                questionIds: unknown;
+                scheduledAt: string | null;
+                startedAt: string | null;
+                endedAt: string | null;
+                /** Format: uuid */
+                winnerId: string | null;
+                participantCount: number;
+                annulledAt: string | null;
+                /** Format: uuid */
+                annulledBy: string | null;
+                annulReason: string | null;
+                prizes: unknown;
+                module: {
+                    shortName: string;
+                    fullName: string;
+                    country: string;
+                };
+                winner: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                } | null;
+                participants: {
+                    /** Format: uuid */
+                    userId: string;
+                    joinedAt: string;
+                    eliminatedAt: string | null;
+                    finalRank: number | null;
+                    isBot: boolean;
+                    rewardClaimed: boolean;
+                    user: {
+                        displayName: string;
+                    };
+                }[];
+                suspicion: {
+                    /** Format: uuid */
+                    userId: string;
+                    total: number;
+                    fastCorrect: number;
+                    fastCorrectRate: number;
+                    maxFastStreak: number;
+                    speedSuspicious: boolean;
+                    patternSuspicious: boolean;
+                }[];
+            };
+        };
+        ScheduleEspecialDto: {
+            /** Format: uuid */
+            module_id: string;
+            /** Format: date-time */
+            scheduled_at: string;
+            prizes: {
+                min_rank: number;
+                max_rank: number;
+                kolones: number;
+                kokos: number;
+                xp: number;
+            }[];
+        };
+        SimulacroAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    status: string;
+                    totalQuestions: number;
+                    score: string | null;
+                    startedAt: string;
+                    endedAt: string | null;
+                    annulledAt: string | null;
+                    user: {
+                        /** Format: uuid */
+                        id: string;
+                        displayName: string;
+                    };
+                    module: {
+                        shortName: string;
+                        country: string;
+                    };
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        SimulacroAdminDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                userId: string;
+                /** Format: uuid */
+                moduleId: string;
+                /** Format: uuid */
+                subjectId: string | null;
+                status: string;
+                totalQuestions: number;
+                durationMinutes: number;
+                startedAt: string;
+                endedAt: string | null;
+                score: string | null;
+                xpEarned: number | null;
+                kolonesEarned: number | null;
+                aiAnalysis: string | null;
+                shareCardGenerated: boolean;
+                questionIds: unknown;
+                annulledAt: string | null;
+                /** Format: uuid */
+                annulledBy: string | null;
+                annulReason: string | null;
+                user: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                    isBot: boolean;
+                };
+                module: {
+                    shortName: string;
+                    fullName: string;
+                    country: string;
+                };
+                subject: {
+                    name: string;
+                } | null;
+                subjectResults: {
+                    /** Format: uuid */
+                    subjectId: string;
+                    questionsTotal: number;
+                    questionsCorrect: number;
+                    score: string;
+                    subject: {
+                        name: string;
+                    };
+                }[];
+                suspicion: {
+                    /** Format: uuid */
+                    userId: string;
+                    total: number;
+                    fastCorrect: number;
+                    fastCorrectRate: number;
+                    maxFastStreak: number;
+                    speedSuspicious: boolean;
+                    patternSuspicious: boolean;
+                }[];
+            };
+        };
+        QuickModeAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    type: string;
+                    status: string;
+                    questionsAnswered: number;
+                    questionsCorrect: number;
+                    kolonesEarned: number;
+                    startedAt: string;
+                    endedAt: string | null;
+                    annulledAt: string | null;
+                    user: {
+                        /** Format: uuid */
+                        id: string;
+                        displayName: string;
+                    };
+                    module: {
+                        shortName: string;
+                        country: string;
+                    };
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        QuickModeAdminDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                userId: string;
+                /** Format: uuid */
+                moduleId: string;
+                type: string;
+                status: string;
+                questionsAnswered: number;
+                questionsCorrect: number;
+                maxCombo: number;
+                livesRemaining: number | null;
+                xpEarned: number;
+                kolonesEarned: number;
+                startedAt: string;
+                endedAt: string | null;
+                shareCardGenerated: boolean;
+                annulledAt: string | null;
+                /** Format: uuid */
+                annulledBy: string | null;
+                annulReason: string | null;
+                user: {
+                    /** Format: uuid */
+                    id: string;
+                    displayName: string;
+                    isBot: boolean;
+                };
+                module: {
+                    shortName: string;
+                    fullName: string;
+                    country: string;
+                };
+                suspicion: {
+                    /** Format: uuid */
+                    userId: string;
+                    total: number;
+                    fastCorrect: number;
+                    fastCorrectRate: number;
+                    maxFastStreak: number;
+                    speedSuspicious: boolean;
+                    patternSuspicious: boolean;
+                }[];
+            };
+        };
+        LeagueConfigListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** @enum {string} */
+                    leagueLevel: "aprendiz" | "avanzado" | "experto" | "genio";
+                    country: string | null;
+                    promotePct: number;
+                    promoteCap: number;
+                    demotePct: number;
+                    demoteCap: number;
+                    rewardTop3: unknown;
+                    rewardTop4to10: unknown;
+                    rewardRest: unknown;
+                    /** Format: uuid */
+                    insigniaItemId: string | null;
+                    /** Format: uuid */
+                    updatedBy: string | null;
+                    updatedAt: string;
+                }[];
+            };
+        };
+        UpsertLeagueConfigDto: {
+            /** @enum {string} */
+            leagueLevel: "aprendiz" | "avanzado" | "experto" | "genio";
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            promotePct: number;
+            promoteCap: number;
+            demotePct: number;
+            demoteCap: number;
+            rewardTop3: {
+                /** @default 0 */
+                kokos: number;
+                /** @default 0 */
+                kolones: number;
+                items?: {
+                    /** Format: uuid */
+                    itemId: string;
+                    quantity?: number;
+                }[];
+            };
+            rewardTop4to10: {
+                /** @default 0 */
+                kokos: number;
+                /** @default 0 */
+                kolones: number;
+                items?: {
+                    /** Format: uuid */
+                    itemId: string;
+                    quantity?: number;
+                }[];
+            };
+            rewardRest: {
+                /** @default 0 */
+                kokos: number;
+                /** @default 0 */
+                kolones: number;
+                items?: {
+                    /** Format: uuid */
+                    itemId: string;
+                    quantity?: number;
+                }[];
+            };
+        };
+        LeagueConfigResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                leagueLevel: "aprendiz" | "avanzado" | "experto" | "genio";
+                country: string | null;
+                promotePct: number;
+                promoteCap: number;
+                demotePct: number;
+                demoteCap: number;
+                rewardTop3: unknown;
+                rewardTop4to10: unknown;
+                rewardRest: unknown;
+                /** Format: uuid */
+                insigniaItemId: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+            };
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -6847,14 +14029,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterDto"];
+            };
+        };
         responses: {
             /** @description Usuario creado, tokens emitidos */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RegisterResponse"];
+                };
             };
             /** @description Email ya registrado */
             409: {
@@ -6879,14 +14067,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginDto"];
+            };
+        };
         responses: {
             /** @description Tokens JWT emitidos */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
             };
             /** @description Credenciales inválidas */
             401: {
@@ -6909,18 +14103,24 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                provider: string;
+                provider: "google" | "apple" | "facebook";
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialLoginDto"];
+            };
+        };
         responses: {
             /** @description Sesión emitida o needs_onboarding */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SocialLoginResponse"];
+                };
             };
         };
     };
@@ -6931,14 +14131,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshDto"];
+            };
+        };
         responses: {
             /** @description Nuevos tokens emitidos */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TokenPairResponse"];
+                };
             };
             /** @description Refresh token inválido o reutilizado */
             401: {
@@ -6956,7 +14162,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogoutDto"];
+            };
+        };
         responses: {
             /** @description Logout OK */
             204: {
@@ -6974,14 +14184,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequestDto"];
+            };
+        };
         responses: {
             /** @description Mensaje genérico devuelto */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PasswordResetRequestedResponse"];
+                };
             };
             /** @description Rate limit (3/h IP) */
             429: {
@@ -6999,14 +14215,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirmDto"];
+            };
+        };
         responses: {
             /** @description Contraseña actualizada */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PasswordUpdatedResponse"];
+                };
             };
             /** @description Token inválido o expirado */
             401: {
@@ -7024,14 +14246,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordDto"];
+            };
+        };
         responses: {
             /** @description Contraseña actualizada */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PasswordUpdatedResponse"];
+                };
             };
             /** @description Contraseña actual incorrecta */
             401: {
@@ -7056,14 +14284,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParentalConsentSendDto"];
+            };
+        };
         responses: {
             /** @description Email enviado, token con TTL 24h */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ParentalConsentSentResponse"];
+                };
             };
             /** @description Cuenta no requiere consentimiento */
             403: {
@@ -7076,7 +14310,9 @@ export interface operations {
     };
     AuthController_verifyEmail: {
         parameters: {
-            query?: never;
+            query: {
+                token: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7106,7 +14342,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EmailVerificationResentResponse"];
+                };
             };
             /** @description Rate limit (3/h IP) */
             429: {
@@ -7119,7 +14357,9 @@ export interface operations {
     };
     AuthController_parentalConsentApprove: {
         parameters: {
-            query?: never;
+            query: {
+                token: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7137,7 +14377,9 @@ export interface operations {
     };
     ModulesController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7148,7 +14390,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ModuleListResponse"];
+                };
             };
         };
     };
@@ -7167,7 +14411,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubjectListResponse"];
+                };
             };
         };
     };
@@ -7186,7 +14432,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdmissionCutoffListResponse"];
+                };
             };
         };
     };
@@ -7205,13 +14453,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TopicListResponse"];
+                };
             };
         };
     };
     TopicsController_listQuestions: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+                session_type?: "practice" | "quick" | "simulacro";
+            };
             header?: never;
             path: {
                 id: string;
@@ -7224,13 +14477,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TopicQuestionListResponse"];
+                };
             };
         };
     };
     QuestionsController_demo: {
         parameters: {
-            query?: never;
+            query?: {
+                module_id?: string;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7241,13 +14499,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DemoQuestionListResponse"];
+                };
             };
         };
     };
     NewsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA";
+                module_id?: string;
+                category?: "module" | "education";
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7258,7 +14524,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsListResponse"];
+                };
             };
         };
     };
@@ -7277,13 +14545,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LearningPathResponse"];
+                };
             };
         };
     };
     LearningController_getTopicPerformance: {
         parameters: {
-            query?: never;
+            query?: {
+                module_id?: string;
+                subject_id?: string;
+                state?: "untried" | "insufficient_data" | "weak" | "in_progress" | "mastered";
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7294,13 +14570,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TopicPerformanceListResponse"];
+                };
             };
         };
     };
     RegionalCharactersController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA";
+                region?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7311,7 +14592,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RegionalCharacterListResponse"];
+                };
             };
         };
     };
@@ -7328,7 +14611,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EnergyResponse"];
+                };
             };
         };
     };
@@ -7345,7 +14630,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EnergyResponse"];
+                };
             };
         };
     };
@@ -7362,7 +14649,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PracticeQuotaResponse"];
+                };
             };
         };
     };
@@ -7379,7 +14668,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["VideoBoostResponse"];
+                };
             };
         };
     };
@@ -7396,13 +14687,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BalanceResponse"];
+                };
             };
         };
     };
     CurrencyController_listTransactions: {
         parameters: {
-            query?: never;
+            query?: {
+                currency?: "kolones" | "kokos";
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7413,7 +14710,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TransactionListResponse"];
+                };
             };
         };
     };
@@ -7424,13 +14723,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimVideoKokosDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["VideoKokosClaimedResponse"];
+                };
             };
         };
     };
@@ -7447,7 +14752,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["KokosPackCatalogResponse"];
+                };
             };
         };
     };
@@ -7460,13 +14767,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["KokosPurchaseResponse"];
+                };
             };
         };
     };
@@ -7485,7 +14798,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UsernameAvailableResponse"];
+                };
             };
         };
     };
@@ -7502,7 +14817,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FullProfileResponse"];
+                };
             };
         };
     };
@@ -7513,7 +14830,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteAccountDto"];
+            };
+        };
         responses: {
             204: {
                 headers: {
@@ -7530,13 +14851,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UpdatedProfileResponse"];
+                };
             };
         };
     };
@@ -7553,7 +14880,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProfileStatsResponse"];
+                };
             };
         };
     };
@@ -7564,13 +14893,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetActiveModuleDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ActiveModuleResponse"];
+                };
             };
         };
     };
@@ -7581,13 +14916,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkExamPassedDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ExamPassedResponse"];
+                };
             };
         };
     };
@@ -7606,7 +14947,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PublicProfileResponse"];
+                };
             };
         };
     };
@@ -7623,7 +14966,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserModuleListResponse"];
+                };
             };
         };
     };
@@ -7634,13 +14979,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterModuleDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserModuleRegisteredResponse"];
+                };
             };
         };
     };
@@ -7665,7 +15016,10 @@ export interface operations {
     };
     SubscriptionsController_listMine: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7676,7 +15030,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionListResponse"];
+                };
             };
         };
     };
@@ -7687,13 +15043,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivateTrialDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TrialActivatedResponse"];
+                };
             };
         };
     };
@@ -7712,7 +15074,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionCancelledResponse"];
+                };
             };
         };
     };
@@ -7723,13 +15087,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IapWebhookDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["WebhookReceivedResponse"];
+                };
             };
         };
     };
@@ -7746,7 +15116,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PricingResponse"];
+                };
             };
         };
     };
@@ -7763,7 +15135,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ActiveOfferResponse"];
+                };
             };
         };
     };
@@ -7774,13 +15148,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSessionDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PracticeSessionCreatedResponse"];
+                };
             };
         };
     };
@@ -7793,8 +15173,20 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitAnswerDto"];
+            };
+        };
         responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeAnswerResponse"];
+                };
+            };
             /** @description PLAN_REQUIRED — free user llegó al cap diario de 15 preguntas (3 videos) */
             403: {
                 headers: {
@@ -7826,7 +15218,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PracticeCompletedResponse"];
+                };
             };
         };
     };
@@ -7845,7 +15239,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PracticeSessionResponse"];
+                };
             };
         };
     };
@@ -7856,13 +15252,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExplainDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ExplainResponse"];
+                };
             };
         };
     };
@@ -7881,7 +15283,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["WeeklySummaryResponse"];
+                };
             };
         };
     };
@@ -7900,7 +15304,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SessionDebriefResponse"];
+                };
             };
         };
     };
@@ -7911,13 +15317,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetExamDateDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ExamDateSetResponse"];
+                };
             };
         };
     };
@@ -7936,7 +15348,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ExamPlanResponse"];
+                };
             };
         };
     };
@@ -7955,7 +15369,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DailyPlanResponse"];
+                };
             };
         };
     };
@@ -7974,7 +15390,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SimulacroAnalysisResponse"];
+                };
             };
         };
     };
@@ -7999,7 +15417,12 @@ export interface operations {
     };
     StoreController_listItems: {
         parameters: {
-            query?: never;
+            query?: {
+                category?: "cosmetic" | "functional";
+                item_type?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance";
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8010,7 +15433,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StoreItemListResponse"];
+                };
             };
         };
     };
@@ -8029,13 +15454,20 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PurchaseResponse"];
+                };
             };
         };
     };
     InventoryController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                category?: "cosmetic" | "functional";
+                item_type?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance";
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8046,7 +15478,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["InventoryListResponse"];
+                };
             };
         };
     };
@@ -8059,13 +15493,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EquipItemDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ItemEquippedResponse"];
+                };
             };
         };
     };
@@ -8082,7 +15522,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DailyProgressResponse"];
+                };
             };
         };
     };
@@ -8099,7 +15541,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DailyGoalResponse"];
+                };
             };
         };
     };
@@ -8110,13 +15554,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDailyGoalDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DailyGoalUpdatedResponse"];
+                };
             };
         };
     };
@@ -8133,7 +15583,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DailyGoalClaimedResponse"];
+                };
             };
         };
     };
@@ -8150,7 +15602,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MissionListResponse"];
+                };
             };
         };
     };
@@ -8167,7 +15621,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MissionListResponse"];
+                };
             };
         };
     };
@@ -8184,7 +15640,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StreakResponse"];
+                };
             };
         };
     };
@@ -8201,13 +15659,17 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StreakFrozenResponse"];
+                };
             };
         };
     };
     LeaguesController_getCurrent: {
         parameters: {
-            query?: never;
+            query?: {
+                module_id?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8218,13 +15680,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LeagueCurrentResponse"];
+                };
             };
         };
     };
     LeaguesController_getLeaderboard: {
         parameters: {
-            query?: never;
+            query?: {
+                moduleId?: string;
+                level?: "aprendiz" | "avanzado" | "experto" | "genio";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8235,13 +15702,17 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LeagueLeaderboardResponse"];
+                };
             };
         };
     };
     LeaguesController_getFriendsLeaderboard: {
         parameters: {
-            query?: never;
+            query?: {
+                module_id?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8252,7 +15723,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FriendsLeaderboardResponse"];
+                };
             };
         };
     };
@@ -8263,19 +15736,31 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRewardDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RewardClaimedResponse"];
+                };
             };
         };
     };
     CouponsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA";
+                module_id?: string;
+                tier?: "basico" | "estandar" | "premium";
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8286,7 +15771,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CouponListResponse"];
+                };
             };
         };
     };
@@ -8303,13 +15790,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CouponBranchesResponse"];
+                };
             };
         };
     };
     CouponsController_listRedeemed: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8320,7 +15812,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RedeemedCouponListResponse"];
+                };
             };
         };
     };
@@ -8339,7 +15833,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CouponDetailResponse"];
+                };
             };
         };
     };
@@ -8352,13 +15848,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RedeemCouponDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CouponRedeemedResponse"];
+                };
             };
         };
     };
@@ -8369,13 +15871,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidateCouponDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CouponValidatedResponse"];
+                };
             };
         };
     };
@@ -8392,7 +15900,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MyReferralsResponse"];
+                };
             };
         };
     };
@@ -8403,8 +15913,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQuickSessionDto"];
+            };
+        };
         responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuickSessionCreatedResponse"];
+                };
+            };
             /** @description VIDEO_REQUIRED — free user sin credit de video sponsor pendiente */
             403: {
                 headers: {
@@ -8423,13 +15945,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitQuickAnswerDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuickAnswerResponse"];
+                };
             };
         };
     };
@@ -8448,13 +15976,17 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuickSessionEndedResponse"];
+                };
             };
         };
     };
     VideosController_getNext: {
         parameters: {
-            query?: never;
+            query: {
+                context: "practice" | "game" | "kokos" | "energy";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8465,7 +15997,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NextVideoResponse"];
+                };
             };
         };
     };
@@ -8478,13 +16012,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteVideoDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["VideoCompletedResponse"];
+                };
             };
         };
     };
@@ -8495,13 +16035,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSimulacroDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SimulacroCreatedResponse"];
+                };
             };
         };
     };
@@ -8520,7 +16066,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SimulacroDetailResponse"];
+                };
             };
         };
     };
@@ -8533,13 +16081,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitSimulacroAnswerDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SimulacroAnswerReceivedResponse"];
+                };
             };
         };
     };
@@ -8558,7 +16112,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SimulacroResultResponse"];
+                };
             };
         };
     };
@@ -8577,13 +16133,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SimulacroAbandonedResponse"];
+                };
             };
         };
     };
     FriendsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8594,7 +16155,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FriendListResponse"];
+                };
             };
         };
     };
@@ -8605,13 +16168,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendFriendRequestDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FriendRequestSentResponse"];
+                };
             };
         };
     };
@@ -8622,13 +16191,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactsMatchDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FriendMatchesResponse"];
+                };
             };
         };
     };
@@ -8639,19 +16214,28 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SocialMatchDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FriendMatchesResponse"];
+                };
             };
         };
     };
     FriendsController_listReceivedRequests: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8662,7 +16246,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReceivedRequestListResponse"];
+                };
             };
         };
     };
@@ -8681,7 +16267,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RequestAcceptedResponse"];
+                };
             };
         };
     };
@@ -8700,7 +16288,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RequestDeclinedResponse"];
+                };
             };
         };
     };
@@ -8730,13 +16320,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlockUserDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserBlockedResponse"];
+                };
             };
         };
     };
@@ -8761,7 +16357,10 @@ export interface operations {
     };
     FeedController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8772,7 +16371,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FeedListResponse"];
+                };
             };
         };
     };
@@ -8791,7 +16392,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SharedStreakResponse"];
+                };
             };
         };
     };
@@ -8829,7 +16432,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SharedStreakResponse"];
+                };
             };
         };
     };
@@ -8865,7 +16470,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AchievementCatalogListResponse"];
+                };
             };
         };
     };
@@ -8882,7 +16489,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AchievementUnlockedListResponse"];
+                };
             };
         };
     };
@@ -8899,7 +16508,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SurpriseExamResponse"];
+                };
             };
         };
     };
@@ -8912,13 +16523,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitSurpriseAnswerDto"];
+            };
+        };
         responses: {
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SurpriseAnswerResponse"];
+                };
             };
         };
     };
@@ -8937,13 +16554,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SurpriseExamCompletedResponse"];
+                };
             };
         };
     };
     DuelsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: "pending" | "active" | "completed" | "cancelled";
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8954,7 +16577,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MatchListResponse"];
+                };
             };
         };
     };
@@ -8965,8 +16590,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMatchDto"];
+            };
+        };
         responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchResponse"];
+                };
+            };
             /** @description VIDEO_REQUIRED — free user sin credit de video sponsor pendiente */
             403: {
                 headers: {
@@ -8991,7 +16628,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MatchDetailResponse"];
+                };
             };
         };
     };
@@ -9010,7 +16649,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MatchAcceptedResponse"];
+                };
             };
         };
     };
@@ -9029,7 +16670,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MatchDeclinedResponse"];
+                };
             };
         };
     };
@@ -9048,7 +16691,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SpinResponse"];
+                };
             };
         };
     };
@@ -9062,13 +16707,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitDuelAnswerDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DuelAnswerResponse"];
+                };
             };
         };
     };
@@ -9087,7 +16738,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MatchResultResponse"];
+                };
             };
         };
     };
@@ -9106,13 +16759,20 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MatchResponse"];
+                };
             };
         };
     };
     ArenaController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: "waiting" | "active" | "completed";
+                type?: "rapida" | "especial" | "amigos";
+                page?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -9123,7 +16783,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ArenaListResponse"];
+                };
             };
         };
     };
@@ -9134,8 +16796,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateArenaDto"];
+            };
+        };
         responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArenaCreatedResponse"];
+                };
+            };
             /** @description VIDEO_REQUIRED — free user sin credit de video sponsor pendiente */
             403: {
                 headers: {
@@ -9152,8 +16826,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuickArenaDto"];
+            };
+        };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArenaJoinedResponse"];
+                };
+            };
             /** @description VIDEO_REQUIRED — free user sin credit de video sponsor pendiente */
             403: {
                 headers: {
@@ -9170,8 +16856,20 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuickArenaDto"];
+            };
+        };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArenaEspecialJoinedResponse"];
+                };
+            };
             /** @description VIDEO_REQUIRED — free user sin credit de video sponsor pendiente */
             403: {
                 headers: {
@@ -9196,7 +16894,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ArenaDetailResponse"];
+                };
             };
         };
     };
@@ -9209,8 +16909,20 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JoinArenaDto"];
+            };
+        };
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArenaJoinedResponse"];
+                };
+            };
             /** @description VIDEO_REQUIRED — free user sin credit de video sponsor pendiente; o FORBIDDEN si invite_code es inválido */
             403: {
                 headers: {
@@ -9235,7 +16947,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ArenaStartedResponse"];
+                };
             };
         };
     };
@@ -9254,7 +16968,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ArenaQuestionResponse"];
+                };
             };
         };
     };
@@ -9267,13 +16983,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitArenaAnswerDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ArenaAnswerResponse"];
+                };
             };
         };
     };
@@ -9282,17 +17004,23 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: string;
+                type: "simulacro" | "streak" | "league" | "duel" | "exam";
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateShareDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CreateShareResponse"];
+                };
             };
         };
     };
@@ -9301,7 +17029,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                type: string;
+                type: "simulacro" | "streak" | "league" | "duel" | "exam";
                 id: string;
             };
             cookie?: never;
@@ -9312,7 +17040,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SharePreviewResponse"];
+                };
             };
         };
     };
@@ -9323,13 +17053,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterPushTokenDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PushTokenRegisteredResponse"];
+                };
             };
         };
     };
@@ -9365,7 +17101,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NotificationSettingsResponse"];
+                };
             };
         };
     };
@@ -9376,13 +17114,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNotificationSettingsDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NotificationSettingsResponse"];
+                };
             };
         };
     };
@@ -9397,6 +17141,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GradePredictionResponse"];
+                };
+            };
             /** @description PLAN_REQUIRED — feature exclusiva del plan Pro */
             403: {
                 headers: {
@@ -9419,7 +17171,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["VocationalTestResponse"];
+                };
             };
         };
     };
@@ -9430,13 +17184,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitTestDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["VocationalSubmitResponse"];
+                };
             };
         };
     };
@@ -9453,13 +17213,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["VocationalResultResponse"];
+                };
             };
         };
     };
     VocationalController_browseCareers: {
         parameters: {
-            query?: never;
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                riasec?: "R" | "I" | "A" | "S" | "E" | "C";
+                sort?: "name" | "demand" | "salary" | "employment";
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -9470,7 +17238,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BrowseCareersResponse"];
+                };
             };
         };
     };
@@ -9487,13 +17257,17 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RiasecTypesResponse"];
+                };
             };
         };
     };
     VocationalController_compareCareers: {
         parameters: {
-            query?: never;
+            query: {
+                ids: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -9504,7 +17278,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CompareCareersResponse"];
+                };
             };
         };
     };
@@ -9523,7 +17299,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerDetailResponse"];
+                };
             };
         };
     };
@@ -9542,7 +17320,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerFitResponse"];
+                };
             };
         };
     };
@@ -9559,7 +17339,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RaffleListResponse"];
+                };
             };
         };
     };
@@ -9578,7 +17360,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RaffleResponse"];
+                };
             };
         };
     };
@@ -9597,7 +17381,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RaffleEligibilityResponse"];
+                };
             };
         };
     };
@@ -9616,13 +17402,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RaffleWinnersResponse"];
+                };
             };
         };
     };
     BannersController_getNext: {
         parameters: {
-            query?: never;
+            query: {
+                placement: "practice_home" | "jugar_home" | "rankings_home" | "benefits_home" | "session_complete";
+                module_id?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -9633,7 +17424,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NextBannerResponse"];
+                };
             };
         };
     };
@@ -9682,13 +17475,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateReportDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReportCreatedResponse"];
+                };
             };
         };
     };
@@ -9699,13 +17498,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTicketDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TicketCreatedResponse"];
+                };
             };
         };
     };
@@ -9722,7 +17527,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HealthLiveResponse"];
+                };
             };
         };
     };
@@ -9739,7 +17546,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HealthReadyResponse"];
+                };
             };
         };
     };
@@ -9758,7 +17567,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["JobTriggeredResponse"];
+                };
             };
         };
     };
@@ -9769,13 +17580,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminLoginResponse"];
+                };
             };
         };
     };
@@ -9792,7 +17609,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminRefreshResponse"];
+                };
             };
         };
     };
@@ -9820,7 +17639,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordDto"];
+            };
+        };
         responses: {
             204: {
                 headers: {
@@ -9843,7 +17666,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminMeResponse"];
+                };
             };
         };
     };
@@ -9860,7 +17685,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminSessionsResponse"];
+                };
             };
         };
     };
@@ -9877,7 +17704,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminSessionsRevokedResponse"];
+                };
             };
         };
     };
@@ -9902,7 +17731,14 @@ export interface operations {
     };
     AdminsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                role?: "user" | "admin" | "editor" | "support" | "commercial";
+                scope?: "global" | "regional";
+                status?: "active" | "inactive" | "pending_first_login";
+                search?: string;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -9913,7 +17749,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminListResponse"];
+                };
             };
         };
     };
@@ -9924,13 +17762,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAdminDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminInvitedResponse"];
+                };
             };
         };
     };
@@ -9949,7 +17793,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminDetailResponse"];
+                };
             };
         };
     };
@@ -9962,13 +17808,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAdminDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminUpdatedResponse"];
+                };
             };
         };
     };
@@ -10025,7 +17877,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AdminSessionListResponse"];
+                };
             };
         };
     };
@@ -10069,7 +17923,22 @@ export interface operations {
     };
     UsersAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                search?: string;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                activeModuleId?: string;
+                plan?: "free" | "basico" | "plus" | "pro";
+                accountStatus?: "pending_parental" | "active" | "suspended" | "deleted";
+                isBot?: boolean;
+                createdFrom?: string;
+                createdTo?: string;
+                lastActiveFrom?: string;
+                lastActiveTo?: string;
+                page?: number;
+                pageSize?: number;
+                sortBy?: "createdAt" | "lastActiveAt" | "streakDays";
+                sortDir?: "asc" | "desc";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -10080,7 +17949,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserAdminListResponse"];
+                };
             };
         };
     };
@@ -10099,7 +17970,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserAdminDetailResponse"];
+                };
             };
         };
     };
@@ -10112,13 +17985,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserUpdatedResponse"];
+                };
             };
         };
     };
@@ -10139,7 +18018,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserTransactionsResponse"];
+                };
             };
         };
     };
@@ -10158,7 +18039,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserInventoryResponse"];
+                };
             };
         };
     };
@@ -10177,7 +18060,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserAchievementAdminResponse"];
+                };
             };
         };
     };
@@ -10196,7 +18081,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserLeaguesResponse"];
+                };
             };
         };
     };
@@ -10215,7 +18102,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserSubscriptionsResponse"];
+                };
             };
         };
     };
@@ -10234,7 +18123,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserSocialResponse"];
+                };
             };
         };
     };
@@ -10253,7 +18144,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserAiResponse"];
+                };
             };
         };
     };
@@ -10272,7 +18165,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserActivityResponse"];
+                };
             };
         };
     };
@@ -10291,7 +18186,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserStatsResponse"];
+                };
             };
         };
     };
@@ -10310,7 +18207,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserCouponsResponse"];
+                };
             };
         };
     };
@@ -10329,7 +18228,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserAdvancedStatsResponse"];
+                };
             };
         };
     };
@@ -10342,7 +18243,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailChangeDto"];
+            };
+        };
         responses: {
             204: {
                 headers: {
@@ -10418,7 +18323,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BanDto"];
+            };
+        };
         responses: {
             204: {
                 headers: {
@@ -10456,7 +18365,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteAccountDto"];
+            };
+        };
         responses: {
             204: {
                 headers: {
@@ -10475,7 +18388,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToggleBotDto"];
+            };
+        };
         responses: {
             204: {
                 headers: {
@@ -10513,7 +18430,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasonDto"];
+            };
+        };
         responses: {
             204: {
                 headers: {
@@ -10532,13 +18453,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustBalanceDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserBalanceAdjustedResponse"];
+                };
             };
         };
     };
@@ -10551,7 +18478,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetStreakDto"];
+            };
+        };
         responses: {
             204: {
                 headers: {
@@ -10570,13 +18501,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrantItemDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserItemGrantedResponse"];
+                };
             };
         };
     };
@@ -10601,7 +18538,17 @@ export interface operations {
     };
     AuditLogController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                actorId?: string;
+                action?: string;
+                resourceType?: string;
+                resourceId?: string;
+                search?: string;
+                from?: string;
+                to?: string;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -10612,13 +18559,24 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AuditLogListResponse"];
+                };
             };
         };
     };
     AuditLogController_export: {
         parameters: {
             query: {
+                actorId?: string;
+                action?: string;
+                resourceType?: string;
+                resourceId?: string;
+                search?: string;
+                from?: string;
+                to?: string;
+                page?: number;
+                pageSize?: number;
                 format: string;
             };
             header?: never;
@@ -10627,11 +18585,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description CSV descargable */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "text/csv": string;
+                };
             };
         };
     };
@@ -10648,7 +18609,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AuditArchiveListResponse"];
+                };
             };
         };
     };
@@ -10668,7 +18631,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AuditLogListResponse"];
+                };
             };
         };
     };
@@ -10685,7 +18650,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["HealthSummaryResponse"];
+                };
             };
         };
     };
@@ -10702,7 +18669,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SlowQueriesResponse"];
+                };
             };
         };
     };
@@ -10721,7 +18690,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["IntegrationCheckResponse"];
+                };
             };
         };
     };
@@ -10738,13 +18709,24 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["IapFailuresResponse"];
+                };
             };
         };
     };
     QuestionsAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                moduleId?: string;
+                subjectId?: string;
+                topicId?: string;
+                difficulty?: "easy" | "medium" | "hard";
+                status?: "draft" | "review" | "active" | "inactive";
+                search?: string;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -10755,7 +18737,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionAdminListResponse"];
+                };
             };
         };
     };
@@ -10766,13 +18750,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQuestionDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionAdminResponse"];
+                };
             };
         };
     };
@@ -10789,7 +18779,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionUploadImageResponse"];
+                };
             };
         };
     };
@@ -10800,13 +18792,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkImportDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionBulkPreviewResponse"];
+                };
             };
         };
     };
@@ -10817,13 +18815,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkImportDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionBulkImportResponse"];
+                };
             };
         };
     };
@@ -10834,13 +18838,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkStatusDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionBulkStatusResponse"];
+                };
             };
         };
     };
@@ -10851,13 +18861,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkIdsDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionBulkDeleteResponse"];
+                };
             };
         };
     };
@@ -10868,13 +18884,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiGenerateDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionAiGeneratedResponse"];
+                };
             };
         };
     };
@@ -10893,7 +18915,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionAdminDetailResponse"];
+                };
             };
         };
     };
@@ -10906,13 +18930,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateQuestionDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionAdminResponse"];
+                };
             };
         };
     };
@@ -10931,7 +18961,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionAdminResponse"];
+                };
             };
         };
     };
@@ -10950,7 +18982,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionAdminResponse"];
+                };
             };
         };
     };
@@ -10969,7 +19003,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionAdminResponse"];
+                };
             };
         };
     };
@@ -10984,11 +19020,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            204: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionAdminResponse"];
+                };
             };
         };
     };
@@ -11007,7 +19045,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuestionAdminResponse"];
+                };
             };
         };
     };
@@ -11026,7 +19066,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ModuleAdminListResponse"];
+                };
             };
         };
     };
@@ -11037,13 +19079,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateModuleDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ModuleAdminResponse"];
+                };
             };
         };
     };
@@ -11062,6 +19110,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
+                content: {
+                    "application/json": components["schemas"]["ModuleTreeResponse"];
+                };
+            };
+        };
+    };
+    ModulesAdminController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
                 content?: never;
             };
         };
@@ -11075,13 +19144,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateModuleDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ModuleAdminResponse"];
+                };
             };
         };
     };
@@ -11100,7 +19175,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ModuleAdminResponse"];
+                };
             };
         };
     };
@@ -11113,13 +19190,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicateModuleDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ModuleAdminResponse"];
+                };
             };
         };
     };
@@ -11130,13 +19213,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSubjectDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubjectAdminResponse"];
+                };
             };
         };
     };
@@ -11147,13 +19236,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubjectsReorderedResponse"];
+                };
             };
         };
     };
@@ -11166,13 +19261,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSubjectDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubjectAdminResponse"];
+                };
             };
         };
     };
@@ -11202,13 +19303,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTopicDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TopicAdminResponse"];
+                };
             };
         };
     };
@@ -11219,13 +19326,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TopicsReorderedResponse"];
+                };
             };
         };
     };
@@ -11238,13 +19351,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTopicDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TopicAdminResponse"];
+                };
             };
         };
     };
@@ -11269,7 +19388,14 @@ export interface operations {
     };
     NewsAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                moduleId?: string;
+                category?: "module" | "education";
+                status?: "draft" | "scheduled" | "published";
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -11280,7 +19406,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsAdminListResponse"];
+                };
             };
         };
     };
@@ -11291,13 +19419,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNewsDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsAdminResponse"];
+                };
             };
         };
     };
@@ -11316,7 +19450,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsAdminResponse"];
+                };
             };
         };
     };
@@ -11329,13 +19465,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNewsDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsAdminResponse"];
+                };
             };
         };
     };
@@ -11346,13 +19488,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkIdsDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsBulkPublishedResponse"];
+                };
             };
         };
     };
@@ -11363,13 +19511,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkIdsDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsBulkDeletedResponse"];
+                };
             };
         };
     };
@@ -11386,7 +19540,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsUploadImageResponse"];
+                };
             };
         };
     };
@@ -11405,7 +19561,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsAdminResponse"];
+                };
             };
         };
     };
@@ -11424,7 +19582,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsAdminResponse"];
+                };
             };
         };
     };
@@ -11443,7 +19603,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsAdminResponse"];
+                };
             };
         };
     };
@@ -11462,7 +19624,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["NewsAdminResponse"];
+                };
             };
         };
     };
@@ -11473,19 +19637,27 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadCutoffsDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CutoffUploadResponse"];
+                };
             };
         };
     };
     AdmissionCutoffsAdminController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: "pending_review" | "applied" | "rejected";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -11496,7 +19668,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CutoffUploadListResponse"];
+                };
             };
         };
     };
@@ -11515,7 +19689,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CutoffUploadDetailResponse"];
+                };
             };
         };
     };
@@ -11534,7 +19710,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CutoffUploadDeletedResponse"];
+                };
             };
         };
     };
@@ -11553,7 +19731,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CutoffUploadResponse"];
+                };
             };
         };
     };
@@ -11566,13 +19746,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CutoffUploadResponse"];
+                };
             };
         };
     };
@@ -11589,7 +19775,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AiPromptListResponse"];
+                };
             };
         };
     };
@@ -11600,13 +19788,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertPromptDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AiPromptResponse"];
+                };
             };
         };
     };
@@ -11625,7 +19819,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AiPromptDetailResponse"];
+                };
             };
         };
     };
@@ -11636,13 +19832,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaygroundDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PlaygroundRunResponse"];
+                };
             };
         };
     };
@@ -11655,13 +19857,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVersionDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AiPromptVersionResponse"];
+                };
             };
         };
     };
@@ -11674,19 +19882,32 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivateVersionDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AiPromptResponse"];
+                };
             };
         };
     };
     CareerAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                moduleId?: string;
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                area?: string;
+                isActive?: boolean;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -11697,7 +19918,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerAdminListResponse"];
+                };
             };
         };
     };
@@ -11708,13 +19931,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCareerDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerAdminResponse"];
+                };
             };
         };
     };
@@ -11733,7 +19962,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerAdminResponse"];
+                };
             };
         };
     };
@@ -11746,13 +19977,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCareerDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerAdminResponse"];
+                };
             };
         };
     };
@@ -11763,19 +20000,27 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadCareersDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerUploadResponse"];
+                };
             };
         };
     };
     CareerUploadsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: "pending_review" | "applied" | "rejected";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -11786,7 +20031,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerUploadListResponse"];
+                };
             };
         };
     };
@@ -11805,7 +20052,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerUploadDetailResponse"];
+                };
             };
         };
     };
@@ -11824,7 +20073,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerUploadDeletedResponse"];
+                };
             };
         };
     };
@@ -11843,7 +20094,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerUploadResponse"];
+                };
             };
         };
     };
@@ -11856,19 +20109,30 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectCareersDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CareerUploadResponse"];
+                };
             };
         };
     };
     ItemAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                dimension?: "R" | "I" | "A" | "S" | "E" | "C";
+                isActive?: boolean;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -11879,7 +20143,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["VocationalItemListResponse"];
+                };
             };
         };
     };
@@ -11890,13 +20156,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateItemDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["VocationalItemResponse"];
+                };
             };
         };
     };
@@ -11915,7 +20187,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["VocationalItemDeletedResponse"];
+                };
             };
         };
     };
@@ -11928,13 +20202,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateItemDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["VocationalItemResponse"];
+                };
             };
         };
     };
@@ -11951,7 +20231,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RiasecTypeListResponse"];
+                };
             };
         };
     };
@@ -11964,19 +20246,35 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRiasecTypeDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RiasecTypeResponse"];
+                };
             };
         };
     };
     ModerationAdminController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: "open" | "in_review" | "dismissed" | "actioned" | "escalated";
+                severity?: "low" | "medium" | "high" | "critical";
+                target?: "user_profile" | "duel_behavior";
+                reason?: "offensive_name" | "inappropriate_avatar" | "impersonation" | "cheating_speed" | "cheating_pattern" | "abandonment" | "other";
+                source?: "user_report" | "detector";
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                search?: string;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -11987,7 +20285,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ModerationReportListResponse"];
+                };
             };
         };
     };
@@ -12004,7 +20304,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ModerationStatsResponse"];
+                };
             };
         };
     };
@@ -12023,7 +20325,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ModerationReportResponse"];
+                };
             };
         };
     };
@@ -12036,19 +20340,28 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveReportDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ModerationReportResponse"];
+                };
             };
         };
     };
     ProhibitedWordsAdminController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                isActive?: boolean;
+                search?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12059,7 +20372,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProhibitedWordListResponse"];
+                };
             };
         };
     };
@@ -12070,13 +20385,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProhibitedWordDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProhibitedWordResponse"];
+                };
             };
         };
     };
@@ -12095,7 +20416,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProhibitedWordDeletedResponse"];
+                };
             };
         };
     };
@@ -12108,13 +20431,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProhibitedWordDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProhibitedWordResponse"];
+                };
             };
         };
     };
@@ -12131,7 +20460,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageSegmentListResponse"];
+                };
             };
         };
     };
@@ -12142,13 +20473,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSegmentDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageSegmentResponse"];
+                };
             };
         };
     };
@@ -12159,13 +20496,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreviewCountDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SegmentPreviewCountResponse"];
+                };
             };
         };
     };
@@ -12184,7 +20527,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageSegmentResponse"];
+                };
             };
         };
     };
@@ -12203,7 +20548,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageSegmentDeletedResponse"];
+                };
             };
         };
     };
@@ -12216,19 +20563,27 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSegmentDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageSegmentResponse"];
+                };
             };
         };
     };
     TemplatesController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                channel?: "email" | "push";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12239,7 +20594,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageTemplateListResponse"];
+                };
             };
         };
     };
@@ -12250,13 +20607,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTemplateDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageTemplateResponse"];
+                };
             };
         };
     };
@@ -12275,7 +20638,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageTemplateResponse"];
+                };
             };
         };
     };
@@ -12294,7 +20659,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageTemplateDeletedResponse"];
+                };
             };
         };
     };
@@ -12307,19 +20674,29 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTemplateDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageTemplateResponse"];
+                };
             };
         };
     };
     CampaignsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: "draft" | "pending_approval" | "approved" | "sending" | "sent" | "failed" | "cancelled";
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12330,7 +20707,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageCampaignListResponse"];
+                };
             };
         };
     };
@@ -12341,13 +20720,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCampaignDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageCampaignResponse"];
+                };
             };
         };
     };
@@ -12366,7 +20751,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageCampaignDetailResponse"];
+                };
             };
         };
     };
@@ -12379,13 +20766,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCampaignDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageCampaignResponse"];
+                };
             };
         };
     };
@@ -12396,13 +20789,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadCampaignAssetDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CampaignUploadAssetResponse"];
+                };
             };
         };
     };
@@ -12421,7 +20820,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageCampaignResponse"];
+                };
             };
         };
     };
@@ -12440,7 +20841,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CampaignSendResponse"];
+                };
             };
         };
     };
@@ -12459,7 +20862,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MessageCampaignResponse"];
+                };
             };
         };
     };
@@ -12476,7 +20881,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TxTemplateListResponse"];
+                };
             };
         };
     };
@@ -12489,13 +20896,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTxTemplateDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TxTemplateResponse"];
+                };
             };
         };
     };
@@ -12512,7 +20925,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotTemplateListResponse"];
+                };
             };
         };
     };
@@ -12525,13 +20940,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBotTemplateDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotTemplateResponse"];
+                };
             };
         };
     };
@@ -12548,7 +20969,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotAvatarListResponse"];
+                };
             };
         };
     };
@@ -12559,13 +20982,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBotAvatarDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotAvatarResponse"];
+                };
             };
         };
     };
@@ -12576,13 +21005,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadAssetDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotAvatarUploadResponse"];
+                };
             };
         };
     };
@@ -12601,7 +21036,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotAvatarResponse"];
+                };
             };
         };
     };
@@ -12614,19 +21051,27 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToggleDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotAvatarResponse"];
+                };
             };
         };
     };
     BotPoolsController_listNames: {
         parameters: {
-            query?: never;
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12637,7 +21082,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotNameListResponse"];
+                };
             };
         };
     };
@@ -12648,13 +21095,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBotNameDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotNameResponse"];
+                };
             };
         };
     };
@@ -12673,13 +21126,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotNameResponse"];
+                };
             };
         };
     };
     BotsAdminController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                pageSize?: number;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                templateId?: string;
+                isActive?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12690,7 +21151,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotAdminListResponse"];
+                };
             };
         };
     };
@@ -12701,13 +21164,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBotDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotCreatedResponse"];
+                };
             };
         };
     };
@@ -12718,13 +21187,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkBotsDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotBulkResponse"];
+                };
             };
         };
     };
@@ -12737,13 +21212,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBotDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotUpdatedResponse"];
+                };
             };
         };
     };
@@ -12760,7 +21241,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BotMetricsResponse"];
+                };
             };
         };
     };
@@ -12771,19 +21254,31 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadAssetDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AchievementUploadIconResponse"];
+                };
             };
         };
     };
     AchievementsAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                tier?: "common" | "uncommon" | "rare" | "epic";
+                isActive?: boolean;
+                search?: string;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12794,7 +21289,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AchievementAdminListResponse"];
+                };
             };
         };
     };
@@ -12805,13 +21302,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAchievementDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AchievementAdminResponse"];
+                };
             };
         };
     };
@@ -12830,7 +21333,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AchievementAdminDetailResponse"];
+                };
             };
         };
     };
@@ -12843,13 +21348,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAchievementDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AchievementAdminDetailResponse"];
+                };
             };
         };
     };
@@ -12868,7 +21379,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AchievementRegrantPreviewResponse"];
+                };
             };
         };
     };
@@ -12887,13 +21400,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AchievementRegrantResponse"];
+                };
             };
         };
     };
     MissionsAdminController_searchTemplates: {
         parameters: {
-            query?: never;
+            query?: {
+                type?: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro";
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                isActive?: boolean;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12904,7 +21425,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MissionTemplateListResponse"];
+                };
             };
         };
     };
@@ -12915,13 +21438,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMissionTemplateDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MissionTemplateResponse"];
+                };
             };
         };
     };
@@ -12940,7 +21469,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MissionTemplateResponse"];
+                };
             };
         };
     };
@@ -12953,13 +21484,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMissionTemplateDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MissionTemplateResponse"];
+                };
             };
         };
     };
@@ -12978,7 +21515,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MissionRefreshConfigResponse"];
+                };
             };
         };
     };
@@ -12989,13 +21528,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshConfigDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MissionRefreshConfigResponse"];
+                };
             };
         };
     };
@@ -13014,7 +21559,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserMissionListResponse"];
+                };
             };
         };
     };
@@ -13033,7 +21580,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MissionOkResponse"];
+                };
             };
         };
     };
@@ -13052,7 +21601,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserMissionResponse"];
+                };
             };
         };
     };
@@ -13071,13 +21622,22 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MissionOkResponse"];
+                };
             };
         };
     };
     StoreAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                category?: "cosmetic" | "functional";
+                itemType?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                isActive?: boolean;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -13088,7 +21648,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StoreItemAdminListResponse"];
+                };
             };
         };
     };
@@ -13099,13 +21661,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStoreItemDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StoreItemAdminResponse"];
+                };
             };
         };
     };
@@ -13116,13 +21684,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadStoreAssetDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StoreUploadAssetResponse"];
+                };
             };
         };
     };
@@ -13135,13 +21709,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustInventoryDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["InventoryAdjustedResponse"];
+                };
             };
         };
     };
@@ -13160,7 +21740,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StoreItemAdminResponse"];
+                };
             };
         };
     };
@@ -13173,19 +21755,32 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStoreItemDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StoreItemAdminResponse"];
+                };
             };
         };
     };
     CouponsAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                tier?: "basico" | "estandar" | "premium";
+                sponsorId?: string;
+                isActive?: boolean;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -13196,7 +21791,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CouponAdminListResponse"];
+                };
             };
         };
     };
@@ -13207,13 +21804,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCouponDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CouponAdminResponse"];
+                };
             };
         };
     };
@@ -13232,7 +21835,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CouponStatsResponse"];
+                };
             };
         };
     };
@@ -13247,17 +21852,24 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description CSV descargable */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "text/csv": string;
+                };
             };
         };
     };
     CouponsAdminController_listUserCoupons: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: "active" | "used" | "invalidated";
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path: {
                 id: string;
@@ -13270,7 +21882,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserCouponAdminListResponse"];
+                };
             };
         };
     };
@@ -13289,7 +21903,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CouponAdminResponse"];
+                };
             };
         };
     };
@@ -13302,13 +21918,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCouponDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CouponAdminResponse"];
+                };
             };
         };
     };
@@ -13321,13 +21943,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCouponBranchesDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CouponBranchesSetResponse"];
+                };
             };
         };
     };
@@ -13346,7 +21974,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserCouponActionResponse"];
+                };
             };
         };
     };
@@ -13359,19 +21989,31 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvalidateUserCouponDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UserCouponActionResponse"];
+                };
             };
         };
     };
     RafflesAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                moduleId?: string;
+                status?: "scheduled" | "open" | "closed" | "awarded" | "awarded_pending_review" | "awarded_final" | "reverted";
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -13382,7 +22024,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RaffleAdminListResponse"];
+                };
             };
         };
     };
@@ -13393,13 +22037,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadPrizeAssetDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RaffleUploadResponse"];
+                };
             };
         };
     };
@@ -13418,7 +22068,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RaffleAdminResponse"];
+                };
             };
         };
     };
@@ -13431,13 +22083,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteRaffleDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RaffleActionResponse"];
+                };
             };
         };
     };
@@ -13456,7 +22114,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RaffleActionResponse"];
+                };
             };
         };
     };
@@ -13469,13 +22129,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWinnerDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RaffleWinnerResponse"];
+                };
             };
         };
     };
@@ -13494,13 +22160,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RaffleActionResponse"];
+                };
             };
         };
     };
     SponsorsAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                isActive?: boolean;
+                search?: string;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -13511,7 +22185,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorAdminListResponse"];
+                };
             };
         };
     };
@@ -13522,13 +22198,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSponsorDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorAdminResponse"];
+                };
             };
         };
     };
@@ -13539,13 +22221,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadSponsorLogoDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["UploadUrlResponse"];
+                };
             };
         };
     };
@@ -13564,7 +22252,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorAdminResponse"];
+                };
             };
         };
     };
@@ -13577,13 +22267,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSponsorDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorAdminResponse"];
+                };
             };
         };
     };
@@ -13602,7 +22298,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BranchListResponse"];
+                };
             };
         };
     };
@@ -13615,13 +22313,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBranchDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BranchResponse"];
+                };
             };
         };
     };
@@ -13640,7 +22344,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BranchDeletedResponse"];
+                };
             };
         };
     };
@@ -13653,13 +22359,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBranchDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BranchResponse"];
+                };
             };
         };
     };
@@ -13676,7 +22388,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReferralMilestoneListResponse"];
+                };
             };
         };
     };
@@ -13687,13 +22401,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMilestoneDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReferralMilestoneResponse"];
+                };
             };
         };
     };
@@ -13710,7 +22430,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReferralStatsAdminResponse"];
+                };
             };
         };
     };
@@ -13729,7 +22451,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReferralMilestoneDeletedResponse"];
+                };
             };
         };
     };
@@ -13742,19 +22466,32 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMilestoneDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ReferralMilestoneResponse"];
+                };
             };
         };
     };
     BannersAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                placement?: "practice_home" | "jugar_home" | "rankings_home" | "benefits_home" | "session_complete";
+                sponsorId?: string;
+                isActive?: boolean;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -13765,7 +22502,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BannerAdminListResponse"];
+                };
             };
         };
     };
@@ -13776,13 +22515,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBannerDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BannerAdminResponse"];
+                };
             };
         };
     };
@@ -13793,13 +22538,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadAssetDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BannerUploadResponse"];
+                };
             };
         };
     };
@@ -13818,7 +22569,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BannerStatsResponse"];
+                };
             };
         };
     };
@@ -13837,7 +22590,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BannerAdminResponse"];
+                };
             };
         };
     };
@@ -13850,19 +22605,30 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBannerDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["BannerAdminResponse"];
+                };
             };
         };
     };
     SponsorInvoicesAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                sponsorId?: string;
+                status?: "draft" | "issued" | "paid" | "overdue" | "void";
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -13873,7 +22639,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorInvoiceAdminListResponse"];
+                };
             };
         };
     };
@@ -13884,13 +22652,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInvoiceDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorInvoiceAdminResponse"];
+                };
             };
         };
     };
@@ -13909,7 +22683,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorInvoiceAdminResponse"];
+                };
             };
         };
     };
@@ -13922,13 +22698,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInvoiceDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorInvoiceAdminResponse"];
+                };
             };
         };
     };
@@ -13947,7 +22729,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorInvoiceAdminResponse"];
+                };
             };
         };
     };
@@ -13966,7 +22750,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorInvoiceAdminResponse"];
+                };
             };
         };
     };
@@ -13985,7 +22771,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorInvoiceAdminResponse"];
+                };
             };
         };
     };
@@ -14004,7 +22792,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorInvoiceAdminResponse"];
+                };
             };
         };
     };
@@ -14023,13 +22813,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorInvoicePdfUrlResponse"];
+                };
             };
         };
     };
     SponsorCrmController_listActivities: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path: {
                 id: string;
@@ -14042,13 +22837,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorActivityListResponse"];
+                };
             };
         };
     };
     SponsorCrmController_listNotes: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path: {
                 id: string;
@@ -14061,7 +22861,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorNoteListResponse"];
+                };
             };
         };
     };
@@ -14074,13 +22876,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNoteDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorNoteResponse"];
+                };
             };
         };
     };
@@ -14100,7 +22908,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorCrmDeletedResponse"];
+                };
             };
         };
     };
@@ -14114,19 +22924,28 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateNoteDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorNoteResponse"];
+                };
             };
         };
     };
     SponsorCrmController_listDocuments: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path: {
                 id: string;
@@ -14139,7 +22958,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorDocumentListResponse"];
+                };
             };
         };
     };
@@ -14152,13 +22973,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadDocumentDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorDocumentResponse"];
+                };
             };
         };
     };
@@ -14178,7 +23005,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorDocumentUrlResponse"];
+                };
             };
         };
     };
@@ -14198,7 +23027,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorCrmDeletedResponse"];
+                };
             };
         };
     };
@@ -14217,7 +23048,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EnergyConfigResponse"];
+                };
             };
         };
     };
@@ -14228,13 +23061,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnergyConfigDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["EnergyConfigResponse"];
+                };
             };
         };
     };
@@ -14253,7 +23092,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FreeLimitConfigResponse"];
+                };
             };
         };
     };
@@ -14264,13 +23105,63 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FreeLimitConfigDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FreeLimitConfigResponse"];
+                };
+            };
+        };
+    };
+    RewardsAdminController_getConfig: {
+        parameters: {
+            query: {
+                country: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         requestBody?: never;
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RewardConfigResponse"];
+                };
+            };
+        };
+    };
+    RewardsAdminController_upsertConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RewardConfigDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RewardConfigResponse"];
+                };
             };
         };
     };
@@ -14281,19 +23172,32 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PresignVideoDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorVideoUploadUrlResponse"];
+                };
             };
         };
     };
     VideosAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                sponsorId?: string;
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                context?: "practice" | "game" | "kokos" | "any";
+                isActive?: "true" | "false";
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14304,7 +23208,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorVideoAdminListResponse"];
+                };
             };
         };
     };
@@ -14315,13 +23221,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateVideoDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorVideoAdminResponse"];
+                };
             };
         };
     };
@@ -14340,7 +23252,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorVideoAdminResponse"];
+                };
             };
         };
     };
@@ -14359,7 +23273,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorVideoRemovedResponse"];
+                };
             };
         };
     };
@@ -14372,19 +23288,29 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateVideoDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SponsorVideoAdminResponse"];
+                };
             };
         };
     };
     DashboardAdminController_engagement: {
         parameters: {
-            query?: never;
+            query?: {
+                from?: string;
+                to?: string;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14395,13 +23321,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DashboardEngagementResponse"];
+                };
             };
         };
     };
     DashboardAdminController_economy: {
         parameters: {
-            query?: never;
+            query?: {
+                from?: string;
+                to?: string;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14412,13 +23344,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DashboardEconomyResponse"];
+                };
             };
         };
     };
     DashboardAdminController_subscribers: {
         parameters: {
-            query?: never;
+            query?: {
+                from?: string;
+                to?: string;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14429,13 +23367,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DashboardSubscribersResponse"];
+                };
             };
         };
     };
     DashboardAdminController_timeseries: {
         parameters: {
-            query?: never;
+            query?: {
+                from?: string;
+                to?: string;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14446,13 +23390,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DashboardTimeseriesResponse"];
+                };
             };
         };
     };
     DashboardAdminController_retention: {
         parameters: {
-            query?: never;
+            query?: {
+                from?: string;
+                to?: string;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14463,13 +23413,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DashboardRetentionResponse"];
+                };
             };
         };
     };
     DashboardAdminController_acquisition: {
         parameters: {
-            query?: never;
+            query?: {
+                from?: string;
+                to?: string;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14480,13 +23436,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DashboardAcquisitionResponse"];
+                };
             };
         };
     };
     DashboardAdminController_examsPassed: {
         parameters: {
-            query?: never;
+            query?: {
+                from?: string;
+                to?: string;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14497,13 +23459,23 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["DashboardExamsPassedResponse"];
+                };
             };
         };
     };
     SubscriptionsAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                friendCode?: string;
+                plan?: "free" | "basico" | "plus" | "pro";
+                status?: "trial" | "active" | "cancelled" | "expired" | "grace";
+                moduleId?: string;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14514,7 +23486,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionAdminListResponse"];
+                };
             };
         };
     };
@@ -14533,7 +23507,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionAdminResponse"];
+                };
             };
         };
     };
@@ -14544,13 +23520,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrantSubDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionAdminResponse"];
+                };
             };
         };
     };
@@ -14563,13 +23545,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExtendSubDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionAdminResponse"];
+                };
             };
         };
     };
@@ -14588,7 +23576,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionAdminResponse"];
+                };
             };
         };
     };
@@ -14601,13 +23591,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeStatusDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionAdminResponse"];
+                };
             };
         };
     };
@@ -14624,7 +23620,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CrossSellListResponse"];
+                };
             };
         };
     };
@@ -14641,7 +23639,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CrossSellResponse"];
+                };
             };
         };
     };
@@ -14660,7 +23660,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CrossSellDeletedResponse"];
+                };
             };
         };
     };
@@ -14679,13 +23681,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CrossSellResponse"];
+                };
             };
         };
     };
     SubscriptionsAnalyticsController_get: {
         parameters: {
-            query?: never;
+            query?: {
+                from?: string;
+                to?: string;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14696,7 +23704,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionAnalyticsResponse"];
+                };
             };
         };
     };
@@ -14713,7 +23723,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["KokosPackListResponse"];
+                };
             };
         };
     };
@@ -14730,7 +23742,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["KokosPackResponse"];
+                };
             };
         };
     };
@@ -14749,7 +23763,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["KokosPackResponse"];
+                };
             };
         };
     };
@@ -14766,7 +23782,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionPriceListResponse"];
+                };
             };
         };
     };
@@ -14783,7 +23801,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionPriceResponse"];
+                };
             };
         };
     };
@@ -14802,7 +23822,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionPriceResponse"];
+                };
             };
         };
     };
@@ -14821,7 +23843,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SubscriptionPriceResponse"];
+                };
             };
         };
     };
@@ -14838,7 +23862,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PromoOfferListResponse"];
+                };
             };
         };
     };
@@ -14855,7 +23881,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PromoOfferResponse"];
+                };
             };
         };
     };
@@ -14874,7 +23902,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PromoOfferDetailResponse"];
+                };
             };
         };
     };
@@ -14893,7 +23923,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PromoOfferResponse"];
+                };
             };
         };
     };
@@ -14912,7 +23944,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["PromoOfferPricesSetResponse"];
+                };
             };
         };
     };
@@ -14929,13 +23963,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["JobCountsResponse"];
+                };
             };
         };
     };
     JobsAdminController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                state?: "waiting" | "active" | "completed" | "failed" | "delayed";
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14946,7 +23986,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["JobListResponse"];
+                };
             };
         };
     };
@@ -14959,11 +24001,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["JobsRetryAllResponse"];
+                };
             };
         };
     };
@@ -14982,7 +24026,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["JobDetailResponse"];
+                };
             };
         };
     };
@@ -15001,7 +24047,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["JobRemovedResponse"];
+                };
             };
         };
     };
@@ -15016,17 +24064,25 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["JobRetriedResponse"];
+                };
             };
         };
     };
     TicketsAdminController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: "open" | "triaging" | "resolved" | "dismissed";
+                type?: "question_report" | "suggestion" | "bug_report";
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15037,7 +24093,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TicketAdminListResponse"];
+                };
             };
         };
     };
@@ -15056,7 +24114,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TicketAdminResponse"];
+                };
             };
         };
     };
@@ -15069,19 +24129,28 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TriageTicketDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["TicketAdminResponse"];
+                };
             };
         };
     };
     FeaturesAdminController_search: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: "idea" | "construccion" | "lanzado" | "descartado";
+                search?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15092,7 +24161,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FeatureBoardResponse"];
+                };
             };
         };
     };
@@ -15103,13 +24174,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFeatureIdeaDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FeatureIdeaResponse"];
+                };
             };
         };
     };
@@ -15128,7 +24205,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FeatureDeletedResponse"];
+                };
             };
         };
     };
@@ -15141,19 +24220,27 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFeatureIdeaDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FeatureIdeaResponse"];
+                };
             };
         };
     };
     AppVersionsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                platform?: "ios" | "android";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15164,7 +24251,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AppVersionListResponse"];
+                };
             };
         };
     };
@@ -15175,13 +24264,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAppVersionDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AppVersionResponse"];
+                };
             };
         };
     };
@@ -15200,7 +24295,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AppVersionDeletedResponse"];
+                };
             };
         };
     };
@@ -15213,13 +24310,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAppVersionDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AppVersionResponse"];
+                };
             };
         };
     };
@@ -15236,7 +24339,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CountryRolloutListResponse"];
+                };
             };
         };
     };
@@ -15249,19 +24354,27 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCountryRolloutDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["CountryRolloutResponse"];
+                };
             };
         };
     };
     FinanceAdminController_listCategories: {
         parameters: {
-            query?: never;
+            query?: {
+                kind?: "expense" | "income";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15272,7 +24385,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinanceCategoryListResponse"];
+                };
             };
         };
     };
@@ -15283,13 +24398,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFinanceCategoryDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinanceCategoryResponse"];
+                };
             };
         };
     };
@@ -15308,7 +24429,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinanceRemovedResponse"];
+                };
             };
         };
     };
@@ -15321,19 +24444,33 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFinanceCategoryDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinanceCategoryResponse"];
+                };
             };
         };
     };
     FinanceAdminController_listEntries: {
         parameters: {
-            query?: never;
+            query?: {
+                kind?: "expense" | "income";
+                categoryId?: string;
+                currency?: "CRC" | "USD";
+                from?: string;
+                to?: string;
+                page?: number;
+                pageSize?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15344,7 +24481,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinanceEntryListResponse"];
+                };
             };
         };
     };
@@ -15355,13 +24494,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFinanceEntryDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinanceEntryResponse"];
+                };
             };
         };
     };
@@ -15372,13 +24517,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadReceiptDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinanceUrlResponse"];
+                };
             };
         };
     };
@@ -15397,7 +24548,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinanceUrlResponse"];
+                };
             };
         };
     };
@@ -15416,7 +24569,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinanceEntryResponse"];
+                };
             };
         };
     };
@@ -15435,7 +24590,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinanceRemovedResponse"];
+                };
             };
         };
     };
@@ -15448,19 +24605,28 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFinanceEntryDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinanceEntryResponse"];
+                };
             };
         };
     };
     FinanceAdminController_getPnl: {
         parameters: {
-            query?: never;
+            query?: {
+                from?: string;
+                to?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15471,13 +24637,24 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["FinancePnlResponse"];
+                };
             };
         };
     };
     MatchesAdminController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                pageSize?: number;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                moduleId?: string;
+                dateFrom?: string;
+                dateTo?: string;
+                status?: "pending" | "active" | "player1_won" | "player2_won" | "cancelled_timeout" | "cancelled" | "annulled";
+                isBot?: boolean;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15488,7 +24665,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MatchAdminListResponse"];
+                };
             };
         };
     };
@@ -15507,7 +24686,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["MatchAdminDetailResponse"];
+                };
             };
         };
     };
@@ -15520,19 +24701,33 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnulDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["GameAnnulledResponse"];
+                };
             };
         };
     };
     ArenasAdminController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                pageSize?: number;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                moduleId?: string;
+                dateFrom?: string;
+                dateTo?: string;
+                status?: "waiting" | "active" | "finished" | "annulled";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15543,7 +24738,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ArenaAdminListResponse"];
+                };
             };
         };
     };
@@ -15562,7 +24759,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ArenaAdminDetailResponse"];
+                };
             };
         };
     };
@@ -15573,13 +24772,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleEspecialDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ArenaCreatedResponse"];
+                };
             };
         };
     };
@@ -15592,19 +24797,33 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnulDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["GameAnnulledResponse"];
+                };
             };
         };
     };
     SimulacrosAdminController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                pageSize?: number;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                moduleId?: string;
+                dateFrom?: string;
+                dateTo?: string;
+                status?: "active" | "completed" | "abandoned" | "annulled";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15615,7 +24834,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SimulacroAdminListResponse"];
+                };
             };
         };
     };
@@ -15634,7 +24855,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["SimulacroAdminDetailResponse"];
+                };
             };
         };
     };
@@ -15647,19 +24870,34 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnulDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["GameAnnulledResponse"];
+                };
             };
         };
     };
     QuickModesAdminController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                pageSize?: number;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+                moduleId?: string;
+                dateFrom?: string;
+                dateTo?: string;
+                status?: "active" | "completed" | "game_over" | "annulled";
+                type?: "contrarreloj" | "supervivencia";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -15670,7 +24908,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuickModeAdminListResponse"];
+                };
             };
         };
     };
@@ -15689,7 +24929,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["QuickModeAdminDetailResponse"];
+                };
             };
         };
     };
@@ -15702,13 +24944,19 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnnulDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["GameAnnulledResponse"];
+                };
             };
         };
     };
@@ -15727,7 +24975,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LeagueConfigListResponse"];
+                };
             };
         };
     };
@@ -15738,13 +24988,19 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertLeagueConfigDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["LeagueConfigResponse"];
+                };
             };
         };
     };

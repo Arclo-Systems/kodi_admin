@@ -74,6 +74,8 @@ export type Action =
   | 'economy:monetization:read'
   // Energía + límites free (Ola 2a) — config económica, admin
   | 'economy:energy:write'
+  // Recompensas de juego/estudio/hábito (ola recompensas) — emite moneda, admin
+  | 'economy:rewards:write'
   // Kokos-packs (Ola 2b) — config de packs IAP, admin
   | 'economy:kokos-pack:write'
   // Precios de suscripción unificados (mini-ola unificación) — admin
@@ -188,6 +190,7 @@ const matrix: Record<AdminRole, Action[]> = {
     'economy:cross-sell:write',
     'economy:monetization:read',
     'economy:energy:write',
+    'economy:rewards:write',
     'economy:kokos-pack:write',
     'economy:subscription-price:write',
     'economy:video:read',

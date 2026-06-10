@@ -10,6 +10,7 @@ import {
   RocketIcon,
   ShoppingBagIcon,
   ShuffleIcon,
+  SparklesIcon,
   Share2Icon,
   TargetIcon,
   TicketIcon,
@@ -142,6 +143,13 @@ const AREAS: AreaCard[] = [
     description: 'Config por país: energía (tope/regen/costos) y límites del plan free.',
     icon: BatteryChargingIcon,
     action: 'economy:energy:write',
+  },
+  {
+    href: '/economy/rewards',
+    label: 'Recompensas',
+    description: 'Cuánto paga cada modo (práctica, duelos, arena, simulacro, racha…) en XP, Kolones y Kokos.',
+    icon: SparklesIcon,
+    action: 'economy:rewards:write',
   },
   {
     href: '/economy/kokos-packs',
