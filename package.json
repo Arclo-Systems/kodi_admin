@@ -12,6 +12,7 @@
     "scripts": {
         "dev": "next dev -p 3001",
         "build": "next build",
+    "docs:bundle": "node scripts/bundle-docs.mjs",
         "start": "next start -p 3001",
         "lint": "eslint",
         "typecheck": "tsc --noEmit",

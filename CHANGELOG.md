@@ -9,6 +9,7 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 ## [Unreleased]
 
 ### Added
+- **Manual empaquetado en el deploy:** `scripts/bundle-docs.mjs` construye kodi-docs y copia su `dist/` a `docs-dist/` (auto-ignorada); en Vercel corre antes del build (`vercel.json` `buildCommand`) clonando el repo privado con `DOCS_REPO_TOKEN` (salida redactada — el token nunca llega al log) y `next.config` incluye la carpeta en el bundle serverless del handler (`outputFileTracingIncludes`, clave glob). Si el manual no se puede construir, **avisa y el panel deploya igual** (`/docs` da 404). Verificado: servido desde `docs-dist` con sesión real, degradación con exit 0 y redacción del token.
 - **Manual del panel bajo `/docs`:** route handler que sirve el build estático de kodi-docs detrás de la sesión del panel (`getCurrentAdmin`; sin sesión → `/login`). Anti path-traversal, MIME map, caché immutable para `_astro` y `no-cache` para HTML; ubicación del build configurable con `DOCS_SITE_DIR` (default `../kodi-docs/dist`). El ítem "Documentación" del menú de usuario pasa del placeholder externo a `/docs/`.
 
 ### Security

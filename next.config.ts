@@ -27,6 +27,13 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
+  // El manual (docs-dist/, generado por scripts/bundle-docs.mjs) no se importa desde código:
+  // hay que incluirlo explícito en el bundle serverless del handler que lo sirve. La clave es
+  // un GLOB contra el nombre de ruta — `[[...path]]` literal sería una clase de caracteres,
+  // por eso se matchea con `*` (cubre /docs/[[...path]] sin pelear con el escaping).
+  outputFileTracingIncludes: {
+    '/docs/*': ['./docs-dist/**/*'],
+  },
   images: {
     // El default de Next es [75]; habilitamos 90 para la imagen hero del login
     // (con `sizes` ya no se sobre-descarga, así que subir la calidad casi no pesa).

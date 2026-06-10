@@ -1,12 +1,16 @@
-import { promises as fs } from 'node:fs';
+import { existsSync, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getCurrentAdmin } from '@/lib/auth';
 
 // El manual (kodi-docs) es un build estático de Astro con `base: '/docs'`. Se sirve desde
 // acá —y no desde public/— para exigir sesión del panel en cada request.
+// Orden de búsqueda: DOCS_SITE_DIR → docs-dist/ (empaquetado por scripts/bundle-docs.mjs,
+// es lo que existe en el deploy) → ../kodi-docs/dist (checkout hermano en dev).
+const bundledDir = path.join(process.cwd(), 'docs-dist');
 const DOCS_DIR = path.resolve(
-  process.env.DOCS_SITE_DIR ?? path.join(process.cwd(), '..', 'kodi-docs', 'dist'),
+  process.env.DOCS_SITE_DIR ??
+    (existsSync(bundledDir) ? bundledDir : path.join(process.cwd(), '..', 'kodi-docs', 'dist')),
 );
 
 const MIME: Record<string, string> = {
