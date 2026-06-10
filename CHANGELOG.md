@@ -9,6 +9,14 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 ## [Unreleased]
 
 ### Added
+- **Economía → Recompensas:** pantalla nueva (espejo de Energía: Default + override por país)
+  para configurar cuánto paga cada modo —práctica, modos rápidos, examen sorpresa, simulacro,
+  Partida Kodi, arena, XP de liga, meta diaria, racha, logros y videos— en XP/Kolones/Kokos.
+  Permiso nuevo `economy:rewards:write` (admin). Con e2e read-only (`rewards.spec.ts`).
+- **Documentación técnica bajo `/tecnica`:** segundo sitio Starlight (kodi-docs-tecnica) servido
+  detrás de la sesión con el helper compartido `lib/static-site.ts`; `bundle-docs.mjs` construye
+  ambos sitios en el deploy y el link "Documentación técnica" del menú deja de ser placeholder.
+  Con e2e de ambos sitios (`docs-sites.spec.ts`).
 - **Manual empaquetado en el deploy:** `scripts/bundle-docs.mjs` construye kodi-docs y copia su `dist/` a `docs-dist/` (auto-ignorada); en Vercel corre antes del build (`vercel.json` `buildCommand`) clonando el repo privado con `DOCS_REPO_TOKEN` (salida redactada — el token nunca llega al log) y `next.config` incluye la carpeta en el bundle serverless del handler (`outputFileTracingIncludes`, clave glob). Si el manual no se puede construir, **avisa y el panel deploya igual** (`/docs` da 404). Verificado: servido desde `docs-dist` con sesión real, degradación con exit 0 y redacción del token.
 - **Manual del panel bajo `/docs`:** route handler que sirve el build estático de kodi-docs detrás de la sesión del panel (`getCurrentAdmin`; sin sesión → `/login`). Anti path-traversal, MIME map, caché immutable para `_astro` y `no-cache` para HTML; ubicación del build configurable con `DOCS_SITE_DIR` (default `../kodi-docs/dist`). El ítem "Documentación" del menú de usuario pasa del placeholder externo a `/docs/`.
 
