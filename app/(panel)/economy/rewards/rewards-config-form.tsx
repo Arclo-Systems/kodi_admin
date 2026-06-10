@@ -19,120 +19,135 @@ import {
   type RewardConfigValues,
 } from '@/hooks/use-rewards-config';
 
-// Mismos caps que el backend (anti-typo: este form emite moneda).
+// Mismos caps que el backend (anti-typo: este form emite moneda). 0 = no aplica.
 const xp = z.number().int().min(0).max(1000);
 const kolones = z.number().int().min(0).max(1000);
 const kokos = z.number().int().min(0).max(500);
 
 const FormSchema = z.object({
   practiceKolonesPerCorrect: kolones,
+  practiceKokosPerCorrect: kokos,
   quickKolonesPerCorrect: kolones,
+  quickKokosPerCorrect: kokos,
   surpriseExamBaseXp: xp,
   surpriseExamWindowFactor: z.number().int().min(1).max(10),
   surpriseExamKolones: kolones,
+  surpriseExamKokos: kokos,
   simulacroKolones: kolones,
+  simulacroKokos: kokos,
   duelCompletionKolones: kolones,
+  duelCompletionKokos: kokos,
   duelWinKolones: kolones,
+  duelWinKokos: kokos,
   arenaRapidaKolones: kolones,
   arenaRapidaKokos: kokos,
+  arenaRapidaXp: xp,
   arenaAmigosKolones: kolones,
   arenaAmigosKokos: kokos,
+  arenaAmigosXp: xp,
   leagueXpPerCorrect: xp,
   leagueXpSimulacro: xp,
   leagueXpGameMode: xp,
   leagueXpDuelWon: xp,
   goalKolones: kolones,
+  goalKokos: kokos,
   goalXp: xp,
   streakKolones: kolones,
+  streakKokos: kokos,
   streakLeagueXp: xp,
   achievementKolones: kolones,
+  achievementXp: xp,
   kokosPerVideo: kokos,
+  kolonesPerVideo: kolones,
+  videoXp: xp,
 });
 type FormValues = z.infer<typeof FormSchema>;
 
-const pick = (data: RewardConfigValues): FormValues => ({
-  practiceKolonesPerCorrect: data.practiceKolonesPerCorrect,
-  quickKolonesPerCorrect: data.quickKolonesPerCorrect,
-  surpriseExamBaseXp: data.surpriseExamBaseXp,
-  surpriseExamWindowFactor: data.surpriseExamWindowFactor,
-  surpriseExamKolones: data.surpriseExamKolones,
-  simulacroKolones: data.simulacroKolones,
-  duelCompletionKolones: data.duelCompletionKolones,
-  duelWinKolones: data.duelWinKolones,
-  arenaRapidaKolones: data.arenaRapidaKolones,
-  arenaRapidaKokos: data.arenaRapidaKokos,
-  arenaAmigosKolones: data.arenaAmigosKolones,
-  arenaAmigosKokos: data.arenaAmigosKokos,
-  leagueXpPerCorrect: data.leagueXpPerCorrect,
-  leagueXpSimulacro: data.leagueXpSimulacro,
-  leagueXpGameMode: data.leagueXpGameMode,
-  leagueXpDuelWon: data.leagueXpDuelWon,
-  goalKolones: data.goalKolones,
-  goalXp: data.goalXp,
-  streakKolones: data.streakKolones,
-  streakLeagueXp: data.streakLeagueXp,
-  achievementKolones: data.achievementKolones,
-  kokosPerVideo: data.kokosPerVideo,
-});
+const FIELD_NAMES = Object.keys(FormSchema.shape) as (keyof FormValues)[];
+const pick = (data: RewardConfigValues): FormValues =>
+  Object.fromEntries(FIELD_NAMES.map((k) => [k, data[k]])) as FormValues;
 
-// TODO XP del juego suma a la liga (no hay "dos XP"): la sección XP define cuánto
-// acredita cada acción; las secciones de modo definen solo la moneda.
+// Cada modo tiene su XP + Kolones + Kokos (matriz completa); los XP compartidos entre
+// modos (correcta / modo completado) viven en la sección XP para no duplicarlos.
 const SECTIONS: { title: string; fields: [keyof FormValues, string][] }[] = [
   {
     title: 'XP (todo XP suma a la liga)',
     fields: [
       ['leagueXpPerCorrect', 'Por respuesta correcta (todos los modos)'],
-      ['leagueXpSimulacro', 'Por simulacro completado'],
       ['leagueXpGameMode', 'Por modo de juego completado'],
+      ['leagueXpSimulacro', 'Por simulacro completado'],
       ['leagueXpDuelWon', 'Por duelo ganado'],
-      ['surpriseExamBaseXp', 'Examen sorpresa: XP al completar'],
+      ['surpriseExamBaseXp', 'Examen sorpresa: al completar'],
       ['surpriseExamWindowFactor', 'Examen sorpresa: multiplicador en ventana (×)'],
-      ['goalXp', 'Meta diaria: XP'],
-      ['streakLeagueXp', 'Racha: XP por día'],
+      ['goalXp', 'Meta diaria'],
+      ['streakLeagueXp', 'Racha: por día'],
     ],
   },
   {
-    title: 'Práctica y modos rápidos',
+    title: 'Práctica normal (por respuesta correcta)',
     fields: [
-      ['practiceKolonesPerCorrect', 'Práctica: Kolones por correcta'],
-      ['quickKolonesPerCorrect', 'Rápidos: Kolones por correcta'],
+      ['practiceKolonesPerCorrect', 'Kolones'],
+      ['practiceKokosPerCorrect', 'Kokos'],
     ],
   },
   {
-    title: 'Examen sorpresa y simulacro',
+    title: 'Modos rápidos (por respuesta correcta)',
     fields: [
-      ['surpriseExamKolones', 'Examen sorpresa: Kolones (0 = sin premio)'],
-      ['simulacroKolones', 'Simulacro: Kolones al completar'],
+      ['quickKolonesPerCorrect', 'Kolones'],
+      ['quickKokosPerCorrect', 'Kokos'],
+    ],
+  },
+  {
+    title: 'Examen sorpresa (al completar)',
+    fields: [
+      ['surpriseExamKolones', 'Kolones'],
+      ['surpriseExamKokos', 'Kokos'],
+    ],
+  },
+  {
+    title: 'Simulacro (al completar)',
+    fields: [
+      ['simulacroKolones', 'Kolones'],
+      ['simulacroKokos', 'Kokos'],
     ],
   },
   {
     title: 'Partida Kodi (duelo)',
     fields: [
-      ['duelCompletionKolones', 'Kolones por completar (ambos jugadores)'],
-      ['duelWinKolones', 'Kolones extra al ganador'],
+      ['duelCompletionKolones', 'Completar: Kolones (ambos jugadores)'],
+      ['duelCompletionKokos', 'Completar: Kokos (ambos jugadores)'],
+      ['duelWinKolones', 'Ganador: Kolones extra'],
+      ['duelWinKokos', 'Ganador: Kokos extra'],
     ],
   },
   {
-    title: 'Arena (la Especial premia por tramos en su pantalla)',
+    title: 'Arena al ganador (la Especial premia por tramos en su pantalla)',
     fields: [
-      ['arenaRapidaKolones', 'Rápida: Kolones al ganador'],
-      ['arenaRapidaKokos', 'Rápida: Kokos al ganador'],
-      ['arenaAmigosKolones', 'Amigos: Kolones al ganador'],
-      ['arenaAmigosKokos', 'Amigos: Kokos al ganador'],
+      ['arenaRapidaKolones', 'Rápida: Kolones'],
+      ['arenaRapidaKokos', 'Rápida: Kokos'],
+      ['arenaRapidaXp', 'Rápida: XP extra'],
+      ['arenaAmigosKolones', 'Amigos: Kolones'],
+      ['arenaAmigosKokos', 'Amigos: Kokos'],
+      ['arenaAmigosXp', 'Amigos: XP extra'],
     ],
   },
   {
     title: 'Hábito diario',
     fields: [
       ['goalKolones', 'Meta diaria: Kolones'],
+      ['goalKokos', 'Meta diaria: Kokos'],
       ['streakKolones', 'Racha: Kolones por día'],
+      ['streakKokos', 'Racha: Kokos por día'],
     ],
   },
   {
-    title: 'Otros',
+    title: 'Logros y videos',
     fields: [
-      ['achievementKolones', 'Bono de Kolones por logro (los Kokos van por logro)'],
-      ['kokosPerVideo', 'Kokos por video completado'],
+      ['achievementKolones', 'Logro: Kolones (los Kokos van por logro)'],
+      ['achievementXp', 'Logro: XP'],
+      ['kokosPerVideo', 'Video: Kokos'],
+      ['kolonesPerVideo', 'Video: Kolones'],
+      ['videoXp', 'Video: XP'],
     ],
   },
 ];
@@ -193,6 +208,10 @@ export function RewardsConfigForm({ country }: { country: string | null }) {
           <GiftIcon className="text-primary size-4" />
           Recompensas por modo
         </CardTitle>
+        <p className="text-muted-foreground text-sm">
+          Cada modo tiene XP, Kolones y Kokos. <strong>0 = ese premio no aplica</strong>;
+          poné un monto para activarlo. Todo XP suma a la liga del usuario.
+        </p>
       </CardHeader>
       <CardContent>
         <form onSubmit={form.handleSubmit(onSubmit)}>

@@ -9,6 +9,7 @@ test('recompensas: carga con secciones y defaults', async ({ page }) => {
     'XP (todo XP suma a la liga)',
     'Partida Kodi (duelo)',
     'Hábito diario',
+    'Logros y videos',
   ]) {
     await expect(page.getByRole('heading', { name: section })).toBeVisible();
   }
