@@ -12,8 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Build del manual (kodi-docs) empaquetado por scripts/bundle-docs.mjs — no es código nuestro.
+    // Builds de los sitios de docs empaquetados por scripts/bundle-docs.mjs — no es código nuestro.
     "docs-dist/**",
+    "tecnica-dist/**",
   ]),
 ]);
 

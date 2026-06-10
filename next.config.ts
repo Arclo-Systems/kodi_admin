@@ -33,6 +33,7 @@ const nextConfig: NextConfig = {
   // por eso se matchea con `*` (cubre /docs/[[...path]] sin pelear con el escaping).
   outputFileTracingIncludes: {
     '/docs/*': ['./docs-dist/**/*'],
+    '/tecnica/*': ['./tecnica-dist/**/*'],
   },
   images: {
     // El default de Next es [75]; habilitamos 90 para la imagen hero del login
