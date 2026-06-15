@@ -1,17 +1,27 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { ImageIcon, SigmaIcon, TableIcon, WorkflowIcon } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { ImageIcon, ShapesIcon, SigmaIcon, SparklesIcon, TableIcon, WorkflowIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { unwrapData } from '@/lib/bff';
+import { formatBytes, maxSvgWeight, optimizeSvgBlocks, type SvgWeightLevel } from '@/lib/svg-optimize';
 
-export type RichTool = 'formula' | 'table' | 'image' | 'mermaid';
+export type RichTool = 'formula' | 'table' | 'image' | 'mermaid' | 'svg';
 
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/avif'];
 const TABLE_SNIPPET = '\n| Columna | Columna |\n| --- | --- |\n| celda | celda |\n';
 const MERMAID_SNIPPET = '\n```mermaid\ngraph TD\n  A[Inicio] --> B[Fin]\n```\n';
+const SVG_HEAD = '\n```svg\n';
+const SVG_TAIL = '\n```\n';
+
+const WEIGHT_CLASS: Record<SvgWeightLevel, string> = {
+  ok: 'border-success/40 bg-success/15 text-success',
+  warn: 'border-warning/40 bg-warning/15 text-warning',
+  heavy: 'border-destructive/40 bg-destructive/15 text-destructive',
+};
 
 async function fileToBase64(file: File): Promise<string> {
   const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -51,6 +61,30 @@ export function MarkdownField({
   const ref = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
+  const weight = useMemo(() => maxSvgWeight(value), [value]);
+
+  function insertSvg(): void {
+    const { start, end } = bounds();
+    applyAt(start, end, SVG_HEAD + SVG_TAIL, start + SVG_HEAD.length);
+  }
+
+  async function onOptimize(): Promise<void> {
+    setOptimizing(true);
+    try {
+      const { md, results } = await optimizeSvgBlocks(value);
+      if (results.length === 0) return;
+      onChange(md);
+      const before = results.reduce((a, r) => a + r.before, 0);
+      const after = results.reduce((a, r) => a + r.after, 0);
+      const ratio = before > 0 ? Math.round((1 - after / before) * 100) : 0;
+      toast.success(`Optimizado: ${formatBytes(before)} → ${formatBytes(after)} (−${ratio}%)`);
+    } catch {
+      toast.error('No se pudo optimizar el SVG');
+    } finally {
+      setOptimizing(false);
+    }
+  }
 
   function applyAt(start: number, end: number, replacement: string, caret: number): void {
     onChange(value.slice(0, start) + replacement + value.slice(end));
@@ -157,7 +191,27 @@ export function MarkdownField({
             </Button>
           </>
         )}
+        {tools.includes('svg') && (
+          <Button type="button" variant="ghost" size="sm" onClick={insertSvg}>
+            <ShapesIcon className="size-4" />
+            SVG
+          </Button>
+        )}
       </div>
+      {weight && (
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className={WEIGHT_CLASS[weight.level]}>
+            {formatBytes(weight.bytes)}
+          </Badge>
+          <Button type="button" variant="ghost" size="sm" disabled={optimizing} onClick={onOptimize}>
+            <SparklesIcon className="size-4" />
+            {optimizing ? 'Optimizando…' : 'Optimizar'}
+          </Button>
+          {weight.level === 'heavy' && (
+            <span className="text-destructive text-xs">Supera 30 KB — optimizá o reducí la figura.</span>
+          )}
+        </div>
+      )}
       <Textarea
         ref={ref}
         id={id}
