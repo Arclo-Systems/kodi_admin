@@ -8,6 +8,7 @@ import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import 'katex/dist/katex.min.css';
 import { cn } from '@/lib/utils';
 import { Mermaid } from './mermaid';
+import { SvgFigure } from './svg-figure';
 
 // Schema de saneo: default + wrappers de remark-math (span/div con clase math*) + code language-*.
 // El orden es [sanitize, katex] (AUD-SEC-1): se sanea el HTML del autor ANTES de KaTeX; la salida
@@ -46,10 +47,12 @@ export function RichContent({
   value,
   className,
   allowMermaid = true,
+  allowSvg = true,
 }: {
   value: string;
   className?: string;
   allowMermaid?: boolean;
+  allowSvg?: boolean;
 }) {
   return (
     <div className={cn(STYLES, className)}>
@@ -60,6 +63,9 @@ export function RichContent({
           code({ className: cls, children }) {
             if (allowMermaid && /\blanguage-mermaid\b/.test(cls ?? '')) {
               return <Mermaid chart={String(children).trim()} />;
+            }
+            if (allowSvg && /\blanguage-svg\b/.test(cls ?? '')) {
+              return <SvgFigure source={String(children).trim()} />;
             }
             return <code className={cls}>{children}</code>;
           },
