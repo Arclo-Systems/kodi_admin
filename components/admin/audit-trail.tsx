@@ -18,20 +18,26 @@ export function AuditTrail({ resourceType, resourceId }: AuditTrailProps) {
   }
 
   return (
-    <ol className="border-border relative ml-2 space-y-4 border-l">
+    <ul className="space-y-2">
       {data.items.map((entry) => (
-        <li key={entry.id} className="ml-4">
-          <span className="bg-primary absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full" />
-          <time className="text-muted-foreground text-xs">
-            {new Date(entry.createdAt).toLocaleString('es')}
-          </time>
-          <p className="text-sm font-medium">{entry.action}</p>
-          <p className="text-muted-foreground text-xs">
-            por <strong>{entry.actor.displayName}</strong> ({entry.actor.email})
+        <li key={entry.id} className="bg-card rounded-lg border p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <code className="bg-muted rounded px-1.5 py-0.5 font-mono text-xs font-medium">
+              {entry.action}
+            </code>
+            <time className="text-muted-foreground text-xs tabular-nums">
+              {new Date(entry.createdAt).toLocaleString('es')}
+            </time>
+          </div>
+          <p className="text-muted-foreground mt-2 text-xs">
+            por <strong className="text-foreground font-medium">{entry.actor.displayName}</strong> ·{' '}
+            {entry.actor.email}
           </p>
-          {entry.reason && <p className="mt-1 text-xs italic">&ldquo;{entry.reason}&rdquo;</p>}
+          {entry.reason && (
+            <p className="mt-1 text-xs italic">&ldquo;{entry.reason}&rdquo;</p>
+          )}
         </li>
       ))}
-    </ol>
+    </ul>
   );
 }
