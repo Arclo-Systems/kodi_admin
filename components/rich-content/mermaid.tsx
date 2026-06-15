@@ -52,5 +52,6 @@ export function Mermaid({ chart }: { chart: string }) {
     return <span className="text-destructive text-sm">Diagrama inválido o incompleto.</span>;
   }
   // Sin overflow (DESIGN L9): el SVG escala a lo ancho del contenedor en vez de mostrar scrollbar.
-  return <div ref={ref} className="my-2 [&_svg]:h-auto [&_svg]:max-w-full" />;
+  // Centrado: text-center cubre el svg inline; mx-auto cubre el caso en que mermaid lo emita block.
+  return <div ref={ref} className="my-2 text-center [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-w-full" />;
 }

@@ -31,13 +31,14 @@ const STYLES = cn(
   '[&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:text-lg [&_h2]:font-semibold',
   '[&_h3]:mt-2 [&_h3]:font-semibold',
   '[&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5',
-  // tablas GFM
-  '[&_table]:my-2 [&_table]:w-auto [&_table]:border-collapse [&_table]:text-sm',
+  // tablas GFM (centradas)
+  '[&_table]:my-2 [&_table]:mx-auto [&_table]:w-auto [&_table]:border-collapse [&_table]:text-sm',
   '[&_th]:border [&_th]:border-border [&_th]:px-2 [&_th]:py-1 [&_th]:font-medium',
   '[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1',
   // matemática en bloque centrada (sin overflow → sin scrollbars internos, DESIGN L9)
-  '[&_.katex-display]:my-3',
-  '[&_img]:my-2 [&_img]:max-w-full [&_img]:rounded-md',
+  '[&_.katex-display]:my-3 [&_.katex-display]:text-center',
+  // imágenes y figuras SVG (SvgFigure renderiza un <img>): centradas
+  '[&_img]:my-2 [&_img]:mx-auto [&_img]:block [&_img]:max-w-full [&_img]:rounded-md',
 );
 
 // Render de contenido rico: Markdown + LaTeX (KaTeX) + Mermaid + tablas + imágenes, saneado.
