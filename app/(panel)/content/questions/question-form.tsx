@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useModulesTree } from '@/hooks/use-modules-tree';
+import { hasHeavySvg } from '@/lib/svg-optimize';
 import type { Difficulty, QuestionDetail } from '@/hooks/use-questions';
 import { QuestionPreview } from './question-preview';
 
@@ -36,11 +37,11 @@ const FormSchema = z
     moduleId: z.string().optional(),
     subjectId: z.string().optional(),
     topicId: z.string().optional(),
-    text: z.string().trim().min(1, 'Requerido').max(5000, 'Máximo 5000 caracteres'),
+    text: z.string().trim().min(1, 'Requerido').max(40000, 'Máximo 40000 caracteres'),
     options: z.array(OptionSchema).min(2).max(6),
     correctOptionId: z.string().min(1, 'Elegí la opción correcta'),
     difficulty: z.enum(['easy', 'medium', 'hard']),
-    explanation: z.string().trim().max(10000, 'Máximo 10000 caracteres').optional(),
+    explanation: z.string().trim().max(40000, 'Máximo 40000 caracteres').optional(),
   })
   .refine((q) => q.options.some((o) => o.id === q.correctOptionId), {
     message: 'La correcta debe ser una de las opciones',
@@ -99,12 +100,17 @@ export function QuestionForm({
   });
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'options' });
   const values = form.watch();
+  const heavySvg = hasHeavySvg(values.text, values.explanation ?? '');
 
   const modules = tree ?? [];
   const subjects = modules.find((m) => m.id === values.moduleId)?.subjects ?? [];
   const topics = subjects.find((s) => s.id === values.subjectId)?.topics ?? [];
 
   async function submit(v: FormValues): Promise<void> {
+    if (hasHeavySvg(v.text, v.explanation ?? '')) {
+      toast.error('Optimizá la figura SVG: supera 30 KB');
+      return;
+    }
     if (mode === 'create' && (!v.moduleId || !v.subjectId || !v.topicId)) {
       toast.error('Elegí módulo, materia y tema');
       return;
@@ -260,9 +266,9 @@ export function QuestionForm({
                   id="q-text"
                   value={field.value}
                   onChange={field.onChange}
-                  tools={['formula', 'table', 'image', 'mermaid']}
+                  tools={['formula', 'table', 'image', 'mermaid', 'svg']}
                   rows={4}
-                  maxLength={5000}
+                  maxLength={40000}
                   ariaInvalid={fieldState.invalid}
                   uploadUrl={UPLOAD_URL}
                 />
@@ -385,9 +391,9 @@ export function QuestionForm({
                   id="q-exp"
                   value={field.value ?? ''}
                   onChange={field.onChange}
-                  tools={['formula', 'table', 'image', 'mermaid']}
+                  tools={['formula', 'table', 'image', 'mermaid', 'svg']}
                   rows={3}
-                  maxLength={10000}
+                  maxLength={40000}
                   ariaInvalid={fieldState.invalid}
                   uploadUrl={UPLOAD_URL}
                 />
@@ -397,11 +403,16 @@ export function QuestionForm({
           />
         </fieldset>
 
+        {heavySvg && (
+          <p data-testid="form-heavy-svg" className="text-destructive text-right text-sm">
+            Hay una figura SVG que supera 30 KB. Optimizala antes de guardar.
+          </p>
+        )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => router.push('/content/questions')}>
             Cancelar
           </Button>
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+          <Button type="submit" disabled={form.formState.isSubmitting || heavySvg}>
             {mode === 'create' ? <PlusIcon className="size-4" /> : <SaveIcon className="size-4" />}
             {mode === 'create' ? 'Crear borrador' : 'Guardar cambios'}
           </Button>
