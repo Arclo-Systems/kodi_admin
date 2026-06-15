@@ -52,4 +52,11 @@ describe('IdsReference', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Temas' }));
     expect(screen.getByText('Álgebra')).toBeInTheDocument();
   });
+
+  it('muestra empty state cuando la búsqueda no matchea', () => {
+    render(<IdsReference />);
+    fireEvent.change(screen.getByLabelText('Buscar por nombre'), { target: { value: 'zzz' } });
+    expect(screen.getByText('Sin resultados para esa búsqueda.')).toBeInTheDocument();
+    expect(screen.queryByText('Matemática')).not.toBeInTheDocument();
+  });
 });

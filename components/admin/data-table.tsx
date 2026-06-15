@@ -13,13 +13,7 @@ import {
   useReactTable,
   type VisibilityState,
 } from '@tanstack/react-table';
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  ChevronsUpDownIcon,
-  InboxIcon,
-  Settings2Icon,
-} from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, Settings2Icon } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -39,6 +33,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTablePagination } from './data-table-pagination';
+import { TableEmptyRow } from './empty-state';
 
 // Etiqueta legible por columna para el menú "Columnas" (en vez del id crudo).
 declare module '@tanstack/react-table' {
@@ -247,28 +242,12 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
                 </TableRow>
               ))
             ) : table.getRowModel().rows.length === 0 ? (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={columns.length} className="py-14">
-                  <div className="flex flex-col items-center gap-3 text-center">
-                    <div
-                      aria-hidden
-                      className="bg-muted text-muted-foreground flex size-12 items-center justify-center rounded-full [&_svg]:size-6"
-                    >
-                      {props.emptyIcon ?? <InboxIcon />}
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">
-                        {props.emptyMessage ?? 'No hay resultados'}
-                      </p>
-                      {props.emptyDescription && (
-                        <p className="text-muted-foreground max-w-sm text-sm">
-                          {props.emptyDescription}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <TableEmptyRow
+                colSpan={columns.length}
+                message={props.emptyMessage}
+                description={props.emptyDescription}
+                icon={props.emptyIcon}
+              />
             ) : (
               table.getRowModel().rows.map((row) => (
                 <TableRow

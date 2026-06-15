@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { TableEmptyRow } from '@/components/admin/empty-state';
 import { useModulesTree } from '@/hooks/use-modules-tree';
 import { filterByName, selectSubjects, selectTopicsBySubject } from './ids-helpers';
 
@@ -65,6 +66,14 @@ export function IdsReference() {
       })),
     [modules, moduleId, query],
   );
+
+  const isEmpty =
+    tab === 'subjects' ? subjects.length === 0 : !groups.some((g) => g.topics.length > 0);
+  const emptyMessage = query.trim()
+    ? 'Sin resultados para esa búsqueda.'
+    : tab === 'subjects'
+      ? 'Este módulo no tiene materias.'
+      : 'Este módulo no tiene temas.';
 
   if (isLoading) return <Skeleton className="h-64 w-full" />;
 
@@ -114,8 +123,10 @@ export function IdsReference() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tab === 'subjects'
-                  ? subjects.map((s) => (
+                {isEmpty ? (
+                  <TableEmptyRow colSpan={2} message={emptyMessage} />
+                ) : tab === 'subjects' ? (
+                  subjects.map((s) => (
                       <TableRow key={s.id}>
                         <TableCell>
                           <CopyId id={s.id} />
@@ -123,7 +134,8 @@ export function IdsReference() {
                         <TableCell>{s.name}</TableCell>
                       </TableRow>
                     ))
-                  : groups.flatMap((g) =>
+                ) : (
+                  groups.flatMap((g) =>
                       g.topics.length === 0
                         ? []
                         : [
@@ -144,7 +156,8 @@ export function IdsReference() {
                               </TableRow>
                             )),
                           ],
-                    )}
+                    )
+                )}
               </TableBody>
             </Table>
           </div>
