@@ -180,6 +180,13 @@ export function BulkImportReview() {
             {invalidRows.length} con error
           </Badge>
         )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => router.push(`/content/questions/bulk-import/ids?moduleId=${data?.moduleId ?? ''}`)}
+        >
+          Ver IDs
+        </Button>
         <div className="ml-auto flex items-center gap-2">
           <Button variant="outline" onClick={() => router.push('/content/questions')}>
             <ArrowLeftIcon className="size-4" /> Cancelar
