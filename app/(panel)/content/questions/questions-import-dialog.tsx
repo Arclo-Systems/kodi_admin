@@ -58,35 +58,17 @@ export function QuestionsImportDialog() {
   }
 
   function downloadTemplate(): void {
-    const mod = (tree ?? []).find((m) => m.id === moduleId);
-    if (!mod) {
-      toast.error('Elegí primero un módulo para incluir sus IDs en la plantilla');
-      return;
-    }
     const header =
       'subjectId,topicId,text,optionA,optionB,optionC,optionD,correct,difficulty,explanation';
     // El ejemplo muestra LaTeX inline ($…$): en text/opciones/explicación se acepta Markdown + LaTeX.
-    const example =
-      'SUBJECT_ID,TOPIC_ID,¿Cuánto es $2^3$?,6,8,9,12,B,medium,Porque $2^3 = 8$';
-    // Líneas de referencia: cada una como UNA celda entre comillas (los nombres pueden tener comas)
-    // y con escape de comillas internas, así Excel no las parte en columnas.
-    const cell = (s: string) => `"${s.replace(/"/g, '""')}"`;
-    const ref = [
-      cell(`--- Referencia de IDs · módulo ${mod.country} · ${mod.shortName} (borrá estas líneas antes de subir) ---`),
-    ];
-    for (const s of mod.subjects) {
-      ref.push(cell(`Materia "${s.name}" -> subjectId: ${s.id}`));
-      for (const t of s.topics) {
-        ref.push(cell(`  Tema "${t.name}" -> topicId: ${t.id}`));
-      }
-    }
+    const example = 'SUBJECT_ID,TOPIC_ID,¿Cuánto es $2^3$?,6,8,9,12,B,medium,Porque $2^3 = 8$';
     // BOM para que Excel en español detecte UTF-8 y no rompa acentos/ñ.
-    const content = `﻿${header}\n${example}\n\n${ref.join('\n')}\n`;
+    const content = `﻿${header}\n${example}\n`;
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `plantilla-preguntas-${mod.shortName}.csv`;
+    a.download = 'plantilla-preguntas.csv';
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -157,8 +139,13 @@ export function QuestionsImportDialog() {
                 subjectId, topicId, text, optionA, optionB, optionC, optionD, correct (A-D),
                 difficulty (easy/medium/hard), explanation (opcional)
               </code>
-              . Podés usar Markdown y LaTeX (<code className="text-xs">$…$</code>) en enunciado,
-              opciones y explicación; los diagramas (Mermaid) van mejor en la explicación.
+              . Los IDs de materias y temas los encontrás en{' '}
+              <strong>Ver IDs de materias y temas</strong>. Podés usar Markdown y LaTeX (
+              <code className="text-xs">$…$</code>) en enunciado, opciones y explicación. Para una
+              figura SVG, pegá <code className="text-xs">```svg … ```</code> dentro de la celda{' '}
+              <strong>entre comillas dobles</strong> (escapando las internas como{' '}
+              <code className="text-xs">&quot;&quot;</code>); se optimiza al importar y se descarta si supera
+              30 KB.
             </FieldDescription>
           </Field>
         </div>
@@ -167,6 +154,18 @@ export function QuestionsImportDialog() {
           <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
             <DownloadIcon className="size-4" />
             Descargar plantilla
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              router.push(
+                `/content/questions/bulk-import/ids${moduleId ? `?moduleId=${moduleId}` : ''}`,
+              )
+            }
+          >
+            Ver IDs de materias y temas
           </Button>
           <Button onClick={submit} disabled={!moduleId || !csv}>
             <UploadIcon className="size-4" />
