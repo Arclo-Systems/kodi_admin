@@ -27,26 +27,17 @@ import {
 } from '@/components/ui/table';
 import { DataTablePagination } from '@/components/admin/data-table-pagination';
 import { unwrapData } from '@/lib/bff';
+import { stripSvgForList } from '@/lib/svg-optimize';
 import type { Difficulty } from '@/hooks/use-questions';
 import { QuestionDifficulty } from '@/lib/question-status';
 import { QuestionPreview } from '../question-preview';
 import { QUESTIONS_IMPORT_KEY } from '../questions-import-dialog';
+import { augmentRowsWithSvg, buildQuestionsCsv, rowHasSvg, type CsvRow } from './svg-augment';
 
 const TABLE_PAGE_SIZE = 50;
 const MAX_ERRORS_SHOWN = 100;
 
-type PreviewRow = {
-  row: number;
-  valid: boolean;
-  error?: string;
-  subjectId: string;
-  topicId: string;
-  text: string;
-  options: { id: string; text: string }[];
-  correct: string;
-  difficulty: string;
-  explanation: string;
-};
+type PreviewRow = CsvRow;
 type PreviewResult = {
   total: number;
   validCount: number;
@@ -86,8 +77,15 @@ export function BulkImportReview() {
         if (res.ok) {
           const result = unwrapData<PreviewResult>(await res.json());
           if (result) {
-            setPreview(result);
-            setSelected(new Set(result.rows.filter((r) => r.valid).map((r) => r.row)));
+            const rows = await augmentRowsWithSvg(result.rows);
+            const augmented: PreviewResult = {
+              ...result,
+              rows,
+              validCount: rows.filter((r) => r.valid).length,
+              errors: rows.filter((r) => !r.valid).map((r) => ({ row: r.row, message: r.error! })),
+            };
+            setPreview(augmented);
+            setSelected(new Set(rows.filter((r) => r.valid).map((r) => r.row)));
           }
         } else {
           toast.error('No se pudo previsualizar el archivo');
@@ -121,16 +119,21 @@ export function BulkImportReview() {
   }
 
   async function confirmImport(): Promise<void> {
-    if (!data || selected.size === 0) return;
+    if (!data || !preview || selected.size === 0) return;
     setBusy(true);
+    const chosen = preview.rows.filter((r) => r.valid && selected.has(r.row));
+    const anySvg = chosen.some(rowHasSvg);
+    const body = anySvg
+      ? {
+          moduleId: data.moduleId,
+          csv: buildQuestionsCsv(chosen),
+          selectedRows: chosen.map((_, i) => i + 1),
+        }
+      : { moduleId: data.moduleId, csv: data.csv, selectedRows: Array.from(selected) };
     const res = await fetch('/api/admin/content/questions/bulk-import', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        moduleId: data.moduleId,
-        csv: data.csv,
-        selectedRows: Array.from(selected),
-      }),
+      body: JSON.stringify(body),
     });
     setBusy(false);
     if (!res.ok) {
@@ -231,7 +234,7 @@ export function BulkImportReview() {
                             aria-label={`Incluir fila ${r.row}`}
                           />
                         </TableCell>
-                        <TableCell className="max-w-md truncate">{r.text}</TableCell>
+                        <TableCell className="max-w-md truncate">{stripSvgForList(r.text)}</TableCell>
                         <TableCell className="text-muted-foreground max-w-xs truncate">
                           {r.correct.toUpperCase()} ·{' '}
                           {correctOpt?.text ? correctOpt.text.replace(/\s+/g, ' ') : '—'}
@@ -325,7 +328,7 @@ export function BulkImportReview() {
                   {invalidRows.slice(0, MAX_ERRORS_SHOWN).map((r) => (
                     <TableRow key={r.row}>
                       <TableCell className="tabular-nums">{r.row}</TableCell>
-                      <TableCell className="max-w-md truncate">{r.text || '—'}</TableCell>
+                      <TableCell className="max-w-md truncate">{stripSvgForList(r.text) || '—'}</TableCell>
                       <TableCell className="text-destructive">{r.error}</TableCell>
                     </TableRow>
                   ))}

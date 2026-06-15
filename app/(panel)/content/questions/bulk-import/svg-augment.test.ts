@@ -54,20 +54,20 @@ describe('buildQuestionsCsv', () => {
 describe('augmentRowsWithSvg', () => {
   it('optimiza el SVG pequeño y mantiene la fila válida', async () => {
     const [out] = await augmentRowsWithSvg([baseRow({ text: `Q ${fence(smallSvg)}` })]);
-    expect(out.valid).toBe(true);
-    expect(out.text).not.toContain('<!--');
+    expect(out?.valid).toBe(true);
+    expect(out?.text).not.toContain('<!--');
   });
 
   it('marca inválida la fila cuyo SVG sigue heavy tras optimizar', async () => {
     const [out] = await augmentRowsWithSvg([baseRow({ explanation: fence(heavySvg) })]);
-    expect(out.valid).toBe(false);
-    expect(out.error).toMatch(/30 KB/);
+    expect(out?.valid).toBe(false);
+    expect(out?.error).toMatch(/30 KB/);
   });
 
   it('marca inválida (sin romper) la fila con SVG malformado', async () => {
     const [out] = await augmentRowsWithSvg([baseRow({ text: `Q ${fence('<svg><rect')}` })]);
-    expect(out.valid).toBe(false);
-    expect(out.error).toMatch(/inválida/i);
+    expect(out?.valid).toBe(false);
+    expect(out?.error).toMatch(/inválida/i);
   });
 
   it('deja intactas las filas sin SVG', async () => {
