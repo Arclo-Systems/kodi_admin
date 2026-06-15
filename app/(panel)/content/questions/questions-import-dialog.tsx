@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { DownloadIcon, UploadIcon } from 'lucide-react';
+import { DownloadIcon, ListIcon, UploadIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -151,22 +151,25 @@ export function QuestionsImportDialog() {
         </div>
 
         <DialogFooter className="sm:justify-between">
-          <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
-            <DownloadIcon className="size-4" />
-            Descargar plantilla
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              router.push(
-                `/content/questions/bulk-import/ids${moduleId ? `?moduleId=${moduleId}` : ''}`,
-              )
-            }
-          >
-            Ver IDs de materias y temas
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
+              <DownloadIcon className="size-4" />
+              Descargar plantilla
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                router.push(
+                  `/content/questions/bulk-import/ids${moduleId ? `?moduleId=${moduleId}` : ''}`,
+                )
+              }
+            >
+              <ListIcon className="size-4" />
+              Ver IDs
+            </Button>
+          </div>
           <Button onClick={submit} disabled={!moduleId || !csv}>
             <UploadIcon className="size-4" />
             Subir y revisar

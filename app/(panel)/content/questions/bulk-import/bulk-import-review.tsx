@@ -10,6 +10,7 @@ import {
   CheckIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ListIcon,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -185,6 +186,7 @@ export function BulkImportReview() {
           size="sm"
           onClick={() => router.push(`/content/questions/bulk-import/ids?moduleId=${data?.moduleId ?? ''}`)}
         >
+          <ListIcon className="size-4" />
           Ver IDs
         </Button>
         <div className="ml-auto flex items-center gap-2">
