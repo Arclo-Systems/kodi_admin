@@ -9,6 +9,7 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 ## [Unreleased]
 
 ### Added
+- ✨ SVG inline en preguntas: pegá código SVG (enunciado/explicación y CSV) con render seguro vía data-URI, optimización SVGO y semáforo de peso (bloquea >30 KB).
 - **Economía → Recompensas:** pantalla nueva (espejo de Energía: Default + override por país)
   para configurar cuánto paga cada modo —práctica, modos rápidos, examen sorpresa, simulacro,
   Partida Kodi, arena, XP de liga, meta diaria, racha, logros y videos— en XP/Kolones/Kokos.
