@@ -73,6 +73,13 @@ const AREAS: AreaCard[] = [
     action: 'content:career:upload',
   },
   {
+    href: '/content/universities',
+    label: 'Universidades',
+    description: 'Pesos de admisión y escalas por universidad.',
+    icon: GraduationCapIcon,
+    action: 'content:university:write',
+  },
+  {
     href: '/content/vocational-items',
     label: 'Ítems del test vocacional',
     description: 'Banco de enunciados RIASEC (Holland) del test, por dimensión.',

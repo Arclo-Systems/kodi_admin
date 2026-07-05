@@ -43,6 +43,8 @@ export type Action =
   // Subida masiva de carreras (espejo de cortes): editor sube/revisa, solo admin aprueba.
   | 'content:career:upload'
   | 'content:career:approve'
+  // Universidades (nota de admisión): pesos + escala = solo admin.
+  | 'content:university:write'
   // Economía (Ola 2b)
   | 'view:economy'
   | 'economy:achievement:read'
@@ -163,6 +165,7 @@ const matrix: Record<AdminRole, Action[]> = {
     'content:vocational:write',
     'content:career:upload',
     'content:career:approve',
+    'content:university:write',
     'view:economy',
     'economy:achievement:read',
     'economy:achievement:write',
