@@ -22,13 +22,15 @@ function RowsTable({ rows }: { rows: CutoffRow[] }) {
             <TableHead>Facultad</TableHead>
             <TableHead>Carrera</TableHead>
             <TableHead>Sede</TableHead>
+            <TableHead>Provincia</TableHead>
+            <TableHead>Cantón</TableHead>
             <TableHead className="text-right">Corte</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-muted-foreground py-6 text-center">
+              <TableCell colSpan={7} className="text-muted-foreground py-6 text-center">
                 Sin filas
               </TableCell>
             </TableRow>
@@ -39,6 +41,8 @@ function RowsTable({ rows }: { rows: CutoffRow[] }) {
                 <TableCell>{r.faculty}</TableCell>
                 <TableCell>{r.career}</TableCell>
                 <TableCell>{r.campus ?? '—'}</TableCell>
+                <TableCell>{r.province ?? '—'}</TableCell>
+                <TableCell>{r.canton ?? '—'}</TableCell>
                 <TableCell className="text-right">{r.cutoffScore}</TableCell>
               </TableRow>
             ))
@@ -58,6 +62,8 @@ function InvalidTable({ rows }: { rows: InvalidRow[] }) {
             <TableHead>Universidad</TableHead>
             <TableHead>Carrera</TableHead>
             <TableHead>Corte</TableHead>
+            <TableHead>Provincia</TableHead>
+            <TableHead>Cantón</TableHead>
             <TableHead>Motivo</TableHead>
           </TableRow>
         </TableHeader>
@@ -67,6 +73,8 @@ function InvalidTable({ rows }: { rows: InvalidRow[] }) {
               <TableCell>{r.university || '—'}</TableCell>
               <TableCell>{r.career || '—'}</TableCell>
               <TableCell>{r.cutoffScore || '—'}</TableCell>
+              <TableCell>{r.province || '—'}</TableCell>
+              <TableCell>{r.canton || '—'}</TableCell>
               <TableCell className="text-destructive">{r.reason}</TableCell>
             </TableRow>
           ))}

@@ -48,11 +48,11 @@ export function CutoffsUploadDialog() {
   }
 
   function downloadTemplate(): void {
-    const header = 'university,faculty,career,campus,cutoffScore';
+    const header = 'university,faculty,career,campus,cutoffScore,province,canton';
     // Ejemplos: uno con sede, otro con campus vacío (permitido). Punto decimal y coma como separador.
     const examples = [
-      'UCR,110103,BACHILLERATO Y LICENCIATURA EN ARTES TEATRALES,RODRIGO FACIO,526.59',
-      'UNA,,ENSEÑANZA DEL INGLÉS,,452.10',
+      'UCR,110103,BACHILLERATO Y LICENCIATURA EN ARTES TEATRALES,RODRIGO FACIO,526.59,San José,Montes de Oca',
+      'TEC,,INGENIERÍA EN COMPUTACIÓN,,565.20,Cartago,Cartago',
     ];
     // BOM para que Excel en español detecte UTF-8 y no rompa acentos/ñ.
     const content = `﻿${header}\n${examples.join('\n')}\n`;
@@ -178,8 +178,13 @@ export function CutoffsUploadDialog() {
             </div>
             <FieldDescription>
               Columnas (en este orden):{' '}
-              <code className="text-xs">university, faculty, career, campus, cutoffScore</code>.{' '}
-              <code className="text-xs">campus</code> puede ir vacío. Si las notas usan coma decimal
+              <code className="text-xs">
+                university, faculty, career, campus, cutoffScore, province, canton
+              </code>
+              . <code className="text-xs">campus</code>, <code className="text-xs">province</code> y{' '}
+              <code className="text-xs">canton</code> pueden ir vacíos (province y canton son
+              opcionales). <code className="text-xs">university</code> debe ser el código de una
+              universidad activa (UCR, UNA, TEC). Si las notas usan coma decimal
               (ej. <code className="text-xs">542,15</code>), guardá el archivo separado por{' '}
               <code className="text-xs">;</code> (punto y coma) — es como lo exporta Excel en español.
             </FieldDescription>

@@ -10,6 +10,8 @@ export type InvalidRow = {
   career: string;
   campus: string;
   cutoffScore: string;
+  province: string;
+  canton: string;
   reason: string;
 };
 export type DiffSummary = {
@@ -41,6 +43,8 @@ export type CutoffRow = {
   career: string;
   campus: string | null;
   cutoffScore: number;
+  province: string | null;
+  canton: string | null;
 };
 export type CutoffDetail = CutoffUpload & { rowsToInsert: CutoffRow[]; currentCutoffs?: CutoffRow[] };
 
