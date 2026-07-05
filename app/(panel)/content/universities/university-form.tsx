@@ -132,7 +132,10 @@ function UniversityFormInner({
     }
     try {
       if (universityId) {
-        await update.mutateAsync({ id: universityId, input: toInput(v) });
+        const patch: Partial<UniversityInput> = toInput(v);
+        delete patch.code;
+        delete patch.country;
+        await update.mutateAsync({ id: universityId, input: patch });
         toast.success('Universidad actualizada');
       } else {
         await create.mutateAsync(toInput(v));
@@ -144,14 +147,21 @@ function UniversityFormInner({
     }
   }
 
-  const text = (name: keyof FormValues, label: string, desc?: string) => (
+  const isEdit = Boolean(universityId);
+
+  const text = (name: keyof FormValues, label: string, desc?: string, disabled = false) => (
     <Controller
       name={name}
       control={form.control}
       render={({ field }) => (
         <Field>
           <FieldLabel htmlFor={`u-${name}`}>{label}</FieldLabel>
-          <Input id={`u-${name}`} value={field.value as string} onChange={field.onChange} />
+          <Input
+            id={`u-${name}`}
+            value={field.value as string}
+            onChange={field.onChange}
+            disabled={disabled}
+          />
           {desc && <FieldDescription>{desc}</FieldDescription>}
         </Field>
       )}
@@ -174,7 +184,7 @@ function UniversityFormInner({
                 render={({ field }) => (
                   <Field>
                     <FieldLabel>País</FieldLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select value={field.value} onValueChange={field.onChange} disabled={isEdit}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -189,8 +199,15 @@ function UniversityFormInner({
                   </Field>
                 )}
               />
-              {text('code', 'Código', 'Ej. UCR — 2 a 20 caracteres, se guarda en mayúsculas.')}
-              {text('name', 'Nombre', 'Debe coincidir con el nombre en los cortes.')}
+              {text(
+                'code',
+                'Código',
+                isEdit
+                  ? 'No editable. Para cambiar el código, creá una nueva universidad y desactivá esta.'
+                  : 'Ej. UCR — 2 a 20 caracteres, se guarda en mayúsculas. Debe coincidir con la columna «university» del CSV de cortes.',
+                isEdit,
+              )}
+              {text('name', 'Nombre', 'Solo para mostrar; el cruce con los cortes se hace por código.')}
             </div>
           </fieldset>
 

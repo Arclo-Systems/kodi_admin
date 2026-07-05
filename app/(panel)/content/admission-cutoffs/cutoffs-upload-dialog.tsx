@@ -184,7 +184,7 @@ export function CutoffsUploadDialog() {
               . <code className="text-xs">campus</code>, <code className="text-xs">province</code> y{' '}
               <code className="text-xs">canton</code> pueden ir vacíos (province y canton son
               opcionales). <code className="text-xs">university</code> debe ser el código de una
-              universidad activa (UCR, UNA, TEC). Si las notas usan coma decimal
+              universidad activa (los encontrás en Contenido → Universidades). Si las notas usan coma decimal
               (ej. <code className="text-xs">542,15</code>), guardá el archivo separado por{' '}
               <code className="text-xs">;</code> (punto y coma) — es como lo exporta Excel en español.
             </FieldDescription>

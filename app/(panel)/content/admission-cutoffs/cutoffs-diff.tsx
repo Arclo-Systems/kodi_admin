@@ -60,10 +60,12 @@ function InvalidTable({ rows }: { rows: InvalidRow[] }) {
         <TableHeader>
           <TableRow>
             <TableHead>Universidad</TableHead>
+            <TableHead>Facultad</TableHead>
             <TableHead>Carrera</TableHead>
-            <TableHead>Corte</TableHead>
+            <TableHead>Sede</TableHead>
             <TableHead>Provincia</TableHead>
             <TableHead>Cantón</TableHead>
+            <TableHead className="text-right">Corte</TableHead>
             <TableHead>Motivo</TableHead>
           </TableRow>
         </TableHeader>
@@ -71,10 +73,12 @@ function InvalidTable({ rows }: { rows: InvalidRow[] }) {
           {rows.map((r, i) => (
             <TableRow key={i}>
               <TableCell>{r.university || '—'}</TableCell>
+              <TableCell>{r.faculty || '—'}</TableCell>
               <TableCell>{r.career || '—'}</TableCell>
-              <TableCell>{r.cutoffScore || '—'}</TableCell>
+              <TableCell>{r.campus || '—'}</TableCell>
               <TableCell>{r.province || '—'}</TableCell>
               <TableCell>{r.canton || '—'}</TableCell>
+              <TableCell className="text-right">{r.cutoffScore || '—'}</TableCell>
               <TableCell className="text-destructive">{r.reason}</TableCell>
             </TableRow>
           ))}
