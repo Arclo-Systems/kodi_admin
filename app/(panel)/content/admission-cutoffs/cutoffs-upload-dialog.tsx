@@ -48,11 +48,11 @@ export function CutoffsUploadDialog() {
   }
 
   function downloadTemplate(): void {
-    const header = 'university,faculty,career,campus,cutoffScore,province,canton';
+    const header = 'university,career,campus,cutoffScore,province,canton';
     // Ejemplos: uno con sede, otro con campus vacío (permitido). Punto decimal y coma como separador.
     const examples = [
-      'UCR,110103,BACHILLERATO Y LICENCIATURA EN ARTES TEATRALES,RODRIGO FACIO,526.59,San José,Montes de Oca',
-      'TEC,,INGENIERÍA EN COMPUTACIÓN,,565.20,Cartago,Cartago',
+      'UCR,BACHILLERATO Y LICENCIATURA EN ARTES TEATRALES,RODRIGO FACIO,526.59,San José,Montes de Oca',
+      'TEC,INGENIERÍA EN COMPUTACIÓN,,565.20,Cartago,Cartago',
     ];
     // BOM para que Excel en español detecte UTF-8 y no rompa acentos/ñ.
     const content = `﻿${header}\n${examples.join('\n')}\n`;
@@ -179,7 +179,7 @@ export function CutoffsUploadDialog() {
             <FieldDescription>
               Columnas (en este orden):{' '}
               <code className="text-xs">
-                university, faculty, career, campus, cutoffScore, province, canton
+                university, career, campus, cutoffScore, province, canton
               </code>
               . <code className="text-xs">campus</code>, <code className="text-xs">province</code> y{' '}
               <code className="text-xs">canton</code> pueden ir vacíos (province y canton son

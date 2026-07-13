@@ -4476,6 +4476,38 @@ export interface paths {
         patch: operations["RiasecTypeAdminController_update"];
         trace?: never;
     };
+    "/v1/admin/content/universities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UniversityAdminController_search"];
+        put?: never;
+        post: operations["UniversityAdminController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/universities/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["UniversityAdminController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["UniversityAdminController_update"];
+        trace?: never;
+    };
     "/v1/admin/moderation/reports": {
         parameters: {
             query?: never;
@@ -7012,7 +7044,6 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 university: string;
-                faculty: string;
                 career: string;
                 campus: string | null;
                 cutoff_score: number;
@@ -7264,6 +7295,7 @@ export interface components {
                 email_verified: boolean;
                 /** @enum {string} */
                 plan: "free" | "basico" | "plus" | "pro";
+                presentation_grade: number | null;
                 created_at: string;
             };
         };
@@ -7297,6 +7329,7 @@ export interface components {
             /** @enum {string} */
             friend_request_policy?: "everyone" | "nobody";
             reminder_hour?: number;
+            presentation_grade?: number | null;
         };
         UpdatedProfileResponse: {
             data: {
@@ -8896,8 +8929,9 @@ export interface components {
                 };
                 universities: {
                     university: string;
-                    faculty: string;
                     campus: string | null;
+                    province: string | null;
+                    canton: string | null;
                     cutoff_score: number;
                     year: number;
                 }[];
@@ -8913,8 +8947,22 @@ export interface components {
                 /** @enum {boolean} */
                 available: true;
                 estimated_score: number;
-                cutoff_min: number | null;
-                gap: number | null;
+                presentation_grade: number | null;
+                universities: {
+                    university: string;
+                    cutoff_min: number;
+                    year: number;
+                    weights: {
+                        exam: number;
+                        presentation: number;
+                    };
+                    scale: {
+                        min: number;
+                        max: number;
+                    };
+                    admission_score: number | null;
+                    gap: number | null;
+                }[];
                 weak_topics: {
                     /** Format: uuid */
                     topic_id: string;
@@ -10164,9 +10212,10 @@ export interface components {
                 createdAt: string;
                 currentCutoffs: {
                     university: string;
-                    faculty: string | null;
                     career: string;
                     campus: string | null;
+                    province: string | null;
+                    canton: string | null;
                     cutoffScore: number;
                 }[];
             };
@@ -10550,6 +10599,69 @@ export interface components {
                 updatedBy: string | null;
                 updatedAt: string;
             };
+        };
+        UniversityAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    country: string;
+                    code: string;
+                    name: string;
+                    examWeight: string;
+                    presentationWeight: string;
+                    scaleMin: number;
+                    scaleMax: number;
+                    isActive: boolean;
+                    /** Format: uuid */
+                    createdBy: string | null;
+                    /** Format: uuid */
+                    updatedBy: string | null;
+                    updatedAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        UniversityAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string;
+                code: string;
+                name: string;
+                examWeight: string;
+                presentationWeight: string;
+                scaleMin: number;
+                scaleMax: number;
+                isActive: boolean;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+            };
+        };
+        CreateUniversityDto: {
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            code: string;
+            name: string;
+            examWeight: number;
+            presentationWeight: number;
+            scaleMin: number;
+            scaleMax: number;
+            /** @default true */
+            isActive: boolean;
+        };
+        UpdateUniversityDto: {
+            name?: string;
+            examWeight?: number;
+            presentationWeight?: number;
+            scaleMin?: number;
+            scaleMax?: number;
+            isActive?: boolean;
         };
         ModerationReportListResponse: {
             data: {
@@ -20278,6 +20390,99 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RiasecTypeResponse"];
+                };
+            };
+        };
+    };
+    UniversityAdminController_search: {
+        parameters: {
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                isActive?: boolean;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UniversityAdminListResponse"];
+                };
+            };
+        };
+    };
+    UniversityAdminController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUniversityDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UniversityAdminResponse"];
+                };
+            };
+        };
+    };
+    UniversityAdminController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UniversityAdminResponse"];
+                };
+            };
+        };
+    };
+    UniversityAdminController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUniversityDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UniversityAdminResponse"];
                 };
             };
         };

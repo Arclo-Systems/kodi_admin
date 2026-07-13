@@ -19,7 +19,6 @@ function RowsTable({ rows }: { rows: CutoffRow[] }) {
         <TableHeader>
           <TableRow>
             <TableHead>Universidad</TableHead>
-            <TableHead>Facultad</TableHead>
             <TableHead>Carrera</TableHead>
             <TableHead>Sede</TableHead>
             <TableHead>Provincia</TableHead>
@@ -30,7 +29,7 @@ function RowsTable({ rows }: { rows: CutoffRow[] }) {
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-muted-foreground py-6 text-center">
+              <TableCell colSpan={6} className="text-muted-foreground py-6 text-center">
                 Sin filas
               </TableCell>
             </TableRow>
@@ -38,7 +37,6 @@ function RowsTable({ rows }: { rows: CutoffRow[] }) {
             rows.map((r, i) => (
               <TableRow key={`${r.university}-${r.career}-${i}`}>
                 <TableCell>{r.university}</TableCell>
-                <TableCell>{r.faculty}</TableCell>
                 <TableCell>{r.career}</TableCell>
                 <TableCell>{r.campus ?? '—'}</TableCell>
                 <TableCell>{r.province ?? '—'}</TableCell>
@@ -60,7 +58,6 @@ function InvalidTable({ rows }: { rows: InvalidRow[] }) {
         <TableHeader>
           <TableRow>
             <TableHead>Universidad</TableHead>
-            <TableHead>Facultad</TableHead>
             <TableHead>Carrera</TableHead>
             <TableHead>Sede</TableHead>
             <TableHead>Provincia</TableHead>
@@ -73,7 +70,6 @@ function InvalidTable({ rows }: { rows: InvalidRow[] }) {
           {rows.map((r, i) => (
             <TableRow key={i}>
               <TableCell>{r.university || '—'}</TableCell>
-              <TableCell>{r.faculty || '—'}</TableCell>
               <TableCell>{r.career || '—'}</TableCell>
               <TableCell>{r.campus || '—'}</TableCell>
               <TableCell>{r.province || '—'}</TableCell>

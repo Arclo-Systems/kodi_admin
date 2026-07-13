@@ -6,7 +6,6 @@ import { unwrapData } from '@/lib/bff';
 export type CutoffStatus = 'pending_review' | 'applied' | 'rejected';
 export type InvalidRow = {
   university: string;
-  faculty: string;
   career: string;
   campus: string;
   cutoffScore: string;
@@ -39,7 +38,6 @@ export type CutoffUpload = {
 
 export type CutoffRow = {
   university: string;
-  faculty: string;
   career: string;
   campus: string | null;
   cutoffScore: number;
