@@ -51,9 +51,10 @@ const PERIOD_LABELS: Record<string, string> = { monthly: 'Mensual', quarterly: '
 const PERIOD_MONTHS: Record<string, number> = { monthly: 1, quarterly: 3, yearly: 12 };
 const STATUSES = ['pending', 'approved', 'rejected'] as const;
 const EXAM_LABELS: Record<string, string> = {
-  cosevi: 'COSEVI',
-  paa: 'PAA',
-  pne: 'PNE',
+  cosevi_auto: 'COSEVI Auto',
+  cosevi_moto: 'COSEVI Moto',
+  pne_primaria: 'PNE Primaria',
+  pne_bachillerato: 'PNE Secundaria',
   admision: 'Admisión',
 };
 const ALL = 'all';
