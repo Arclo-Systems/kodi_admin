@@ -21,6 +21,14 @@ test('cross-sell: renderiza la página de cross-sell', async ({ page }) => {
   await expect(page.getByText('Nuevo cross-sell')).toBeVisible();
 });
 
+test('becas: renderiza la lista con filtros', async ({ page }) => {
+  await page.goto('/economy/scholarships');
+  await expect(page.getByRole('heading', { name: 'Becas' })).toBeVisible();
+  await expect(page.getByPlaceholder('Email o nombre')).toBeVisible();
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByText('Sin solicitudes de beca.').or(page.getByText('Revisar').first())).toBeVisible();
+});
+
 test('monetización: la analítica carga sin error', async ({ page }) => {
   await page.goto('/economy/monetization');
   await expect(page.getByRole('heading', { name: 'Monetización' })).toBeVisible();

@@ -29,6 +29,8 @@ import {
   usePromoOffers,
   usePromoOffer,
   usePromoOfferMutations,
+  CURRENCY_LABELS,
+  OFFER_CURRENCIES,
   type PromoOffer,
 } from '@/hooks/use-promo-offers';
 import { OfferPricesEditor } from './offer-prices-editor';
@@ -42,6 +44,7 @@ const FormSchema = z
     country: z.string().min(1),
     priceMode: z.enum(['explicit', 'percent']),
     discountPercent: z.number().int().min(1).max(99).optional(), // NaN/undefined = sin %
+    currency: z.enum(OFFER_CURRENCIES),
     slotsTotal: z.number().int().min(0),
     startsAt: z.string(),
     endsAt: z.string(),
@@ -64,6 +67,7 @@ const DEFAULTS: FormValues = {
   country: 'CR',
   priceMode: 'explicit',
   discountPercent: NaN,
+  currency: 'USD',
   slotsTotal: 1250,
   startsAt: '',
   endsAt: '',
@@ -102,6 +106,7 @@ export function PromoOffersManager() {
         country: o.country,
         priceMode: o.priceMode,
         discountPercent: o.discountPercent ?? NaN,
+        currency: o.currency,
         slotsTotal: o.slotsTotal,
         startsAt: o.startsAt ? o.startsAt.slice(0, 10) : '',
         endsAt: o.endsAt ? o.endsAt.slice(0, 10) : '',
@@ -136,7 +141,9 @@ export function PromoOffersManager() {
         cell: ({ row }) =>
           row.original.priceMode === 'percent'
             ? `−${row.original.discountPercent}%`
-            : 'Tabla propia',
+            : // La moneda solo aplica a la tabla propia; en modo % el precio
+              // sale del grid regular y hereda la suya.
+              `Tabla propia · ${row.original.currency}`,
       },
       {
         id: 'slots',
@@ -203,6 +210,7 @@ export function PromoOffersManager() {
       label: v.label,
       priceMode: v.priceMode,
       discountPercent,
+      currency: v.currency,
       slotsTotal: v.slotsTotal,
       startsAt: v.startsAt ? `${v.startsAt}T00:00:00.000Z` : null,
       endsAt: v.endsAt ? `${v.endsAt}T23:59:59.999Z` : null,
@@ -295,6 +303,31 @@ export function PromoOffersManager() {
                     </Field>
                   )}
                 />
+                {/* Los precios de la oferta van en su propia moneda: la app
+                    los pintaba con la del grid regular. */}
+                {priceMode === 'explicit' && (
+                  <Controller
+                    name="currency"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Field>
+                        <FieldLabel>Moneda</FieldLabel>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {OFFER_CURRENCIES.map((code) => (
+                              <SelectItem key={code} value={code}>
+                                {CURRENCY_LABELS[code]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    )}
+                  />
+                )}
                 {priceMode === 'percent' && (
                   <Controller
                     name="discountPercent"

@@ -27,6 +27,7 @@ import { RAFFLE_STATUS_FARO, DELIVERY_FARO } from '@/lib/raffle-status';
 import { DataTable } from '@/components/admin/data-table';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { CompleteRaffleForm } from './complete-raffle-form';
+import { RafflePrizesForm } from './raffle-prizes-form';
 import { WinnerDeliveryDialog } from './winner-delivery-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -199,6 +200,24 @@ export function RaffleDetail({ id }: { id: string }) {
               <Stat label="Otorgada">{fmtDateTime(raffle.awardedAt)}</Stat>
               <Stat label="Reversible hasta">{fmtDateTime(raffle.reversibleUntil)}</Stat>
             </dl>
+          </CardContent>
+        </Card>
+      )}
+
+      {raffle && editable && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MedalIcon className="text-primary size-4" />
+              Premio por puesto
+            </CardTitle>
+            <CardDescription>
+              Cada puesto del podio puede tener su propio premio. Sin esto, los
+              tres ganadores muestran el mismo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RafflePrizesForm raffle={raffle} />
           </CardContent>
         </Card>
       )}

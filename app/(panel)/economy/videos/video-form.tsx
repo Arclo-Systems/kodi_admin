@@ -99,21 +99,19 @@ function VideoFormInner({ videoId, initial }: { videoId?: string; initial?: Form
   const { data: tree } = useModulesTree(country || undefined);
   const modules = country ? (tree ?? []) : [];
 
+  // La duración REAL del archivo manda siempre. Antes solo se autocompletaba si
+  // caía en la lista de duraciones estándar; si no, había que elegir la más
+  // cercana. Un video de 8 s guardado como 15 nunca acredita a nadie: la app
+  // exige el 95 % de la duración declarada, o sea 14 s de un archivo que dura 8,
+  // y el usuario ve "No completaste el video" después de verlo entero.
   function onDurationDetected(seconds: number): void {
     setDetectedDuration(seconds);
-    if ((VIDEO_DURATIONS as readonly number[]).includes(seconds)) {
-      form.setValue('durationSec', seconds);
-    }
+    form.setValue('durationSec', seconds);
   }
 
-  const durationMismatch =
-    detectedDuration !== null && !(VIDEO_DURATIONS as readonly number[]).includes(detectedDuration);
-  const nearest =
-    detectedDuration === null
-      ? null
-      : VIDEO_DURATIONS.reduce((a, b) =>
-          Math.abs(b - detectedDuration) < Math.abs(a - detectedDuration) ? b : a,
-        );
+  const nonStandardDuration =
+    detectedDuration !== null &&
+    !(VIDEO_DURATIONS as readonly number[]).includes(detectedDuration);
 
   async function submit(v: FormValues): Promise<void> {
     if (!v.videoUrl) {
@@ -122,6 +120,13 @@ function VideoFormInner({ videoId, initial }: { videoId?: string; initial?: Form
     }
     if (!videoId && (!v.sponsorId || !v.country)) {
       toast.error('Elegí sponsor y país');
+      return;
+    }
+    // Sin duración real no se puede guardar: la app valida el tiempo visto
+    // contra este número, y si no corresponde al archivo el video no acredita
+    // a nadie y nada lo avisa.
+    if (!v.durationSec || v.durationSec < 1) {
+      toast.error('No se pudo medir la duración del video. Volvé a subirlo.');
       return;
     }
     if (v.startsAt && v.endsAt && v.endsAt < v.startsAt) {
@@ -302,29 +307,25 @@ function VideoFormInner({ videoId, initial }: { videoId?: string; initial?: Form
                 control={form.control}
                 render={({ field }) => (
                   <Field>
-                    <FieldLabel>Duración declarada</FieldLabel>
-                    <Select
-                      value={String(field.value)}
-                      onValueChange={(v) => field.onChange(Number(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {VIDEO_DURATIONS.map((d) => (
-                          <SelectItem key={d} value={String(d)}>
-                            {d} segundos
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {durationMismatch && nearest !== null ? (
+                    <FieldLabel>Duración</FieldLabel>
+                    <Input
+                      value={field.value ? `${field.value} segundos` : '—'}
+                      readOnly
+                      aria-readonly
+                      className="bg-muted"
+                    />
+                    {detectedDuration === null ? (
+                      <FieldDescription>
+                        Se toma del archivo al subirlo.
+                      </FieldDescription>
+                    ) : nonStandardDuration ? (
                       <FieldDescription className="text-warning">
-                        El video dura ~{detectedDuration}s, que no es una duración estándar. Elegí la
-                        más cercana ({nearest}s); la app valida el tiempo de visionado contra este valor.
+                        Medida del archivo. No es una duración estándar de
+                        anuncio, pero se usa tal cual: la app valida contra la
+                        duración real, no contra la que se declare.
                       </FieldDescription>
                     ) : (
-                      <FieldDescription>Debe coincidir con la duración real del archivo.</FieldDescription>
+                      <FieldDescription>Medida del archivo.</FieldDescription>
                     )}
                   </Field>
                 )}

@@ -5,6 +5,18 @@ import { unwrapData } from '@/lib/bff';
 
 export type PriceMode = 'explicit' | 'percent';
 
+/** Monedas de los mercados donde opera Kodi (mismo enum que el backend). */
+export const OFFER_CURRENCIES = ['USD', 'CRC', 'GTQ', 'HNL', 'PAB'] as const;
+export type OfferCurrency = (typeof OFFER_CURRENCIES)[number];
+
+export const CURRENCY_LABELS: Record<OfferCurrency, string> = {
+  USD: 'USD — dólar',
+  CRC: 'CRC — colón',
+  GTQ: 'GTQ — quetzal',
+  HNL: 'HNL — lempira',
+  PAB: 'PAB — balboa',
+};
+
 export type OfferPrice = {
   id: string;
   plan: string;
@@ -20,6 +32,8 @@ export type PromoOffer = {
   country: string;
   priceMode: PriceMode;
   discountPercent: number | null;
+  /** Moneda del grid de la oferta; puede diferir de la del grid regular. */
+  currency: OfferCurrency;
   slotsTotal: number;
   slotsClaimed: number;
   startsAt: string | null;
@@ -37,6 +51,7 @@ export type CreateOfferInput = {
   country: string;
   priceMode: PriceMode;
   discountPercent?: number | null;
+  currency?: OfferCurrency;
   slotsTotal: number;
   startsAt?: string | null;
   endsAt?: string | null;

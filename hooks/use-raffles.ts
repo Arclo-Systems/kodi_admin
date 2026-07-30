@@ -71,9 +71,25 @@ export type RaffleWinner = {
   user?: { displayName: string };
 };
 
+export type RafflePrize = {
+  id: string;
+  raffleId: string;
+  position: number;
+  description: string;
+  imageUrl: string | null;
+};
+
 export type RaffleDetail = Raffle & {
   sponsor: { name: string; logoUrl: string | null } | null;
   winners: RaffleWinner[];
+  prizes: RafflePrize[];
+};
+
+/** Fila de la tabla de premios en edición: sin id hasta que el backend la crea. */
+export type RafflePrizeInput = {
+  position: number;
+  description: string;
+  image_url?: string | null;
 };
 
 export type RaffleListQuery = {
@@ -107,7 +123,11 @@ export type UpdateWinnerInput = {
   prizeDeliveredAt?: string | null;
 };
 
-async function sendJson(url: string, method: 'POST' | 'PATCH', body: unknown): Promise<unknown> {
+async function sendJson(
+  url: string,
+  method: 'POST' | 'PATCH' | 'PUT',
+  body: unknown,
+): Promise<unknown> {
   const res = await fetch(url, {
     method,
     headers: { 'content-type': 'application/json' },
@@ -169,6 +189,13 @@ export function useRaffleActions(id: string) {
     }),
     revert: useMutation({
       mutationFn: () => sendJson(`/api/admin/economy/raffles/${id}/revert`, 'POST', {}),
+      onSuccess: invalidate,
+    }),
+    // Se manda la lista COMPLETA: el backend reemplaza, así que quitar un
+    // puesto es no mandarlo.
+    setPrizes: useMutation({
+      mutationFn: (prizes: RafflePrizeInput[]) =>
+        sendJson(`/api/admin/economy/raffles/${id}/prizes`, 'PUT', { prizes }),
       onSuccess: invalidate,
     }),
     updateWinner: useMutation({
