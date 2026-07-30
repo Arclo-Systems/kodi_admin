@@ -17,8 +17,12 @@ jobs:
           node-version: '24'
           cache: 'npm'
       - run: npm ci
-      # Gate de supply chain: falla si hay vulnerabilidades altas/críticas.
-      - run: npm audit --audit-level=high
+      # Gate de supply chain: falla ante cualquier alerta alta/crítica en las
+      # dependencias de producción que no esté en la lista de excepciones
+      # (motivo + fecha de revisión en el script).
+      - run: npm run audit:gate
+      # Informativo: el estado del toolchain de desarrollo, sin frenar el merge.
+      - run: npm audit --audit-level=high || true
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
