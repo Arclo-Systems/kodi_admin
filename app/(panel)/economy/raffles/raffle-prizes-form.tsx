@@ -70,6 +70,9 @@ export function RafflePrizesForm({ raffle }: { raffle: RaffleDetail }) {
       toast.error('Hay más de un premio para el mismo puesto.');
       return;
     }
+    // El backend exige `min(1)`: con el premio general vacío, las filas que
+    // propone `initialRows` salen vacías y volvía el error crudo de Zod, que es
+    // justo lo que esta validación existe para evitar.
     if (rows.some((r) => !r.description.trim())) {
       toast.error('Todos los puestos necesitan una descripción.');
       return;
