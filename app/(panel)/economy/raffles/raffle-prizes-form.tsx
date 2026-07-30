@@ -52,6 +52,20 @@ export function RafflePrizesForm({ raffle }: { raffle: RaffleDetail }) {
 
   const save = () => {
     const positions = rows.map((r) => r.position);
+    // `Number('')` da 0 y `Number('abc')` da NaN: sin este chequeo llegaban al
+    // backend y volvía el error crudo de Zod en un toast. Además
+    // `new Set([NaN]).size === 1`, así que el chequeo de duplicados tampoco los
+    // atrapaba.
+    if (!positions.every((p) => Number.isInteger(p) && p >= 1)) {
+      toast.error('Cada puesto tiene que ser un número entero desde 1.');
+      return;
+    }
+    if (positions.some((p) => p > raffle.prizesCount)) {
+      toast.error(
+        `Esta premiación entrega ${raffle.prizesCount} premios: no hay puestos más allá de ese.`,
+      );
+      return;
+    }
     if (new Set(positions).size !== positions.length) {
       toast.error('Hay más de un premio para el mismo puesto.');
       return;
@@ -121,7 +135,15 @@ export function RafflePrizesForm({ raffle }: { raffle: RaffleDetail }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={add}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={add}
+          // No se pueden cargar más premios que puestos entrega la premiación:
+          // el backend los rechaza y antes se guardaban invisibles.
+          disabled={rows.length >= raffle.prizesCount}
+        >
           <PlusIcon className="size-4" />
           Agregar puesto
         </Button>
@@ -131,7 +153,9 @@ export function RafflePrizesForm({ raffle }: { raffle: RaffleDetail }) {
       </div>
 
       <p className="text-muted-foreground text-sm">
-        Los puestos sin premio propio muestran el premio general de la premiación.
+        Esta premiación entrega {raffle.prizesCount}{' '}
+        {raffle.prizesCount === 1 ? 'premio' : 'premios'}. Los puestos sin
+        premio propio muestran el premio general de la premiación.
       </p>
     </div>
   );
