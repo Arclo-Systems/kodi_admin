@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { ColumnDef } from '@tanstack/react-table';
-import { CircleCheckIcon, CircleOffIcon, PlusIcon } from 'lucide-react';
+import { CircleCheckIcon, CircleOffIcon, PlusIcon, Trash2Icon } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   useStoreItems,
+  useStoreItemMutations,
   CATEGORY_LABELS,
   ITEM_TYPE_LABELS,
   STORE_ITEM_TYPES,
@@ -18,6 +20,7 @@ import {
   type StoreListQuery,
 } from '@/hooks/use-store';
 import { DataTable } from '@/components/admin/data-table';
+import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { StoreInventoryDialog } from './store-inventory';
 import { StatusBadge } from '@/lib/status-badge';
 import { Button } from '@/components/ui/button';
@@ -96,13 +99,68 @@ const columns: ColumnDef<StoreItem, unknown>[] = [
   },
 ];
 
+// El borrado solo aparece donde de verdad se puede: ítem desactivado y sin
+// dueños. Mostrarlo siempre y que el backend rechace sería ofrecer algo que no
+// se puede hacer.
+function canDelete(item: StoreItem): boolean {
+  return !item.isActive && (item.ownedBy ?? 0) === 0;
+}
+
 export function StoreTable() {
   const router = useRouter();
   const [query, setQuery] = useState<StoreListQuery>({ page: 1, pageSize: 20 });
   const { data, isLoading } = useStoreItems(query);
+  const { remove } = useStoreItemMutations();
+  const [toDelete, setToDelete] = useState<StoreItem | null>(null);
   const set = (patch: Partial<StoreListQuery>) => setQuery({ ...query, page: 1, ...patch });
 
+  const columnsWithActions: ColumnDef<StoreItem, unknown>[] = [
+    ...columns,
+    {
+      id: 'actions',
+      header: '',
+      meta: { label: 'Acciones' },
+      enableSorting: false,
+      cell: ({ row }) =>
+        canDelete(row.original) ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+            aria-label={`Borrar ${row.original.name}`}
+            onClick={(e) => {
+              // La fila navega al detalle; el botón no debe arrastrar con eso.
+              e.stopPropagation();
+              setToDelete(row.original);
+            }}
+          >
+            <Trash2Icon className="size-4" />
+          </Button>
+        ) : null,
+    },
+  ];
+
   return (
+    <>
+      <ConfirmDialog
+        open={toDelete !== null}
+        onOpenChange={(open) => !open && setToDelete(null)}
+        title={`¿Borrar "${toDelete?.name ?? ''}"?`}
+        description="El ítem desaparece del catálogo para siempre. Nadie lo tiene, así que no se le saca nada a ningún usuario."
+        destructive
+        confirmLabel="Borrar"
+        onConfirm={async () => {
+          if (!toDelete) return;
+          try {
+            await remove.mutateAsync(toDelete.id);
+            toast.success('Ítem borrado');
+            setToDelete(null);
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : 'No se pudo borrar');
+          }
+        }}
+      />
+
     <DataTable
       toolbar={
         <>
@@ -175,7 +233,7 @@ export function StoreTable() {
           </div>
         </>
       }
-      columns={columns}
+      columns={columnsWithActions}
       data={data?.items ?? []}
       total={data?.total ?? 0}
       page={query.page}
@@ -186,5 +244,6 @@ export function StoreTable() {
       onRowClick={(i) => router.push(`/economy/store/${i.id}/edit`)}
       emptyMessage="No hay ítems con esos filtros"
     />
+    </>
   );
 }

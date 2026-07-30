@@ -179,6 +179,20 @@ export function useStoreItemMutations() {
         qc.invalidateQueries({ queryKey: ['store-item', id] });
       },
     }),
+    // El backend solo deja borrar ítems desactivados y sin dueños; su mensaje
+    // explica cuál de las dos cosas falla.
+    remove: useMutation({
+      mutationFn: async (id: string): Promise<void> => {
+        const res = await fetch(`/api/admin/economy/store/${id}`, {
+          method: 'DELETE',
+        });
+        if (!res.ok) {
+          const b = (await res.json().catch(() => ({}))) as { message?: string };
+          throw new Error(b.message ?? 'No se pudo borrar el ítem');
+        }
+      },
+      onSuccess: () => qc.invalidateQueries({ queryKey: ['store-items'] }),
+    }),
   };
 }
 
