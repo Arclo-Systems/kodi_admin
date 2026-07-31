@@ -20,6 +20,7 @@ const tree: TreeModule[] = [
     approvalThreshold: 70,
     noRepeatWindowQuestions: 50,
     duelCategorySource: 'subjects',
+    duelCategoryCap: 6,
     examDurationMin: null,
     examQuestionCount: null,
     subjects: [

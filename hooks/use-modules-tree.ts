@@ -53,6 +53,8 @@ export type TreeModule = {
   noRepeatWindowQuestions: number;
   /** De qué se arma el tablero de Partida Kodi. */
   duelCategorySource: 'subjects' | 'topics';
+  /** Máximo de sectores de la ruleta. Si hay menos categorías, se usan todas. */
+  duelCategoryCap: number;
   examDurationMin: number | null;
   examQuestionCount: number | null;
   subjects: TreeSubject[];

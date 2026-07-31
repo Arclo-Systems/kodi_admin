@@ -44,6 +44,8 @@ export type UpdateModuleInput = ModuleVisuals & {
   noRepeatWindowQuestions?: number;
   /** De qué se arma el tablero de Partida Kodi: materias o temas. */
   duelCategorySource?: 'subjects' | 'topics';
+  /** Máximo de sectores de la ruleta (2–12). */
+  duelCategoryCap?: number;
   /** Simulacro: duración y cantidad de preguntas. null = sin definir. */
   examDurationMin?: number | null;
   examQuestionCount?: number | null;
@@ -108,11 +110,6 @@ export function useContentTreeMutations() {
     toggleModule: useMutation({
       mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
         send(`/api/admin/content/modules/${id}/toggle-active`, 'POST', { isActive }),
-      onSuccess,
-    }),
-    duplicateModule: useMutation({
-      mutationFn: ({ id, targetCountry }: { id: string; targetCountry: string }) =>
-        send(`/api/admin/content/modules/${id}/duplicate`, 'POST', { targetCountry }),
       onSuccess,
     }),
     createSubject: useMutation({
