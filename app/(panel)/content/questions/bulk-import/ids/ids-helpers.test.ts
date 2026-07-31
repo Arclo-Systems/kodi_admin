@@ -10,6 +10,11 @@ const tree: TreeModule[] = [
     fullName: 'Prueba',
     isActive: true,
     questionCount: 0,
+    approvalThreshold: 70,
+    noRepeatWindowQuestions: 50,
+    duelCategorySource: 'subjects',
+    examDurationMin: null,
+    examQuestionCount: null,
     subjects: [
       {
         id: 's1',

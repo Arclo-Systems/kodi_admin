@@ -24,6 +24,14 @@ export type TreeModule = {
   fullName: string;
   isActive: boolean;
   questionCount: number;
+  /** Nota mínima para aprobar el examen (0-100). */
+  approvalThreshold: number;
+  /** Últimas N preguntas que no se le repiten al usuario. 0 = sin margen. */
+  noRepeatWindowQuestions: number;
+  /** De qué se arma el tablero de Partida Kodi. */
+  duelCategorySource: 'subjects' | 'topics';
+  examDurationMin: number | null;
+  examQuestionCount: number | null;
   subjects: TreeSubject[];
 };
 

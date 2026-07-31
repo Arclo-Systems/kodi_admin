@@ -27,6 +27,15 @@ export type UpdateModuleInput = {
   fullName?: string;
   version?: string;
   hasAdmissionCutoffs?: boolean;
+  /** Nota mínima para dar el examen por aprobado (0-100). */
+  approvalThreshold?: number;
+  /** Últimas N preguntas que no se repiten al usuario. 0 = sin margen. */
+  noRepeatWindowQuestions?: number;
+  /** De qué se arma el tablero de Partida Kodi: materias o temas. */
+  duelCategorySource?: 'subjects' | 'topics';
+  /** Simulacro: duración y cantidad de preguntas. null = sin definir. */
+  examDurationMin?: number | null;
+  examQuestionCount?: number | null;
 };
 export type CreateSubjectInput = {
   moduleId: string;

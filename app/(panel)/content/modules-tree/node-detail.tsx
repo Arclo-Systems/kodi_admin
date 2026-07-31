@@ -118,6 +118,12 @@ type ModuleValues = {
   fullName: string;
   version: string;
   hasAdmissionCutoffs: boolean;
+  approvalThreshold: number;
+  noRepeatWindowQuestions: number;
+  duelCategorySource: 'subjects' | 'topics';
+  /** Vacío = sin definir (el backend recibe null). */
+  examDurationMin: string;
+  examQuestionCount: string;
 };
 
 function ModuleForm({
@@ -145,11 +151,25 @@ function ModuleForm({
       fullName: existing?.fullName ?? '',
       version: '1',
       hasAdmissionCutoffs: false,
+      approvalThreshold: existing?.approvalThreshold ?? 70,
+      noRepeatWindowQuestions: existing?.noRepeatWindowQuestions ?? 50,
+      duelCategorySource: existing?.duelCategorySource ?? 'subjects',
+      examDurationMin: existing?.examDurationMin?.toString() ?? '',
+      examQuestionCount: existing?.examQuestionCount?.toString() ?? '',
     },
   });
   useEffect(() => {
     if (existing)
-      form.reset({ ...form.getValues(), shortName: existing.shortName, fullName: existing.fullName });
+      form.reset({
+        ...form.getValues(),
+        shortName: existing.shortName,
+        fullName: existing.fullName,
+        approvalThreshold: existing.approvalThreshold,
+        noRepeatWindowQuestions: existing.noRepeatWindowQuestions,
+        duelCategorySource: existing.duelCategorySource,
+        examDurationMin: existing.examDurationMin?.toString() ?? '',
+        examQuestionCount: existing.examQuestionCount?.toString() ?? '',
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existing?.id]);
 
@@ -165,6 +185,13 @@ function ModuleForm({
           fullName: v.fullName,
           version: v.version,
           hasAdmissionCutoffs: v.hasAdmissionCutoffs,
+          approvalThreshold: v.approvalThreshold,
+          noRepeatWindowQuestions: v.noRepeatWindowQuestions,
+          duelCategorySource: v.duelCategorySource,
+          // Vacío = sin definir; el simulacro cae a sus valores por defecto.
+          examDurationMin: v.examDurationMin === '' ? null : Number(v.examDurationMin),
+          examQuestionCount:
+            v.examQuestionCount === '' ? null : Number(v.examQuestionCount),
         });
         toast.success('Módulo actualizado');
       }
@@ -261,6 +288,93 @@ function ModuleForm({
             </label>
           )}
         />
+
+        {!isNew && (
+          <div className="space-y-4 border-t pt-4">
+            <p className="text-sm font-medium">Configuración del módulo</p>
+
+            <Controller
+              name="duelCategorySource"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel>Tablero de Partida Kodi</FieldLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="subjects">Por materias</SelectItem>
+                      <SelectItem value="topics">Por temas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-muted-foreground text-xs">
+                    De qué se arman los sectores de la ruleta y las coronas que
+                    se ganan.
+                  </p>
+                </Field>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <Controller
+                name="approvalThreshold"
+                control={form.control}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Nota para aprobar (%)</FieldLabel>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={field.value}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </Field>
+                )}
+              />
+              <Controller
+                name="noRepeatWindowQuestions"
+                control={form.control}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>No repetir últimas N</FieldLabel>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={500}
+                      value={field.value}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      0 = sin margen.
+                    </p>
+                  </Field>
+                )}
+              />
+              <Controller
+                name="examDurationMin"
+                control={form.control}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Duración del examen (min)</FieldLabel>
+                    <Input type="number" min={1} max={600} placeholder="Sin definir" {...field} />
+                  </Field>
+                )}
+              />
+              <Controller
+                name="examQuestionCount"
+                control={form.control}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Preguntas del examen</FieldLabel>
+                    <Input type="number" min={1} placeholder="Sin definir" {...field} />
+                  </Field>
+                )}
+              />
+            </div>
+          </div>
+        )}
 
         {!isNew && existing && (
           <div className="flex flex-wrap items-center gap-2 border-t pt-4">
