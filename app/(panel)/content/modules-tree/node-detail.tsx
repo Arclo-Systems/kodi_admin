@@ -372,7 +372,11 @@ function ModuleForm({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Filas compartidas (etiqueta / campo / ayuda) con subgrid: si una
+                etiqueta ocupa dos líneas y la de al lado una, los campos siguen
+                alineados y el texto de ayuda no abre huecos. Apoyar el input
+                abajo no alcanzaba acá porque hay ayuda debajo del campo. */}
+            <div className="grid grid-cols-2 grid-rows-[auto_auto_auto] gap-x-3 gap-y-2 [&>*]:row-span-3 [&>*]:grid [&>*]:grid-rows-subgrid [&>*]:gap-y-2">
               {/* Los exámenes de admisión (PAA, TEC) no se aprueban ni se
                   reprueban: se compite contra la cohorte. El backend ya los
                   trata así —predictor y estadísticas devuelven la nota en
@@ -421,7 +425,7 @@ function ModuleForm({
                 name="examDurationMin"
                 control={form.control}
                 render={({ field }) => (
-                  <Field className="h-full justify-between">
+                  <Field>
                     <FieldLabel>Duración del examen (min)</FieldLabel>
                     <Input type="number" min={1} max={600} placeholder="Sin definir" {...field} />
                   </Field>
@@ -431,7 +435,7 @@ function ModuleForm({
                 name="examQuestionCount"
                 control={form.control}
                 render={({ field }) => (
-                  <Field className="h-full justify-between">
+                  <Field>
                     <FieldLabel>Preguntas del examen</FieldLabel>
                     <Input type="number" min={1} placeholder="Sin definir" {...field} />
                   </Field>
