@@ -67,8 +67,14 @@ export type UpdateSubjectInput = NodeAssets & {
   colorHex?: string;
   region?: string | null;
 };
-/** El tema suma color propio; solo se llena en módulos de admisión. */
-type TopicVisuals = NodeAssets & { colorHex?: string | null };
+/**
+ * El tema suma color propio; solo se llena en módulos de admisión. Sin arte de
+ * práctica: esa ilustración es de la materia.
+ */
+type TopicVisuals = {
+  colorHex?: string | null;
+  wheelAssetUrl?: string | null;
+};
 
 export type CreateTopicInput = TopicVisuals & {
   subjectId: string;

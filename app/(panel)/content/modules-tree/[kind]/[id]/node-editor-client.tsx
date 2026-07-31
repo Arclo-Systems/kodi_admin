@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useModulesTree, type TreeModule } from '@/hooks/use-modules-tree';
 import { NodeDetail, type TreeView } from '../../node-detail';
+import { NodeChrome } from '../../node-shell';
 
 const TREE_PATH = '/content/modules-tree';
 
@@ -83,13 +84,17 @@ export function NodeEditorClient({
         </Link>
       </Button>
 
-      <Card className="max-w-3xl p-6">
-        <NodeDetail
-          view={toView(tree ?? [], kind, id, moduleId, subjectId)}
-          tree={tree ?? []}
-          canWriteModules={canWriteModules}
-          onDone={() => router.push(TREE_PATH)}
-        />
+      {/* Ancho completo: son tres bloques (identidad, configuración y arte) y con
+          ancho de modal el arte quedaba apilado abajo con media pantalla vacía. */}
+      <Card className="p-6">
+        <NodeChrome variant="screen">
+          <NodeDetail
+            view={toView(tree ?? [], kind, id, moduleId, subjectId)}
+            tree={tree ?? []}
+            canWriteModules={canWriteModules}
+            onDone={() => router.push(TREE_PATH)}
+          />
+        </NodeChrome>
       </Card>
     </div>
   );

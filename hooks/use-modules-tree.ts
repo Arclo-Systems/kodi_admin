@@ -13,9 +13,11 @@ export type TreeTopic = {
    * Identidad visual del tema. Solo se carga en módulos de ADMISIÓN: ahí la
    * "materia" es el examen (PAA UCR, TEC) y lo que el estudiante percibe como
    * materia es el tema. En los demás modos queda en null.
+   *
+   * Sin arte de práctica: esa ilustración es de la materia. El tema solo tiene
+   * arte propio dentro de la ruleta de Partida Kodi.
    */
   colorHex: string | null;
-  assetUrl: string | null;
   wheelAssetUrl: string | null;
 };
 export type TreeSubject = {

@@ -7623,7 +7623,6 @@ export interface components {
                 order: number;
                 exam_weight: number | null;
                 color_hex: string | null;
-                asset_url: string | null;
                 wheel_asset_url: string | null;
             }[];
             meta: {
@@ -11136,7 +11135,6 @@ export interface components {
                         examWeight: string | null;
                         questionCount: number;
                         colorHex: string | null;
-                        assetUrl: string | null;
                         wheelAssetUrl: string | null;
                     }[];
                 }[];
@@ -11280,8 +11278,6 @@ export interface components {
             examWeight?: number | null;
             colorHex?: string | null;
             /** Format: uri */
-            assetUrl?: string | null;
-            /** Format: uri */
             wheelAssetUrl?: string | null;
         };
         TopicAdminResponse: {
@@ -11296,7 +11292,6 @@ export interface components {
                 order: number;
                 examWeight: string | null;
                 colorHex: string | null;
-                assetUrl: string | null;
                 wheelAssetUrl: string | null;
             };
         };
@@ -11309,8 +11304,6 @@ export interface components {
             name?: string;
             examWeight?: number | null;
             colorHex?: string | null;
-            /** Format: uri */
-            assetUrl?: string | null;
             /** Format: uri */
             wheelAssetUrl?: string | null;
         };

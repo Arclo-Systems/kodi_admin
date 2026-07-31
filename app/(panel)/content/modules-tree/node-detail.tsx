@@ -262,10 +262,10 @@ function ModuleForm({
         </NodeTitle>
       </NodeHeader>
 
-      {/* Dos columnas en pantallas anchas: identidad a la izquierda, ajustes de
-          cálculo a la derecha. En una sola columna el módulo salía tan largo
-          que había que hacer scroll dentro del diálogo. */}
-      <div className="grid gap-x-6 gap-y-4 py-4 sm:grid-cols-2">
+      {/* Tres bloques en paralelo: qué examen es, cómo se calcula, y cómo se ve.
+          Antes eran dos columnas porque esto vivía en un diálogo; en pantalla
+          completa el arte entra al lado en vez de apilarse al final. */}
+      <div className="grid gap-x-6 gap-y-4 py-4 sm:grid-cols-2 xl:grid-cols-3">
         {isNew && (
           <div className="grid grid-cols-2 gap-3 sm:col-span-2">
             <Controller
@@ -292,7 +292,7 @@ function ModuleForm({
           </div>
         )}
 
-        <div className={isNew ? 'space-y-4 sm:col-span-2' : 'space-y-4'}>
+        <div className="space-y-4">
         <Controller
           name="examType"
           control={form.control}
@@ -371,7 +371,13 @@ function ModuleForm({
           )}
         />
 
-        <div className="space-y-4 border-t pt-4">
+        </div>
+
+        {/* Columna propia: el arte necesita espacio para los previews. Va última
+            en el orden de lectura (qué examen es → cómo se calcula → cómo se ve),
+            y se ordena por CSS en vez de mover el bloque porque la columna de
+            configuración es condicional. */}
+        <div className="order-last space-y-4 sm:col-span-2 sm:border-t sm:pt-4 xl:col-span-1 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-6">
           <p className="text-sm font-medium">Identidad visual</p>
           <Controller
             name="colorHex"
@@ -409,8 +415,6 @@ function ModuleForm({
               />
             )}
           />
-        </div>
-
         </div>
 
         {!isNew && (
@@ -831,7 +835,7 @@ type TopicValues = {
   /** `null` = sin identidad propia. La ruleta depende de ese null para caer a
    *  su color de respaldo por posición, así que no se rellena con un default. */
   colorHex: string | null;
-  assetUrl: string | null;
+  /** Solo arte de ruleta: en práctica se muestra la materia, no el tema. */
   wheelAssetUrl: string | null;
 };
 
@@ -859,7 +863,6 @@ function TopicForm({
       name: existing?.name ?? '',
       examWeight: existing?.examWeight != null ? String(existing.examWeight) : '',
       colorHex: existing?.colorHex ?? null,
-      assetUrl: existing?.assetUrl ?? null,
       wheelAssetUrl: existing?.wheelAssetUrl ?? null,
     },
   });
@@ -871,7 +874,6 @@ function TopicForm({
         name: existing.name,
         examWeight: existing.examWeight != null ? String(existing.examWeight) : '',
         colorHex: existing.colorHex,
-        assetUrl: existing.assetUrl,
         wheelAssetUrl: existing.wheelAssetUrl,
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -884,11 +886,7 @@ function TopicForm({
     // Vaciar el campo de color vuelve a `null`, que es como se le devuelve al
     // tema su falta de identidad propia.
     const visuals = isAdmissionModule
-      ? {
-          colorHex: v.colorHex || null,
-          assetUrl: v.assetUrl,
-          wheelAssetUrl: v.wheelAssetUrl,
-        }
+      ? { colorHex: v.colorHex || null, wheelAssetUrl: v.wheelAssetUrl }
       : {};
     try {
       if (view.kind === 'new-topic') {
@@ -960,18 +958,9 @@ function TopicForm({
                 />
               )}
             />
-            <Controller
-              name="assetUrl"
-              control={form.control}
-              render={({ field }) => (
-                <AssetField
-                  label="Arte de práctica"
-                  hint="La ilustración del tema donde se lo muestra completo."
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
+            {/* El tema NO lleva arte de práctica: en práctica se muestra la
+                materia (que en admisión es el examen). Su arte propio solo
+                aparece en la ruleta de Partida Kodi. */}
             <Controller
               name="wheelAssetUrl"
               control={form.control}

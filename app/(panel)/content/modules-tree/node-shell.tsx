@@ -1,16 +1,39 @@
+'use client';
+
+import { createContext, useContext } from 'react';
+import { DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
-// Cabecera y pie del detalle de nodo. Antes eran `DialogHeader`/`DialogFooter`:
-// el detalle vivía dentro de un modal y con la identidad visual (color + dos
-// subidas de imagen con preview por nodo) quedaba inusable. Al pasar a pantalla
-// propia las piezas dejan de poder depender del contexto de Radix, así que se
-// replican acá con el mismo aspecto.
+// El detalle de nodo vive en dos sitios: el módulo en pantalla propia (necesita
+// el ancho para el arte) y materia/tema en modal (son formularios cortos). El
+// contenedor cambia con el sitio, no el formulario.
+//
+// No alcanza con divs neutros: dentro de un diálogo el título TIENE que ser el
+// de Radix, o el modal queda sin nombre accesible y Radix avisa por consola.
+
+type Chrome = 'dialog' | 'screen';
+
+const ChromeContext = createContext<Chrome>('screen');
+
+export function NodeChrome({
+  variant,
+  children,
+}: {
+  variant: Chrome;
+  children: React.ReactNode;
+}) {
+  return <ChromeContext.Provider value={variant}>{children}</ChromeContext.Provider>;
+}
 
 export function NodeHeader({ className, ...props }: React.ComponentProps<'div'>) {
+  const chrome = useContext(ChromeContext);
+  if (chrome === 'dialog') return <DialogHeader className={className} {...props} />;
   return <div className={cn('flex flex-col gap-2', className)} {...props} />;
 }
 
 export function NodeTitle({ className, ...props }: React.ComponentProps<'h2'>) {
+  const chrome = useContext(ChromeContext);
+  if (chrome === 'dialog') return <DialogTitle className={className} {...props} />;
   return (
     <h2
       className={cn('font-heading text-base leading-none font-medium', className)}
@@ -19,9 +42,11 @@ export function NodeTitle({ className, ...props }: React.ComponentProps<'h2'>) {
   );
 }
 
-// Compensa el padding de la Card contenedora para quedar pegado al borde,
-// igual que el pie del modal.
 export function NodeFooter({ className, ...props }: React.ComponentProps<'div'>) {
+  const chrome = useContext(ChromeContext);
+  if (chrome === 'dialog') return <DialogFooter className={className} {...props} />;
+  // En pantalla compensa el padding de la Card para quedar pegado al borde,
+  // igual que el pie del modal.
   return (
     <div
       className={cn(

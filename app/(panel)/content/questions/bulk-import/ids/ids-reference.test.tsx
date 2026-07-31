@@ -39,7 +39,6 @@ const tree: TreeModule[] = [
             examWeight: null,
             questionCount: 0,
             colorHex: null,
-            assetUrl: null,
             wheelAssetUrl: null,
           },
         ],
