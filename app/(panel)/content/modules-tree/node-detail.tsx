@@ -26,6 +26,12 @@ import {
 } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { COUNTRIES } from '@/lib/countries';
+import {
+  EXAM_TYPES,
+  EXAM_TYPE_HINTS,
+  EXAM_TYPE_LABELS,
+  isKnownExamType,
+} from '@/lib/exam-types';
 import type { TreeModule, TreeSubject, TreeTopic } from '@/hooks/use-modules-tree';
 import { useContentTreeMutations } from '@/hooks/use-content-tree-mutations';
 
@@ -149,7 +155,7 @@ function ModuleForm({
   const form = useForm<ModuleValues>({
     defaultValues: {
       country: COUNTRY_CODES[0] ?? 'CR',
-      examType: '',
+      examType: existing?.examType ?? '',
       shortName: existing?.shortName ?? '',
       fullName: existing?.fullName ?? '',
       version: existing?.version ?? '1',
@@ -167,6 +173,7 @@ function ModuleForm({
         ...form.getValues(),
         shortName: existing.shortName,
         fullName: existing.fullName,
+        examType: existing.examType,
         version: existing.version,
         hasAdmissionCutoffs: existing.hasAdmissionCutoffs,
         approvalThreshold: existing.approvalThreshold,
@@ -188,6 +195,7 @@ function ModuleForm({
           id: view.id,
           shortName: v.shortName,
           fullName: v.fullName,
+          examType: v.examType,
           version: v.version,
           hasAdmissionCutoffs: v.hasAdmissionCutoffs,
           approvalThreshold: v.approvalThreshold,
@@ -242,18 +250,42 @@ function ModuleForm({
                 </Field>
               )}
             />
-            <Controller
-              name="examType"
-              control={form.control}
-              render={({ field }) => (
-                <Field>
-                  <FieldLabel>Tipo de examen</FieldLabel>
-                  <Input {...field} placeholder="paa" />
-                </Field>
-              )}
-            />
           </div>
         )}
+
+        <Controller
+          name="examType"
+          control={form.control}
+          render={({ field }) => (
+            <Field>
+              <FieldLabel>Tipo de examen</FieldLabel>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Elegí el tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EXAM_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {EXAM_TYPE_LABELS[t]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-muted-foreground text-xs">
+                {isKnownExamType(field.value)
+                  ? EXAM_TYPE_HINTS[field.value]
+                  : 'Decide cómo se calculan el predictor y las estadísticas.'}
+              </p>
+              {!isNew && !isKnownExamType(existing?.examType ?? '') && (
+                <p className="text-destructive text-xs">
+                  Guardado hoy: «{existing?.examType}» — no es un tipo válido, así
+                  que este módulo se está calculando como examen simple. Elegí el
+                  correcto y guardá.
+                </p>
+              )}
+            </Field>
+          )}
+        />
         <Controller
           name="shortName"
           control={form.control}

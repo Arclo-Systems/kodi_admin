@@ -25,6 +25,8 @@ export type CreateModuleInput = {
 export type UpdateModuleInput = {
   shortName?: string;
   fullName?: string;
+  /** Decide cómo se calculan predictor y estadísticas — lista cerrada. */
+  examType?: string;
   version?: string;
   hasAdmissionCutoffs?: boolean;
   /** Nota mínima para dar el examen por aprobado (0-100). */
