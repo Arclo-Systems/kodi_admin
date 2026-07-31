@@ -142,6 +142,9 @@ function ModuleForm({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const existing = view.kind === 'module' ? tree.find((x) => x.id === view.id) : undefined;
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  // Mismo criterio que el backend (PredictorService.modeFor): el prefijo del
+  // examType decide, no una lista de módulos.
+  const isAdmission = existing?.examType.startsWith('admision') ?? false;
 
   const form = useForm<ModuleValues>({
     defaultValues: {
@@ -149,8 +152,8 @@ function ModuleForm({
       examType: '',
       shortName: existing?.shortName ?? '',
       fullName: existing?.fullName ?? '',
-      version: '1',
-      hasAdmissionCutoffs: false,
+      version: existing?.version ?? '1',
+      hasAdmissionCutoffs: existing?.hasAdmissionCutoffs ?? false,
       approvalThreshold: existing?.approvalThreshold ?? 70,
       noRepeatWindowQuestions: existing?.noRepeatWindowQuestions ?? 50,
       duelCategorySource: existing?.duelCategorySource ?? 'subjects',
@@ -164,6 +167,8 @@ function ModuleForm({
         ...form.getValues(),
         shortName: existing.shortName,
         fullName: existing.fullName,
+        version: existing.version,
+        hasAdmissionCutoffs: existing.hasAdmissionCutoffs,
         approvalThreshold: existing.approvalThreshold,
         noRepeatWindowQuestions: existing.noRepeatWindowQuestions,
         duelCategorySource: existing.duelCategorySource,
@@ -189,9 +194,10 @@ function ModuleForm({
           noRepeatWindowQuestions: v.noRepeatWindowQuestions,
           duelCategorySource: v.duelCategorySource,
           // Vacío = sin definir; el simulacro cae a sus valores por defecto.
-          examDurationMin: v.examDurationMin === '' ? null : Number(v.examDurationMin),
+          // Se recorta antes: Number(' ') da 0, y el backend exige mínimo 1.
+          examDurationMin: v.examDurationMin.trim() === '' ? null : Number(v.examDurationMin),
           examQuestionCount:
-            v.examQuestionCount === '' ? null : Number(v.examQuestionCount),
+            v.examQuestionCount.trim() === '' ? null : Number(v.examQuestionCount),
         });
         toast.success('Módulo actualizado');
       }
@@ -292,6 +298,12 @@ function ModuleForm({
         {!isNew && (
           <div className="space-y-4 border-t pt-4">
             <p className="text-sm font-medium">Configuración del módulo</p>
+            {isAdmission && (
+              <p className="text-muted-foreground text-xs">
+                Examen de admisión: no se aprueba ni se reprueba, se compite
+                contra la cohorte. Por eso no lleva nota para aprobar.
+              </p>
+            )}
 
             <Controller
               name="duelCategorySource"
@@ -317,22 +329,28 @@ function ModuleForm({
             />
 
             <div className="grid grid-cols-2 gap-3">
-              <Controller
-                name="approvalThreshold"
-                control={form.control}
-                render={({ field }) => (
-                  <Field>
-                    <FieldLabel>Nota para aprobar (%)</FieldLabel>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={field.value}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                  </Field>
-                )}
-              />
+              {/* Los exámenes de admisión (PAA, TEC) no se aprueban ni se
+                  reprueban: se compite contra la cohorte. El backend ya los
+                  trata así —predictor y estadísticas devuelven la nota en
+                  nulo—, así que mostrar el campo solo confundía. */}
+              {!isAdmission && (
+                <Controller
+                  name="approvalThreshold"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field>
+                      <FieldLabel>Nota para aprobar (%)</FieldLabel>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={field.value}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </Field>
+                  )}
+                />
+              )}
               <Controller
                 name="noRepeatWindowQuestions"
                 control={form.control}
