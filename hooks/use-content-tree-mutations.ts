@@ -17,6 +17,7 @@ async function send(url: string, method: 'POST' | 'PATCH' | 'DELETE', body?: unk
 export type CreateModuleInput = {
   country: string;
   examType: string;
+  examMode?: 'simple' | 'per_subject' | 'admission';
   shortName: string;
   fullName: string;
   version: string;
@@ -27,6 +28,7 @@ export type UpdateModuleInput = {
   fullName?: string;
   /** Decide cómo se calculan predictor y estadísticas — lista cerrada. */
   examType?: string;
+  examMode?: 'simple' | 'per_subject' | 'admission';
   version?: string;
   hasAdmissionCutoffs?: boolean;
   /** Nota mínima para dar el examen por aprobado (0-100). */

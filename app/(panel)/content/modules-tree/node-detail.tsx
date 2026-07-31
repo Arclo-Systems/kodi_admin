@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
   BookOpenIcon,
@@ -26,12 +26,7 @@ import {
 } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { COUNTRIES } from '@/lib/countries';
-import {
-  EXAM_TYPES,
-  EXAM_TYPE_HINTS,
-  EXAM_TYPE_LABELS,
-  isKnownExamType,
-} from '@/lib/exam-types';
+import { EXAM_MODES, EXAM_MODE_HINTS, EXAM_MODE_LABELS, type ExamMode } from '@/lib/exam-types';
 import type { TreeModule, TreeSubject, TreeTopic } from '@/hooks/use-modules-tree';
 import { useContentTreeMutations } from '@/hooks/use-content-tree-mutations';
 
@@ -119,7 +114,10 @@ export function NodeDetail({
 // ─── Módulo ──────────────────────────────────────────────────────────────────
 type ModuleValues = {
   country: string;
+  /** Nombre del examen en su país. Identidad, no comportamiento. */
   examType: string;
+  /** Cómo se califica. De esto cuelgan predictor y estadísticas. */
+  examMode: ExamMode;
   shortName: string;
   fullName: string;
   version: string;
@@ -148,14 +146,11 @@ function ModuleForm({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const existing = view.kind === 'module' ? tree.find((x) => x.id === view.id) : undefined;
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
-  // Mismo criterio que el backend (PredictorService.modeFor): el prefijo del
-  // examType decide, no una lista de módulos.
-  const isAdmission = existing?.examType.startsWith('admision') ?? false;
-
   const form = useForm<ModuleValues>({
     defaultValues: {
       country: COUNTRY_CODES[0] ?? 'CR',
       examType: existing?.examType ?? '',
+      examMode: existing?.examMode ?? 'simple',
       shortName: existing?.shortName ?? '',
       fullName: existing?.fullName ?? '',
       version: existing?.version ?? '1',
@@ -167,6 +162,11 @@ function ModuleForm({
       examQuestionCount: existing?.examQuestionCount?.toString() ?? '',
     },
   });
+  // Los exámenes de admisión no se aprueban ni se reprueban, así que su nota
+  // mínima no aplica. Sale del campo declarado, ya no de adivinar el nombre.
+  const isAdmission =
+    useWatch({ control: form.control, name: 'examMode' }) === 'admission';
+
   useEffect(() => {
     if (existing)
       form.reset({
@@ -174,6 +174,7 @@ function ModuleForm({
         shortName: existing.shortName,
         fullName: existing.fullName,
         examType: existing.examType,
+        examMode: existing.examMode,
         version: existing.version,
         hasAdmissionCutoffs: existing.hasAdmissionCutoffs,
         approvalThreshold: existing.approvalThreshold,
@@ -196,6 +197,7 @@ function ModuleForm({
           shortName: v.shortName,
           fullName: v.fullName,
           examType: v.examType,
+          examMode: v.examMode,
           version: v.version,
           hasAdmissionCutoffs: v.hasAdmissionCutoffs,
           approvalThreshold: v.approvalThreshold,
@@ -226,9 +228,12 @@ function ModuleForm({
         </DialogTitle>
       </DialogHeader>
 
-      <div className="space-y-4 py-4">
+      {/* Dos columnas en pantallas anchas: identidad a la izquierda, ajustes de
+          cálculo a la derecha. En una sola columna el módulo salía tan largo
+          que había que hacer scroll dentro del diálogo. */}
+      <div className="grid gap-x-6 gap-y-4 py-4 sm:grid-cols-2">
         {isNew && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:col-span-2">
             <Controller
               name="country"
               control={form.control}
@@ -253,36 +258,41 @@ function ModuleForm({
           </div>
         )}
 
+        <div className={isNew ? 'space-y-4 sm:col-span-2' : 'space-y-4'}>
         <Controller
           name="examType"
           control={form.control}
           render={({ field }) => (
             <Field>
-              <FieldLabel>Tipo de examen</FieldLabel>
+              <FieldLabel>Nombre del examen</FieldLabel>
+              <Input {...field} placeholder="cosevi_auto, paa, …" />
+              <p className="text-muted-foreground text-xs">
+                Cómo se llama en su país. Único por país; no afecta cálculos.
+              </p>
+            </Field>
+          )}
+        />
+        <Controller
+          name="examMode"
+          control={form.control}
+          render={({ field }) => (
+            <Field>
+              <FieldLabel>¿Cómo se califica?</FieldLabel>
               <Select value={field.value} onValueChange={field.onChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Elegí el tipo" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {EXAM_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {EXAM_TYPE_LABELS[t]}
+                  {EXAM_MODES.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {EXAM_MODE_LABELS[m]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-muted-foreground text-xs">
-                {isKnownExamType(field.value)
-                  ? EXAM_TYPE_HINTS[field.value]
-                  : 'Decide cómo se calculan el predictor y las estadísticas.'}
+                {EXAM_MODE_HINTS[field.value]}
               </p>
-              {!isNew && !isKnownExamType(existing?.examType ?? '') && (
-                <p className="text-destructive text-xs">
-                  Guardado hoy: «{existing?.examType}» — no es un tipo válido, así
-                  que este módulo se está calculando como examen simple. Elegí el
-                  correcto y guardá.
-                </p>
-              )}
             </Field>
           )}
         />
@@ -327,8 +337,10 @@ function ModuleForm({
           )}
         />
 
+        </div>
+
         {!isNew && (
-          <div className="space-y-4 border-t pt-4">
+          <div className="space-y-4 sm:border-l sm:pl-6">
             <p className="text-sm font-medium">Configuración del módulo</p>
             {isAdmission && (
               <p className="text-muted-foreground text-xs">

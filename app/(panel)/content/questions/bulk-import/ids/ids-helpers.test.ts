@@ -11,6 +11,7 @@ const tree: TreeModule[] = [
     isActive: true,
     questionCount: 0,
     examType: 'paa',
+    examMode: 'admission' as const,
     version: '1',
     hasAdmissionCutoffs: false,
     approvalThreshold: 70,

@@ -37,7 +37,7 @@ import { StatusBadge } from '@/lib/status-badge';
 import { SCHOLARSHIP_STATUS, scholarshipStatusLabel } from '@/lib/scholarship-status';
 import { planLabel } from '@/lib/plans';
 import { COUNTRIES } from '@/lib/countries';
-import { EXAM_TYPE_LABELS } from '@/lib/exam-types';
+import { SCHOLARSHIP_EXAM_LABELS } from '@/lib/exam-types';
 import { useModulesTree } from '@/hooks/use-modules-tree';
 import {
   useScholarships,
@@ -53,7 +53,7 @@ const PERIOD_MONTHS: Record<string, number> = { monthly: 1, quarterly: 3, yearly
 const STATUSES = ['pending', 'approved', 'rejected'] as const;
 // Los nombres salen de lib/exam-types: acá estaban copiados y ya se habían
 // desincronizado una vez (decían cosevi/paa/pne, que no existen).
-const EXAM_LABELS: Record<string, string> = EXAM_TYPE_LABELS;
+const EXAM_LABELS: Record<string, string> = SCHOLARSHIP_EXAM_LABELS;
 const ALL = 'all';
 const PAGE_SIZE = 20;
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');

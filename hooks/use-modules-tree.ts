@@ -25,6 +25,7 @@ export type TreeModule = {
   isActive: boolean;
   questionCount: number;
   examType: string;
+  examMode: 'simple' | 'per_subject' | 'admission';
   version: string;
   hasAdmissionCutoffs: boolean;
   /** Nota mínima para aprobar el examen (0-100). */

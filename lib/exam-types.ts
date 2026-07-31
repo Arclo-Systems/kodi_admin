@@ -1,35 +1,33 @@
-// Tipos de examen válidos. NO es una etiqueta cosmética: el backend lee el
-// prefijo de este valor para decidir cómo calcula todo (`pne` → predicción por
-// materia, `admision` → nota de admisión contra universidades, `cosevi` →
-// examen simple). Un valor fuera de esta lista cae en "examen simple" sin
-// avisar — así quedaron cuatro módulos mal clasificados en producción.
-export const EXAM_TYPES = [
-  'cosevi_auto',
-  'cosevi_moto',
-  'pne_primaria',
-  'pne_bachillerato',
-  'admision',
-] as const;
+// CÓMO se califica un examen. Universal: cualquier país tiene exámenes de estos
+// tres tipos, se llamen como se llamen. De acá cuelgan predictor y estadísticas.
+//
+// Antes esto se deducía leyendo el prefijo del NOMBRE del examen (`pne…`,
+// `admision…`, `cosevi…`). Dos problemas: entró texto libre sin validar
+// ("fewf", "pen") y cuatro módulos quedaron calculando mal en silencio; y al
+// cerrarlo con la lista de nombres de Costa Rica se volvía imposible dar de
+// alta el examen de otro país.
+export const EXAM_MODES = ['simple', 'per_subject', 'admission'] as const;
 
-export type ExamType = (typeof EXAM_TYPES)[number];
+export type ExamMode = (typeof EXAM_MODES)[number];
 
-export const EXAM_TYPE_LABELS: Record<ExamType, string> = {
+export const EXAM_MODE_LABELS: Record<ExamMode, string> = {
+  simple: 'Se aprueba o se reprueba',
+  per_subject: 'Por materia',
+  admission: 'Admisión',
+};
+
+export const EXAM_MODE_HINTS: Record<ExamMode, string> = {
+  simple: 'Una nota mínima decide si pasa. Ej: COSEVI.',
+  per_subject: 'Cada materia es su propio examen y se predice aparte. Ej: PNE.',
+  admission:
+    'No se aprueba: se compite por cupo y se proyecta contra universidades. Ej: PAA, TEC.',
+};
+
+/** Exámenes del formulario público de Becas — identifican QUÉ eligió el solicitante. */
+export const SCHOLARSHIP_EXAM_LABELS: Record<string, string> = {
   cosevi_auto: 'COSEVI Auto',
   cosevi_moto: 'COSEVI Moto',
   pne_primaria: 'PNE Primaria',
   pne_bachillerato: 'PNE Secundaria',
-  admision: 'Admisión (PAA / TEC)',
+  admision: 'Admisión',
 };
-
-/** Cómo se calcula el examen, según el prefijo — espejo de PredictorService.modeFor. */
-export const EXAM_TYPE_HINTS: Record<ExamType, string> = {
-  cosevi_auto: 'Examen simple: se aprueba o se reprueba.',
-  cosevi_moto: 'Examen simple: se aprueba o se reprueba.',
-  pne_primaria: 'Predicción materia por materia.',
-  pne_bachillerato: 'Predicción materia por materia.',
-  admision: 'Proyecta nota de admisión y compara contra universidades.',
-};
-
-export function isKnownExamType(value: string): value is ExamType {
-  return (EXAM_TYPES as readonly string[]).includes(value);
-}

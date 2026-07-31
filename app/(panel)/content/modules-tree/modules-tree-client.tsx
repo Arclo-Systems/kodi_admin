@@ -78,7 +78,16 @@ export function ModulesTreeClient({ canWriteModules }: { canWriteModules: boolea
           if (!open) setView(null);
         }}
       >
-        <DialogContent>
+        {/* El módulo tiene el doble de campos que materia y tema: en el ancho
+            por defecto quedaba una columna larguísima con scroll. Se ensancha
+            solo para módulo — materias y temas son cortos y se verían vacíos. */}
+        <DialogContent
+          className={
+            view?.kind === 'module' || view?.kind === 'new-module'
+              ? 'sm:max-w-3xl'
+              : undefined
+          }
+        >
           <NodeDetail
             view={view}
             tree={tree ?? []}
