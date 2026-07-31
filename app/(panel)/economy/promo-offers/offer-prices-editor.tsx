@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { PlanBadge } from '@/lib/plans';
 import { usePromoOfferMutations, type OfferPrice, type PriceRow } from '@/hooks/use-promo-offers';
+import { fromPriceCents, toPriceCents } from './offer-price-units';
 
 const PLANS = ['basico', 'plus', 'pro'] as const;
 const PERIODS = ['monthly', 'quarterly', 'yearly'] as const;
@@ -28,13 +29,19 @@ const packLabel = (n: number) => (n === 1 ? 'Suelto' : `Pack ${n}`);
 const key = (plan: string, period: string, pack: number) => `${plan}|${period}|${pack}`;
 
 // Editor del grid de precios de una oferta explicit (plan × período × pack). Guarda todo de una
-// (PUT /:id/prices reemplaza la grilla). Valores en la moneda del país (sin céntimos, como el resto).
+// (PUT /:id/prices reemplaza la grilla).
+//
+// Se escribe el precio COMO SE LEE (4.99, 2500) y acá se convierte a céntimos,
+// igual que la pantalla de Precios de suscripción. Antes se guardaba el número
+// crudo: la oferta founder-cr terminó con "3190" queriendo decir ₡3.190 y la
+// app mostró $31.90 contra $4.99 del precio normal (incidente 2026-07-30).
 export function OfferPricesEditor({ offerId, prices }: { offerId: string; prices: OfferPrice[] }) {
   const { setPrices } = usePromoOfferMutations();
   const [error, setError] = useState<string | null>(null);
   const [grid, setGrid] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
-    for (const p of prices) init[key(p.plan, p.period, p.packSize)] = String(p.priceCents);
+    for (const p of prices)
+      init[key(p.plan, p.period, p.packSize)] = fromPriceCents(p.priceCents);
     return init;
   });
 
@@ -49,13 +56,13 @@ export function OfferPricesEditor({ offerId, prices }: { offerId: string; prices
       for (const pack of PACKS) {
         for (const plan of PLANS) {
           const raw = grid[key(plan, period, pack)];
-          if (raw === undefined || raw === '') continue;
-          const n = Number(raw);
-          if (!Number.isInteger(n) || n < 0) {
+          if (raw === undefined || raw.trim() === '') continue;
+          const priceCents = toPriceCents(raw);
+          if (priceCents === null) {
             setError(`Precio inválido en ${plan} · ${PERIOD_LABELS[period]} · ${packLabel(pack)}`);
             return;
           }
-          rows.push({ plan, period, packSize: pack, priceCents: n });
+          rows.push({ plan, period, packSize: pack, priceCents });
         }
       }
     }
