@@ -352,11 +352,14 @@ function ModuleForm({
                   </Field>
                 )}
               />
+              {/* `justify-between` apoya el input abajo de la celda: si una
+                  etiqueta ocupa dos líneas y la de al lado una, los campos
+                  siguen alineados en vez de quedar escalonados. */}
               <Controller
                 name="examDurationMin"
                 control={form.control}
                 render={({ field }) => (
-                  <Field>
+                  <Field className="h-full justify-between">
                     <FieldLabel>Duración del examen (min)</FieldLabel>
                     <Input type="number" min={1} max={600} placeholder="Sin definir" {...field} />
                   </Field>
@@ -366,7 +369,7 @@ function ModuleForm({
                 name="examQuestionCount"
                 control={form.control}
                 render={({ field }) => (
-                  <Field>
+                  <Field className="h-full justify-between">
                     <FieldLabel>Preguntas del examen</FieldLabel>
                     <Input type="number" min={1} placeholder="Sin definir" {...field} />
                   </Field>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { SaveIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -72,6 +73,7 @@ export function OfferPricesEditor({ offerId, prices }: { offerId: string; prices
     }
     try {
       await setPrices.mutateAsync({ id: offerId, prices: rows });
+      toast.success(`${rows.length} precios guardados`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error guardando los precios');
     }

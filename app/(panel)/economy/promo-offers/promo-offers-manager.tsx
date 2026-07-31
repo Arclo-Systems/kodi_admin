@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import { CircleCheckIcon, CircleOffIcon, PencilIcon, PlusIcon, SaveIcon, SparklesIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -220,8 +221,10 @@ export function PromoOffersManager() {
     try {
       if (editing) {
         await update.mutateAsync({ id: editing.id, input: common });
+        toast.success(`Oferta ${editing.label} actualizada`);
       } else {
         await create.mutateAsync({ slug: v.slug, country: v.country, ...common });
+        toast.success(`Oferta ${v.label} creada`);
       }
       cancelEdit();
     } catch (e) {
