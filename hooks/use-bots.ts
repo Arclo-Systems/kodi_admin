@@ -11,6 +11,9 @@ export type BotTemplate = {
   accuracyMax: number;
   responseTimeMsMin: number;
   responseTimeMsMax: number;
+  /** Margen antes de tomar el turno en Partida Kodi, en minutos. */
+  turnDelayMinMinutes: number;
+  turnDelayMaxMinutes: number;
   isActive: boolean;
 };
 

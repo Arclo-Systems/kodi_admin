@@ -27,6 +27,8 @@ function TemplateCard({
     accuracyMax: template.accuracyMax,
     responseTimeMsMin: template.responseTimeMsMin,
     responseTimeMsMax: template.responseTimeMsMax,
+    turnDelayMinMinutes: template.turnDelayMinMinutes,
+    turnDelayMaxMinutes: template.turnDelayMaxMinutes,
   });
 
   async function save(): Promise<void> {
@@ -68,6 +70,24 @@ function TemplateCard({
             <FieldLabel htmlFor={`${template.id}-rmax`}>Tiempo máx (ms)</FieldLabel>
             <Input id={`${template.id}-rmax`} type="number" min={0} value={form.responseTimeMsMax} onChange={num('responseTimeMsMax')} disabled={!canWrite} />
           </Field>
+        </div>
+
+        <div className="space-y-3 border-t pt-3">
+          <p className="text-muted-foreground text-xs">
+            Espera antes de tomar el turno en Partida Kodi. Se sortea un valor
+            distinto en cada turno, para que no se note un patrón. No aplica a
+            la Arena, que es por rondas simultáneas.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field>
+              <FieldLabel htmlFor={`${template.id}-tdmin`}>Espera mín (min)</FieldLabel>
+              <Input id={`${template.id}-tdmin`} type="number" min={0} max={1440} value={form.turnDelayMinMinutes} onChange={num('turnDelayMinMinutes')} disabled={!canWrite} />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor={`${template.id}-tdmax`}>Espera máx (min)</FieldLabel>
+              <Input id={`${template.id}-tdmax`} type="number" min={0} max={1440} value={form.turnDelayMaxMinutes} onChange={num('turnDelayMaxMinutes')} disabled={!canWrite} />
+            </Field>
+          </div>
         </div>
         {canWrite && (
           <Button size="sm" onClick={save} disabled={mutation.isPending}>
