@@ -9,12 +9,25 @@ export type TreeTopic = {
   order: number;
   examWeight: number | null;
   questionCount: number;
+  /**
+   * Identidad visual del tema. Solo se carga en módulos de ADMISIÓN: ahí la
+   * "materia" es el examen (PAA UCR, TEC) y lo que el estudiante percibe como
+   * materia es el tema. En los demás modos queda en null.
+   */
+  colorHex: string | null;
+  assetUrl: string | null;
+  wheelAssetUrl: string | null;
 };
 export type TreeSubject = {
   id: string;
   name: string;
   order: number;
   questionCount: number;
+  colorHex: string;
+  /** Ilustración de práctica. */
+  assetUrl: string | null;
+  /** Arte del sector de la ruleta de Partida Kodi: se lee chico y en movimiento. */
+  wheelAssetUrl: string | null;
   topics: TreeTopic[];
 };
 export type TreeModule = {
@@ -26,6 +39,10 @@ export type TreeModule = {
   questionCount: number;
   examType: string;
   examMode: 'simple' | 'per_subject' | 'admission';
+  colorHex: string;
+  iconUrl: string | null;
+  /** Personaje ESTÁTICO (card hero de práctica y tarjeta de compartir). */
+  characterUrl: string | null;
   version: string;
   hasAdmissionCutoffs: boolean;
   /** Nota mínima para aprobar el examen (0-100). */

@@ -1,101 +1,74 @@
 'use client';
 
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { ListTreeIcon, PlusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useModulesTree } from '@/hooks/use-modules-tree';
 import { useContentTreeMutations } from '@/hooks/use-content-tree-mutations';
 import { TreeView, type Selected } from './tree-view';
-import { NodeDetail, type TreeView as ViewState } from './node-detail';
 
-function toSelected(v: ViewState): Selected {
-  if (v?.kind === 'module') return { type: 'module', id: v.id };
-  if (v?.kind === 'subject') return { type: 'subject', id: v.id, moduleId: v.moduleId };
-  if (v?.kind === 'topic') return { type: 'topic', id: v.id, subjectId: v.subjectId };
-  return null;
-}
-
-function toView(s: Selected): ViewState {
-  if (s?.type === 'module') return { kind: 'module', id: s.id };
-  if (s?.type === 'subject') return { kind: 'subject', id: s.id, moduleId: s.moduleId };
-  if (s?.type === 'topic') return { kind: 'topic', id: s.id, subjectId: s.subjectId };
-  return null;
-}
+const TREE_PATH = '/content/modules-tree';
 
 export function ModulesTreeClient({ canWriteModules }: { canWriteModules: boolean }) {
+  const router = useRouter();
   const { data: tree, isLoading } = useModulesTree();
   const mut = useContentTreeMutations();
-  const [view, setView] = useState<ViewState>(null);
+
+  // Editar y crear pasaron de modal a pantalla propia: el detalle de nodo ya era
+  // largo y con la identidad visual (color + dos subidas de imagen con preview)
+  // no entraba en un diálogo. Efecto secundario deseado: cada nodo tiene URL.
+  const openNode = (kind: 'module' | 'subject' | 'topic', id: string, parent?: string) => {
+    const query =
+      id === 'new' && parent
+        ? `?${kind === 'subject' ? 'moduleId' : 'subjectId'}=${parent}`
+        : '';
+    router.push(`${TREE_PATH}/${kind}/${id}${query}`);
+  };
 
   return (
-    <div className="space-y-4">
-      <Card className="p-3">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-sm font-medium">
-            <ListTreeIcon className="text-primary size-4" />
-            Árbol de contenido
-          </h2>
-          {canWriteModules && (
-            <Button size="sm" variant="outline" onClick={() => setView({ kind: 'new-module' })}>
-              <PlusIcon className="size-4" />
-              Nuevo módulo
-            </Button>
-          )}
-        </div>
-        {isLoading ? (
-          <Skeleton className="h-48 w-full" />
-        ) : (
-          <TreeView
-            tree={tree ?? []}
-            selected={toSelected(view)}
-            onSelect={(s) => setView(toView(s))}
-            onReorderSubjects={(moduleId, orderedIds) =>
-              mut.reorderSubjects.mutate(
-                { parentId: moduleId, orderedIds },
-                { onError: (e: Error) => toast.error(e.message) },
-              )
-            }
-            onReorderTopics={(subjectId, orderedIds) =>
-              mut.reorderTopics.mutate(
-                { parentId: subjectId, orderedIds },
-                { onError: (e: Error) => toast.error(e.message) },
-              )
-            }
-            onNewSubject={(moduleId) => setView({ kind: 'new-subject', moduleId })}
-            onNewTopic={(subjectId) => setView({ kind: 'new-topic', subjectId })}
-            canWriteModules={canWriteModules}
-          />
+    <Card className="p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-sm font-medium">
+          <ListTreeIcon className="text-primary size-4" />
+          Árbol de contenido
+        </h2>
+        {canWriteModules && (
+          <Button size="sm" variant="outline" onClick={() => openNode('module', 'new')}>
+            <PlusIcon className="size-4" />
+            Nuevo módulo
+          </Button>
         )}
-      </Card>
-
-      <Dialog
-        open={view !== null}
-        onOpenChange={(open) => {
-          if (!open) setView(null);
-        }}
-      >
-        {/* El módulo tiene el doble de campos que materia y tema: en el ancho
-            por defecto quedaba una columna larguísima con scroll. Se ensancha
-            solo para módulo — materias y temas son cortos y se verían vacíos. */}
-        <DialogContent
-          className={
-            view?.kind === 'module' || view?.kind === 'new-module'
-              ? 'sm:max-w-3xl'
-              : undefined
+      </div>
+      {isLoading ? (
+        <Skeleton className="h-48 w-full" />
+      ) : (
+        <TreeView
+          tree={tree ?? []}
+          selected={null}
+          onSelect={(s: Selected) => {
+            if (!s) return;
+            openNode(s.type, s.id);
+          }}
+          onReorderSubjects={(moduleId, orderedIds) =>
+            mut.reorderSubjects.mutate(
+              { parentId: moduleId, orderedIds },
+              { onError: (e: Error) => toast.error(e.message) },
+            )
           }
-        >
-          <NodeDetail
-            view={view}
-            tree={tree ?? []}
-            canWriteModules={canWriteModules}
-            onDone={() => setView(null)}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
+          onReorderTopics={(subjectId, orderedIds) =>
+            mut.reorderTopics.mutate(
+              { parentId: subjectId, orderedIds },
+              { onError: (e: Error) => toast.error(e.message) },
+            )
+          }
+          onNewSubject={(moduleId) => openNode('subject', 'new', moduleId)}
+          onNewTopic={(subjectId) => openNode('topic', 'new', subjectId)}
+          canWriteModules={canWriteModules}
+        />
+      )}
+    </Card>
   );
 }

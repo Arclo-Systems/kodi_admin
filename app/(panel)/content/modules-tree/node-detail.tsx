@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
@@ -13,7 +14,8 @@ import {
   Trash2Icon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { NodeFooter, NodeHeader, NodeTitle } from './node-shell';
+import { AssetField, ColorField } from './visual-identity-fields';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -53,6 +55,23 @@ function findTopic(tree: TreeModule[], id: string): TreeTopic | undefined {
       const t = s.topics.find((x) => x.id === id);
       if (t) return t;
     }
+}
+function findModuleOfSubject(tree: TreeModule[], subjectId: string): TreeModule | undefined {
+  return tree.find((m) => m.subjects.some((s) => s.id === subjectId));
+}
+
+function NodeNotFound({ tipo }: { tipo: string }) {
+  return (
+    <div className="space-y-3 py-6 text-center">
+      <p className="text-sm font-medium">{tipo} ya no existe</p>
+      <p className="text-muted-foreground text-sm">
+        Puede que alguien la haya eliminado, o que el enlace sea viejo.
+      </p>
+      <Button asChild variant="outline" size="sm">
+        <Link href="/content/modules-tree">Volver al árbol</Link>
+      </Button>
+    </div>
+  );
 }
 
 function DeleteButton({
@@ -120,6 +139,12 @@ type ModuleValues = {
   examMode: ExamMode;
   shortName: string;
   fullName: string;
+  /** Identidad visual: antes vivía en mapas literales de la app. */
+  colorHex: string;
+  iconUrl: string | null;
+  /** Personaje ESTÁTICO (card hero y tarjeta de compartir). Las caras animadas
+   *  siguen dentro de la app y su set se elige por `examMode`. */
+  characterUrl: string | null;
   version: string;
   hasAdmissionCutoffs: boolean;
   approvalThreshold: number;
@@ -153,6 +178,9 @@ function ModuleForm({
       examMode: existing?.examMode ?? 'simple',
       shortName: existing?.shortName ?? '',
       fullName: existing?.fullName ?? '',
+      colorHex: existing?.colorHex ?? '#408D99',
+      iconUrl: existing?.iconUrl ?? null,
+      characterUrl: existing?.characterUrl ?? null,
       version: existing?.version ?? '1',
       hasAdmissionCutoffs: existing?.hasAdmissionCutoffs ?? false,
       approvalThreshold: existing?.approvalThreshold ?? 70,
@@ -173,6 +201,9 @@ function ModuleForm({
         ...form.getValues(),
         shortName: existing.shortName,
         fullName: existing.fullName,
+        colorHex: existing.colorHex,
+        iconUrl: existing.iconUrl,
+        characterUrl: existing.characterUrl,
         examType: existing.examType,
         examMode: existing.examMode,
         version: existing.version,
@@ -196,6 +227,9 @@ function ModuleForm({
           id: view.id,
           shortName: v.shortName,
           fullName: v.fullName,
+          colorHex: v.colorHex,
+          iconUrl: v.iconUrl,
+          characterUrl: v.characterUrl,
           examType: v.examType,
           examMode: v.examMode,
           version: v.version,
@@ -221,12 +255,12 @@ function ModuleForm({
 
   return (
     <form onSubmit={form.handleSubmit(submit)}>
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
+      <NodeHeader>
+        <NodeTitle className="flex items-center gap-2">
           <BookOpenIcon className="text-primary size-5" />
           {isNew ? 'Nuevo módulo' : 'Editar módulo'}
-        </DialogTitle>
-      </DialogHeader>
+        </NodeTitle>
+      </NodeHeader>
 
       {/* Dos columnas en pantallas anchas: identidad a la izquierda, ajustes de
           cálculo a la derecha. En una sola columna el módulo salía tan largo
@@ -336,6 +370,46 @@ function ModuleForm({
             </label>
           )}
         />
+
+        <div className="space-y-4 border-t pt-4">
+          <p className="text-sm font-medium">Identidad visual</p>
+          <Controller
+            name="colorHex"
+            control={form.control}
+            render={({ field }) => (
+              <ColorField
+                label="Color del módulo"
+                value={field.value}
+                onChange={field.onChange}
+                hint="Usá un tono de la paleta oficial de Kodi."
+              />
+            )}
+          />
+          <Controller
+            name="iconUrl"
+            control={form.control}
+            render={({ field }) => (
+              <AssetField
+                label="Icono del módulo"
+                hint="Se ve en onboarding, planes, perfil e invitaciones."
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+          <Controller
+            name="characterUrl"
+            control={form.control}
+            render={({ field }) => (
+              <AssetField
+                label="Personaje del módulo"
+                hint="Card de práctica y tarjeta de compartir. Las caras animadas de Koko no se suben acá: viajan dentro de la app."
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        </div>
 
         </div>
 
@@ -482,7 +556,7 @@ function ModuleForm({
         )}
       </div>
 
-      <DialogFooter>
+      <NodeFooter>
         {!isNew && canWriteModules && (
           <Button
             type="button"
@@ -501,7 +575,7 @@ function ModuleForm({
           {isNew ? <PlusIcon className="size-4" /> : <SaveIcon className="size-4" />}
           {isNew ? 'Crear' : 'Guardar'}
         </Button>
-      </DialogFooter>
+      </NodeFooter>
 
       {view.kind === 'module' && (
         <ConfirmDialog
@@ -555,7 +629,14 @@ function DuplicateModule({ id }: { id: string }) {
 }
 
 // ─── Materia ─────────────────────────────────────────────────────────────────
-type SubjectValues = { name: string; shortName: string; colorHex: string; region: string };
+type SubjectValues = {
+  name: string;
+  shortName: string;
+  colorHex: string;
+  region: string;
+  assetUrl: string | null;
+  wheelAssetUrl: string | null;
+};
 
 function SubjectForm({
   view,
@@ -574,10 +655,24 @@ function SubjectForm({
     defaultValues: {
       name: existing?.name ?? '',
       shortName: '',
-      colorHex: '#3b82f6',
+      colorHex: existing?.colorHex ?? '#408D99',
       region: '',
+      assetUrl: existing?.assetUrl ?? null,
+      wheelAssetUrl: existing?.wheelAssetUrl ?? null,
     },
   });
+
+  useEffect(() => {
+    if (existing)
+      form.reset({
+        ...form.getValues(),
+        name: existing.name,
+        colorHex: existing.colorHex,
+        assetUrl: existing.assetUrl,
+        wheelAssetUrl: existing.wheelAssetUrl,
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing?.id]);
 
   async function submit(v: SubjectValues): Promise<void> {
     try {
@@ -588,10 +683,20 @@ function SubjectForm({
           shortName: v.shortName,
           colorHex: v.colorHex,
           region: v.region || null,
+          assetUrl: v.assetUrl,
+          wheelAssetUrl: v.wheelAssetUrl,
         });
         toast.success('Materia creada');
       } else {
-        await m.updateSubject.mutateAsync({ id: view.id, name: v.name });
+        // `shortName` y `region` no se mandan: el árbol no los trae, así que no
+        // hay con qué precargarlos y enviarlos vacíos los borraría.
+        await m.updateSubject.mutateAsync({
+          id: view.id,
+          name: v.name,
+          colorHex: v.colorHex,
+          assetUrl: v.assetUrl,
+          wheelAssetUrl: v.wheelAssetUrl,
+        });
         toast.success('Materia actualizada');
       }
       onDone();
@@ -600,14 +705,19 @@ function SubjectForm({
     }
   }
 
+  // Desde B0 cada nodo tiene URL propia: un link viejo, un nodo que otro admin
+  // borró o un fallo al traer el árbol llegaban acá y pintaban un formulario en
+  // blanco sin decir por qué.
+  if (!isNew && !existing) return <NodeNotFound tipo="La materia" />;
+
   return (
     <form onSubmit={form.handleSubmit(submit)}>
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
+      <NodeHeader>
+        <NodeTitle className="flex items-center gap-2">
           <FolderIcon className="text-primary size-5" />
           {isNew ? 'Nueva materia' : 'Editar materia'}
-        </DialogTitle>
-      </DialogHeader>
+        </NodeTitle>
+      </NodeHeader>
 
       <div className="space-y-4 py-4">
         <Controller
@@ -621,7 +731,7 @@ function SubjectForm({
           )}
         />
         {isNew && (
-          <>
+          <div className="grid grid-cols-2 gap-3">
             <Controller
               name="shortName"
               control={form.control}
@@ -632,33 +742,60 @@ function SubjectForm({
                 </Field>
               )}
             />
-            <div className="grid grid-cols-2 gap-3">
-              <Controller
-                name="colorHex"
-                control={form.control}
-                render={({ field }) => (
-                  <Field>
-                    <FieldLabel>Color</FieldLabel>
-                    <Input type="color" {...field} className="h-9 w-full" />
-                  </Field>
-                )}
-              />
-              <Controller
-                name="region"
-                control={form.control}
-                render={({ field }) => (
-                  <Field>
-                    <FieldLabel>Región (opcional)</FieldLabel>
-                    <Input {...field} />
-                  </Field>
-                )}
-              />
-            </div>
-          </>
+            <Controller
+              name="region"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel>Región (opcional)</FieldLabel>
+                  <Input {...field} />
+                </Field>
+              )}
+            />
+          </div>
         )}
+
+        <div className="space-y-4 border-t pt-4">
+          <p className="text-sm font-medium">Identidad visual</p>
+          <Controller
+            name="colorHex"
+            control={form.control}
+            render={({ field }) => (
+              <ColorField
+                label="Color de la materia"
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+          <Controller
+            name="assetUrl"
+            control={form.control}
+            render={({ field }) => (
+              <AssetField
+                label="Arte de práctica"
+                hint="La ilustración de la materia donde se la muestra completa."
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+          <Controller
+            name="wheelAssetUrl"
+            control={form.control}
+            render={({ field }) => (
+              <AssetField
+                label="Arte de ruleta"
+                hint="Va dentro de un sector de la ruleta de Partida Kodi: tiene que leerse chico y en movimiento."
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        </div>
       </div>
 
-      <DialogFooter className="sm:justify-between">
+      <NodeFooter className="sm:justify-between">
         <div>
           {view.kind === 'subject' && (
             <DeleteButton
@@ -682,13 +819,21 @@ function SubjectForm({
             {isNew ? 'Crear' : 'Guardar'}
           </Button>
         </div>
-      </DialogFooter>
+      </NodeFooter>
     </form>
   );
 }
 
 // ─── Tema ────────────────────────────────────────────────────────────────────
-type TopicValues = { name: string; examWeight: string };
+type TopicValues = {
+  name: string;
+  examWeight: string;
+  /** `null` = sin identidad propia. La ruleta depende de ese null para caer a
+   *  su color de respaldo por posición, así que no se rellena con un default. */
+  colorHex: string | null;
+  assetUrl: string | null;
+  wheelAssetUrl: string | null;
+};
 
 function TopicForm({
   view,
@@ -703,21 +848,59 @@ function TopicForm({
   const isNew = view.kind === 'new-topic';
   const existing = view.kind === 'topic' ? findTopic(tree, view.id) : undefined;
 
+  // La identidad visual del tema solo aplica en ADMISIÓN: ahí la "materia" es
+  // el examen (PAA UCR, TEC) y lo que el estudiante percibe como materia es el
+  // tema. Se deriva del modo del módulo, no es un interruptor aparte.
+  const parentModule = findModuleOfSubject(tree, view.subjectId);
+  const isAdmissionModule = parentModule?.examMode === 'admission';
+
   const form = useForm<TopicValues>({
     defaultValues: {
       name: existing?.name ?? '',
       examWeight: existing?.examWeight != null ? String(existing.examWeight) : '',
+      colorHex: existing?.colorHex ?? null,
+      assetUrl: existing?.assetUrl ?? null,
+      wheelAssetUrl: existing?.wheelAssetUrl ?? null,
     },
   });
 
+  useEffect(() => {
+    if (existing)
+      form.reset({
+        ...form.getValues(),
+        name: existing.name,
+        examWeight: existing.examWeight != null ? String(existing.examWeight) : '',
+        colorHex: existing.colorHex,
+        assetUrl: existing.assetUrl,
+        wheelAssetUrl: existing.wheelAssetUrl,
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existing?.id]);
+
   async function submit(v: TopicValues): Promise<void> {
     const examWeight = v.examWeight === '' ? null : Number(v.examWeight);
+    // Fuera de admisión los campos ni se muestran; mandarlos escribiría arte que
+    // la app nunca va a usar.
+    // Vaciar el campo de color vuelve a `null`, que es como se le devuelve al
+    // tema su falta de identidad propia.
+    const visuals = isAdmissionModule
+      ? {
+          colorHex: v.colorHex || null,
+          assetUrl: v.assetUrl,
+          wheelAssetUrl: v.wheelAssetUrl,
+        }
+      : {};
     try {
       if (view.kind === 'new-topic') {
-        await m.createTopic.mutateAsync({ subjectId: view.subjectId, name: v.name, examWeight });
+        await m.createTopic.mutateAsync({
+          subjectId: view.subjectId,
+          name: v.name,
+          examWeight,
+          ...visuals,
+        });
         toast.success('Tema creado');
       } else {
-        await m.updateTopic.mutateAsync({ id: view.id, name: v.name, examWeight });
+        await m.updateTopic.mutateAsync({ id: view.id, name: v.name, examWeight, ...visuals });
         toast.success('Tema actualizado');
       }
       onDone();
@@ -726,14 +909,16 @@ function TopicForm({
     }
   }
 
+  if (!isNew && !existing) return <NodeNotFound tipo="El tema" />;
+
   return (
     <form onSubmit={form.handleSubmit(submit)}>
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
+      <NodeHeader>
+        <NodeTitle className="flex items-center gap-2">
           <FileTextIcon className="text-primary size-5" />
           {isNew ? 'Nuevo tema' : 'Editar tema'}
-        </DialogTitle>
-      </DialogHeader>
+        </NodeTitle>
+      </NodeHeader>
 
       <div className="space-y-4 py-4">
         <Controller
@@ -756,9 +941,54 @@ function TopicForm({
             </Field>
           )}
         />
+
+        {isAdmissionModule && (
+          <div className="space-y-4 border-t pt-4">
+            <p className="text-sm font-medium">Identidad visual</p>
+            <p className="text-muted-foreground text-xs">
+              Este módulo es de admisión: acá la materia es el examen, así que el
+              arte va en el tema, que es lo que el estudiante percibe como materia.
+            </p>
+            <Controller
+              name="colorHex"
+              control={form.control}
+              render={({ field }) => (
+                <ColorField
+                  label="Color del tema"
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            <Controller
+              name="assetUrl"
+              control={form.control}
+              render={({ field }) => (
+                <AssetField
+                  label="Arte de práctica"
+                  hint="La ilustración del tema donde se lo muestra completo."
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+            <Controller
+              name="wheelAssetUrl"
+              control={form.control}
+              render={({ field }) => (
+                <AssetField
+                  label="Arte de ruleta"
+                  hint="Va dentro de un sector de la ruleta de Partida Kodi: tiene que leerse chico y en movimiento."
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
+        )}
       </div>
 
-      <DialogFooter className="sm:justify-between">
+      <NodeFooter className="sm:justify-between">
         <div>
           {view.kind === 'topic' && (
             <DeleteButton
@@ -782,7 +1012,7 @@ function TopicForm({
             {isNew ? 'Crear' : 'Guardar'}
           </Button>
         </div>
-      </DialogFooter>
+      </NodeFooter>
     </form>
   );
 }

@@ -14,7 +14,14 @@ async function send(url: string, method: 'POST' | 'PATCH' | 'DELETE', body?: unk
   }
 }
 
-export type CreateModuleInput = {
+/** Identidad visual del módulo: color de marca, icono y personaje estático. */
+type ModuleVisuals = {
+  colorHex?: string;
+  iconUrl?: string | null;
+  characterUrl?: string | null;
+};
+
+export type CreateModuleInput = ModuleVisuals & {
   country: string;
   examType: string;
   examMode?: 'simple' | 'per_subject' | 'admission';
@@ -23,7 +30,7 @@ export type CreateModuleInput = {
   version: string;
   hasAdmissionCutoffs: boolean;
 };
-export type UpdateModuleInput = {
+export type UpdateModuleInput = ModuleVisuals & {
   shortName?: string;
   fullName?: string;
   /** Decide cómo se calculan predictor y estadísticas — lista cerrada. */
@@ -41,21 +48,37 @@ export type UpdateModuleInput = {
   examDurationMin?: number | null;
   examQuestionCount?: number | null;
 };
-export type CreateSubjectInput = {
+/** Dos artes por nodo: la ilustración de práctica y el sector de la ruleta. */
+type NodeAssets = {
+  assetUrl?: string | null;
+  wheelAssetUrl?: string | null;
+};
+
+export type CreateSubjectInput = NodeAssets & {
   moduleId: string;
   name: string;
   shortName: string;
   colorHex: string;
   region?: string | null;
 };
-export type UpdateSubjectInput = {
+export type UpdateSubjectInput = NodeAssets & {
   name?: string;
   shortName?: string;
   colorHex?: string;
   region?: string | null;
 };
-export type CreateTopicInput = { subjectId: string; name: string; examWeight?: number | null };
-export type UpdateTopicInput = { name?: string; examWeight?: number | null };
+/** El tema suma color propio; solo se llena en módulos de admisión. */
+type TopicVisuals = NodeAssets & { colorHex?: string | null };
+
+export type CreateTopicInput = TopicVisuals & {
+  subjectId: string;
+  name: string;
+  examWeight?: number | null;
+};
+export type UpdateTopicInput = TopicVisuals & {
+  name?: string;
+  examWeight?: number | null;
+};
 export type ReorderInput = { parentId: string; orderedIds: string[] };
 
 export function useContentTreeMutations() {
