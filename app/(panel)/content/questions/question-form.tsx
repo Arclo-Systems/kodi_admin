@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
@@ -59,10 +59,17 @@ export function QuestionForm({
   mode,
   questionId,
   initial,
+  onDirtyChange,
 }: {
   mode: 'create' | 'edit';
   questionId?: string;
   initial?: QuestionDetail;
+  /**
+   * Avisa si hay cambios sin guardar. La barra de estado la usa para no dejar
+   * enviar a revisión con edición pendiente: esa acción no guarda el
+   * formulario y se perdía lo editado (incidente 2026-07-30).
+   */
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const router = useRouter();
   const qc = useQueryClient();
@@ -101,6 +108,11 @@ export function QuestionForm({
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'options' });
   const values = form.watch();
   const heavySvg = hasHeavySvg(values.text, values.explanation ?? '');
+
+  const isDirty = form.formState.isDirty;
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   const modules = tree ?? [];
   const subjects = modules.find((m) => m.id === values.moduleId)?.subjects ?? [];
