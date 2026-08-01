@@ -435,40 +435,6 @@ export function ModuleForm({
           </div>
         )}
 
-        {!isNew && existing && (
-          <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              className={existing.isActive ? undefined : 'text-success hover:text-success'}
-              onClick={() => {
-                if (existing.isActive) {
-                  setConfirmDeactivate(true);
-                } else {
-                  m.toggleModule.mutate(
-                    { id: existing.id, isActive: true },
-                    { onSuccess: () => toast.success('Activado') },
-                  );
-                }
-              }}
-            >
-              <PowerIcon className="size-4" />
-              {existing.isActive ? 'Desactivar' : 'Activar'}
-            </Button>
-            <ConfirmDialog
-              open={confirmDeactivate}
-              onOpenChange={(o) => !o && setConfirmDeactivate(false)}
-              destructive
-              title="Desactivar módulo"
-              description="El módulo dejará de aparecer en la app. Podés reactivarlo después."
-              confirmLabel="Desactivar"
-              onConfirm={async () => {
-                await m.toggleModule.mutateAsync({ id: existing.id, isActive: false });
-                toast.success('Desactivado');
-              }}
-            />
-          </div>
-        )}
         </div>
 
 
@@ -514,16 +480,39 @@ export function ModuleForm({
       </div>
 
       <NodeFooter>
-        {!isNew && canWriteModules && (
-          <Button
-            type="button"
-            variant="destructive"
-            className="mr-auto"
-            onClick={() => setConfirmDelete(true)}
-          >
-            <Trash2Icon className="size-4" />
-            Eliminar
-          </Button>
+        {!isNew && (
+          <div className="flex flex-col-reverse gap-2 sm:mr-auto sm:flex-row">
+            {canWriteModules && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2Icon className="size-4" />
+                Eliminar
+              </Button>
+            )}
+            {existing && (
+              <Button
+                type="button"
+                variant="outline"
+                className={existing.isActive ? undefined : 'text-success hover:text-success'}
+                onClick={() => {
+                  if (existing.isActive) {
+                    setConfirmDeactivate(true);
+                  } else {
+                    m.toggleModule.mutate(
+                      { id: existing.id, isActive: true },
+                      { onSuccess: () => toast.success('Activado') },
+                    );
+                  }
+                }}
+              >
+                <PowerIcon className="size-4" />
+                {existing.isActive ? 'Desactivar' : 'Activar'}
+              </Button>
+            )}
+          </div>
         )}
         <Button type="button" variant="outline" onClick={onDone}>
           Cancelar
@@ -533,6 +522,21 @@ export function ModuleForm({
           {isNew ? 'Crear' : 'Guardar'}
         </Button>
       </NodeFooter>
+
+      {existing && (
+        <ConfirmDialog
+          open={confirmDeactivate}
+          onOpenChange={(o) => !o && setConfirmDeactivate(false)}
+          destructive
+          title="Desactivar módulo"
+          description="El módulo dejará de aparecer en la app. Podés reactivarlo después."
+          confirmLabel="Desactivar"
+          onConfirm={async () => {
+            await m.toggleModule.mutateAsync({ id: existing.id, isActive: false });
+            toast.success('Desactivado');
+          }}
+        />
+      )}
 
       {view.kind === 'module' && (
         <ConfirmDialog
