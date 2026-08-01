@@ -37,12 +37,4 @@ describe('permissions', () => {
     expect(can('admin', 'economy:raffle:manage')).toBe(true);
   });
 
-  it('becas: solo admin, con scope país permitido', () => {
-    expect(can('admin', 'economy:scholarship:read')).toBe(true);
-    expect(can('admin', 'economy:scholarship:manage')).toBe(true);
-    expect(can('editor', 'economy:scholarship:read')).toBe(false);
-    expect(can('support', 'economy:scholarship:read')).toBe(false);
-    expect(can('commercial', 'economy:scholarship:manage')).toBe(false);
-    expect(canWithScope('admin', false, 'economy:scholarship:manage')).toBe(true);
-  });
 });

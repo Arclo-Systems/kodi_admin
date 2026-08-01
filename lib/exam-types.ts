@@ -22,12 +22,3 @@ export const EXAM_MODE_HINTS: Record<ExamMode, string> = {
   admission:
     'No se aprueba: se compite por cupo y se proyecta contra universidades. Ej: PAA, TEC.',
 };
-
-/** Exámenes del formulario público de Becas — identifican QUÉ eligió el solicitante. */
-export const SCHOLARSHIP_EXAM_LABELS: Record<string, string> = {
-  cosevi_auto: 'COSEVI Auto',
-  cosevi_moto: 'COSEVI Moto',
-  pne_primaria: 'PNE Primaria',
-  pne_bachillerato: 'PNE Secundaria',
-  admision: 'Admisión',
-};

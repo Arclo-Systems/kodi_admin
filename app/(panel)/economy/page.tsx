@@ -5,7 +5,6 @@ import {
   CoinsIcon,
   CreditCardIcon,
   GiftIcon,
-  GraduationCapIcon,
   HandshakeIcon,
   ImageIcon,
   RocketIcon,
@@ -122,13 +121,6 @@ const AREAS: AreaCard[] = [
     description: 'Suscripciones de usuarios: comp/grant manual, extender, cancelar, cambiar estado.',
     icon: CreditCardIcon,
     action: 'economy:subscription:read',
-  },
-  {
-    href: '/economy/scholarships',
-    label: 'Becas',
-    description: 'Solicitudes de beca de la landing: revisar, aprobar (activa suscripción) o rechazar.',
-    icon: GraduationCapIcon,
-    action: 'economy:scholarship:read',
   },
   {
     href: '/economy/monetization',

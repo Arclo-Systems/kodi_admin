@@ -73,9 +73,6 @@ export type Action =
   | 'economy:subscription:read'
   | 'economy:subscription:write'
   | 'economy:monetization:read'
-  // Becas (programa de becas) — otorgan valor pagado, solo admin (espejo del backend)
-  | 'economy:scholarship:read'
-  | 'economy:scholarship:manage'
   // Energía + límites free (Ola 2a) — config económica, admin
   | 'economy:energy:write'
   // Recompensas de juego/estudio/hábito (ola recompensas) — emite moneda, admin
@@ -194,8 +191,6 @@ const matrix: Record<AdminRole, Action[]> = {
     'economy:subscription:read',
     'economy:subscription:write',
     'economy:monetization:read',
-    'economy:scholarship:read',
-    'economy:scholarship:manage',
     'economy:energy:write',
     'economy:rewards:write',
     'economy:kokos-pack:write',
