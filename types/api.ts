@@ -11277,6 +11277,9 @@ export interface components {
                     publishedBy: string | null;
                     publishedAt: string;
                     createdAt: string;
+                    module: {
+                        shortName: string;
+                    } | null;
                 }[];
                 total: number;
                 page: number;

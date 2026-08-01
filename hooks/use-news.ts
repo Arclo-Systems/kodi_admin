@@ -9,6 +9,8 @@ export type NewsListItem = {
   id: string;
   country: string;
   moduleId: string | null;
+  /** Solo en el listado; `null` mientras el borrador no tenga módulo. */
+  module: { shortName: string } | null;
   title: string;
   summary: string;
   status: NewsStatus;

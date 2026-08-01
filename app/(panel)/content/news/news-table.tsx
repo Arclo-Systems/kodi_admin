@@ -34,6 +34,17 @@ const columns: ColumnDef<NewsListItem, unknown>[] = [
   },
   { accessorKey: 'country', header: 'País', meta: { label: 'País' } },
   {
+    accessorKey: 'module',
+    header: 'Módulo',
+    meta: { label: 'Módulo' },
+    // Un borrador puede no tener módulo todavía; publicada sin módulo no existe.
+    // El guion marca justo las que están esperando que alguien se lo asigne.
+    cell: ({ row }) =>
+      row.original.module?.shortName ?? (
+        <span className="text-muted-foreground">—</span>
+      ),
+  },
+  {
     accessorKey: 'status',
     header: 'Estado',
     meta: { label: 'Estado' },
