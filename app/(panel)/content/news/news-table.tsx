@@ -7,7 +7,6 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { PlusIcon } from 'lucide-react';
 import {
   useNews,
-  type NewsCategory,
   type NewsListItem,
   type NewsListQuery,
   type NewsStatus,
@@ -34,12 +33,6 @@ const columns: ColumnDef<NewsListItem, unknown>[] = [
     cell: ({ row }) => <div className="max-w-md truncate font-medium">{row.original.title}</div>,
   },
   { accessorKey: 'country', header: 'País', meta: { label: 'País' } },
-  {
-    accessorKey: 'category',
-    header: 'Categoría',
-    meta: { label: 'Categoría' },
-    cell: ({ row }) => (row.original.category === 'module' ? 'Módulo' : 'Educación'),
-  },
   {
     accessorKey: 'status',
     header: 'Estado',
@@ -83,19 +76,6 @@ export function NewsTable() {
               <SelectItem value="draft">Borrador</SelectItem>
               <SelectItem value="scheduled">Programada</SelectItem>
               <SelectItem value="published">Publicada</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={query.category ?? ALL}
-            onValueChange={(v) => set({ category: v === ALL ? undefined : (v as NewsCategory) })}
-          >
-            <SelectTrigger className="w-40" aria-label="Filtrar por categoría">
-              <SelectValue placeholder="Categoría" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Todas</SelectItem>
-              <SelectItem value="module">Módulo</SelectItem>
-              <SelectItem value="education">Educación</SelectItem>
             </SelectContent>
           </Select>
         </div>

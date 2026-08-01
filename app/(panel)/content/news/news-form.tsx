@@ -19,14 +19,13 @@ import {
 } from '@/components/ui/select';
 import { COUNTRIES } from '@/lib/countries';
 import { useModulesTree } from '@/hooks/use-modules-tree';
-import type { NewsCategory, NewsDetail } from '@/hooks/use-news';
+import type { NewsDetail } from '@/hooks/use-news';
 import { MarkdownEditor } from './markdown-editor';
 import { NewsPreview } from './news-preview';
 import { NewsImageUpload } from './news-image-upload';
 
 type FormValues = {
   country: string;
-  category: NewsCategory;
   moduleId: string;
   title: string;
   summary: string;
@@ -42,7 +41,6 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
     defaultValues: initial
       ? {
           country: initial.country,
-          category: initial.category,
           moduleId: initial.moduleId ?? '',
           title: initial.title,
           summary: initial.summary,
@@ -51,7 +49,6 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
         }
       : {
           country: COUNTRIES[0]?.code ?? 'CR',
-          category: 'module',
           moduleId: '',
           title: '',
           summary: '',
@@ -64,8 +61,9 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
   const modules = tree ?? [];
 
   async function submit(v: FormValues): Promise<void> {
-    if (mode === 'create' && v.category === 'module' && !v.moduleId) {
-      form.setError('moduleId', { message: 'Elegí un módulo' });
+    // Toda noticia va a un módulo, también al editar: sin él no se puede publicar.
+    if (!v.moduleId) {
+      form.setError('moduleId', { message: 'Elegí a qué módulo va' });
       return;
     }
     const url = mode === 'create' ? '/api/admin/content/news' : `/api/admin/content/news/${initial?.id}`;
@@ -73,15 +71,20 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
       mode === 'create'
         ? {
             country: v.country,
-            category: v.category,
-            moduleId: v.category === 'module' ? v.moduleId : null,
+            moduleId: v.moduleId,
             title: v.title,
             summary: v.summary,
             body: v.body,
             imageUrl: v.imageUrl,
             status: 'draft',
           }
-        : { title: v.title, summary: v.summary, body: v.body, imageUrl: v.imageUrl };
+        : {
+            moduleId: v.moduleId,
+            title: v.title,
+            summary: v.summary,
+            body: v.body,
+            imageUrl: v.imageUrl,
+          };
     const res = await fetch(url, {
       method: mode === 'create' ? 'POST' : 'PATCH',
       headers: { 'content-type': 'application/json' },
@@ -103,13 +106,17 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
       <Card>
         <CardContent>
           <form onSubmit={form.handleSubmit(submit)} className="space-y-6">
-            {mode === 'create' && (
-              <fieldset className="min-w-0 space-y-3">
-                <legend className="flex items-center gap-2 text-sm font-medium">
-                  <LayersIcon className="text-primary size-4" />
-                  Clasificación
-                </legend>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {/* El módulo también se edita: la migración dejó 6 noticias en
+                borrador sin módulo para que alguien se lo asigne, y si el campo
+                solo existiera al crear, guardar fallaba en silencio sobre un
+                campo invisible. El país sí queda fijo tras crear. */}
+            <fieldset className="min-w-0 space-y-3">
+              <legend className="flex items-center gap-2 text-sm font-medium">
+                <LayersIcon className="text-primary size-4" />
+                Clasificación
+              </legend>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {mode === 'create' && (
             <Controller
               name="country"
               control={form.control}
@@ -137,51 +144,37 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
                 </Field>
               )}
             />
+                )}
             <Controller
-              name="category"
+              name="moduleId"
               control={form.control}
-              render={({ field }) => (
-                <Field>
-                  <FieldLabel>Categoría</FieldLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue />
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Módulo</FieldLabel>
+                  <Select value={field.value || undefined} onValueChange={field.onChange}>
+                    <SelectTrigger aria-invalid={fieldState.invalid}>
+                      <SelectValue placeholder="Elegí el módulo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="module">Módulo</SelectItem>
-                      <SelectItem value="education">Educación</SelectItem>
+                      {modules.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.shortName}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  {fieldState.invalid ? (
+                    <FieldError errors={[fieldState.error]} />
+                  ) : (
+                    <p className="text-muted-foreground text-xs">
+                      A quién le llega la noticia.
+                    </p>
+                  )}
                 </Field>
               )}
             />
-            {values.category === 'module' && (
-              <Controller
-                name="moduleId"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel>Módulo</FieldLabel>
-                    <Select value={field.value || undefined} onValueChange={field.onChange}>
-                      <SelectTrigger aria-invalid={fieldState.invalid}>
-                        <SelectValue placeholder="Módulo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {modules.map((m) => (
-                          <SelectItem key={m.id} value={m.id}>
-                            {m.shortName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
-            )}
-                </div>
-              </fieldset>
-            )}
+              </div>
+            </fieldset>
 
             <fieldset className="min-w-0 space-y-4">
               <legend className="flex items-center gap-2 text-sm font-medium">
@@ -260,7 +253,9 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
           Vista previa
         </h2>
         <NewsPreview
-          category={values.category}
+          moduleName={
+            modules.find((m) => m.id === values.moduleId)?.shortName ?? null
+          }
           title={values.title}
           summary={values.summary}
           body={values.body}

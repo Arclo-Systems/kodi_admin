@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// Monetización (Ola 3b). Read-only sobre el harness storageState: verifica que las 4 páginas
+// Monetización (Ola 3b). Read-only sobre el harness storageState: verifica que las páginas
 // renderizan y que los endpoints /v1/admin/monetization/* responden (sin mutar).
 
 test('subscription-prices: renderiza la página de precios', async ({ page }) => {
@@ -13,12 +13,6 @@ test('suscripciones: renderiza la lista con Comp/grant', async ({ page }) => {
   await page.goto('/economy/subscriptions');
   await expect(page.getByRole('heading', { name: 'Suscripciones' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Comp/ })).toBeVisible();
-});
-
-test('cross-sell: renderiza la página de cross-sell', async ({ page }) => {
-  await page.goto('/economy/cross-sell');
-  await expect(page.getByRole('heading', { name: 'Cross-sell' })).toBeVisible();
-  await expect(page.getByText('Nuevo cross-sell')).toBeVisible();
 });
 
 test('becas: renderiza la lista con filtros', async ({ page }) => {

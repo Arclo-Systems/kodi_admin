@@ -354,8 +354,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Listar noticias por país, módulo y/o categoría
-         * @description PRD §6.2.1: dos secciones — "Tu examen" (category=module + module_id) vs "Educación" (category=education).
+         * Listar noticias por país y/o módulo
+         * @description Toda noticia pertenece a un módulo; sin module_id devuelve las del país.
          */
         get: operations["NewsController_list"];
         put?: never;
@@ -721,26 +721,6 @@ export interface paths {
         head?: never;
         /** Cambiar el módulo activo (pill del header) */
         patch: operations["UsersController_setActiveModule"];
-        trace?: never;
-    };
-    "/v1/users/me/exam-passed": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reportar que aprobaste tu examen (PRD §7.17)
-         * @description Activa badge "Aprobado", precarga share card "Aprobé con Kodi" y devuelve sugerencia de cross-sell del próximo módulo si aplica.
-         */
-        post: operations["UsersController_markExamPassed"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/v1/users/{id}": {
@@ -6589,14 +6569,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/admin/dashboard/exams-passed": {
+    "/v1/admin/dashboard/users-by-module": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["DashboardAdminController_examsPassed"];
+        get: operations["DashboardAdminController_usersByModule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/dashboard/subscribers-by-period": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["DashboardAdminController_subscribersByPeriod"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6699,38 +6695,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/v1/admin/monetization/cross-sell": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["CrossSellAdminController_list"];
-        put?: never;
-        post: operations["CrossSellAdminController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/admin/monetization/cross-sell/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["CrossSellAdminController_remove"];
-        options?: never;
-        head?: never;
-        patch: operations["CrossSellAdminController_update"];
         trace?: never;
     };
     "/v1/admin/monetization/analytics": {
@@ -6877,6 +6841,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/jobs/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["JobsAdminController_schedules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/jobs": {
         parameters: {
             query?: never;
@@ -6935,6 +6915,23 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["JobsAdminController_retry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/notifications/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catálogo de notificaciones y su disparador */
+        get: operations["NotificationsAdminController_catalog"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7661,8 +7658,6 @@ export interface components {
                 published_at: string;
                 /** Format: uuid */
                 module_id: string | null;
-                /** @enum {string} */
-                category: "module" | "education";
             }[];
             meta: {
                 page: number;
@@ -7874,11 +7869,9 @@ export interface components {
                 avatar_item_id: string | null;
                 /** Format: uuid */
                 frame_item_id: string | null;
-                exam_passed: boolean;
                 sounds_enabled: boolean;
                 goal_streak_days: number;
                 discovery_source: string | null;
-                cross_sell_dismissed: unknown;
                 onboarding_flags: unknown;
                 email_verified: boolean;
                 /** @enum {string} */
@@ -7977,9 +7970,6 @@ export interface components {
             onboarding_flags?: {
                 [key: string]: boolean;
             };
-            cross_sell_dismissed?: {
-                [key: string]: boolean;
-            };
             goal_streak_days?: number;
             /** @enum {string} */
             discovery_source?: "tiktok" | "google" | "youtube" | "instagram" | "tv" | "app_store" | "noticias" | "recomendacion" | "otro";
@@ -7999,7 +7989,6 @@ export interface components {
                 daily_goal_target: number;
                 sounds_enabled: boolean;
                 onboarding_flags: unknown;
-                cross_sell_dismissed: unknown;
                 goal_streak_days: number;
                 discovery_source: string | null;
             };
@@ -8018,23 +8007,6 @@ export interface components {
                 active_module_id: string;
             };
         };
-        MarkExamPassedDto: {
-            /** Format: uuid */
-            module_id?: string;
-        };
-        ExamPassedResponse: {
-            data: {
-                exam_passed: boolean;
-                exam_passed_at: string;
-                /** Format: uuid */
-                module_id: string | null;
-                cross_sell_suggestion: {
-                    /** Format: uuid */
-                    module_id: string;
-                    message: string;
-                } | null;
-            };
-        };
         PublicProfileResponse: {
             data: {
                 /** Format: uuid */
@@ -8048,7 +8020,6 @@ export interface components {
                 avatar_item_id: string | null;
                 /** Format: uuid */
                 frame_item_id: string | null;
-                exam_passed: boolean | null;
                 created_at: string | null;
                 is_friend: boolean;
                 is_blocked: boolean;
@@ -10455,8 +10426,6 @@ export interface components {
                 avatarItemId: string | null;
                 /** Format: uuid */
                 frameItemId: string | null;
-                examPassed: boolean;
-                examPassedAt: string | null;
                 soundsEnabled: boolean;
                 isBot: boolean;
                 goalStreakDays: number;
@@ -11295,7 +11264,6 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     country: string;
-                    category: string;
                     /** Format: uuid */
                     moduleId: string | null;
                     title: string;
@@ -11320,7 +11288,6 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 country: string;
-                category: string;
                 /** Format: uuid */
                 moduleId: string | null;
                 title: string;
@@ -11349,11 +11316,6 @@ export interface components {
         CreateNewsDto: {
             /** @enum {string} */
             country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
-            /**
-             * @default module
-             * @enum {string}
-             */
-            category: "module" | "education";
             /** Format: uuid */
             moduleId?: string | null;
             title: string;
@@ -11375,6 +11337,8 @@ export interface components {
             };
         };
         UpdateNewsDto: {
+            /** Format: uuid */
+            moduleId?: string | null;
             title?: string;
             summary?: string;
             body?: string;
@@ -14257,11 +14221,29 @@ export interface components {
                 };
             };
         };
-        DashboardExamsPassedResponse: {
+        DashboardUsersByModuleResponse: {
             data: {
-                passed: number;
-                total: number;
-                rate: number;
+                modules: {
+                    /** Format: uuid */
+                    moduleId: string;
+                    name: string;
+                    total: number;
+                    free: number;
+                    basico: number;
+                    plus: number;
+                    pro: number;
+                }[];
+                range: {
+                    from: string;
+                    to: string;
+                };
+            };
+        };
+        DashboardSubscribersByPeriodResponse: {
+            data: {
+                monthly: number;
+                quarterly: number;
+                yearly: number;
             };
         };
         SubscriptionAdminListResponse: {
@@ -14329,39 +14311,6 @@ export interface components {
         ChangeStatusDto: {
             /** @enum {string} */
             status: "trial" | "active" | "cancelled" | "expired" | "grace";
-        };
-        CrossSellListResponse: {
-            data: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                sourceModuleId: string;
-                /** Format: uuid */
-                targetModuleId: string;
-                message: string;
-                priority: number;
-                isActive: boolean;
-            }[];
-        };
-        CrossSellResponse: {
-            data: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                sourceModuleId: string;
-                /** Format: uuid */
-                targetModuleId: string;
-                message: string;
-                priority: number;
-                isActive: boolean;
-            };
-        };
-        CrossSellDeletedResponse: {
-            data: {
-                /** Format: uuid */
-                id: string;
-                deleted: boolean;
-            };
         };
         SubscriptionAnalyticsResponse: {
             data: {
@@ -14550,6 +14499,16 @@ export interface components {
                 [key: string]: number;
             };
         };
+        JobSchedulesResponse: {
+            data: {
+                name: string;
+                pattern: string;
+                description: string;
+                nextRunAt: number | null;
+                lastRunAt: number | null;
+                lastRunFailed: boolean | null;
+            }[];
+        };
         JobListResponse: {
             data: {
                 items: {
@@ -14597,6 +14556,14 @@ export interface components {
                 id: string;
                 removed: boolean;
             };
+        };
+        NotificationCatalogResponse: {
+            data: {
+                type: string;
+                label: string;
+                trigger: string;
+                settingKey: string | null;
+            }[];
         };
         TicketAdminListResponse: {
             data: {
@@ -15927,7 +15894,6 @@ export interface operations {
             query?: {
                 country?: "CR" | "GT" | "SV" | "HN" | "PA";
                 module_id?: string;
-                category?: "module" | "education";
                 page?: number;
                 limit?: number;
             };
@@ -16404,29 +16370,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActiveModuleResponse"];
-                };
-            };
-        };
-    };
-    UsersController_markExamPassed: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MarkExamPassedDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExamPassedResponse"];
                 };
             };
         };
@@ -21433,7 +21376,6 @@ export interface operations {
             query?: {
                 country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
                 moduleId?: string;
-                category?: "module" | "education";
                 status?: "draft" | "scheduled" | "published";
                 page?: number;
                 pageSize?: number;
@@ -25623,7 +25565,7 @@ export interface operations {
             };
         };
     };
-    DashboardAdminController_examsPassed: {
+    DashboardAdminController_usersByModule: {
         parameters: {
             query?: {
                 from?: string;
@@ -25641,7 +25583,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DashboardExamsPassedResponse"];
+                    "application/json": components["schemas"]["DashboardUsersByModuleResponse"];
+                };
+            };
+        };
+    };
+    DashboardAdminController_subscribersByPeriod: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardSubscribersByPeriodResponse"];
                 };
             };
         };
@@ -25784,86 +25749,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubscriptionAdminResponse"];
-                };
-            };
-        };
-    };
-    CrossSellAdminController_list: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CrossSellListResponse"];
-                };
-            };
-        };
-    };
-    CrossSellAdminController_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CrossSellResponse"];
-                };
-            };
-        };
-    };
-    CrossSellAdminController_remove: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CrossSellDeletedResponse"];
-                };
-            };
-        };
-    };
-    CrossSellAdminController_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CrossSellResponse"];
                 };
             };
         };
@@ -26150,6 +26035,25 @@ export interface operations {
             };
         };
     };
+    JobsAdminController_schedules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobSchedulesResponse"];
+                };
+            };
+        };
+    };
     JobsAdminController_list: {
         parameters: {
             query?: {
@@ -26251,6 +26155,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobRetriedResponse"];
+                };
+            };
+        };
+    };
+    NotificationsAdminController_catalog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationCatalogResponse"];
                 };
             };
         };

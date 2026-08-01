@@ -3,10 +3,12 @@
 import { useMemo, useState } from 'react';
 import {
   BookOpenIcon,
+  CalendarCheckIcon,
+  CalendarIcon,
+  CalendarRangeIcon,
   CircleHelpIcon,
   CoinsIcon,
   GiftIcon,
-  GraduationCapIcon,
   ShoppingBagIcon,
   TargetIcon,
   TicketIcon,
@@ -24,9 +26,10 @@ import {
   useAcquisition,
   useEconomy,
   useEngagement,
-  useExamsPassed,
   useRetention,
   useSubscribers,
+  useSubscribersByPeriod,
+  useUsersByModule,
   useTimeseries,
 } from '@/hooks/use-dashboard';
 
@@ -75,7 +78,8 @@ export function DashboardOverview({ allowedCountries }: { allowedCountries: stri
   const timeseries = useTimeseries(query);
   const retention = useRetention(query);
   const acquisition = useAcquisition(query);
-  const examsPassed = useExamsPassed(query);
+  const subsByPeriod = useSubscribersByPeriod(query);
+  const usersByModule = useUsersByModule(query);
   const e = engagement.data;
   const ec = economy.data;
   const r = retention.data;
@@ -121,29 +125,39 @@ export function DashboardOverview({ allowedCountries }: { allowedCountries: stri
       <section className="space-y-3">
         <h2 className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
           <span className="bg-info size-1.5 rounded-full" aria-hidden />
-          Exámenes aprobados
+          Suscriptores por duración del plan
         </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <KpiCard
-            label="Exámenes aprobados"
-            value={fmt(examsPassed.data?.passed)}
-            loading={examsPassed.isLoading}
+            label="Mensual"
+            value={fmt(subsByPeriod.data?.monthly)}
+            loading={subsByPeriod.isLoading}
             tone="blue"
-            icon={<GraduationCapIcon className="size-4" />}
+            icon={<CalendarIcon className="size-4" />}
           />
           <KpiCard
-            label="Tasa de aprobación"
-            value={pct(examsPassed.data?.rate)}
-            loading={examsPassed.isLoading}
+            label="Trimestral"
+            value={fmt(subsByPeriod.data?.quarterly)}
+            loading={subsByPeriod.isLoading}
             tone="blue"
-            icon={<TargetIcon className="size-4" />}
+            icon={<CalendarRangeIcon className="size-4" />}
+          />
+          <KpiCard
+            label="Anual"
+            value={fmt(subsByPeriod.data?.yearly)}
+            loading={subsByPeriod.isLoading}
+            tone="blue"
+            icon={<CalendarCheckIcon className="size-4" />}
           />
         </div>
-        {examsPassed.isError ? (
-          <p className="text-destructive text-sm">No se pudo cargar la métrica de exámenes.</p>
+        {subsByPeriod.isError ? (
+          <p className="text-destructive text-sm">
+            No se pudieron cargar los suscriptores.
+          </p>
         ) : (
           <p className="text-muted-foreground text-xs">
-            Auto-reportados por los usuarios (sobre el total de usuarios reales del scope).
+            Suscripciones vigentes hoy, incluyendo las que están en prueba. No
+            dependen del período seleccionado arriba.
           </p>
         )}
       </section>
@@ -184,7 +198,12 @@ export function DashboardOverview({ allowedCountries }: { allowedCountries: stri
         )}
       </section>
 
-      <DashboardCharts timeseries={timeseries} subscribers={subscribers} acquisition={acquisition} />
+      <DashboardCharts
+        timeseries={timeseries}
+        subscribers={subscribers}
+        acquisition={acquisition}
+        usersByModule={usersByModule}
+      />
     </div>
   );
 }

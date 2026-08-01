@@ -4,12 +4,19 @@ import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, XAxis, YAxis } fro
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { useAcquisition, useSubscribers, useTimeseries } from '@/hooks/use-dashboard';
+import type {
+  useAcquisition,
+  useSubscribers,
+  useTimeseries,
+  useUsersByModule,
+} from '@/hooks/use-dashboard';
 
 const PLAN_LABELS: Record<string, string> = { free: 'Free', basico: 'Básico', plus: 'Plus', pro: 'Pro' };
 // Color por tier (paleta DESIGN.md), de menor a mayor: cielo → teal → dorado.
@@ -37,6 +44,15 @@ const acqChartConfig = {
 const subsChartConfig = {
   count: { label: 'Suscriptores', color: 'var(--chart-1)' },
 } satisfies ChartConfig;
+// Mismos colores por tier que "Suscriptores por plan": el lector cruza los dos
+// gráficos y un free azul acá y gris allá lo haría leer mal.
+const modulesChartConfig = {
+  free: { label: 'Free', color: PLAN_COLORS.free },
+  basico: { label: 'Básico', color: PLAN_COLORS.basico },
+  plus: { label: 'Plus', color: PLAN_COLORS.plus },
+  pro: { label: 'Pro', color: PLAN_COLORS.pro },
+} satisfies ChartConfig;
+const PLAN_KEYS = ['free', 'basico', 'plus', 'pro'] as const;
 const tsChartConfig = {
   newUsers: { label: 'Nuevos', color: 'var(--chart-1)' },
   practiceSessions: { label: 'Sesiones', color: 'var(--chart-2)' },
@@ -48,10 +64,12 @@ export function DashboardCharts({
   timeseries,
   subscribers,
   acquisition,
+  usersByModule,
 }: {
   timeseries: ReturnType<typeof useTimeseries>;
   subscribers: ReturnType<typeof useSubscribers>;
   acquisition: ReturnType<typeof useAcquisition>;
+  usersByModule: ReturnType<typeof useUsersByModule>;
 }) {
   return (
     <>
@@ -152,6 +170,77 @@ export function DashboardCharts({
                 <YAxis allowDecimals={false} width={32} tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+              </BarChart>
+            </ChartContainer>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Usuarios por módulo</CardTitle>
+          <CardDescription>
+            Quién se registró a cada módulo en el período, según el plan que
+            tiene hoy en ese módulo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {usersByModule.isLoading ? (
+            <Skeleton className="h-48 w-full" />
+          ) : usersByModule.isError ? (
+            <p className="text-destructive text-sm">
+              No se pudieron cargar los usuarios por módulo.
+            </p>
+          ) : (usersByModule.data?.modules.length ?? 0) === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              Nadie se registró a un módulo en el período.
+            </p>
+          ) : (
+            // Barras horizontales: los nombres de módulo ("PEN Secundaria",
+            // "COSEVI Auto") no entran en un eje X sin cortarse ni rotarse.
+            <ChartContainer
+              config={modulesChartConfig}
+              style={{
+                height: `${Math.max(
+                  12,
+                  usersByModule.data!.modules.length * 3,
+                )}rem`,
+              }}
+              className="w-full"
+            >
+              <BarChart
+                layout="vertical"
+                data={usersByModule.data!.modules}
+                margin={{ left: 8, right: 24 }}
+              >
+                <CartesianGrid horizontal={false} />
+                <XAxis
+                  type="number"
+                  allowDecimals={false}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={110}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartLegend content={<ChartLegendContent />} />
+                {/* Apiladas: la barra entera es el total del módulo y cada
+                    tramo un plan. El radio va solo en el último tramo para que
+                    la barra tenga una sola punta redondeada. */}
+                {PLAN_KEYS.map((plan, i) => (
+                  <Bar
+                    key={plan}
+                    dataKey={plan}
+                    stackId="planes"
+                    fill={`var(--color-${plan})`}
+                    radius={i === PLAN_KEYS.length - 1 ? [0, 4, 4, 0] : 0}
+                  />
+                ))}
               </BarChart>
             </ChartContainer>
           )}

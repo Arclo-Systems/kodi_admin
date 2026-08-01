@@ -4,12 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
 
 export type NewsStatus = 'draft' | 'scheduled' | 'published';
-export type NewsCategory = 'module' | 'education';
 
 export type NewsListItem = {
   id: string;
   country: string;
-  category: NewsCategory;
   moduleId: string | null;
   title: string;
   summary: string;
@@ -22,7 +20,6 @@ export type NewsListItem = {
 export type NewsListQuery = {
   country?: string;
   moduleId?: string;
-  category?: NewsCategory;
   status?: NewsStatus;
   page: number;
   pageSize: number;

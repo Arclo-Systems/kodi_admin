@@ -22,6 +22,7 @@ const LABELS: Record<string, string> = {
   'audit-log': 'Audit log',
   health: 'Health',
   jobs: 'Jobs',
+  notifications: 'Notificaciones',
   moderation: 'Moderación',
   tickets: 'Tickets',
   features: 'Features',
@@ -40,6 +41,9 @@ const LABELS: Record<string, string> = {
   inventory: 'Inventario',
   'bulk-import': 'Importar',
   'modules-tree': 'Módulos',
+  module: 'Módulo',
+  subject: 'Materia',
+  topic: 'Tema',
   'prohibited-words': 'Palabras prohibidas',
   segments: 'Segmentos',
   templates: 'Plantillas',
@@ -54,7 +58,6 @@ const LABELS: Record<string, string> = {
   branches: 'Sucursales',
   'sponsor-invoices': 'Facturas',
   subscriptions: 'Suscripciones',
-  'cross-sell': 'Cross-sell',
   monetization: 'Monetización',
   energy: 'Energía',
   'kokos-packs': 'Paquetes Kokos',
@@ -82,7 +85,14 @@ const LABELS: Record<string, string> = {
 // Segmentos que son solo contenedores de ruta (sin página índice propia): se muestran como
 // texto, no como link, para no mandar a un 404. Ej: /economy/sponsor-invoices solo existe en
 // /new y /[id], no como listado.
-const NON_NAVIGABLE = new Set(['sponsor-invoices', 'branches']);
+// `module`/`subject`/`topic` son el [kind] de /content/modules-tree/[kind]/[id].
+const NON_NAVIGABLE = new Set([
+  'sponsor-invoices',
+  'branches',
+  'module',
+  'subject',
+  'topic',
+]);
 
 const looksLikeId = (s: string) =>
   /^\d+$/.test(s) || /^[0-9a-f]{8}-[0-9a-f]{4}/i.test(s) || s.length > 20;

@@ -33,8 +33,6 @@ export type UserDetail = {
   profilePublic: boolean;
   showInRankings: boolean;
   friendRequestPolicy: 'everyone' | 'nobody';
-  examPassed: boolean;
-  examPassedAt: string | null;
   emailVerifiedAt: string | null;
   createdAt: string;
   lastActiveAt: string | null;

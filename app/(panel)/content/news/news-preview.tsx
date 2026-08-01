@@ -5,21 +5,15 @@ import Image from 'next/image';
 import { ImageIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { MarkdownView } from './markdown-view';
-import type { NewsCategory } from '@/hooks/use-news';
-
-const CATEGORY_LABELS: Record<NewsCategory, string> = {
-  module: 'Módulo',
-  education: 'Educación',
-};
-
 export function NewsPreview({
-  category,
+  moduleName,
   title,
   summary,
   body,
   imageUrl,
 }: {
-  category: NewsCategory;
+  /** Vacío mientras no se eligió módulo: ahí la insignia no se muestra. */
+  moduleName: string | null;
   title: string;
   summary: string;
   body: string;
@@ -48,7 +42,9 @@ export function NewsPreview({
               <ImageIcon className="size-8" />
             </div>
           )}
-          <Badge className="absolute top-2 left-2">{CATEGORY_LABELS[category]}</Badge>
+          {moduleName && (
+            <Badge className="absolute top-2 left-2">{moduleName}</Badge>
+          )}
         </div>
         <div className="space-y-2 p-4">
           <div className="text-lg font-semibold leading-tight">

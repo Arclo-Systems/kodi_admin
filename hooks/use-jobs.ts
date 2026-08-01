@@ -44,6 +44,31 @@ export function useJobCounts() {
   });
 }
 
+export type JobSchedule = {
+  name: string;
+  /** Cron en UTC. */
+  pattern: string;
+  description: string;
+  nextRunAt: number | null;
+  lastRunAt: number | null;
+  lastRunFailed: boolean | null;
+};
+
+export function useJobSchedules() {
+  return useQuery({
+    queryKey: ['jobs', 'schedules'],
+    queryFn: async (): Promise<JobSchedule[]> => {
+      const res = await fetch('/api/admin/jobs/schedules', {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('No se pudo cargar lo programado');
+      return unwrapData<JobSchedule[]>(await res.json()) ?? [];
+    },
+    // El calendario cambia con un deploy, no solo: no hace falta refetch agresivo.
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useJobs(state: JobState, page: number) {
   return useQuery({
     queryKey: ['jobs', 'list', state, page],

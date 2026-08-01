@@ -3,5 +3,9 @@ import { forwardToBackend } from '@/lib/proxy';
 
 export async function GET(req: NextRequest) {
   const qs = req.nextUrl.searchParams.toString();
-  return forwardToBackend(req, 'GET', `/v1/admin/dashboard/exams-passed${qs ? `?${qs}` : ''}`);
+  return forwardToBackend(
+    req,
+    'GET',
+    `/v1/admin/dashboard/subscribers-by-period${qs ? `?${qs}` : ''}`,
+  );
 }

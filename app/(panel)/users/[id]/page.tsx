@@ -122,9 +122,6 @@ function AccountCard({ user }: { user: UserDetail }) {
       </CardHeader>
       <CardContent className="space-y-6">
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:grid-cols-4">
-          <Field label="Examen aprobado">
-            {user.examPassed ? `Sí · ${fmtDate(user.examPassedAt)}` : 'No'}
-          </Field>
           <Field label="Racha máxima">
             <span className="tabular-nums">{user.longestStreakDays}</span> días
           </Field>

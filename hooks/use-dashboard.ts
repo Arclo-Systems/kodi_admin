@@ -80,6 +80,25 @@ export const useRetention = (q: DashboardQuery) =>
   useDashboardSection<RetentionResult>('retention', q);
 export const useAcquisition = (q: DashboardQuery) =>
   useDashboardSection<AcquisitionResult>('acquisition', q);
-export type ExamsPassedResult = { passed: number; total: number; rate: number };
-export const useExamsPassed = (q: DashboardQuery) =>
-  useDashboardSection<ExamsPassedResult>('exams-passed', q);
+export type SubscribersByPeriodResult = {
+  monthly: number;
+  quarterly: number;
+  yearly: number;
+};
+export const useSubscribersByPeriod = (q: DashboardQuery) =>
+  useDashboardSection<SubscribersByPeriodResult>('subscribers-by-period', q);
+
+export type UsersByModuleResult = {
+  modules: {
+    moduleId: string;
+    name: string;
+    total: number;
+    free: number;
+    basico: number;
+    plus: number;
+    pro: number;
+  }[];
+  range: { from: string; to: string };
+};
+export const useUsersByModule = (q: DashboardQuery) =>
+  useDashboardSection<UsersByModuleResult>('users-by-module', q);

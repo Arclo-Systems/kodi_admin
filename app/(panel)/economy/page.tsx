@@ -10,7 +10,6 @@ import {
   ImageIcon,
   RocketIcon,
   ShoppingBagIcon,
-  ShuffleIcon,
   SparklesIcon,
   Share2Icon,
   TargetIcon,
@@ -130,13 +129,6 @@ const AREAS: AreaCard[] = [
     description: 'Solicitudes de beca de la landing: revisar, aprobar (activa suscripción) o rechazar.',
     icon: GraduationCapIcon,
     action: 'economy:scholarship:read',
-  },
-  {
-    href: '/economy/cross-sell',
-    label: 'Cross-sell',
-    description: 'Sugerencias entre módulos: origen → destino con mensaje y prioridad.',
-    icon: ShuffleIcon,
-    action: 'economy:cross-sell:write',
   },
   {
     href: '/economy/monetization',

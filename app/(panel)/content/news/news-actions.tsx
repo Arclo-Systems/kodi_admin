@@ -104,7 +104,7 @@ function DuplicateNews({ article }: { article: NewsDetail }) {
 
   function run(): void {
     m.duplicate.mutate(
-      { id: article.id, country, moduleId: article.category === 'module' ? moduleId : null },
+      { id: article.id, country, moduleId },
       {
         onSuccess: () => {
           toast.success('Noticia duplicada como borrador');
@@ -148,29 +148,27 @@ function DuplicateNews({ article }: { article: NewsDetail }) {
               </SelectContent>
             </Select>
           </Field>
-          {article.category === 'module' && (
-            <Field>
-              <FieldLabel>Módulo destino</FieldLabel>
-              <Select value={moduleId || undefined} onValueChange={setModuleId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Módulo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(tree ?? []).map((mod) => (
-                    <SelectItem key={mod.id} value={mod.id}>
-                      {mod.shortName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          )}
+          <Field>
+            <FieldLabel>Módulo destino</FieldLabel>
+            <Select value={moduleId || undefined} onValueChange={setModuleId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Elegí el módulo" />
+              </SelectTrigger>
+              <SelectContent>
+                {(tree ?? []).map((mod) => (
+                  <SelectItem key={mod.id} value={mod.id}>
+                    {mod.shortName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Cancelar
           </Button>
-          <Button onClick={run} disabled={article.category === 'module' && !moduleId}>
+          <Button onClick={run} disabled={!moduleId}>
             <CopyIcon className="size-4" /> Duplicar
           </Button>
         </DialogFooter>

@@ -72,7 +72,6 @@ export type Action =
   // Monetización (Ola 3b)
   | 'economy:subscription:read'
   | 'economy:subscription:write'
-  | 'economy:cross-sell:write'
   | 'economy:monetization:read'
   // Becas (programa de becas) — otorgan valor pagado, solo admin (espejo del backend)
   | 'economy:scholarship:read'
@@ -90,6 +89,7 @@ export type Action =
   | 'economy:video:write'
   // Jobs / cola BullMQ (Ola 3c) — ops, admin-only
   | 'view:jobs'
+  | 'view:notifications'
   | 'jobs:manage'
   // Moderación social (Ola 3d)
   | 'view:moderation'
@@ -193,7 +193,6 @@ const matrix: Record<AdminRole, Action[]> = {
     'economy:referral:write',
     'economy:subscription:read',
     'economy:subscription:write',
-    'economy:cross-sell:write',
     'economy:monetization:read',
     'economy:scholarship:read',
     'economy:scholarship:manage',
@@ -204,6 +203,7 @@ const matrix: Record<AdminRole, Action[]> = {
     'economy:video:read',
     'economy:video:write',
     'view:jobs',
+    'view:notifications',
     'jobs:manage',
     'view:moderation',
     'moderation:resolve',

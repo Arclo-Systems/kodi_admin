@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
+  BellIcon,
   BookOpenIcon,
   BotIcon,
   CoinsIcon,
@@ -88,6 +89,12 @@ const NAV: NavGroup[] = [
       { href: '/audit-log', label: 'Audit log', icon: ScrollTextIcon, action: 'view:audit-log' },
       { href: '/health', label: 'Health', icon: HeartPulseIcon, action: 'view:health' },
       { href: '/jobs', label: 'Jobs', icon: LayersIcon, action: 'view:jobs' },
+      {
+        href: '/notifications',
+        label: 'Notificaciones',
+        icon: BellIcon,
+        action: 'view:notifications',
+      },
     ],
   },
 ];
