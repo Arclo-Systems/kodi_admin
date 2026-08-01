@@ -66,7 +66,13 @@ export function useModulesTree(country?: string) {
     queryFn: async (): Promise<TreeModule[]> => {
       const qs = country ? `?country=${country}` : '';
       const res = await fetch(`/api/admin/content/modules/tree${qs}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch tree failed');
+      // El mensaje del backend importa: el árbol es la única fuente del editor,
+      // así que si falla hay que poder decir por qué en vez de mostrar el
+      // formulario vacío o un "ya no existe" que sería mentira.
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        throw new Error(body.message ?? 'No se pudo cargar el árbol de contenido');
+      }
       return unwrapData<TreeModule[]>(await res.json()) ?? [];
     },
   });

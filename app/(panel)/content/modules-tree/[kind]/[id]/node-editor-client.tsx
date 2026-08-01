@@ -62,7 +62,7 @@ export function NodeEditorClient({
   canWriteModules: boolean;
 }) {
   const router = useRouter();
-  const { data: tree, isLoading } = useModulesTree();
+  const { data: tree, isLoading, isError, error, refetch } = useModulesTree();
 
   // El árbol es la única fuente de datos del panel: no hay GET de detalle por
   // nodo, así que el formulario no puede precargarse hasta que llegue.
@@ -71,6 +71,31 @@ export function NodeEditorClient({
       <div className="space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-96 w-full" />
+      </div>
+    );
+  }
+
+  // Sin esto, un fallo al traer el árbol caía en el formulario con `tree = []`:
+  // el de módulo quedaba en blanco y los de materia y tema decían "ya no existe",
+  // que para un error de red es mentira.
+  if (isError) {
+    return (
+      <div className="space-y-4">
+        <Button asChild variant="ghost" size="sm" className="-ml-2">
+          <Link href={TREE_PATH}>
+            <ArrowLeftIcon className="size-4" />
+            Volver al árbol
+          </Link>
+        </Button>
+        <Card className="max-w-lg space-y-3 p-6 text-center">
+          <p className="text-sm font-medium">No se pudo cargar el contenido</p>
+          <p className="text-muted-foreground text-sm">
+            {(error as Error)?.message ?? 'Intentá de nuevo en un momento.'}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => void refetch()}>
+            Reintentar
+          </Button>
+        </Card>
       </div>
     );
   }

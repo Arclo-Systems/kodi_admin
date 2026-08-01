@@ -35,11 +35,12 @@ export function SubjectForm({
   const isNew = view.kind === 'new-subject';
   const existing = view.kind === 'subject' ? findSubject(tree, view.id) : undefined;
 
-  // En admisión la ruleta se arma con TEMAS, así que la materia —que ahí es el
-  // examen— nunca aparece en un sector. Pedirle arte de ruleta sería pedir algo
-  // que no se usa. Derivado del modo, no un ajuste aparte.
-  const isAdmission =
-    tree.find((x) => x.id === view.moduleId)?.examMode === 'admission';
+  // El arte de ruleta se pide donde la ruleta lo usa, y eso lo decide de qué se
+  // arma el tablero — NO cómo se califica el módulo. Mirando `examMode` la PAA
+  // quedaba sin poder cargar el arte que su ruleta sí está usando: arma por
+  // materias aunque sea de admisión.
+  const usaMaterias =
+    tree.find((x) => x.id === view.moduleId)?.duelCategorySource === 'subjects';
 
   const form = useForm<SubjectValues>({
     defaultValues: {
@@ -65,9 +66,9 @@ export function SubjectForm({
   }, [existing?.id]);
 
   async function submit(v: SubjectValues): Promise<void> {
-    // En admisión el campo ni se muestra; mandarlo guardaría arte que la ruleta
-    // nunca va a usar.
-    const ruleta = isAdmission ? {} : { wheelAssetUrl: v.wheelAssetUrl };
+    // Si el tablero se arma con temas, el campo ni se muestra; mandarlo
+    // guardaría arte que la ruleta nunca va a usar.
+    const ruleta = usaMaterias ? { wheelAssetUrl: v.wheelAssetUrl } : {};
     try {
       if (view.kind === 'new-subject') {
         await m.createSubject.mutateAsync({
@@ -173,12 +174,7 @@ export function SubjectForm({
               />
             )}
           />
-          {isAdmission ? (
-            <p className="text-muted-foreground text-xs">
-              En admisión la ruleta de Partida Kodi se arma con los temas, así
-              que el arte de ruleta se carga ahí y no en el examen.
-            </p>
-          ) : (
+          {usaMaterias ? (
             <Controller
               name="wheelAssetUrl"
               control={form.control}
@@ -191,6 +187,11 @@ export function SubjectForm({
                 />
               )}
             />
+          ) : (
+            <p className="text-muted-foreground text-xs">
+              El tablero de Partida Kodi de este módulo se arma con temas, así
+              que el arte de ruleta se carga en el tema y no acá.
+            </p>
           )}
         </div>
       </div>

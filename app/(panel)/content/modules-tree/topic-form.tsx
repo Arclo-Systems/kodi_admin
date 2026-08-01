@@ -41,11 +41,12 @@ export function TopicForm({
   const isNew = view.kind === 'new-topic';
   const existing = view.kind === 'topic' ? findTopic(tree, view.id) : undefined;
 
-  // La identidad visual del tema solo aplica en ADMISIÓN: ahí la "materia" es
-  // el examen (PAA UCR, TEC) y lo que el estudiante percibe como materia es el
-  // tema. Se deriva del modo del módulo, no es un interruptor aparte.
+  // La identidad visual del tema se pide cuando la ruleta se arma con temas, no
+  // cuando el módulo es de admisión. Mirando `examMode` quedaba fuera PEN
+  // Secundaria, que arma por temas sin ser admisión: su ruleta usa el arte del
+  // tema y el panel no daba forma de cargarlo.
   const parentModule = findModuleOfSubject(tree, view.subjectId);
-  const isAdmissionModule = parentModule?.examMode === 'admission';
+  const usaTemas = parentModule?.duelCategorySource === 'topics';
 
   const form = useForm<TopicValues>({
     defaultValues: {
@@ -74,7 +75,7 @@ export function TopicForm({
     // la app nunca va a usar.
     // Vaciar el campo de color vuelve a `null`, que es como se le devuelve al
     // tema su falta de identidad propia.
-    const visuals = isAdmissionModule
+    const visuals = usaTemas
       ? { colorHex: v.colorHex || null, wheelAssetUrl: v.wheelAssetUrl }
       : {};
     try {
@@ -129,12 +130,12 @@ export function TopicForm({
           )}
         />
 
-        {isAdmissionModule && (
+        {usaTemas && (
           <div className="space-y-4 border-t pt-4">
             <p className="text-sm font-medium">Identidad visual</p>
             <p className="text-muted-foreground text-xs">
-              Este módulo es de admisión: acá la materia es el examen, así que el
-              arte va en el tema, que es lo que el estudiante percibe como materia.
+              El tablero de Partida Kodi de este módulo se arma con temas, así
+              que cada tema es un sector de la ruleta.
             </p>
             <Controller
               name="colorHex"

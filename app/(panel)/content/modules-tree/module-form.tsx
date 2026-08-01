@@ -413,12 +413,17 @@ export function ModuleForm({
                 render={({ field }) => (
                   <Field>
                     <FieldLabel>Máximo de sectores</FieldLabel>
+                    {/* Vaciar el campo daba `Number('') === 0` y el backend lo
+                        rechaza con 400: el `min` del HTML no corre al enviar. */}
                     <Input
                       type="number"
                       min={2}
                       max={12}
                       value={field.value}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
+                      onChange={(e) => {
+                        const n = Number(e.target.value);
+                        field.onChange(Number.isFinite(n) && n > 0 ? n : 2);
+                      }}
                     />
                     <p className="text-muted-foreground text-xs">
                       Si hay menos, se usan todas.
