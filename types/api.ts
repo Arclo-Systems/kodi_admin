@@ -2678,6 +2678,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/arena/rooms/especial/upcoming": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Próximas Arenas Especiales del módulo (descubrimiento)
+         * @description El list general solo trae arenas donde participás; este endpoint deja descubrir los eventos en espera para reservar. Uno por examen (Ola C).
+         */
+        get: operations["ArenaController_upcomingEspeciales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/arena/rooms/{id}": {
         parameters: {
             query?: never;
@@ -9790,6 +9810,22 @@ export interface components {
                 scheduled_at: string | null;
                 /** Format: uuid */
                 host_user_id: string | null;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        UpcomingEspecialesResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                exam_subject_id: string | null;
+                exam_name: string | null;
+                scheduled_at: string | null;
+                participant_count: number;
             }[];
             meta: {
                 page: number;
@@ -18903,6 +18939,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ArenaController_upcomingEspeciales: {
+        parameters: {
+            query: {
+                module_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UpcomingEspecialesResponse"];
+                };
             };
         };
     };
