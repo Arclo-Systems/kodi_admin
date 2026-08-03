@@ -33,14 +33,17 @@ import {
 } from '@/hooks/use-kokos-packs';
 import type { LucideIcon } from 'lucide-react';
 
-const FormSchema = z
+export const FormSchema = z
   .object({
     slug: z.string().regex(/^[a-z0-9-]+$/, 'Solo minúsculas, números y guiones'),
     name: z.string().min(1, 'Requerido').max(80),
     amount: z.number().int().positive(),
     storeProductId: z.string().min(1, 'Requerido').max(255),
     priceUsd: z.number().min(0),
-    offerUsd: z.number().min(0).optional(), // NaN/undefined = sin oferta
+    // NaN/undefined = sin oferta. `.or(z.nan())` obligatorio: zod 4 rechaza
+    // NaN en z.number() y el submit moría sin error visible (mismo bug que
+    // discountPercent en promo-offers, 2026-08-03).
+    offerUsd: z.number().min(0).or(z.nan()).optional(),
     offerStarts: z.string(), // '' = abierto
     offerEnds: z.string(),
     isActive: z.boolean(),

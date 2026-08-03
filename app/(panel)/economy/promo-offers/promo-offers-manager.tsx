@@ -38,13 +38,16 @@ import { OfferPricesEditor } from './offer-prices-editor';
 
 const NO_BADGE = 'NONE';
 
-const FormSchema = z
+export const FormSchema = z
   .object({
     slug: z.string().regex(/^[a-z0-9-]+$/, 'Solo minúsculas, números y guiones'),
     label: z.string().min(1, 'Requerido').max(80),
     country: z.string().min(1),
     priceMode: z.enum(['explicit', 'percent']),
-    discountPercent: z.number().int().min(1).max(99).optional(), // NaN/undefined = sin %
+    // NaN/undefined = sin %. El `.or(z.nan())` es obligatorio: zod 4 rechaza
+    // NaN en z.number(), y el error caía en un campo oculto en modo tabla —
+    // el Guardar moría en silencio (bug founder 2026-08-03).
+    discountPercent: z.number().int().min(1).max(99).or(z.nan()).optional(),
     currency: z.enum(OFFER_CURRENCIES),
     slotsTotal: z.number().int().min(0),
     startsAt: z.string(),
