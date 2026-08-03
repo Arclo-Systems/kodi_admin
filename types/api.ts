@@ -1406,6 +1406,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/user-exams/{examKey}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Fijar el examen activo del módulo (sub-módulos) */
+        patch: operations["UserExamsController_setActive"];
+        trace?: never;
+    };
     "/v1/store/items": {
         parameters: {
             query?: never;
@@ -7754,10 +7771,16 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 exam_type: string;
+                /** @enum {string} */
+                exam_mode: "simple" | "per_subject" | "admission";
                 short_name: string;
                 full_name: string;
                 color_hex: string;
                 icon_url: string | null;
+                exams: {
+                    exam_key: string;
+                    name: string;
+                }[];
             }[];
             meta: {
                 page: number;
@@ -7859,6 +7882,7 @@ export interface components {
                 account_status: string;
                 /** Format: uuid */
                 active_module_id: string | null;
+                active_exam_key: string | null;
                 daily_goal_target: number;
                 streak_days: number;
                 streak_last_date: string | null;
@@ -8635,6 +8659,7 @@ export interface components {
                 /** Format: uuid */
                 module_id: string;
                 exam_date: string | null;
+                is_active: boolean;
                 week_current: number | null;
                 week_total: number | null;
                 stages: {
@@ -8663,6 +8688,17 @@ export interface components {
             data: {
                 exam_key: string;
                 plan_queued: boolean;
+            };
+        };
+        ModuleIdBodyDto: {
+            /** Format: uuid */
+            module_id: string;
+        };
+        UserExamActiveResponse: {
+            data: {
+                exam_key: string;
+                /** @enum {boolean} */
+                is_active: true;
             };
         };
         StoreItemListResponse: {
@@ -9405,6 +9441,7 @@ export interface components {
                 status: "pending" | "completed" | "expired";
                 sent_at: string;
                 expires_at: string;
+                exam_name: string | null;
                 questions: {
                     /** Format: uuid */
                     id: string;
@@ -11046,6 +11083,7 @@ export interface components {
                 duelCategoryCap: number;
                 examDurationMin: number | null;
                 examQuestionCount: number | null;
+                surpriseQuestionCount: number;
                 updatedAt: string;
             }[];
         };
@@ -11072,6 +11110,7 @@ export interface components {
                 duelCategorySource: "subjects" | "topics";
                 examDurationMin: number | null;
                 examQuestionCount: number | null;
+                surpriseQuestionCount: number;
                 subjects: {
                     /** Format: uuid */
                     id: string;
@@ -11125,6 +11164,8 @@ export interface components {
             duelCategoryCap: number;
             examDurationMin?: number | null;
             examQuestionCount?: number | null;
+            /** @default 5 */
+            surpriseQuestionCount: number;
             /** @enum {string} */
             country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
         };
@@ -11151,6 +11192,7 @@ export interface components {
                 duelCategoryCap: number;
                 examDurationMin: number | null;
                 examQuestionCount: number | null;
+                surpriseQuestionCount: number;
                 updatedAt: string;
             };
         };
@@ -11174,6 +11216,7 @@ export interface components {
             duelCategoryCap?: number;
             examDurationMin?: number | null;
             examQuestionCount?: number | null;
+            surpriseQuestionCount?: number;
         };
         CreateSubjectDto: {
             /** Format: uuid */
@@ -17209,6 +17252,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    UserExamsController_setActive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModuleIdBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserExamActiveResponse"];
+                };
             };
         };
     };

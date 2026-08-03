@@ -60,6 +60,9 @@ type ModuleValues = {
   /** Vacío = sin definir (el backend recibe null). */
   examDurationMin: string;
   examQuestionCount: string;
+  /** Preguntas del examen sorpresa diario. String como sus hermanos numéricos:
+   *  input vacío = "no lo toques" (Number('') daría 0 y el backend exige ≥1). */
+  surpriseQuestionCount: string;
 };
 
 export function ModuleForm({
@@ -96,6 +99,7 @@ export function ModuleForm({
       duelCategoryCap: existing?.duelCategoryCap ?? 6,
       examDurationMin: existing?.examDurationMin?.toString() ?? '',
       examQuestionCount: existing?.examQuestionCount?.toString() ?? '',
+      surpriseQuestionCount: existing?.surpriseQuestionCount?.toString() ?? '5',
     },
   });
   // Los exámenes de admisión no se aprueban ni se reprueban, así que su nota
@@ -122,6 +126,7 @@ export function ModuleForm({
         duelCategoryCap: existing.duelCategoryCap,
         examDurationMin: existing.examDurationMin?.toString() ?? '',
         examQuestionCount: existing.examQuestionCount?.toString() ?? '',
+        surpriseQuestionCount: existing.surpriseQuestionCount.toString(),
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existing?.id]);
@@ -152,6 +157,10 @@ export function ModuleForm({
           examDurationMin: v.examDurationMin.trim() === '' ? null : Number(v.examDurationMin),
           examQuestionCount:
             v.examQuestionCount.trim() === '' ? null : Number(v.examQuestionCount),
+          surpriseQuestionCount:
+            v.surpriseQuestionCount.trim() === ''
+              ? undefined
+              : Number(v.surpriseQuestionCount),
         });
         toast.success('Módulo actualizado');
       }
@@ -372,6 +381,19 @@ export function ModuleForm({
                     <Input type="number" min={1} placeholder="Sin definir" {...field} />
                     <p className="text-muted-foreground text-xs">
                       Cuántas trae el examen real.
+                    </p>
+                  </Field>
+                )}
+              />
+              <Controller
+                name="surpriseQuestionCount"
+                control={form.control}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Examen sorpresa</FieldLabel>
+                    <Input type="number" min={1} max={50} placeholder="5" {...field} />
+                    <p className="text-muted-foreground text-xs">
+                      Preguntas del examen sorpresa diario.
                     </p>
                   </Field>
                 )}

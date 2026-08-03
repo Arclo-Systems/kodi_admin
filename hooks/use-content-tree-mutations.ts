@@ -49,6 +49,8 @@ export type UpdateModuleInput = ModuleVisuals & {
   /** Simulacro: duración y cantidad de preguntas. null = sin definir. */
   examDurationMin?: number | null;
   examQuestionCount?: number | null;
+  /** Preguntas del examen sorpresa diario (1-50). */
+  surpriseQuestionCount?: number;
 };
 /** Dos artes por nodo: la ilustración de práctica y el sector de la ruleta. */
 type NodeAssets = {

@@ -57,6 +57,8 @@ export type TreeModule = {
   duelCategoryCap: number;
   examDurationMin: number | null;
   examQuestionCount: number | null;
+  /** Preguntas del examen sorpresa diario (Ola A). */
+  surpriseQuestionCount: number;
   subjects: TreeSubject[];
 };
 

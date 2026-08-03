@@ -23,6 +23,7 @@ const tree: TreeModule[] = [
     duelCategoryCap: 6,
     examDurationMin: null,
     examQuestionCount: null,
+    surpriseQuestionCount: 5,
     subjects: [
       {
         id: 's1',
