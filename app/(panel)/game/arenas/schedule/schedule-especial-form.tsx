@@ -37,6 +37,8 @@ type Bracket = {
 type FormValues = {
   country: string;
   moduleId: string;
+  /** Examen del evento (founder #11): obligatorio en módulos de admisión. */
+  examSubjectId: string;
   scheduledAt: string;
   prizes: Bracket[];
 };
@@ -59,8 +61,10 @@ function toSnake(b: Bracket): PrizeBracketInput {
   };
 }
 
-function validate(v: FormValues): string | null {
+function validate(v: FormValues, isAdmission: boolean): string | null {
   if (!v.moduleId) return 'Elegí un módulo';
+  if (isAdmission && !v.examSubjectId)
+    return 'Los módulos de admisión programan sus eventos por examen: elegí uno';
   if (!v.scheduledAt || new Date(v.scheduledAt) <= new Date())
     return 'La fecha/hora debe ser futura';
   if (v.prizes.length === 0) return 'Agregá al menos un tramo de premio';
@@ -81,6 +85,7 @@ export function ScheduleEspecialForm() {
     defaultValues: {
       country: COUNTRIES[0]?.code ?? 'CR',
       moduleId: '',
+      examSubjectId: '',
       scheduledAt: '',
       prizes: [FIRST_BRACKET],
     },
@@ -88,13 +93,20 @@ export function ScheduleEspecialForm() {
   const country = useWatch({ control: form.control, name: 'country' });
   const { data: tree } = useModulesTree(country);
   const modules = tree ?? [];
+
+  // Sub-módulos (Ola C, founder #11): en admisión el evento se programa POR
+  // examen — en admisión la materia ES el examen.
+  const moduleId = useWatch({ control: form.control, name: 'moduleId' });
+  const selectedModule = modules.find((m) => m.id === moduleId);
+  const isAdmission = selectedModule?.examMode === 'admission';
+  const examOptions = isAdmission ? (selectedModule?.subjects ?? []) : [];
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'prizes',
   });
 
   async function submit(v: FormValues): Promise<void> {
-    const error = validate(v);
+    const error = validate(v, isAdmission);
     if (error) {
       toast.error(error);
       return;
@@ -102,6 +114,7 @@ export function ScheduleEspecialForm() {
     try {
       await schedule.mutateAsync({
         module_id: v.moduleId,
+        exam_subject_id: isAdmission ? v.examSubjectId : null,
         scheduled_at: new Date(v.scheduledAt).toISOString(),
         prizes: v.prizes.map(toSnake),
       });
@@ -179,7 +192,14 @@ export function ScheduleEspecialForm() {
                 render={({ field }) => (
                   <Field>
                     <FieldLabel>Módulo</FieldLabel>
-                    <Select value={field.value} onValueChange={field.onChange}>
+                    <Select
+                      value={field.value}
+                      onValueChange={(val) => {
+                        field.onChange(val);
+                        // Cambiar de módulo invalida el examen elegido.
+                        form.setValue('examSubjectId', '');
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Elegí un módulo" />
                       </SelectTrigger>
@@ -195,6 +215,34 @@ export function ScheduleEspecialForm() {
                 )}
               />
             </div>
+            {isAdmission ? (
+              <Controller
+                name="examSubjectId"
+                control={form.control}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Examen</FieldLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Elegí el examen del evento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {examOptions.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      El evento sirve preguntas SOLO de este examen y solo se
+                      inscriben quienes lo declararon. Un evento «de la PAA» ya
+                      no existe: hay uno de UCR y uno de TEC.
+                    </FieldDescription>
+                  </Field>
+                )}
+              />
+            ) : null}
             <Controller
               name="scheduledAt"
               control={form.control}

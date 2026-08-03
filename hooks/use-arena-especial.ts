@@ -17,6 +17,8 @@ export type PrizeBracketInput = {
 
 export type ScheduleEspecialInput = {
   module_id: string;
+  /** Examen del evento (Ola C, founder #11) — obligatorio en admisión. */
+  exam_subject_id: string | null;
   scheduled_at: string;
   prizes: PrizeBracketInput[];
 };

@@ -9491,6 +9491,8 @@ export interface components {
                 id: string;
                 /** Format: uuid */
                 module_id: string;
+                /** Format: uuid */
+                exam_subject_id: string | null;
                 /** @enum {string} */
                 mode: "vs_friend" | "vs_random";
                 /** @enum {string} */
@@ -9515,6 +9517,8 @@ export interface components {
                 id: string;
                 /** Format: uuid */
                 module_id: string;
+                /** Format: uuid */
+                exam_subject_id: string | null;
                 /** @enum {string} */
                 mode: "vs_friend" | "vs_random";
                 /** @enum {string} */
@@ -9531,6 +9535,7 @@ export interface components {
                 player2_perfects: number;
                 turn_started_at: string | null;
                 started_at: string;
+                exam_name: string | null;
                 module_name: string;
                 my_crowns: number;
                 opponent_crowns: number;
@@ -9554,6 +9559,8 @@ export interface components {
                 id: string;
                 /** Format: uuid */
                 module_id: string;
+                /** Format: uuid */
+                exam_subject_id: string | null;
                 /** @enum {string} */
                 mode: "vs_friend" | "vs_random";
                 /** @enum {string} */
@@ -9570,6 +9577,7 @@ export interface components {
                 player2_perfects: number;
                 turn_started_at: string | null;
                 started_at: string;
+                exam_name: string | null;
                 subjects: {
                     /** Format: uuid */
                     subject_id: string;
@@ -9754,6 +9762,10 @@ export interface components {
                 participant_count: number;
             };
         };
+        JoinEspecialDto: {
+            /** Format: uuid */
+            arena_id: string;
+        };
         ArenaEspecialJoinedResponse: {
             data: {
                 /** Format: uuid */
@@ -9772,6 +9784,8 @@ export interface components {
                 status: "waiting" | "active" | "finished" | "annulled";
                 /** Format: uuid */
                 module_id: string;
+                /** Format: uuid */
+                exam_subject_id: string | null;
                 participant_count: number;
                 scheduled_at: string | null;
                 /** Format: uuid */
@@ -9793,10 +9807,13 @@ export interface components {
                 status: "waiting" | "active" | "finished" | "annulled";
                 /** Format: uuid */
                 module_id: string;
+                /** Format: uuid */
+                exam_subject_id: string | null;
                 participant_count: number;
                 scheduled_at: string | null;
                 /** Format: uuid */
                 host_user_id: string | null;
+                exam_name: string | null;
                 module_name: string;
                 prizes: {
                     min_rank: number;
@@ -15193,6 +15210,8 @@ export interface components {
         ScheduleEspecialDto: {
             /** Format: uuid */
             module_id: string;
+            /** Format: uuid */
+            exam_subject_id?: string | null;
             /** Format: date-time */
             scheduled_at: string;
             prizes: {
@@ -18866,7 +18885,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["QuickArenaDto"];
+                "application/json": components["schemas"]["JoinEspecialDto"];
             };
         };
         responses: {
