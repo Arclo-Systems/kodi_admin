@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -23,6 +24,10 @@ import {
   type University,
   type UniversityInput,
 } from '@/hooks/use-universities';
+import { useModulesTree } from '@/hooks/use-modules-tree';
+
+// Radix Select no admite value vacío — sentinel del repo para "sin asignar".
+const NO_EXAM = 'NONE';
 
 type FormValues = {
   country: string;
@@ -32,6 +37,7 @@ type FormValues = {
   presentationWeight: string;
   scaleMin: string;
   scaleMax: string;
+  examSubjectId: string;
   isActive: boolean;
 };
 
@@ -44,6 +50,7 @@ function toValues(u: University): FormValues {
     presentationWeight: u.presentationWeight,
     scaleMin: String(u.scaleMin),
     scaleMax: String(u.scaleMax),
+    examSubjectId: u.examSubjectId ?? NO_EXAM,
     isActive: u.isActive,
   };
 }
@@ -57,6 +64,7 @@ function toInput(v: FormValues): UniversityInput {
     presentationWeight: Number(v.presentationWeight),
     scaleMin: Number(v.scaleMin),
     scaleMax: Number(v.scaleMax),
+    examSubjectId: v.examSubjectId === NO_EXAM ? null : v.examSubjectId,
     isActive: v.isActive,
   };
 }
@@ -92,9 +100,38 @@ function UniversityFormInner({
         presentationWeight: '',
         scaleMin: '',
         scaleMax: '',
+        examSubjectId: NO_EXAM,
         isActive: true,
       },
   });
+
+  // Opciones del examen: materias de módulos de ADMISIÓN del país elegido —
+  // en admisión la materia ES el examen (Ola B, founder #13). El tree por país
+  // garantiza que nunca se ofrezcan exámenes ajenos al país del form.
+  const country = form.watch('country');
+  const treeQ = useModulesTree(country);
+  const examOptions = (treeQ.data ?? [])
+    .filter((m) => m.examMode === 'admission' && m.country === country)
+    .flatMap((m) =>
+      m.subjects.map((s) => ({
+        id: s.id,
+        label: `${m.shortName} · ${s.name}`,
+      })),
+    );
+
+  // Cambiar de país invalida el examen elegido: sin esto quedaba un id stale
+  // que el Select ya no muestra pero el submit sí envía (422 al final).
+  const selectedExam = form.watch('examSubjectId');
+  useEffect(() => {
+    if (
+      selectedExam !== NO_EXAM &&
+      !treeQ.isLoading &&
+      !examOptions.some((o) => o.id === selectedExam)
+    ) {
+      form.setValue('examSubjectId', NO_EXAM);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [country, treeQ.isLoading]);
 
   async function submit(v: FormValues): Promise<void> {
     const code = v.code.trim().toUpperCase();
@@ -228,6 +265,33 @@ function UniversityFormInner({
               {text('scaleMin', 'Escala mínima', 'Entero, ej. 200.')}
               {text('scaleMax', 'Escala máxima', 'Entero mayor que la mínima, ej. 800.')}
             </div>
+            <Controller
+              name="examSubjectId"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel>Examen que usa</FieldLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NO_EXAM}>Sin asignar</SelectItem>
+                      {examOptions.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>
+                    La proyección de nota de esta universidad se calcula con el
+                    desempeño de ESTE examen. Sin asignar = estimado global del
+                    módulo (mezcla exámenes).
+                  </FieldDescription>
+                </Field>
+              )}
+            />
           </fieldset>
 
           <Controller

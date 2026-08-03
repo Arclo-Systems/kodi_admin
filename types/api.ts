@@ -11865,6 +11865,8 @@ export interface components {
                     presentationWeight: string;
                     scaleMin: number;
                     scaleMax: number;
+                    /** Format: uuid */
+                    examSubjectId: string | null;
                     isActive: boolean;
                     /** Format: uuid */
                     createdBy: string | null;
@@ -11888,6 +11890,8 @@ export interface components {
                 presentationWeight: string;
                 scaleMin: number;
                 scaleMax: number;
+                /** Format: uuid */
+                examSubjectId: string | null;
                 isActive: boolean;
                 /** Format: uuid */
                 createdBy: string | null;
@@ -11905,6 +11909,8 @@ export interface components {
             presentationWeight: number;
             scaleMin: number;
             scaleMax: number;
+            /** Format: uuid */
+            examSubjectId?: string | null;
             /** @default true */
             isActive: boolean;
         };
@@ -11914,6 +11920,8 @@ export interface components {
             presentationWeight?: number;
             scaleMin?: number;
             scaleMax?: number;
+            /** Format: uuid */
+            examSubjectId?: string | null;
             isActive?: boolean;
         };
         ModerationReportListResponse: {

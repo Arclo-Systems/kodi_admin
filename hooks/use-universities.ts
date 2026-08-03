@@ -13,6 +13,8 @@ export type University = {
   presentationWeight: string;
   scaleMin: number;
   scaleMax: number;
+  /** Examen (materia de admisión) que la universidad usa; null = sin asignar. */
+  examSubjectId: string | null;
   isActive: boolean;
   updatedAt: string;
 };
@@ -25,6 +27,7 @@ export type UniversityInput = {
   presentationWeight: number;
   scaleMin: number;
   scaleMax: number;
+  examSubjectId: string | null;
   isActive: boolean;
 };
 
