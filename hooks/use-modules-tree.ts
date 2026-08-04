@@ -2,6 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import type { QuestionStatus } from '@/hooks/use-questions';
+
+/** Desglose del nodo por estado de pregunta. Suma exactamente `questionCount`. */
+export type TreeQuestionCounts = Record<QuestionStatus, number>;
 
 export type TreeTopic = {
   id: string;
@@ -9,6 +13,7 @@ export type TreeTopic = {
   order: number;
   examWeight: number | null;
   questionCount: number;
+  questionCounts: TreeQuestionCounts;
   /**
    * Identidad visual del tema. Solo se carga en módulos de ADMISIÓN: ahí la
    * "materia" es el examen (PAA UCR, TEC) y lo que el estudiante percibe como
@@ -25,6 +30,7 @@ export type TreeSubject = {
   name: string;
   order: number;
   questionCount: number;
+  questionCounts: TreeQuestionCounts;
   colorHex: string;
   /** Ilustración de práctica. */
   assetUrl: string | null;
@@ -39,6 +45,7 @@ export type TreeModule = {
   fullName: string;
   isActive: boolean;
   questionCount: number;
+  questionCounts: TreeQuestionCounts;
   examType: string;
   examMode: 'simple' | 'per_subject' | 'admission';
   colorHex: string;

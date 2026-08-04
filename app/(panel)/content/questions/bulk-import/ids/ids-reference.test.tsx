@@ -2,6 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TreeModule } from '@/hooks/use-modules-tree';
 
+const sinPreguntas = { draft: 0, review: 0, active: 0, inactive: 0 };
+
 const tree: TreeModule[] = [
   {
     id: 'm1',
@@ -10,6 +12,7 @@ const tree: TreeModule[] = [
     fullName: 'Prueba',
     isActive: true,
     questionCount: 0,
+    questionCounts: sinPreguntas,
     examType: 'paa',
     examMode: 'admission' as const,
     colorHex: '#F47C6B',
@@ -30,6 +33,7 @@ const tree: TreeModule[] = [
         name: 'Matemática',
         order: 1,
         questionCount: 0,
+        questionCounts: sinPreguntas,
         colorHex: '#408D99',
         assetUrl: null,
         wheelAssetUrl: null,
@@ -40,6 +44,7 @@ const tree: TreeModule[] = [
             order: 1,
             examWeight: null,
             questionCount: 0,
+            questionCounts: sinPreguntas,
             colorHex: null,
             wheelAssetUrl: null,
           },

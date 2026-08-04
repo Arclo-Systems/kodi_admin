@@ -103,6 +103,9 @@ export function useQuestionAction() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['questions'] });
       qc.invalidateQueries({ queryKey: ['question'] });
+      // El árbol de contenido muestra el desglose por estado: si no se invalida,
+      // aprobar una pregunta deja el badge mostrando el estado anterior.
+      qc.invalidateQueries({ queryKey: ['modules-tree'] });
     },
   });
 }

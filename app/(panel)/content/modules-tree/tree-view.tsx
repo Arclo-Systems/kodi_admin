@@ -26,7 +26,9 @@ import { CSS } from '@dnd-kit/utilities';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import type { TreeModule } from '@/hooks/use-modules-tree';
+import { StatusBadge } from '@/lib/status-badge';
+import { QUESTION_STATUS_META, QUESTION_STATUS_ORDER } from '@/lib/question-status';
+import type { TreeModule, TreeQuestionCounts } from '@/hooks/use-modules-tree';
 
 export type Selected =
   | { type: 'module'; id: string }
@@ -95,6 +97,26 @@ function DragHandle(props: React.HTMLAttributes<HTMLButtonElement>) {
   );
 }
 
+// Desglose del total por estado, al lado del badge de total. Solo los estados
+// con preguntas: el nodo típico tiene uno o dos, y mostrar los cuatro siempre
+// llenaría la fila de ceros que no dicen nada. El número es el badge; el estado
+// se nombra en el tooltip para no triplicar el ancho de cada fila.
+function StatusCountBadges({ counts }: { counts: TreeQuestionCounts }) {
+  return (
+    <>
+      {QUESTION_STATUS_ORDER.filter((status) => counts[status] > 0).map((status) => {
+        const meta = QUESTION_STATUS_META[status];
+        const description = `${counts[status]} ${meta.label}`;
+        return (
+          <span key={status} role="img" aria-label={description} title={description}>
+            <StatusBadge tone={meta.tone} icon={meta.icon} label={String(counts[status])} />
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
 const rowBtn = (active: boolean) =>
   `flex-1 truncate rounded px-2 py-1 text-left text-sm hover:bg-muted/60 ${active ? 'bg-muted font-medium' : ''}`;
 
@@ -145,6 +167,7 @@ export function TreeView({
               </Badge>
             )}
             <Badge variant="secondary">{m.questionCount}</Badge>
+            <StatusCountBadges counts={m.questionCounts} />
             {canWriteModules && (
               <Button variant="ghost" size="icon" aria-label="Nueva materia" onClick={() => onNewSubject(m.id)}>
                 <PlusIcon className="size-4" />
@@ -174,6 +197,7 @@ export function TreeView({
                           {s.name}
                         </button>
                         <Badge variant="secondary">{s.questionCount}</Badge>
+                        <StatusCountBadges counts={s.questionCounts} />
                         <Button
                           variant="ghost"
                           size="icon"
@@ -202,6 +226,7 @@ export function TreeView({
                                     {t.name}
                                   </button>
                                   <Badge variant="secondary">{t.questionCount}</Badge>
+                                  <StatusCountBadges counts={t.questionCounts} />
                                 </div>
                               )}
                             </SortableRow>

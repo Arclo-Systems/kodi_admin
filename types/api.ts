@@ -11221,6 +11221,12 @@ export interface components {
                 fullName: string;
                 isActive: boolean;
                 questionCount: number;
+                questionCounts: {
+                    draft: number;
+                    review: number;
+                    active: number;
+                    inactive: number;
+                };
                 examType: string;
                 /** @enum {string} */
                 examMode: "simple" | "per_subject" | "admission";
@@ -11242,6 +11248,12 @@ export interface components {
                     name: string;
                     order: number;
                     questionCount: number;
+                    questionCounts: {
+                        draft: number;
+                        review: number;
+                        active: number;
+                        inactive: number;
+                    };
                     colorHex: string;
                     assetUrl: string | null;
                     wheelAssetUrl: string | null;
@@ -11252,6 +11264,12 @@ export interface components {
                         order: number;
                         examWeight: string | null;
                         questionCount: number;
+                        questionCounts: {
+                            draft: number;
+                            review: number;
+                            active: number;
+                            inactive: number;
+                        };
                         colorHex: string | null;
                         wheelAssetUrl: string | null;
                     }[];

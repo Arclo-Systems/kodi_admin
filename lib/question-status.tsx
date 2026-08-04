@@ -9,7 +9,9 @@ import { StatusBadge, type StatusTone } from '@/lib/status-badge';
 import type { Difficulty, QuestionStatus } from '@/hooks/use-questions';
 
 // Faro de estados de pregunta. Solo datos; la presentación la define StatusBadge.
-const QUESTION_STATUS_META: Record<
+// Se exporta para las vistas que muestran el estado sin ser un badge suelto
+// (el desglose del árbol de contenido) — el mapa no se duplica en ningún lado.
+export const QUESTION_STATUS_META: Record<
   QuestionStatus,
   { label: string; icon: LucideIcon; tone: StatusTone }
 > = {
@@ -18,6 +20,14 @@ const QUESTION_STATUS_META: Record<
   active: { label: 'Activa', icon: CircleCheckIcon, tone: 'success' },
   inactive: { label: 'Inactiva', icon: BanIcon, tone: 'destructive' },
 };
+
+/** Ciclo de vida de la pregunta: el orden en que se listan los estados. */
+export const QUESTION_STATUS_ORDER = [
+  'draft',
+  'review',
+  'active',
+  'inactive',
+] as const satisfies readonly QuestionStatus[];
 
 export function QuestionStatusBadge({ status }: { status: QuestionStatus }) {
   const m = QUESTION_STATUS_META[status];

@@ -21,7 +21,12 @@ export type QuestionBulkStatus = 'active' | 'inactive' | 'review' | 'draft';
 
 export function useQuestionsBulk() {
   const qc = useQueryClient();
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['questions'] });
+  // También el árbol: muestra el desglose por estado de cada nodo, así que un
+  // cambio masivo lo desactualiza igual que a la lista de preguntas.
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['questions'] });
+    qc.invalidateQueries({ queryKey: ['modules-tree'] });
+  };
   return {
     setStatus: useMutation({
       mutationFn: (input: { ids: string[]; status: QuestionBulkStatus }) =>
