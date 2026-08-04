@@ -5342,6 +5342,38 @@ export interface paths {
         patch: operations["TxTemplatesAdminController_update"];
         trace?: never;
     };
+    "/v1/admin/messaging/transactional-templates/{key}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["TxTemplatesAdminController_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/messaging/social-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["SocialLinksAdminController_get"];
+        put: operations["SocialLinksAdminController_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bots/templates": {
         parameters: {
             query?: never;
@@ -12520,6 +12552,26 @@ export interface components {
                 /** Format: uuid */
                 updatedBy: string;
             };
+        };
+        TxTemplatePreviewResponse: {
+            data: {
+                html: string;
+            };
+        };
+        EmailSocialLinksResponse: {
+            data: {
+                instagramUrl: string | null;
+                xUrl: string | null;
+                facebookUrl: string | null;
+                assets: {
+                    koko: string;
+                };
+            };
+        };
+        UpdateSocialLinksDto: {
+            instagramUrl?: ("" | string) | null;
+            xUrl?: ("" | string) | null;
+            facebookUrl?: ("" | string) | null;
         };
         BotTemplateListResponse: {
             data: {
@@ -23271,6 +23323,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TxTemplateResponse"];
+                };
+            };
+        };
+    };
+    TxTemplatesAdminController_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTxTemplateDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TxTemplatePreviewResponse"];
+                };
+            };
+        };
+    };
+    SocialLinksAdminController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailSocialLinksResponse"];
+                };
+            };
+        };
+    };
+    SocialLinksAdminController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSocialLinksDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailSocialLinksResponse"];
                 };
             };
         };

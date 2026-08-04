@@ -34,6 +34,31 @@ export function useTxTemplates() {
   });
 }
 
+// Previsualización del borrador: el backend devuelve el HTML REAL del email sin
+// persistir nada. No es useQuery porque se dispara con debounce al tipear y se
+// cancela con AbortSignal — el ciclo de vida lo maneja el componente.
+export async function fetchTxTemplatePreview(
+  key: string,
+  input: TxTemplateInput,
+  signal: AbortSignal,
+): Promise<string> {
+  const res = await fetch(`/api/admin/messaging/transactional-templates/${key}/preview`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(input),
+    signal,
+  });
+  // El backend envuelve el error en { error: { code, message } }; el mensaje literal
+  // (p. ej. UNKNOWN_TEMPLATE_VAR) es justo lo que hay que mostrarle al admin.
+  const body = (await res.json().catch(() => ({}))) as {
+    data?: { html?: string };
+    error?: { message?: string };
+  };
+  if (!res.ok) throw new Error(body.error?.message ?? 'No se pudo generar la vista previa.');
+  return body.data?.html ?? '';
+}
+
 export function useUpdateTxTemplate() {
   const qc = useQueryClient();
   return useMutation({
