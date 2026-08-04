@@ -45,7 +45,12 @@ import {
   type CouponBranchAssignment,
 } from '@/hooks/use-coupons';
 
-type FormValues = {
+// Largo del sufijo del código: el backend exige 8–12 (create-coupon.dto). Un
+// default menor hacía fallar con 400 cualquier cupón creado sin tocar el campo.
+const CODE_SUFFIX_MIN = 8;
+const CODE_SUFFIX_MAX = 12;
+
+export type FormValues = {
   sponsorId: string;
   country: string;
   moduleId: string;
@@ -64,7 +69,7 @@ type FormValues = {
   validDaysAfterRedeem: number;
 };
 
-function toValues(d: CouponDetail): FormValues {
+export function toValues(d: CouponDetail): FormValues {
   return {
     sponsorId: d.sponsorId,
     country: d.country,
@@ -85,7 +90,7 @@ function toValues(d: CouponDetail): FormValues {
   };
 }
 
-function toInput(v: FormValues, conditions: string[]): CouponInput {
+export function toInput(v: FormValues, conditions: string[]): CouponInput {
   return {
     sponsorId: v.sponsorId,
     title: v.title.trim(),
@@ -153,7 +158,7 @@ function CouponFormInner({
       limitPerUser: 1,
       validUntil: '',
       codePrefix: '',
-      codeSuffixLen: 6,
+      codeSuffixLen: CODE_SUFFIX_MIN,
       category: 'academico',
       validDaysAfterRedeem: 30,
     },
@@ -568,17 +573,24 @@ function CouponFormInner({
               <Controller
                 name="codeSuffixLen"
                 control={form.control}
-                rules={{ min: { value: 4, message: '4–12' }, max: { value: 12, message: '4–12' } }}
+                rules={{
+                  min: { value: CODE_SUFFIX_MIN, message: '8–12' },
+                  max: { value: CODE_SUFFIX_MAX, message: '8–12' },
+                }}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="c-suffix">Largo del sufijo</FieldLabel>
                     <Input
                       id="c-suffix"
                       type="number"
-                      min={4}
-                      max={12}
+                      min={CODE_SUFFIX_MIN}
+                      max={CODE_SUFFIX_MAX}
                       value={field.value}
-                      onChange={(e) => field.onChange(e.target.value === '' ? 6 : Number(e.target.value))}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === '' ? CODE_SUFFIX_MIN : Number(e.target.value),
+                        )
+                      }
                       aria-invalid={fieldState.invalid}
                     />
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}

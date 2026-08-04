@@ -45,23 +45,42 @@ export function SponsorPosCredentialTab({
   const [generateOpen, setGenerateOpen] = useState(false);
   const [rotateOpen, setRotateOpen] = useState(false);
   const [secret, setSecret] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const rotatedAt = sponsor?.merchantSecretRotatedAt ?? null;
 
-  async function issueCredential(twoFaToken: string): Promise<void> {
+  async function issueCredential(twoFaToken: string | undefined): Promise<void> {
+    if (!twoFaToken) {
+      // El diálogo siempre debería traer el código; sin él el backend responde 401
+      // y el error se leería como "la credencial falló", no como "faltó el 2FA".
+      const msg = 'Falta el código 2FA: pedilo y volvé a confirmar.';
+      toast.error(msg);
+      throw new Error(msg);
+    }
     const wasEnabled = rotatedAt !== null;
     const credential = await rotate.mutateAsync(twoFaToken);
     setSecret(credential.secret);
     toast.success(wasEnabled ? 'Credencial rotada' : 'Credencial generada');
   }
 
-  async function copySecret(): Promise<void> {
-    if (!secret) return;
-    await navigator.clipboard.writeText(secret);
-    setCopied(true);
-    toast.success('Credencial copiada');
-    setTimeout(() => setCopied(false), 2000);
+  async function copyValue(key: string, text: string, message: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      toast.success(message);
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch {
+      // Sin permiso de portapapeles (o contexto no seguro): el texto queda seleccionable.
+      toast.error('No se pudo copiar. Seleccioná el texto y copialo a mano.');
+    }
+  }
+
+  // El secreto en claro solo existe en la respuesta de la rotación: al cerrar hay
+  // que borrarlo del estado Y de la MutationCache (vive ahí hasta el gcTime).
+  function closeSecret(): void {
+    setSecret(null);
+    setCopiedKey(null);
+    rotate.reset();
   }
 
   return (
@@ -72,8 +91,8 @@ export function SponsorPosCredentialTab({
           Credencial del POS
         </CardTitle>
         <CardDescription>
-          La caja del comercio la envía junto con su ID para consultar y cobrar cupones. Solo sirve
-          para los cupones de este sponsor.
+          La caja del comercio manda el ID y el secreto en cada llamada para consultar y cobrar
+          cupones. Solo sirven para los cupones de este sponsor.
         </CardDescription>
       </CardHeader>
 
@@ -89,35 +108,43 @@ export function SponsorPosCredentialTab({
               No se pudo leer el estado de la credencial. Recargá la página.
             </AlertDescription>
           </Alert>
-        ) : rotatedAt ? (
-          <>
-            <div className="flex flex-wrap items-center gap-3">
-              <StatusBadge tone="success" icon={CircleCheckIcon} label="POS habilitado" />
-              <span className="text-muted-foreground text-sm">
-                Generada o rotada el {fmtDateTime(rotatedAt)}
-              </span>
-            </div>
-            {canWrite && (
-              <Button variant="outline" size="sm" onClick={() => setRotateOpen(true)}>
-                <RefreshCwIcon className="size-4" />
-                Rotar credencial
-              </Button>
-            )}
-          </>
         ) : (
           <>
-            <div className="flex flex-wrap items-center gap-3">
-              <StatusBadge tone="muted" icon={CircleOffIcon} label="Sin credencial" />
-              <span className="text-muted-foreground text-sm">
-                Este comercio todavía no puede cobrar cupones en caja.
-              </span>
-            </div>
-            {canWrite && (
-              <Button size="sm" onClick={() => setGenerateOpen(true)}>
-                <KeyRoundIcon className="size-4" />
-                Generar credencial
-              </Button>
+            {rotatedAt ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <StatusBadge tone="success" icon={CircleCheckIcon} label="POS habilitado" />
+                <span className="text-muted-foreground text-sm">
+                  Generada o rotada el {fmtDateTime(rotatedAt)}
+                </span>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <StatusBadge tone="muted" icon={CircleOffIcon} label="Sin credencial" />
+                <span className="text-muted-foreground text-sm">
+                  Este comercio todavía no puede cobrar cupones en caja.
+                </span>
+              </div>
             )}
+
+            <CopyRow
+              label="ID de comercio"
+              value={sponsor.id}
+              copied={copiedKey === 'merchantId'}
+              onCopy={() => void copyValue('merchantId', sponsor.id, 'ID de comercio copiado')}
+            />
+
+            {canWrite &&
+              (rotatedAt ? (
+                <Button variant="outline" size="sm" onClick={() => setRotateOpen(true)}>
+                  <RefreshCwIcon className="size-4" />
+                  Rotar credencial
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => setGenerateOpen(true)}>
+                  <KeyRoundIcon className="size-4" />
+                  Generar credencial
+                </Button>
+              ))}
           </>
         )}
       </CardContent>
@@ -142,52 +169,105 @@ export function SponsorPosCredentialTab({
           action: TWO_FA_ACTION,
           requestEndpoint: `/v1/admin/economy/sponsors/${sponsorId}/request-2fa`,
         }}
-        onConfirm={async ({ twoFaToken }) => {
-          await issueCredential(twoFaToken ?? '');
-        }}
+        onConfirm={({ twoFaToken }) => issueCredential(twoFaToken)}
       />
 
       <SecretDialog
+        merchantId={sponsorId}
         secret={secret}
-        copied={copied}
-        onCopy={copySecret}
-        onClose={() => setSecret(null)}
+        copiedKey={copiedKey}
+        onCopy={copyValue}
+        onClose={closeSecret}
       />
     </Card>
   );
 }
 
-// El secreto en claro solo existe en esta respuesta: si se cierra sin copiarlo,
-// la única salida es rotar de nuevo.
-function SecretDialog({
-  secret,
+function CopyRow({
+  label,
+  value,
   copied,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="text-muted-foreground text-xs font-medium">{label}</p>
+      <div className="bg-muted flex items-center gap-2 rounded-md border p-3">
+        <code className="min-w-0 flex-1 font-mono text-sm break-all">{value}</code>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="shrink-0"
+          onClick={onCopy}
+          aria-label={`Copiar ${label}`}
+        >
+          {copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// El secreto en claro solo existe en esta respuesta: si se cierra sin copiarlo,
+// la única salida es rotar de nuevo. Por eso el diálogo NO se descarta con Esc
+// ni clic afuera — solo con el botón explícito.
+export function SecretDialog({
+  merchantId,
+  secret,
+  copiedKey,
   onCopy,
   onClose,
 }: {
+  merchantId: string;
   secret: string | null;
-  copied: boolean;
-  onCopy: () => void;
+  copiedKey: string | null;
+  onCopy: (key: string, text: string, message: string) => void;
   onClose: () => void;
 }) {
+  const pair = `X-Merchant-Id: ${merchantId}\nX-Merchant-Secret: ${secret}`;
+
   return (
     <Dialog open={!!secret} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent>
+      <DialogContent
+        showCloseButton={false}
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Credencial del POS</DialogTitle>
           <DialogDescription>
-            Copiala y pasala al comercio por un canal seguro. <strong>No la vas a volver a ver</strong> —
-            si se pierde, hay que rotar.
+            Pasale al comercio estos dos datos por un canal seguro: los manda como headers en cada
+            llamada. <strong>El secreto no lo vas a volver a ver</strong> — si se pierde, hay que
+            rotar.
           </DialogDescription>
         </DialogHeader>
-        <div className="bg-muted flex items-center gap-2 rounded-md border p-3">
-          <code className="flex-1 font-mono text-sm break-all">{secret}</code>
-          <Button size="icon" variant="ghost" onClick={onCopy} aria-label="Copiar credencial">
-            {copied ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
-          </Button>
+
+        <div className="space-y-3">
+          <CopyRow
+            label="X-Merchant-Id"
+            value={merchantId}
+            copied={copiedKey === 'dialogId'}
+            onCopy={() => onCopy('dialogId', merchantId, 'ID de comercio copiado')}
+          />
+          <CopyRow
+            label="X-Merchant-Secret"
+            value={secret ?? ''}
+            copied={copiedKey === 'dialogSecret'}
+            onCopy={() => onCopy('dialogSecret', secret ?? '', 'Secreto copiado')}
+          />
         </div>
-        <DialogFooter>
-          <Button onClick={onClose}>Cerrar</Button>
+
+        <DialogFooter className="sm:justify-between">
+          <Button variant="outline" onClick={() => onCopy('pair', pair, 'Credenciales copiadas')}>
+            {copiedKey === 'pair' ? <CheckIcon className="size-4" /> : <CopyIcon className="size-4" />}
+            Copiar ambos
+          </Button>
+          <Button onClick={onClose}>Ya la guardé</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
