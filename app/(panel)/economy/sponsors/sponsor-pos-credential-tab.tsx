@@ -9,6 +9,7 @@ import {
   CopyIcon,
   KeyRoundIcon,
   RefreshCwIcon,
+  TriangleAlertIcon,
 } from 'lucide-react';
 import { useSponsor, useRotatePosCredential } from '@/hooks/use-sponsors';
 import { StatusBadge } from '@/lib/status-badge';
@@ -28,9 +29,20 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 
 const TWO_FA_ACTION = 'rotate_pos_credential';
+const ROTATION_ADVICE_MONTHS = 6;
 
 function fmtDateTime(d: string): string {
   return new Date(d).toLocaleString('es-CR', { dateStyle: 'long', timeStyle: 'short' });
+}
+
+// Recomendación de higiene, no vencimiento: el backend no la aplica. Una credencial
+// filtrada sigue sirviendo hasta que alguien la rote, así que el panel avisa a los 6 meses.
+export function posCredentialNeedsRotation(rotatedAt: string | null, now: Date): boolean {
+  if (!rotatedAt) return false;
+
+  const dueAt = new Date(rotatedAt);
+  dueAt.setMonth(dueAt.getMonth() + ROTATION_ADVICE_MONTHS);
+  return now.getTime() > dueAt.getTime();
 }
 
 export function SponsorPosCredentialTab({
@@ -48,6 +60,7 @@ export function SponsorPosCredentialTab({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const rotatedAt = sponsor?.merchantSecretRotatedAt ?? null;
+  const needsRotation = posCredentialNeedsRotation(rotatedAt, new Date());
 
   async function issueCredential(twoFaToken: string | undefined): Promise<void> {
     if (!twoFaToken) {
@@ -111,11 +124,27 @@ export function SponsorPosCredentialTab({
         ) : (
           <>
             {rotatedAt ? (
-              <div className="flex flex-wrap items-center gap-3">
-                <StatusBadge tone="success" icon={CircleCheckIcon} label="POS habilitado" />
-                <span className="text-muted-foreground text-sm">
-                  Generada o rotada el {fmtDateTime(rotatedAt)}
-                </span>
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  {needsRotation ? (
+                    <StatusBadge
+                      tone="warning"
+                      icon={TriangleAlertIcon}
+                      label="Rotación recomendada"
+                    />
+                  ) : (
+                    <StatusBadge tone="success" icon={CircleCheckIcon} label="POS habilitado" />
+                  )}
+                  <span className="text-muted-foreground text-sm">
+                    Generada o rotada el {fmtDateTime(rotatedAt)}
+                  </span>
+                </div>
+                {needsRotation && (
+                  <p className="text-muted-foreground text-sm">
+                    Esta credencial tiene más de {ROTATION_ADVICE_MONTHS} meses. Rotala
+                    periódicamente: si se filtró, sigue siendo válida hasta que la rotés.
+                  </p>
+                )}
               </div>
             ) : (
               <div className="flex flex-wrap items-center gap-3">

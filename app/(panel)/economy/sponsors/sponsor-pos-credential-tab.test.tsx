@@ -1,6 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Sponsor } from '@/hooks/use-sponsors';
+
+// Fechas locales: `posCredentialNeedsRotation` suma meses de calendario (hora de pared),
+// así que las fronteras se arman igual y el test no depende del TZ de la máquina.
+const localDate = (year: number, monthIndex: number, day: number): Date =>
+  new Date(year, monthIndex, day, 12, 0, 0);
+
+const NOW = localDate(2026, 7, 4);
 
 const sponsor: Sponsor = {
   id: 'spo-123',
@@ -33,11 +40,22 @@ vi.mock('@/hooks/use-sponsors', () => ({
   useRotatePosCredential: () => ({ mutateAsync: vi.fn(), reset: vi.fn() }),
 }));
 
-import { SponsorPosCredentialTab, SecretDialog } from './sponsor-pos-credential-tab';
+import {
+  SponsorPosCredentialTab,
+  SecretDialog,
+  posCredentialNeedsRotation,
+} from './sponsor-pos-credential-tab';
 
 beforeEach(() => {
   state.sponsor = sponsor;
   Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
+  // El aviso de rotación depende de "hoy": sin reloj fijo el test caducaría solo.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(NOW);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 // El POS necesita DOS datos (X-Merchant-Id + X-Merchant-Secret). El ID es el uuid
@@ -57,6 +75,21 @@ describe('SponsorPosCredentialTab', () => {
 
     expect(screen.getByText('POS habilitado')).toBeInTheDocument();
     expect(screen.getByText('spo-123')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /rotar credencial/i })).toBeInTheDocument();
+    expect(screen.queryByText('Rotación recomendada')).not.toBeInTheDocument();
+  });
+
+  // Aviso de higiene: el backend no vence nada, el panel sí lo hace visible (icono + texto).
+  it('con credencial vieja avisa que conviene rotar', () => {
+    state.sponsor = {
+      ...sponsor,
+      merchantSecretRotatedAt: localDate(2025, 11, 1).toISOString(),
+    };
+    render(<SponsorPosCredentialTab sponsorId={sponsor.id} canWrite />);
+
+    expect(screen.getByText('Rotación recomendada')).toBeInTheDocument();
+    expect(screen.queryByText('POS habilitado')).not.toBeInTheDocument();
+    expect(screen.getByText(/tiene más de 6 meses/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /rotar credencial/i })).toBeInTheDocument();
   });
 
@@ -120,5 +153,31 @@ describe('SecretDialog', () => {
   it('cerrado no renderiza nada', () => {
     render(<SecretDialog {...props} secret={null} />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+describe('posCredentialNeedsRotation', () => {
+  const sixMonthsBefore = localDate(2026, 1, 4);
+
+  it('sin credencial nunca avisa', () => {
+    expect(posCredentialNeedsRotation(null, NOW)).toBe(false);
+  });
+
+  it('a los 6 meses exactos todavía no avisa', () => {
+    expect(posCredentialNeedsRotation(sixMonthsBefore.toISOString(), NOW)).toBe(false);
+  });
+
+  it('un milisegundo después de los 6 meses avisa', () => {
+    const justAfter = new Date(NOW.getTime() + 1);
+    expect(posCredentialNeedsRotation(sixMonthsBefore.toISOString(), justAfter)).toBe(true);
+  });
+
+  it('bien pasada la frontera avisa', () => {
+    expect(posCredentialNeedsRotation(localDate(2025, 0, 15).toISOString(), NOW)).toBe(true);
+  });
+
+  // Reloj del cliente atrasado: mejor callar que avisar de una credencial recién emitida.
+  it('fecha futura no avisa', () => {
+    expect(posCredentialNeedsRotation(localDate(2027, 0, 1).toISOString(), NOW)).toBe(false);
   });
 });
