@@ -12561,8 +12561,10 @@ export interface components {
         EmailSocialLinksResponse: {
             data: {
                 instagramUrl: string | null;
-                xUrl: string | null;
                 facebookUrl: string | null;
+                tiktokUrl: string | null;
+                whatsappUrl: string | null;
+                websiteUrl: string | null;
                 assets: {
                     koko: string;
                 };
@@ -12570,8 +12572,10 @@ export interface components {
         };
         UpdateSocialLinksDto: {
             instagramUrl?: ("" | string) | null;
-            xUrl?: ("" | string) | null;
             facebookUrl?: ("" | string) | null;
+            tiktokUrl?: ("" | string) | null;
+            whatsappUrl?: ("" | string) | null;
+            websiteUrl?: ("" | string) | null;
         };
         BotTemplateListResponse: {
             data: {

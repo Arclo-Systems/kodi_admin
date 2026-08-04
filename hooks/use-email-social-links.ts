@@ -3,18 +3,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
 
-export type EmailSocialLinks = {
-  instagramUrl: string | null;
-  xUrl: string | null;
-  facebookUrl: string | null;
-  // El backend resuelve R2 vs /static; el panel solo pinta la URL que le den.
-  assets: { koko: string };
-};
-
+// El orden de las claves espeja el del pie del email.
 export type EmailSocialLinksInput = {
   instagramUrl: string | null;
-  xUrl: string | null;
   facebookUrl: string | null;
+  tiktokUrl: string | null;
+  whatsappUrl: string | null;
+  websiteUrl: string | null;
+};
+
+export type EmailSocialLinks = EmailSocialLinksInput & {
+  // El backend resuelve R2 vs /static; el panel solo pinta la URL que le den.
+  assets: { koko: string };
 };
 
 // Config global de envío: cambia con muy baja frecuencia y la consume también el

@@ -20,16 +20,20 @@ const FIELDS: ReadonlyArray<{
   placeholder: string;
 }> = [
   { key: 'instagramUrl', label: 'Instagram', placeholder: 'https://instagram.com/kodi.app' },
-  { key: 'xUrl', label: 'X', placeholder: 'https://x.com/kodi_app' },
   { key: 'facebookUrl', label: 'Facebook', placeholder: 'https://facebook.com/kodi.app' },
+  { key: 'tiktokUrl', label: 'TikTok', placeholder: 'https://tiktok.com/@kodi.app' },
+  { key: 'whatsappUrl', label: 'WhatsApp', placeholder: 'https://wa.me/506...' },
+  { key: 'websiteUrl', label: 'Sitio web', placeholder: 'https://kodi.app' },
 ];
 
 function SocialLinksForm({ links }: { links: EmailSocialLinks }) {
   const update = useUpdateEmailSocialLinks();
   const [v, setV] = useState<EmailSocialLinksInput>({
     instagramUrl: links.instagramUrl,
-    xUrl: links.xUrl,
     facebookUrl: links.facebookUrl,
+    tiktokUrl: links.tiktokUrl,
+    whatsappUrl: links.whatsappUrl,
+    websiteUrl: links.websiteUrl,
   });
 
   function set(key: keyof EmailSocialLinksInput, value: string): void {
@@ -45,7 +49,8 @@ function SocialLinksForm({ links }: { links: EmailSocialLinks }) {
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-3">
+      {/* 5 redes: a 3 columnas los inputs de URL quedan apretados salvo en pantallas anchas. */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {FIELDS.map((field) => (
           <div key={field.key} className="space-y-2">
             <Label>{field.label}</Label>
@@ -91,7 +96,7 @@ export function SocialLinksManager() {
         <CardContent>
           {/* key: el form arranca del valor cargado; si la query se refresca, se remonta con el nuevo. */}
           <SocialLinksForm
-            key={`${data.instagramUrl}|${data.xUrl}|${data.facebookUrl}`}
+            key={FIELDS.map((field) => data[field.key]).join('|')}
             links={data}
           />
         </CardContent>
