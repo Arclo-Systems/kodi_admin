@@ -10,6 +10,7 @@ import {
   DownloadIcon,
   PencilIcon,
   PercentIcon,
+  StarIcon,
   TicketIcon,
 } from 'lucide-react';
 import { useCoupon, useCouponStats } from '@/hooks/use-coupons';
@@ -165,7 +166,14 @@ export function CouponDetail({ id, role }: { id: string; role: AdminRole }) {
                     : `${coupon.stockRemaining ?? 0} / ${coupon.stockTotal}`}
                 </Stat>
                 <Stat label="Límite por usuario">{coupon.limitPerUser ?? '∞'}</Stat>
-                <Stat label="Solo Pro">{coupon.isProExclusive ? 'Sí' : 'No'}</Stat>
+                <Stat label="Solo planes de pago">{coupon.isProExclusive ? 'Sí' : 'No'}</Stat>
+                <Stat label="Destacado">
+                  {coupon.isFeatured ? (
+                    <StatusBadge tone="warning" icon={StarIcon} label="Destacado" />
+                  ) : (
+                    'No'
+                  )}
+                </Stat>
                 <Stat label="Prefijo de código">{coupon.codePrefix ?? 'KOD'}</Stat>
                 <Stat label="Válido hasta">
                   {coupon.validUntil
@@ -187,7 +195,7 @@ export function CouponDetail({ id, role }: { id: string; role: AdminRole }) {
             </>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 9 }).map((_, i) => (
+              {Array.from({ length: 10 }).map((_, i) => (
                 <Skeleton key={i} className="h-10 w-full" />
               ))}
             </div>

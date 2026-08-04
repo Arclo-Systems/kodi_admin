@@ -12,6 +12,7 @@ import {
   FolderIcon,
   HandshakeIcon,
   ImageIcon,
+  KeyRoundIcon,
   MapPinIcon,
   PencilIcon,
   ReceiptIcon,
@@ -37,6 +38,7 @@ import { SponsorDocumentsTab } from './sponsor-documents-tab';
 import { SponsorTimelineTab } from './sponsor-timeline-tab';
 import { SponsorInvoicesTab } from './sponsor-invoices-tab';
 import { SponsorBranchesTab } from './sponsor-branches-tab';
+import { SponsorPosCredentialTab } from './sponsor-pos-credential-tab';
 
 const PIPELINE_FARO: Record<PipelineStatus, { tone: StatusTone; icon: LucideIcon }> = {
   prospect: { tone: 'info', icon: TargetIcon },
@@ -162,6 +164,10 @@ export function SponsorDetail({ id, role }: { id: string; role: AdminRole }) {
             <ReceiptIcon className="size-4" />
             Facturas
           </TabsTrigger>
+          <TabsTrigger value="pos">
+            <KeyRoundIcon className="size-4" />
+            POS
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="datos">
@@ -234,6 +240,9 @@ export function SponsorDetail({ id, role }: { id: string; role: AdminRole }) {
         </TabsContent>
         <TabsContent value="facturas">
           <SponsorInvoicesTab sponsorId={id} />
+        </TabsContent>
+        <TabsContent value="pos">
+          <SponsorPosCredentialTab sponsorId={id} canWrite={canWrite} />
         </TabsContent>
       </Tabs>
     </div>

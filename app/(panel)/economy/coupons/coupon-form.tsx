@@ -54,6 +54,7 @@ type FormValues = {
   description: string;
   kolonesCost: number;
   isProExclusive: boolean;
+  isFeatured: boolean;
   stockTotal: number | null;
   limitPerUser: number | null;
   validUntil: string;
@@ -73,6 +74,7 @@ function toValues(d: CouponDetail): FormValues {
     description: d.description,
     kolonesCost: d.kolonesCost,
     isProExclusive: d.isProExclusive,
+    isFeatured: d.isFeatured,
     stockTotal: d.stockTotal,
     limitPerUser: d.limitPerUser,
     validUntil: d.validUntil ? d.validUntil.slice(0, 10) : '',
@@ -93,6 +95,7 @@ function toInput(v: FormValues, conditions: string[]): CouponInput {
     country: v.country,
     moduleId: v.moduleId || null,
     isProExclusive: v.isProExclusive,
+    isFeatured: v.isFeatured,
     stockTotal: v.stockTotal,
     validUntil: v.validUntil ? new Date(`${v.validUntil}T00:00:00.000Z`).toISOString() : null,
     codePrefix: v.codePrefix.trim() || null,
@@ -145,6 +148,7 @@ function CouponFormInner({
       description: '',
       kolonesCost: 0,
       isProExclusive: false,
+      isFeatured: false,
       stockTotal: null,
       limitPerUser: 1,
       validUntil: '',
@@ -306,16 +310,28 @@ function CouponFormInner({
               />
             </div>
 
-            <Controller
-              name="isProExclusive"
-              control={form.control}
-              render={({ field }) => (
-                <Field orientation="horizontal">
-                  <Switch id="c-pro" checked={field.value} onCheckedChange={field.onChange} />
-                  <FieldLabel htmlFor="c-pro">Exclusivo para usuarios Pro</FieldLabel>
-                </Field>
-              )}
-            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Controller
+                name="isProExclusive"
+                control={form.control}
+                render={({ field }) => (
+                  <Field orientation="horizontal">
+                    <Switch id="c-pro" checked={field.value} onCheckedChange={field.onChange} />
+                    <FieldLabel htmlFor="c-pro">Solo planes de pago</FieldLabel>
+                  </Field>
+                )}
+              />
+              <Controller
+                name="isFeatured"
+                control={form.control}
+                render={({ field }) => (
+                  <Field orientation="horizontal">
+                    <Switch id="c-featured" checked={field.value} onCheckedChange={field.onChange} />
+                    <FieldLabel htmlFor="c-featured">Destacado en la app</FieldLabel>
+                  </Field>
+                )}
+              />
+            </div>
           </fieldset>
 
           <fieldset className="min-w-0 space-y-4">

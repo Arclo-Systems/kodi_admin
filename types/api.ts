@@ -1858,10 +1858,30 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Validar código de cupón (solo merchant POS)
-         * @description Endpoint protegido por X-Merchant-Secret header. NO accesible para usuarios finales.
+         * Consultar código de cupón (solo merchant POS)
+         * @description SOLO LECTURA: responde si el cupón es presentable en este comercio, sin quemarlo. Protegido por X-Merchant-Id + X-Merchant-Secret. NO accesible para usuarios finales.
          */
         post: operations["CouponsController_validate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/coupons/consume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Quemar código de cupón (solo merchant POS)
+         * @description Marca el cupón como usado. Idempotente hacia afuera: un segundo consume del mismo código responde valid:false.
+         */
+        post: operations["CouponsController_consume"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6062,6 +6082,38 @@ export interface paths {
         patch: operations["SponsorsAdminController_updateSponsor"];
         trace?: never;
     };
+    "/v1/admin/economy/sponsors/{id}/pos-credential": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SponsorsAdminController_rotatePosCredential"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/economy/sponsors/{id}/request-2fa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["SponsorsAdminController_request2fa"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/economy/sponsors/{sponsorId}/branches": {
         parameters: {
             query?: never;
@@ -8953,11 +9005,14 @@ export interface components {
                 tier: "basico" | "estandar" | "premium";
                 kolones_cost: number;
                 is_pro_exclusive: boolean;
+                is_featured: boolean;
                 /** @enum {string} */
                 category: "academico" | "libreria" | "restaurante" | "tecnologia" | "autoescuela" | "universidad" | "transporte";
                 stock_remaining: number | null;
                 valid_until: string | null;
                 available_at: string | null;
+                is_sold_out: boolean;
+                is_locked_for_me: boolean;
             }[];
             meta: {
                 page: number;
@@ -8984,6 +9039,7 @@ export interface components {
                     beneficio: string;
                     cost_kolones: number;
                     is_pro_exclusive: boolean;
+                    is_locked_for_me: boolean;
                     stock_left: number | null;
                 }[];
             }[];
@@ -8992,11 +9048,19 @@ export interface components {
             data: {
                 /** Format: uuid */
                 id: string;
+                /** Format: uuid */
+                coupon_id: string;
                 coupon: {
                     sponsor_name: string;
                     title: string;
                     sponsor_logo_url: string | null;
                 };
+                /** @enum {string} */
+                category: "academico" | "libreria" | "restaurante" | "tecnologia" | "autoescuela" | "universidad" | "transporte";
+                sponsor_color: string | null;
+                branch_label: string | null;
+                /** @enum {string} */
+                status: "active" | "used" | "expired" | "invalidated";
                 code: string;
                 redeemed_at: string;
                 expires_at: string;
@@ -9007,6 +9071,7 @@ export interface components {
                 page: number;
                 limit: number;
                 total: number;
+                active_count: number;
             };
         };
         CouponDetailResponse: {
@@ -9022,13 +9087,18 @@ export interface components {
                 tier: "basico" | "estandar" | "premium";
                 kolones_cost: number;
                 is_pro_exclusive: boolean;
+                is_featured: boolean;
                 /** @enum {string} */
                 category: "academico" | "libreria" | "restaurante" | "tecnologia" | "autoescuela" | "universidad" | "transporte";
                 stock_remaining: number | null;
                 valid_until: string | null;
                 available_at: string | null;
+                is_sold_out: boolean;
+                is_locked_for_me: boolean;
                 conditions: string[];
                 valid_days_after_redeem: number;
+                limit_per_user: number | null;
+                redeemed_count: number;
                 branches: {
                     /** Format: uuid */
                     id: string;
@@ -9051,7 +9121,6 @@ export interface components {
                 user_coupon_id: string;
                 code: string;
                 expires_at: string;
-                qr_code_data: string;
             };
         };
         ValidateCouponDto: {
@@ -9064,6 +9133,9 @@ export interface components {
                 user_display_name: string | null;
                 expires_at: string | null;
             };
+        };
+        ConsumeCouponDto: {
+            code: string;
         };
         MyReferralsResponse: {
             data: {
@@ -13097,6 +13169,7 @@ export interface components {
                     /** Format: uuid */
                     moduleId: string | null;
                     isProExclusive: boolean;
+                    isFeatured: boolean;
                     category: string;
                     conditions: string[];
                     validDaysAfterRedeem: number;
@@ -13167,6 +13240,7 @@ export interface components {
                 /** Format: uuid */
                 moduleId: string | null;
                 isProExclusive: boolean;
+                isFeatured: boolean;
                 category: string;
                 conditions: string[];
                 validDaysAfterRedeem: number;
@@ -13198,6 +13272,8 @@ export interface components {
             moduleId?: string | null;
             /** @default false */
             isProExclusive: boolean;
+            /** @default false */
+            isFeatured: boolean;
             /** @enum {string} */
             category: "academico" | "libreria" | "restaurante" | "tecnologia" | "autoescuela" | "universidad" | "transporte";
             /** @default [] */
@@ -13208,7 +13284,7 @@ export interface components {
             /** Format: date-time */
             validUntil?: string | null;
             codePrefix?: string | null;
-            /** @default 6 */
+            /** @default 8 */
             codeSuffixLen: number;
             limitPerUser?: number | null;
         };
@@ -13225,6 +13301,7 @@ export interface components {
             /** Format: uuid */
             moduleId?: string | null;
             isProExclusive?: boolean;
+            isFeatured?: boolean;
             /** @enum {string} */
             category?: "academico" | "libreria" | "restaurante" | "tecnologia" | "autoescuela" | "universidad" | "transporte";
             conditions?: string[];
@@ -13409,6 +13486,7 @@ export interface components {
                     billingEmail: string | null;
                     contractStartsAt: string | null;
                     contractEndsAt: string | null;
+                    merchantSecretRotatedAt: string | null;
                     /** Format: uuid */
                     createdBy: string | null;
                     /** Format: uuid */
@@ -13458,6 +13536,7 @@ export interface components {
                 billingEmail: string | null;
                 contractStartsAt: string | null;
                 contractEndsAt: string | null;
+                merchantSecretRotatedAt: string | null;
                 /** Format: uuid */
                 createdBy: string | null;
                 /** Format: uuid */
@@ -13499,6 +13578,15 @@ export interface components {
             contractStartsAt?: string | null;
             /** Format: date-time */
             contractEndsAt?: string | null;
+        };
+        RotatePosCredentialDto: {
+            twoFaToken?: string;
+        };
+        SponsorPosCredentialResponse: {
+            data: {
+                secret: string;
+                rotated_at: string;
+            };
         };
         UpdateSponsorDto: {
             name?: string;
@@ -17749,9 +17837,11 @@ export interface operations {
     CouponsController_list: {
         parameters: {
             query?: {
-                country?: "CR" | "GT" | "SV" | "HN" | "PA";
                 module_id?: string;
                 tier?: "basico" | "estandar" | "premium";
+                category?: "academico" | "libreria" | "restaurante" | "tecnologia" | "autoescuela" | "universidad" | "transporte";
+                q?: string;
+                featured?: boolean;
                 page?: number;
                 limit?: number;
             };
@@ -17868,6 +17958,29 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ValidateCouponDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CouponValidatedResponse"];
+                };
+            };
+        };
+    };
+    CouponsController_consume: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsumeCouponDto"];
             };
         };
         responses: {
@@ -24558,6 +24671,50 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SponsorAdminResponse"];
                 };
+            };
+        };
+    };
+    SponsorsAdminController_rotatePosCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RotatePosCredentialDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SponsorPosCredentialResponse"];
+                };
+            };
+        };
+    };
+    SponsorsAdminController_request2fa: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

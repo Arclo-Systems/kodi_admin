@@ -51,6 +51,7 @@ export type CouponListItem = {
   country: string;
   moduleId: string | null;
   isProExclusive: boolean;
+  isFeatured: boolean;
   stockTotal: number | null;
   stockRemaining: number | null;
   validUntil: string | null;
@@ -72,6 +73,7 @@ export type CouponDetail = {
   country: string;
   moduleId: string | null;
   isProExclusive: boolean;
+  isFeatured: boolean;
   stockTotal: number | null;
   stockRemaining: number | null;
   validUntil: string | null;
@@ -98,6 +100,7 @@ export type CouponInput = {
   country: string;
   moduleId: string | null;
   isProExclusive: boolean;
+  isFeatured: boolean;
   stockTotal: number | null;
   validUntil: string | null;
   codePrefix: string | null;

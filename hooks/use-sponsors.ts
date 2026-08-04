@@ -42,6 +42,8 @@ export type Sponsor = {
   billingEmail: string | null;
   contractStartsAt: string | null;
   contractEndsAt: string | null;
+  // El hash nunca sale del backend: esta fecha es la única señal de "tiene credencial POS".
+  merchantSecretRotatedAt: string | null;
   createdAt: string;
   updatedAt: string;
   _count?: SponsorCounts;
@@ -168,6 +170,28 @@ export function useSponsorMutations() {
       },
     }),
   };
+}
+
+// Credencial del POS (E2): el mismo endpoint genera y rota. El secreto en claro
+// viaja UNA sola vez en esta respuesta — el backend solo guarda su hash.
+export type PosCredential = { secret: string; rotatedAt: string };
+
+export function useRotatePosCredential(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (twoFaToken: string): Promise<PosCredential> => {
+      const body = await sendJson(`/api/admin/economy/sponsors/${id}/pos-credential`, 'POST', {
+        twoFaToken,
+      });
+      const data = unwrapData<{ secret: string; rotated_at: string }>(body);
+      if (!data) throw new Error('El backend no devolvió la credencial');
+      return { secret: data.secret, rotatedAt: data.rotated_at };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sponsor', id] });
+      qc.invalidateQueries({ queryKey: ['sponsor-activities', id] });
+    },
+  });
 }
 
 // Cambio de etapa del pipeline (drag en el Kanban). Optimista con rollback.

@@ -5,7 +5,15 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
-import { CircleCheckIcon, CircleOffIcon, PencilIcon, PlusIcon, PowerIcon, PowerOffIcon } from 'lucide-react';
+import {
+  CircleCheckIcon,
+  CircleOffIcon,
+  PencilIcon,
+  PlusIcon,
+  PowerIcon,
+  PowerOffIcon,
+  StarIcon,
+} from 'lucide-react';
 import {
   useCoupons,
   useCouponMutations,
@@ -50,7 +58,14 @@ const columns: ColumnDef<CouponListItem, unknown>[] = [
   {
     accessorKey: 'title',
     header: 'Título',
-    cell: ({ row }) => <div className="max-w-xs truncate font-medium">{row.original.title}</div>,
+    cell: ({ row }) => (
+      <div className="flex max-w-xs items-center gap-2">
+        <span className="min-w-0 truncate font-medium">{row.original.title}</span>
+        {row.original.isFeatured && (
+          <StatusBadge tone="warning" icon={StarIcon} label="Destacado" className="shrink-0" />
+        )}
+      </div>
+    ),
   },
   { accessorKey: 'sponsorName', header: 'Sponsor' },
   {
