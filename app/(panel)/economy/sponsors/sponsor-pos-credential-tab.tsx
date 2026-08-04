@@ -41,7 +41,12 @@ export function posCredentialNeedsRotation(rotatedAt: string | null, now: Date):
   if (!rotatedAt) return false;
 
   const dueAt = new Date(rotatedAt);
+  const dayOfMonth = dueAt.getDate();
   dueAt.setMonth(dueAt.getMonth() + ROTATION_ADVICE_MONTHS);
+  // `setMonth` desborda si el mes destino es más corto (31 de agosto → 3 de marzo, no 28 de
+  // febrero) y el aviso llegaría días tarde. Si el día cambió, `setDate(0)` retrocede al
+  // último día del mes destino.
+  if (dueAt.getDate() !== dayOfMonth) dueAt.setDate(0);
   return now.getTime() > dueAt.getTime();
 }
 

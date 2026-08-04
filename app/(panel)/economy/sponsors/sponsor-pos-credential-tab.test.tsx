@@ -176,6 +176,15 @@ describe('posCredentialNeedsRotation', () => {
     expect(posCredentialNeedsRotation(localDate(2025, 0, 15).toISOString(), NOW)).toBe(true);
   });
 
+  // Mes destino más corto: 31 de agosto + 6 meses cae en febrero, que no tiene 31.
+  // Sin clamp la frontera se corría al 3 de marzo y el aviso llegaba 3 días tarde.
+  it('rotada un 31 avisa dentro del último día del mes destino más corto', () => {
+    const rotatedAt = localDate(2026, 7, 31).toISOString();
+
+    expect(posCredentialNeedsRotation(rotatedAt, new Date(2027, 1, 28, 23, 59))).toBe(true);
+    expect(posCredentialNeedsRotation(rotatedAt, new Date(2027, 1, 28, 11, 59))).toBe(false);
+  });
+
   // Reloj del cliente atrasado: mejor callar que avisar de una credencial recién emitida.
   it('fecha futura no avisa', () => {
     expect(posCredentialNeedsRotation(localDate(2027, 0, 1).toISOString(), NOW)).toBe(false);
