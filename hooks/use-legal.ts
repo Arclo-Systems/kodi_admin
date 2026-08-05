@@ -6,6 +6,13 @@ import { unwrapData } from '@/lib/bff';
 export const LEGAL_DOCS = ['terms', 'privacy', 'raffle_rules'] as const;
 export type LegalDoc = (typeof LEGAL_DOCS)[number];
 
+/** Nombre de cada documento como lo ve el admin (tabs, títulos, confirmaciones). */
+export const DOC_LABELS: Record<LegalDoc, string> = {
+  terms: 'Términos de uso',
+  privacy: 'Política de privacidad',
+  raffle_rules: 'Bases de premiaciones',
+};
+
 export type LegalSection = {
   title: string;
   body: string;

@@ -13,18 +13,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { EmptyState } from '@/components/admin/empty-state';
 import {
+  DOC_LABELS,
   useLegalDocument,
   useUpdateLegalDocument,
   type LegalDoc,
   type LegalDocument,
   type LegalSection,
 } from '@/hooks/use-legal';
-
-export const DOC_LABELS: Record<LegalDoc, string> = {
-  terms: 'Términos de uso',
-  privacy: 'Política de privacidad',
-  raffle_rules: 'Bases de premiaciones',
-};
 
 // Publicar no significa lo mismo en los tres documentos: la aceptación del
 // usuario existe solo para los términos, y las bases no salen en la landing ni

@@ -1,8 +1,8 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LEGAL_DOCS } from '@/hooks/use-legal';
-import { DOC_LABELS, LegalEditor } from './legal-editor';
+import { DOC_LABELS, LEGAL_DOCS } from '@/hooks/use-legal';
+import { LegalEditor } from './legal-editor';
 
 /**
  * Los documentos legales en la misma pantalla: son textos del mismo trámite y se
@@ -11,7 +11,7 @@ import { DOC_LABELS, LegalEditor } from './legal-editor';
  */
 export function LegalTabs({ canWrite }: { canWrite: boolean }) {
   return (
-    <Tabs defaultValue="terms">
+    <Tabs defaultValue={LEGAL_DOCS[0]}>
       <TabsList>
         {LEGAL_DOCS.map((doc) => (
           <TabsTrigger key={doc} value={doc}>
