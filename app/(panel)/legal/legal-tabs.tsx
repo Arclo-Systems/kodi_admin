@@ -1,26 +1,29 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LegalEditor } from './legal-editor';
+import { LEGAL_DOCS } from '@/hooks/use-legal';
+import { DOC_LABELS, LegalEditor } from './legal-editor';
 
 /**
- * Los dos documentos en la misma pantalla: son dos textos del mismo trámite y se
- * revisan juntos. Tabs (no dos páginas) evita duplicar la explicación y el aviso
- * de publicación en cada una.
+ * Los documentos legales en la misma pantalla: son textos del mismo trámite y se
+ * revisan juntos. Tabs (no una página por documento) evita duplicar la
+ * explicación y el aviso de publicación en cada una.
  */
 export function LegalTabs({ canWrite }: { canWrite: boolean }) {
   return (
     <Tabs defaultValue="terms">
       <TabsList>
-        <TabsTrigger value="terms">Términos de uso</TabsTrigger>
-        <TabsTrigger value="privacy">Política de privacidad</TabsTrigger>
+        {LEGAL_DOCS.map((doc) => (
+          <TabsTrigger key={doc} value={doc}>
+            {DOC_LABELS[doc]}
+          </TabsTrigger>
+        ))}
       </TabsList>
-      <TabsContent value="terms" className="pt-4">
-        <LegalEditor doc="terms" canWrite={canWrite} />
-      </TabsContent>
-      <TabsContent value="privacy" className="pt-4">
-        <LegalEditor doc="privacy" canWrite={canWrite} />
-      </TabsContent>
+      {LEGAL_DOCS.map((doc) => (
+        <TabsContent key={doc} value={doc} className="pt-4">
+          <LegalEditor doc={doc} canWrite={canWrite} />
+        </TabsContent>
+      ))}
     </Tabs>
   );
 }

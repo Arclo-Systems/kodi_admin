@@ -41,6 +41,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reactivar una cuenta en proceso de eliminación
+         * @description Mismo body que el login. Si la cuenta está soft-deleted y todavía dentro de la ventana de gracia de 30 días, revierte el borrado y devuelve sesión. Fuera de la ventana o con credenciales incorrectas responde el 401 genérico del login — no confirma si el correo existe.
+         */
+        post: operations["AuthController_reactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/social/{provider}": {
         parameters: {
             query?: never;
@@ -223,12 +243,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Aprobar consentimiento parental (link en email)
+         * Página de confirmación del consentimiento parental (link en email)
+         * @description HTML server-rendered, sin JS. Un token válido muestra el formulario que hace POST a esta misma ruta; un token inexistente, ya usado o vencido muestra un aviso. NO muta nada.
+         */
+        get: operations["AuthController_parentalConsentApprovePage"];
+        put?: never;
+        /**
+         * Aprobar consentimiento parental (submit del formulario)
          * @description Redirect 302 a kodi://consent-approved (válido) o kodi://consent-expired (inválido). No retorna JSON. Guarda IP y User-Agent de quien aprobó como evidencia (M3).
          */
-        get: operations["AuthController_parentalConsentApprove"];
-        put?: never;
-        post?: never;
+        post: operations["AuthController_parentalConsentApprove"];
         delete?: never;
         options?: never;
         head?: never;
@@ -242,7 +266,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Términos o política de privacidad vigentes */
+        /** Documento legal vigente (términos, privacidad o bases de premiaciones) */
         get: operations["PublicLegalController_get"];
         put?: never;
         post?: never;
@@ -371,8 +395,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Listar noticias por país y/o módulo
-         * @description Toda noticia pertenece a un módulo; sin module_id devuelve las del país. `meta.unread_count` cuenta las publicadas del país posteriores a la última vez que el usuario marcó la lista como vista.
+         * Listar noticias del país del token
+         * @description El país sale del JWT y no se puede elegir por query. Toda noticia pertenece a un módulo; sin module_id devuelve las del país. `meta.unread_count` cuenta las publicadas del país posteriores a la última vez que el usuario marcó la lista como vista.
          */
         get: operations["NewsController_list"];
         put?: never;
@@ -394,7 +418,7 @@ export interface paths {
         put?: never;
         /**
          * Marcar las noticias como vistas
-         * @description Pone `news_seen_at = now` — apaga el badge de la campana.
+         * @description Apaga el badge de la campana. `seen_up_to` (opcional) es el `published_at` de la noticia más nueva que la app mostró: lo publicado después de ese instante sigue contando como no leído. Sin el campo, el corte es `now`. El servidor lo acota a `now` y nunca retrocede el marcador.
          */
         post: operations["NewsController_markSeen"];
         delete?: never;
@@ -724,6 +748,26 @@ export interface paths {
         head?: never;
         /** Actualizar campos del perfil propio */
         patch: operations["UsersController_updateMe"];
+        trace?: never;
+    };
+    "/v1/users/me/accept-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Aceptar la versión vigente de los términos
+         * @description Graba accepted_terms_at = now y terms_version = la versión publicada al momento del clic. Idempotente. Tras esto, must_accept_terms vuelve a false.
+         */
+        post: operations["UsersController_acceptTerms"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/users/me/stats": {
@@ -3398,7 +3442,7 @@ export interface paths {
         put?: never;
         /**
          * Pedir una copia de mis datos (M6)
-         * @description Encola la generación del archivo. Cuando termina llega por correo con un enlace firmado de 72 h. Máximo 1 pedido por día por usuario.
+         * @description Encola la generación del archivo. Cuando termina llega por correo con un enlace firmado de 72 h. Máximo 1 pedido por día UTC por usuario (lo sostiene un UNIQUE en la base, no una lectura previa). El archivo se borra de almacenamiento a los 7 días.
          */
         post: operations["DataExportController_request"];
         delete?: never;
@@ -7311,7 +7355,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * Texto legal guardado (para editarlo)
+         * @description Un documento nunca publicado vuelve con `version: ""` y `sections: []` — el panel lo escribe por primera vez desde la misma pantalla. La `version` que devuelve es la que hay que mandar como `expected_version` en el PUT.
+         */
         get: operations["LegalAdminController_get"];
+        /**
+         * Publicar el texto legal
+         * @description La versión se calcula sola: `YYYY-MM-DD.N` (fecha UTC de publicación + orden dentro del día) y solo sube si el contenido cambió — un guardado sin cambios no puede obligar a nadie a re-aceptar. Cada publicación real archiva el texto completo en el histórico. `expected_version` implementa concurrencia optimista: si otro admin publicó mientras editabas, responde 409.
+         */
         put: operations["LegalAdminController_update"];
         post?: never;
         delete?: never;
@@ -7788,7 +7840,7 @@ export interface components {
         PublicLegalDocumentResponse: {
             data: {
                 /** @enum {string} */
-                doc: "terms" | "privacy";
+                doc: "terms" | "privacy" | "raffle_rules";
                 version: string;
                 /** Format: date-time */
                 last_updated: string;
@@ -7932,6 +7984,10 @@ export interface components {
                 total: number;
                 unread_count: number;
             };
+        };
+        MarkNewsSeenDto: {
+            /** Format: date-time */
+            seen_up_to?: string;
         };
         NewsDetailResponse: {
             data: {
@@ -8171,6 +8227,7 @@ export interface components {
                 friend_request_policy: "everyone" | "nobody";
                 reminder_hour: number | null;
                 created_at: string;
+                must_accept_terms: boolean;
             };
         };
         ProfileStatsResponse: {
@@ -12805,7 +12862,6 @@ export interface components {
             headlineSize?: ("" | ("sm" | "md" | "lg")) | null;
         };
         UploadEmailBrandAssetDto: {
-            filename: string;
             /** @enum {string} */
             contentType: "image/png" | "image/webp";
             dataBase64: string;
@@ -15303,7 +15359,7 @@ export interface components {
         AdminLegalDocumentResponse: {
             data: {
                 /** @enum {string} */
-                doc: "terms" | "privacy";
+                doc: "terms" | "privacy" | "raffle_rules";
                 version: string;
                 /** Format: date-time */
                 lastUpdated: string;
@@ -15318,6 +15374,7 @@ export interface components {
             };
         };
         UpdateLegalDocumentDto: {
+            expected_version: string;
             sections: {
                 title: string;
                 body: string;
@@ -16014,6 +16071,44 @@ export interface operations {
             };
         };
     };
+    AuthController_reactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginDto"];
+            };
+        };
+        responses: {
+            /** @description Cuenta reactivada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description Credenciales inválidas o fuera de la ventana */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limit (10/15min IP) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AuthController_social: {
         parameters: {
             query?: never;
@@ -16271,6 +16366,28 @@ export interface operations {
             };
         };
     };
+    AuthController_parentalConsentApprovePage: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de confirmación o de enlace vencido */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
     AuthController_parentalConsentApprove: {
         parameters: {
             query: {
@@ -16445,7 +16562,6 @@ export interface operations {
     NewsController_list: {
         parameters: {
             query?: {
-                country?: "CR" | "GT" | "SV" | "HN" | "PA";
                 module_id?: string;
                 page?: number;
                 limit?: number;
@@ -16473,7 +16589,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MarkNewsSeenDto"];
+            };
+        };
         responses: {
             /** @description Marcadas como vistas */
             204: {
@@ -16909,6 +17029,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UpdatedProfileResponse"];
                 };
+            };
+        };
+    };
+    UsersController_acceptTerms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aceptación registrada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -20277,6 +20415,13 @@ export interface operations {
             };
             /** @description Ya pediste tus datos hoy */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No se pudo encolar el pedido (cola no disponible) */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -27396,6 +27541,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AdminLegalDocumentResponse"];
                 };
+            };
+            /** @description LEGAL_VERSION_CONFLICT — el documento cambió desde que se cargó el editor */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

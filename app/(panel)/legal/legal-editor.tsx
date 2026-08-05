@@ -20,9 +20,22 @@ import {
   type LegalSection,
 } from '@/hooks/use-legal';
 
-const DOC_LABELS: Record<LegalDoc, string> = {
+export const DOC_LABELS: Record<LegalDoc, string> = {
   terms: 'Términos de uso',
   privacy: 'Política de privacidad',
+  raffle_rules: 'Bases de premiaciones',
+};
+
+// Publicar no significa lo mismo en los tres documentos: la aceptación del
+// usuario existe solo para los términos, y las bases no salen en la landing ni
+// en las fichas de las tiendas — el aviso de confirmación lo dice por documento.
+const DOC_PUBLISH_NOTICE: Record<LegalDoc, string> = {
+  terms:
+    'El texto queda visible al instante en la app, la landing y las fichas de las tiendas. Si cambió respecto de lo publicado, sube de versión y los usuarios nuevos aceptarán esta.',
+  privacy:
+    'El texto queda visible al instante en la app, la landing y las fichas de las tiendas. Si cambió respecto de lo publicado, sube de versión.',
+  raffle_rules:
+    'El texto queda visible al instante en la app, en la pantalla de Premiaciones. Si cambió respecto de lo publicado, sube de versión; los usuarios no tienen que aceptarlo.',
 };
 
 // Fecha como la lee el usuario en la app y en la landing ("4 de agosto de 2026"),
@@ -172,7 +185,7 @@ function SectionsForm({
                         value={section.title}
                         maxLength={200}
                         readOnly={!canWrite}
-                        placeholder="1. Aceptación de los términos"
+                        placeholder="1. Título de la sección"
                         onChange={(e) => patch(section.id, 'title', e.target.value)}
                       />
                     </div>
@@ -237,7 +250,7 @@ function SectionsForm({
         open={confirming}
         onOpenChange={setConfirming}
         title={`Publicar ${DOC_LABELS[doc]}`}
-        description="El texto queda visible al instante en la app, la landing y las fichas de las tiendas. Si cambió respecto de lo publicado, sube de versión y los usuarios nuevos aceptarán esta."
+        description={DOC_PUBLISH_NOTICE[doc]}
         confirmLabel="Publicar"
         onConfirm={save}
       />

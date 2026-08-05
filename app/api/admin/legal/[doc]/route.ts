@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { forwardToBackend } from '@/lib/proxy';
 
 // `doc` sale del path y se concatena a la URL del backend. Whitelist anti
-// open-proxy: son los dos únicos documentos que existen.
-const ALLOWED = new Set(['terms', 'privacy']);
+// open-proxy: son los únicos documentos que existen (enum `LegalDocType`).
+const ALLOWED = new Set(['terms', 'privacy', 'raffle_rules']);
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ doc: string }> }) {
   const { doc } = await params;

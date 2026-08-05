@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
 
-export const LEGAL_DOCS = ['terms', 'privacy'] as const;
+export const LEGAL_DOCS = ['terms', 'privacy', 'raffle_rules'] as const;
 export type LegalDoc = (typeof LEGAL_DOCS)[number];
 
 export type LegalSection = {

@@ -108,7 +108,8 @@ export type Action =
   // Identidad visual de los correos (mascota/logo/colores/redes) — afecta TODOS
   // los envíos, así que es admin aunque las plantillas ya lo sean.
   | 'messaging:brand'
-  // Legal (N7) — términos y privacidad publicados; los lee la app y las tiendas
+  // Legal (N7) — términos, privacidad y bases de premiaciones publicados; los
+  // lee la app y (términos/privacidad) las tiendas
   | 'view:legal'
   | 'legal:write'
   // Lanzamientos (Ola 3): versiones de app + roadmap por país
