@@ -105,6 +105,12 @@ export type Action =
   | 'messaging:approve'
   | 'messaging:segments'
   | 'messaging:templates'
+  // Identidad visual de los correos (mascota/logo/colores/redes) — afecta TODOS
+  // los envíos, así que es admin aunque las plantillas ya lo sean.
+  | 'messaging:brand'
+  // Legal (N7) — términos y privacidad publicados; los lee la app y las tiendas
+  | 'view:legal'
+  | 'legal:write'
   // Lanzamientos (Ola 3): versiones de app + roadmap por país
   | 'view:launches'
   | 'launches:write'
@@ -213,6 +219,9 @@ const matrix: Record<AdminRole, Action[]> = {
     'messaging:approve',
     'messaging:segments',
     'messaging:templates',
+    'messaging:brand',
+    'view:legal',
+    'legal:write',
     'view:launches',
     'launches:write',
     'launches:country',

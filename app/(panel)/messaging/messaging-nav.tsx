@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FileTextIcon, MegaphoneIcon, UsersIcon } from 'lucide-react';
+import { FileTextIcon, MegaphoneIcon, PaletteIcon, UsersIcon } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { canWithScope, type Action } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
@@ -19,6 +19,7 @@ const TABS: {
   { href: '/messaging', value: 'campaigns', label: 'Campañas', Icon: MegaphoneIcon, action: 'view:messaging' },
   { href: '/messaging/segments', value: 'segments', label: 'Segmentos', Icon: UsersIcon, action: 'messaging:segments' },
   { href: '/messaging/templates', value: 'templates', label: 'Plantillas', Icon: FileTextIcon, action: 'messaging:templates' },
+  { href: '/messaging/brand', value: 'brand', label: 'Identidad', Icon: PaletteIcon, action: 'messaging:brand' },
 ];
 
 export function MessagingNav({
@@ -31,7 +32,13 @@ export function MessagingNav({
   const pathname = usePathname();
   const visible = TABS.filter((t) => canWithScope(role, isGlobalScope, t.action));
   if (visible.length <= 1) return null;
-  const active = visible.find((t) => t.href === pathname)?.value ?? visible[0]?.value;
+  // Prefijo más largo, no igualdad: las sub-rutas (`/messaging/templates/tx/welcome`,
+  // `/messaging/[id]`) tienen que dejar marcada la pestaña de la que cuelgan.
+  const active =
+    [...visible]
+      .sort((a, b) => b.href.length - a.href.length)
+      .find((t) => pathname === t.href || pathname.startsWith(`${t.href}/`))?.value ??
+    visible[0]?.value;
 
   return (
     <Tabs value={active}>

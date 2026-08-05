@@ -17,6 +17,7 @@ import {
   LightbulbIcon,
   LayoutDashboardIcon,
   RocketIcon,
+  ScaleIcon,
   ScrollTextIcon,
   SendIcon,
   ShieldCheckIcon,
@@ -87,6 +88,7 @@ const NAV: NavGroup[] = [
     items: [
       { href: '/admins', label: 'Admins', icon: ShieldCheckIcon, action: 'view:admins' },
       { href: '/audit-log', label: 'Audit log', icon: ScrollTextIcon, action: 'view:audit-log' },
+      { href: '/legal', label: 'Legal', icon: ScaleIcon, action: 'view:legal' },
       { href: '/health', label: 'Health', icon: HeartPulseIcon, action: 'view:health' },
       { href: '/jobs', label: 'Jobs', icon: LayersIcon, action: 'view:jobs' },
       {

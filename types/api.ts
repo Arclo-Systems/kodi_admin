@@ -224,9 +224,26 @@ export interface paths {
         };
         /**
          * Aprobar consentimiento parental (link en email)
-         * @description Redirect 302 a kodi://consent-approved (válido) o kodi://consent-expired (inválido). No retorna JSON.
+         * @description Redirect 302 a kodi://consent-approved (válido) o kodi://consent-expired (inválido). No retorna JSON. Guarda IP y User-Agent de quien aprobó como evidencia (M3).
          */
         get: operations["AuthController_parentalConsentApprove"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/legal/{doc}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Términos o política de privacidad vigentes */
+        get: operations["PublicLegalController_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -355,9 +372,49 @@ export interface paths {
         };
         /**
          * Listar noticias por país y/o módulo
-         * @description Toda noticia pertenece a un módulo; sin module_id devuelve las del país.
+         * @description Toda noticia pertenece a un módulo; sin module_id devuelve las del país. `meta.unread_count` cuenta las publicadas del país posteriores a la última vez que el usuario marcó la lista como vista.
          */
         get: operations["NewsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/news/seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marcar las noticias como vistas
+         * @description Pone `news_seen_at = now` — apaga el badge de la campana.
+         */
+        post: operations["NewsController_markSeen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/news/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detalle de una noticia publicada
+         * @description Devuelve el cuerpo completo. Solo noticias publicadas del país del token.
+         */
+        get: operations["NewsController_detail"];
         put?: never;
         post?: never;
         delete?: never;
@@ -792,6 +849,26 @@ export interface paths {
         get: operations["SubscriptionsController_listMine"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/subscriptions/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restaurar compras (Apple 3.1.1)
+         * @description Recibe el recibo de StoreKit o el purchaseToken de Play y re-vincula la suscripción al usuario del token. Si el recibo no valida o no hay suscripción vigente devuelve 200 con `restored: false` — nunca error.
+         */
+        post: operations["SubscriptionsController_restore"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3306,6 +3383,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/users/me/data-export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Estado del último pedido de mis datos
+         * @description `latest` es null si el usuario nunca pidió una copia.
+         */
+        get: operations["DataExportController_status"];
+        put?: never;
+        /**
+         * Pedir una copia de mis datos (M6)
+         * @description Encola la generación del archivo. Cuando termina llega por correo con un enlace firmado de 72 h. Máximo 1 pedido por día por usuario.
+         */
+        post: operations["DataExportController_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/_internal/jobs/{name}/run": {
         parameters: {
             query?: never;
@@ -5358,16 +5459,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/admin/messaging/social-links": {
+    "/v1/admin/messaging/brand": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["SocialLinksAdminController_get"];
-        put: operations["SocialLinksAdminController_update"];
+        get: operations["BrandAdminController_get"];
+        put: operations["BrandAdminController_update"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/messaging/brand/upload-asset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["BrandAdminController_uploadAsset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7187,6 +7304,22 @@ export interface paths {
         patch: operations["CountryRolloutsController_update"];
         trace?: never;
     };
+    "/v1/admin/legal/{doc}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["LegalAdminController_get"];
+        put: operations["LegalAdminController_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/finance/categories": {
         parameters: {
             query?: never;
@@ -7652,6 +7785,19 @@ export interface components {
                 expires_at: string | null;
             };
         };
+        PublicLegalDocumentResponse: {
+            data: {
+                /** @enum {string} */
+                doc: "terms" | "privacy";
+                version: string;
+                /** Format: date-time */
+                last_updated: string;
+                sections: {
+                    title: string;
+                    body: string;
+                }[];
+            };
+        };
         ModuleListResponse: {
             data: {
                 /** Format: uuid */
@@ -7784,6 +7930,20 @@ export interface components {
                 page: number;
                 limit: number;
                 total: number;
+                unread_count: number;
+            };
+        };
+        NewsDetailResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                title: string;
+                summary: string;
+                image_url: string | null;
+                published_at: string;
+                /** Format: uuid */
+                module_id: string | null;
+                body: string;
             };
         };
         LearningPathResponse: {
@@ -8241,6 +8401,31 @@ export interface components {
                 page: number;
                 limit: number;
                 total: number;
+            };
+        };
+        RestorePurchasesDto: {
+            /** @enum {string} */
+            platform: "ios" | "android";
+            receipt: string;
+        };
+        RestorePurchasesResponse: {
+            data: {
+                restored: boolean;
+                subscriptions: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    module_id: string;
+                    /** @enum {string} */
+                    plan: "free" | "basico" | "plus" | "pro";
+                    /** @enum {string} */
+                    period: "monthly" | "quarterly" | "yearly";
+                    /** @enum {string} */
+                    status: "trial" | "active" | "cancelled" | "expired" | "grace";
+                    started_at: string;
+                    expires_at: string;
+                    grace_ends_at: string | null;
+                }[];
             };
         };
         ActivateTrialDto: {
@@ -10431,6 +10616,28 @@ export interface components {
                 commit?: string;
             };
         };
+        DataExportRequestedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                status: "pending" | "processing" | "completed" | "failed";
+                requested_at: string;
+                completed_at: string | null;
+            };
+        };
+        DataExportStatusResponse: {
+            data: {
+                latest: {
+                    /** Format: uuid */
+                    id: string;
+                    /** @enum {string} */
+                    status: "pending" | "processing" | "completed" | "failed";
+                    requested_at: string;
+                    completed_at: string | null;
+                } | null;
+            };
+        };
         JobTriggeredResponse: {
             data: {
                 jobId: string;
@@ -12558,24 +12765,55 @@ export interface components {
                 html: string;
             };
         };
-        EmailSocialLinksResponse: {
+        EmailBrandResponse: {
             data: {
                 instagramUrl: string | null;
                 facebookUrl: string | null;
                 tiktokUrl: string | null;
                 whatsappUrl: string | null;
                 websiteUrl: string | null;
-                assets: {
-                    koko: string;
+                mascotUrl: string | null;
+                wordmarkUrl: string | null;
+                ctaColor: string | null;
+                headlineColor: string | null;
+                /** @enum {string|null} */
+                mascotSize: "sm" | "md" | "lg" | null;
+                /** @enum {string|null} */
+                headlineSize: "sm" | "md" | "lg" | null;
+                defaults: {
+                    mascotUrl: string;
+                    ctaColor: string;
+                    headlineColor: string;
+                    /** @enum {string} */
+                    mascotSize: "sm" | "md" | "lg";
+                    /** @enum {string} */
+                    headlineSize: "sm" | "md" | "lg";
                 };
             };
         };
-        UpdateSocialLinksDto: {
+        UpdateEmailBrandDto: {
             instagramUrl?: ("" | string) | null;
             facebookUrl?: ("" | string) | null;
             tiktokUrl?: ("" | string) | null;
             whatsappUrl?: ("" | string) | null;
             websiteUrl?: ("" | string) | null;
+            mascotUrl?: ("" | string) | null;
+            wordmarkUrl?: ("" | string) | null;
+            ctaColor?: ("" | string) | null;
+            headlineColor?: ("" | string) | null;
+            mascotSize?: ("" | ("sm" | "md" | "lg")) | null;
+            headlineSize?: ("" | ("sm" | "md" | "lg")) | null;
+        };
+        UploadEmailBrandAssetDto: {
+            filename: string;
+            /** @enum {string} */
+            contentType: "image/png" | "image/webp";
+            dataBase64: string;
+        };
+        EmailBrandAssetUploadResponse: {
+            data: {
+                url: string;
+            };
         };
         BotTemplateListResponse: {
             data: {
@@ -15062,6 +15300,29 @@ export interface components {
                 registeredUsers: number | null;
             };
         };
+        AdminLegalDocumentResponse: {
+            data: {
+                /** @enum {string} */
+                doc: "terms" | "privacy";
+                version: string;
+                /** Format: date-time */
+                lastUpdated: string;
+                sections: {
+                    title: string;
+                    body: string;
+                }[];
+                /** Format: uuid */
+                updatedBy: string | null;
+                /** Format: date-time */
+                updatedAt: string | null;
+            };
+        };
+        UpdateLegalDocumentDto: {
+            sections: {
+                title: string;
+                body: string;
+            }[];
+        };
         FinanceCategoryListResponse: {
             data: {
                 /** Format: uuid */
@@ -16030,6 +16291,27 @@ export interface operations {
             };
         };
     };
+    PublicLegalController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                doc: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicLegalDocumentResponse"];
+                };
+            };
+        };
+    };
     ModulesController_list: {
         parameters: {
             query?: {
@@ -16181,6 +16463,52 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["NewsListResponse"];
                 };
+            };
+        };
+    };
+    NewsController_markSeen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Marcadas como vistas */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NewsController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsDetailResponse"];
+                };
+            };
+            /** @description No existe, no está publicada o es de otro país */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -16745,6 +17073,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SubscriptionListResponse"];
+                };
+            };
+        };
+    };
+    SubscriptionsController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestorePurchasesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RestorePurchasesResponse"];
                 };
             };
         };
@@ -19878,6 +20229,58 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HealthReadyResponse"];
                 };
+            };
+        };
+    };
+    DataExportController_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataExportStatusResponse"];
+                };
+            };
+        };
+    };
+    DataExportController_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DataExportRequestedResponse"];
+                };
+            };
+            /** @description Correo sin verificar */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ya pediste tus datos hoy */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -23356,7 +23759,7 @@ export interface operations {
             };
         };
     };
-    SocialLinksAdminController_get: {
+    BrandAdminController_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -23370,12 +23773,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EmailSocialLinksResponse"];
+                    "application/json": components["schemas"]["EmailBrandResponse"];
                 };
             };
         };
     };
-    SocialLinksAdminController_update: {
+    BrandAdminController_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -23384,7 +23787,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateSocialLinksDto"];
+                "application/json": components["schemas"]["UpdateEmailBrandDto"];
             };
         };
         responses: {
@@ -23393,7 +23796,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EmailSocialLinksResponse"];
+                    "application/json": components["schemas"]["EmailBrandResponse"];
+                };
+            };
+        };
+    };
+    BrandAdminController_uploadAsset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadEmailBrandAssetDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailBrandAssetUploadResponse"];
                 };
             };
         };
@@ -26923,6 +27349,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CountryRolloutResponse"];
+                };
+            };
+        };
+    };
+    LegalAdminController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                doc: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminLegalDocumentResponse"];
+                };
+            };
+        };
+    };
+    LegalAdminController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                doc: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateLegalDocumentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminLegalDocumentResponse"];
                 };
             };
         };

@@ -5,11 +5,17 @@ import { useState } from 'react';
 import { ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { MessageChannel } from '@/hooks/use-message-templates';
-import { useEmailSocialLinks, type EmailSocialLinks } from '@/hooks/use-email-social-links';
+import { useEmailBrand, type EmailBrand } from '@/hooks/use-email-brand';
+import { InboxHeader } from '@/components/admin/inbox-header';
 
 // Espeja COLOR.wordmark de base.layout.ts del backend: el email lo pinta como
 // texto inline, no como SVG, y ese gris no existe como token del panel.
 const EMAIL_WORDMARK_COLOR = '#A8B5BD';
+
+// Mapeo de los presets del backend a clases de tamaño del panel. El preview es
+// fiel, no idéntico: importa que se note chico/mediano/grande, no clavar el px.
+const HEADLINE_CLASS = { sm: 'text-base', md: 'text-lg', lg: 'text-2xl' } as const;
+const MASCOT_CLASS = { sm: 'size-20', md: 'size-28', lg: 'size-36' } as const;
 
 type StructuredEmailFields = {
   headline?: string;
@@ -49,20 +55,6 @@ export function MessagePreview(props: MessagePreviewProps) {
   );
 }
 
-// Encabezado tipo bandeja (Gmail): remitente + asunto. Compartido por email simple y estructurado.
-function InboxHeader({ subject }: { subject: string }) {
-  return (
-    <div className="bg-muted/50 space-y-1 border-b px-4 py-3">
-      <div className="text-muted-foreground text-xs">
-        Kodi <span className="opacity-70">&lt;info@kodi.app&gt;</span>
-      </div>
-      <div className="text-sm font-medium">
-        {subject.trim() || <span className="text-muted-foreground italic">(sin asunto)</span>}
-      </div>
-    </div>
-  );
-}
-
 function SimpleBody({ body }: { body: string }) {
   return (
     <div className="min-h-24 px-4 py-4 text-sm whitespace-pre-wrap">
@@ -72,31 +64,39 @@ function SimpleBody({ body }: { body: string }) {
 }
 
 function DuolingoCanvas({ headline, assetUrl, body, ctaLabel, secondaryText }: MessagePreviewProps) {
-  const { data: social } = useEmailSocialLinks();
+  const { data: brand } = useEmailBrand();
+
+  // Lo que el destinatario va a ver = lo configurado, y si no hay nada, el default
+  // que reporta el backend. El panel no inventa ninguno de los dos valores.
+  const mascotUrl = brand?.mascotUrl ?? brand?.defaults.mascotUrl;
+  const headlineColor = brand?.headlineColor ?? brand?.defaults.headlineColor;
+  const headlineSize = brand?.headlineSize ?? brand?.defaults.headlineSize ?? 'md';
+  const mascotSize = brand?.mascotSize ?? brand?.defaults.mascotSize ?? 'md';
 
   return (
     <div className="bg-background px-6 py-8 text-center">
+      <Wordmark url={brand?.wordmarkUrl} />
+      <Hero assetUrl={assetUrl} mascotUrl={mascotUrl} sizeClass={MASCOT_CLASS[mascotSize]} />
       <div
-        className="mx-auto mb-7 text-sm font-medium tracking-wide"
-        style={{ color: EMAIL_WORDMARK_COLOR }}
+        className={cn(
+          'text-foreground mt-5 leading-snug font-extrabold tracking-tight',
+          HEADLINE_CLASS[headlineSize],
+        )}
+        style={headlineColor ? { color: headlineColor } : undefined}
       >
-        kodi.
-      </div>
-      <Hero assetUrl={assetUrl} kokoUrl={social?.assets.koko} />
-      <div className="text-foreground mt-5 text-lg leading-snug font-extrabold tracking-tight">
         {headline?.trim() || <span className="text-muted-foreground font-normal italic">(título)</span>}
       </div>
       <p className="text-muted-foreground mx-auto mt-3 max-w-sm text-sm leading-relaxed whitespace-pre-wrap">
         {body.trim() || <span className="italic">(cuerpo vacío)</span>}
       </p>
-      <CtaPill label={ctaLabel} />
+      <CtaPill label={ctaLabel} color={brand?.ctaColor ?? undefined} />
       {secondaryText?.trim() && (
         <p className="text-muted-foreground mx-auto mt-4 max-w-sm text-xs leading-relaxed">
           {secondaryText.trim()}
         </p>
       )}
       <div className="my-6 border-t" />
-      <SocialRow links={social} />
+      <SocialRow links={brand} />
       <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
         © Kodi — Estudiá. Competí. Aprobá.
         <br />
@@ -106,50 +106,99 @@ function DuolingoCanvas({ headline, assetUrl, body, ctaLabel, secondaryText }: M
   );
 }
 
-function Hero({ assetUrl, kokoUrl }: { assetUrl?: string; kokoUrl?: string }) {
-  // El Koko real vive en R2 y su URL la resuelve el backend; si no carga (bucket
+// Encabezado: el logo configurado o, sin él, el wordmark de texto de siempre —
+// exactamente la misma decisión que toma `renderWordmark` en el backend.
+function Wordmark({ url }: { url?: string | null }) {
+  const [failed, setFailed] = useState(false);
+  if (url && !failed) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={url}
+        alt="Kodi"
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className="mx-auto mb-7 h-7 w-auto object-contain"
+      />
+    );
+  }
+  return (
+    <div
+      className="mx-auto mb-7 text-sm font-medium tracking-wide"
+      style={{ color: EMAIL_WORDMARK_COLOR }}
+    >
+      kodi.
+    </div>
+  );
+}
+
+function Hero({
+  assetUrl,
+  mascotUrl,
+  sizeClass,
+}: {
+  assetUrl?: string;
+  mascotUrl?: string;
+  sizeClass: string;
+}) {
+  // La mascota vive en R2 y su URL la resuelve el backend; si no carga (bucket
   // caído, sin red) degradamos al placeholder en vez de dejar un ícono roto.
-  const [kokoFailed, setKokoFailed] = useState(false);
+  const [mascotFailed, setMascotFailed] = useState(false);
   const custom = assetUrl?.trim();
 
   // Origen arbitrario (la URL la escribe el admin) → next/image exigiría remotePatterns por host;
   // <img> es la herramienta correcta para previsualizar una URL externa cualquiera.
   if (custom) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={custom} alt="Imagen principal del email" loading="lazy" className="mx-auto size-28 object-contain" />;
-  }
-  if (kokoUrl && !kokoFailed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={kokoUrl}
-        alt="Koko"
+        src={custom}
+        alt="Imagen principal del email"
         loading="lazy"
-        onError={() => setKokoFailed(true)}
-        className="mx-auto size-28 object-contain"
+        className={cn('mx-auto object-contain', sizeClass)}
+      />
+    );
+  }
+  if (mascotUrl && !mascotFailed) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={mascotUrl}
+        alt="Mascota"
+        loading="lazy"
+        onError={() => setMascotFailed(true)}
+        className={cn('mx-auto object-contain', sizeClass)}
       />
     );
   }
   return (
-    <div className="bg-muted text-muted-foreground mx-auto flex size-28 flex-col items-center justify-center gap-1 rounded-xl">
+    <div
+      className={cn(
+        'bg-muted text-muted-foreground mx-auto flex flex-col items-center justify-center gap-1 rounded-xl',
+        sizeClass,
+      )}
+    >
       <ImageIcon className="size-7" aria-hidden />
-      <span className="text-[10px]">Koko (por defecto)</span>
+      <span className="text-[10px]">Mascota</span>
     </div>
   );
 }
 
 // CTA de previsualización: NO interactivo (es un preview) → <span>, no <button> (FE-2). Imita el
 // botón real: pill teal de marca (bg-primary) con sombra 3D derivada del token (no un hex inventado).
-function CtaPill({ label }: { label?: string }) {
+// Con un color configurado manda ese, porque es el que va a salir en el correo.
+function CtaPill({ label, color }: { label?: string; color?: string }) {
   const text = label?.trim();
   return (
     <div className="mt-7">
       <span
         role="presentation"
         className={cn(
-          'bg-primary text-primary-foreground inline-block rounded-xl px-8 py-3 text-sm font-bold tracking-wide uppercase shadow-sm',
+          'inline-block rounded-xl px-8 py-3 text-sm font-bold tracking-wide uppercase shadow-sm',
+          color ? 'text-white' : 'bg-primary text-primary-foreground',
           !text && 'opacity-60',
         )}
+        style={color ? { backgroundColor: color } : undefined}
       >
         {text || 'texto del botón'}
       </span>
@@ -193,7 +242,7 @@ const SOCIAL_GLYPHS = {
 // Footer con redes, decorativo (aria-hidden): glifos de marca inline en monocromo muted.
 // Solo las redes con enlace configurado, igual que el email real. Sin enlaces (o
 // mientras carga la config) la fila no se dibuja — nunca íconos que no van a salir.
-function SocialRow({ links }: { links?: EmailSocialLinks }) {
+function SocialRow({ links }: { links?: EmailBrand }) {
   const shown = (Object.keys(SOCIAL_GLYPHS) as Array<keyof typeof SOCIAL_GLYPHS>).filter((key) =>
     links?.[key]?.trim(),
   );
