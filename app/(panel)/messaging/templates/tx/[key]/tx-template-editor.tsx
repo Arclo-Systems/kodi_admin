@@ -214,32 +214,39 @@ const MIN_FRAME_HEIGHT = 320;
  */
 function AutoHeightFrame({ html }: { html: string }) {
   const ref = useRef<HTMLIFrameElement>(null);
+  const observerRef = useRef<ResizeObserver | null>(null);
   const [height, setHeight] = useState(MIN_FRAME_HEIGHT);
 
-  useEffect(() => {
-    const frame = ref.current;
-    if (!frame) return;
+  // Cada `srcDoc` crea un documento NUEVO: el `contentDocument` de antes queda
+  // muerto y su `body` ya no es el que se está pintando. Por eso medir y
+  // observar se hacen dentro del load, releyendo el documento vigente — montar
+  // el ResizeObserver en el efecto lo dejaba mirando un body que no existía
+  // todavía (primer render) o uno viejo (cada cambio de plantilla).
+  function attach(): void {
+    const doc = ref.current?.contentDocument;
+    const root = doc?.documentElement;
+    if (!root) return;
 
-    function measure(): void {
-      const doc = frame?.contentDocument;
-      if (!doc?.documentElement) return;
-      setHeight(Math.max(MIN_FRAME_HEIGHT, doc.documentElement.scrollHeight));
-    }
-
+    const measure = (): void => setHeight(Math.max(MIN_FRAME_HEIGHT, root.scrollHeight));
     measure();
-    frame.addEventListener('load', measure);
 
+    observerRef.current?.disconnect();
+    observerRef.current = null;
     // El contenido del iframe no dispara resize del panel: hay que observar SU
     // documento. La mascota es una imagen remota que llega después del load.
-    const doc = frame.contentDocument;
-    const observer = doc?.body ? new ResizeObserver(measure) : null;
-    if (doc?.body) observer?.observe(doc.body);
+    if (doc?.body) {
+      const observer = new ResizeObserver(measure);
+      observer.observe(doc.body);
+      observerRef.current = observer;
+    }
+  }
 
+  useEffect(() => {
     return () => {
-      frame.removeEventListener('load', measure);
-      observer?.disconnect();
+      observerRef.current?.disconnect();
+      observerRef.current = null;
     };
-  }, [html]);
+  }, []);
 
   return (
     <iframe
@@ -248,6 +255,7 @@ function AutoHeightFrame({ html }: { html: string }) {
       srcDoc={html}
       sandbox="allow-same-origin"
       scrolling="no"
+      onLoad={attach}
       style={{ height }}
       className="w-full bg-white"
     />

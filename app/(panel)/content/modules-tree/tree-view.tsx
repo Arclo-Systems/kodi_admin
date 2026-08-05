@@ -101,18 +101,24 @@ function DragHandle(props: React.HTMLAttributes<HTMLButtonElement>) {
 // con preguntas: el nodo típico tiene uno o dos, y mostrar los cuatro siempre
 // llenaría la fila de ceros que no dicen nada. El número es el badge; el estado
 // se nombra en el tooltip para no triplicar el ancho de cada fila.
-function StatusCountBadges({ counts }: { counts: TreeQuestionCounts }) {
+//
+// `counts` se lee defensivo: en una ventana de deploy el backend puede devolver
+// el objeto incompleto (o ninguno) y el árbol de contenido no puede caerse por
+// un desglose — un estado sin dato simplemente no se pinta.
+function StatusCountBadges({ counts }: { counts?: Partial<TreeQuestionCounts> }) {
   return (
     <>
-      {QUESTION_STATUS_ORDER.filter((status) => counts[status] > 0).map((status) => {
-        const meta = QUESTION_STATUS_META[status];
-        const description = `${counts[status]} ${meta.label}`;
-        return (
-          <span key={status} role="img" aria-label={description} title={description}>
-            <StatusBadge tone={meta.tone} icon={meta.icon} label={String(counts[status])} />
-          </span>
-        );
-      })}
+      {QUESTION_STATUS_ORDER.map((status) => ({ status, total: counts?.[status] ?? 0 }))
+        .filter(({ total }) => total > 0)
+        .map(({ status, total }) => {
+          const meta = QUESTION_STATUS_META[status];
+          const description = `${total} ${meta.label}`;
+          return (
+            <span key={status} role="img" aria-label={description} title={description}>
+              <StatusBadge tone={meta.tone} icon={meta.icon} label={String(total)} />
+            </span>
+          );
+        })}
     </>
   );
 }

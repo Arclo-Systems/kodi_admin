@@ -28,6 +28,19 @@ describe('permissions', () => {
     expect(canWithScope('admin', false, 'user:ban')).toBe(true);
   });
 
+  // Identidad del correo y textos legales salen a TODOS los usuarios (y a las
+  // fichas de las tiendas): el backend los tiene con @RequireRole(admin) y el
+  // gating de UX no puede aflojarse sin que alguien lo note acá.
+  it('mensajería/legal: identidad del correo y documentos legales son admin-only', () => {
+    const adminOnly = ['messaging:brand', 'view:legal', 'legal:write'] as const;
+    for (const action of adminOnly) {
+      expect(can('admin', action)).toBe(true);
+      expect(can('editor', action)).toBe(false);
+      expect(can('commercial', action)).toBe(false);
+      expect(can('support', action)).toBe(false);
+    }
+  });
+
   it('economía: roles alineados al RBAC del backend', () => {
     expect(can('commercial', 'economy:sponsor:write')).toBe(true);
     expect(can('commercial', 'economy:achievement:read')).toBe(false);

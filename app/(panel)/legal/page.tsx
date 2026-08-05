@@ -1,10 +1,11 @@
 import { requireAction } from '@/lib/guard';
+import { can } from '@/lib/permissions';
 import { LegalTabs } from './legal-tabs';
 
 export const metadata = { title: 'Legal' };
 
 export default async function LegalPage() {
-  await requireAction('view:legal');
+  const user = await requireAction('view:legal');
 
   return (
     <div className="space-y-6">
@@ -15,7 +16,7 @@ export default async function LegalPage() {
           fichas de App Store y Google Play.
         </p>
       </div>
-      <LegalTabs />
+      <LegalTabs canWrite={can(user.role, 'legal:write')} />
     </div>
   );
 }

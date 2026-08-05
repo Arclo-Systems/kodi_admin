@@ -31,16 +31,29 @@ export function useLegalDocument(doc: LegalDoc) {
   });
 }
 
+export type UpdateLegalDocumentInput = {
+  sections: LegalSection[];
+  /** La versión que traía el GET del que salió este borrador (control optimista). */
+  expectedVersion: string;
+};
+
+// El texto legal se edita despacio y la ventana entre abrir y publicar es larga:
+// sin `expected_version` el último en apretar Publicar pisa en silencio lo que
+// publicó otro admin. El backend responde 409 en vez de guardar, y el borrador
+// se conserva para que el admin pueda copiar lo suyo antes de recargar.
+const CONFLICT_MESSAGE = 'Otro admin publicó mientras editabas — recargá.';
+
 export function useUpdateLegalDocument(doc: LegalDoc) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (sections: LegalSection[]) => {
+    mutationFn: async ({ sections, expectedVersion }: UpdateLegalDocumentInput) => {
       const res = await fetch(`/api/admin/legal/${doc}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ sections }),
+        body: JSON.stringify({ sections, expected_version: expectedVersion }),
       });
+      if (res.status === 409) throw new Error(CONFLICT_MESSAGE);
       if (!res.ok) {
         const b = (await res.json().catch(() => ({}))) as {
           message?: string;

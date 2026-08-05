@@ -8,7 +8,7 @@ import { LegalEditor } from './legal-editor';
  * revisan juntos. Tabs (no dos páginas) evita duplicar la explicación y el aviso
  * de publicación en cada una.
  */
-export function LegalTabs() {
+export function LegalTabs({ canWrite }: { canWrite: boolean }) {
   return (
     <Tabs defaultValue="terms">
       <TabsList>
@@ -16,10 +16,10 @@ export function LegalTabs() {
         <TabsTrigger value="privacy">Política de privacidad</TabsTrigger>
       </TabsList>
       <TabsContent value="terms" className="pt-4">
-        <LegalEditor doc="terms" />
+        <LegalEditor doc="terms" canWrite={canWrite} />
       </TabsContent>
       <TabsContent value="privacy" className="pt-4">
-        <LegalEditor doc="privacy" />
+        <LegalEditor doc="privacy" canWrite={canWrite} />
       </TabsContent>
     </Tabs>
   );

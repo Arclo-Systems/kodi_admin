@@ -73,8 +73,12 @@ function DuolingoCanvas({ headline, assetUrl, body, ctaLabel, secondaryText }: M
   const headlineSize = brand?.headlineSize ?? brand?.defaults.headlineSize ?? 'md';
   const mascotSize = brand?.mascotSize ?? brand?.defaults.mascotSize ?? 'md';
 
+  // `email-canvas` (globals.css) fija los tokens en claro: el correo real
+  // siempre sale sobre blanco y sus colores de marca están afinados contra ese
+  // fondo — seguir el tema oscuro del panel los volvía ilegibles y el preview
+  // dejaba de parecerse a lo que recibe el usuario.
   return (
-    <div className="bg-background px-6 py-8 text-center">
+    <div className="email-canvas bg-card text-card-foreground px-6 py-8 text-center">
       <Wordmark url={brand?.wordmarkUrl} />
       <Hero assetUrl={assetUrl} mascotUrl={mascotUrl} sizeClass={MASCOT_CLASS[mascotSize]} />
       <div
@@ -239,12 +243,23 @@ const SOCIAL_GLYPHS = {
   ),
 } as const;
 
+// Fail-safe del backend (`socialUrls` en email/templates/assets.ts): sin ninguna
+// config guardada el correo real IGUAL sale con Instagram y Facebook, así que el
+// preview tiene que mostrarlos. TikTok, WhatsApp y el sitio web nunca tuvieron
+// default y quedan ocultos hasta que el admin los configure.
+const DEFAULT_SOCIAL_LINKS: Partial<Record<keyof typeof SOCIAL_GLYPHS, string>> = {
+  instagramUrl: 'https://instagram.com/kodi.app',
+  facebookUrl: 'https://facebook.com/kodi.app',
+};
+
 // Footer con redes, decorativo (aria-hidden): glifos de marca inline en monocromo muted.
-// Solo las redes con enlace configurado, igual que el email real. Sin enlaces (o
-// mientras carga la config) la fila no se dibuja — nunca íconos que no van a salir.
+// Solo las redes con enlace, igual que el email real: las configuradas si hay
+// config, y si no las hay (aún cargando, o el GET falló) las que manda el
+// backend por defecto — nunca íconos que no van a salir.
 function SocialRow({ links }: { links?: EmailBrand }) {
+  const resolved = links ?? DEFAULT_SOCIAL_LINKS;
   const shown = (Object.keys(SOCIAL_GLYPHS) as Array<keyof typeof SOCIAL_GLYPHS>).filter((key) =>
-    links?.[key]?.trim(),
+    resolved[key]?.trim(),
   );
   if (shown.length === 0) return null;
 

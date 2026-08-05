@@ -13,11 +13,22 @@ import { uploadEmailBrandAsset } from '@/hooks/use-email-brand';
 // dimensiones).
 const TYPES = ['image/png', 'image/webp'];
 
+// Espejo de `emailBrandAsset.maxBytes` del backend. Se chequea acá porque la
+// imagen viaja en base64 (≈33% más): sin el corte, un archivo grande se lee
+// entero, se sube y recién entonces vuelve rechazado.
+const MAX_BYTES = 1024 * 1024;
+
 /**
  * Imagen de la identidad (mascota o logo). Controlado: `value` es la URL ya
  * subida o null, y null significa "usar el valor por defecto" — por eso el
  * botón de restaurar aparece solo cuando hay algo cargado.
  */
+// Se redondea hacia ARRIBA: un archivo de 1,02 MB mostrado como "1.0 MB" haría
+// ver el rechazo como un error del panel.
+function formatMb(bytes: number): string {
+  return (Math.ceil((bytes / MAX_BYTES) * 10) / 10).toFixed(1);
+}
+
 export function BrandImageField({
   label,
   hint,
@@ -43,6 +54,10 @@ export function BrandImageField({
     if (!file) return;
     if (!TYPES.includes(file.type)) {
       toast.error('Formato no soportado (png/webp)');
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      toast.error(`La imagen pesa ${formatMb(file.size)} MB. El máximo es 1 MB.`);
       return;
     }
     setBusy(true);
