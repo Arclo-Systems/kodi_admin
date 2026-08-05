@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ctaShadowColor } from '@/lib/email-contrast';
 import type { MessageChannel } from '@/hooks/use-message-templates';
 import { useEmailBrand, type EmailBrand } from '@/hooks/use-email-brand';
 import { InboxHeader } from '@/components/admin/inbox-header';
@@ -93,7 +94,11 @@ function DuolingoCanvas({ headline, assetUrl, body, ctaLabel, secondaryText }: M
       <p className="text-muted-foreground mx-auto mt-3 max-w-sm text-sm leading-relaxed whitespace-pre-wrap">
         {body.trim() || <span className="italic">(cuerpo vacío)</span>}
       </p>
-      <CtaPill label={ctaLabel} color={brand?.ctaColor ?? undefined} />
+      <CtaPill
+        label={ctaLabel}
+        color={brand?.ctaColor ?? brand?.defaults.ctaColor}
+        defaultColor={brand?.defaults.ctaColor}
+      />
       {secondaryText?.trim() && (
         <p className="text-muted-foreground mx-auto mt-4 max-w-sm text-xs leading-relaxed">
           {secondaryText.trim()}
@@ -188,21 +193,45 @@ function Hero({
   );
 }
 
-// CTA de previsualización: NO interactivo (es un preview) → <span>, no <button> (FE-2). Imita el
-// botón real: pill teal de marca (bg-primary) con sombra 3D derivada del token (no un hex inventado).
-// Con un color configurado manda ese, porque es el que va a salir en el correo.
-function CtaPill({ label, color }: { label?: string; color?: string }) {
+// CTA de previsualización: NO interactivo (es un preview) → <span>, no <button> (FE-2).
+//
+// Imita el botón real del correo, incluida la sombra 3D: el email pinta un
+// `box-shadow: 0 4px 0 <sombra>` (renderCta de base.layout.ts) y sin ella el
+// preview mostraba un botón plano que no era el que iba a recibir el usuario.
+// La sombra sale de `ctaShadowColor` — el mismo cálculo que el backend, no un
+// hex inventado ni el `shadow-sm` genérico de Tailwind.
+//
+// `color` ya viene resuelto (lo configurado, o el default que reporta el
+// backend); mientras el GET carga no hay ninguno y se cae al token del panel.
+function CtaPill({
+  label,
+  color,
+  defaultColor,
+}: {
+  label?: string;
+  color?: string;
+  defaultColor?: string;
+}) {
   const text = label?.trim();
+  const shadow = color && defaultColor ? ctaShadowColor(color, defaultColor) : undefined;
+
   return (
     <div className="mt-7">
       <span
         role="presentation"
         className={cn(
-          'inline-block rounded-xl px-8 py-3 text-sm font-bold tracking-wide uppercase shadow-sm',
-          color ? 'text-white' : 'bg-primary text-primary-foreground',
+          'inline-block rounded-xl px-8 py-3 text-sm font-bold tracking-wide uppercase',
+          color ? 'text-white' : 'bg-primary text-primary-foreground shadow-sm',
           !text && 'opacity-60',
         )}
-        style={color ? { backgroundColor: color } : undefined}
+        style={
+          color
+            ? {
+                backgroundColor: color,
+                boxShadow: shadow ? `0 4px 0 ${shadow}` : undefined,
+              }
+            : undefined
+        }
       >
         {text || 'texto del botón'}
       </span>
