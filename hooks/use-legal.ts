@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FileTextIcon, ShieldCheckIcon, TrophyIcon, type LucideIcon } from 'lucide-react';
 import { unwrapData } from '@/lib/bff';
 
 export const LEGAL_DOCS = ['terms', 'privacy', 'raffle_rules'] as const;
@@ -11,6 +12,13 @@ export const DOC_LABELS: Record<LegalDoc, string> = {
   terms: 'Términos de uso',
   privacy: 'Política de privacidad',
   raffle_rules: 'Bases de premiaciones',
+};
+
+/** Icono de cada documento en las tabs, junto al label (convención del panel). */
+export const DOC_ICONS: Record<LegalDoc, LucideIcon> = {
+  terms: FileTextIcon,
+  privacy: ShieldCheckIcon,
+  raffle_rules: TrophyIcon,
 };
 
 export type LegalSection = {
