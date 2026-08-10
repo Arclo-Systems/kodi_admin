@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
-import { PlusIcon } from 'lucide-react';
+import { EyeIcon, LockIcon, PlusIcon } from 'lucide-react';
 import {
   useQuestions,
   type GenerationSource,
@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { can } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
 import { QuestionDifficulty, QuestionStatusBadge } from '@/lib/question-status';
+import { StatusBadge } from '@/lib/status-badge';
 import { QuestionFilters } from './question-filters';
 import { AiGenerateDialog } from './ai-generate-dialog';
 import { QuestionsImportDialog } from './questions-import-dialog';
@@ -51,6 +52,17 @@ const columns: ColumnDef<QuestionListItem, unknown>[] = [
     header: 'Origen',
     meta: { label: 'Origen' },
     cell: ({ row }) => SOURCE_L[row.original.generationSource],
+  },
+  {
+    accessorKey: 'isDemoPool',
+    header: 'Mazo',
+    meta: { label: 'Mazo' },
+    cell: ({ row }) =>
+      row.original.isDemoPool ? (
+        <StatusBadge tone="warning" icon={EyeIcon} label="Demo público" />
+      ) : (
+        <StatusBadge tone="muted" icon={LockIcon} label="Banco" />
+      ),
   },
   {
     accessorKey: 'createdAt',

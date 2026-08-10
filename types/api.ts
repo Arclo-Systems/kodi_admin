@@ -376,11 +376,31 @@ export interface paths {
         };
         /**
          * Preguntas demo públicas (sin auth)
-         * @description Para landing/onboarding. Sin correct_option_id.
+         * @description Para landing/onboarding. Sin correct_option_id. `module_id` es obligatorio: el mazo demo se cura por módulo desde el panel.
          */
         get: operations["QuestionsController_demo"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/questions/demo/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Corregir una respuesta del demo (sin auth)
+         * @description Da veredicto y revela la opción correcta SOLO para preguntas del mazo demo — el resto del banco responde 404 igual que una pregunta inexistente. El mazo demo es un conjunto dedicado que ningún modo con recompensa sirve. No acredita XP ni moneda (no hay cuenta) y no devuelve explanation (es beneficio Pro).
+         */
+        post: operations["QuestionsController_answerDemo"];
         delete?: never;
         options?: never;
         head?: never;
@@ -564,6 +584,23 @@ export interface paths {
         };
         /** Módulos activos de un país (onboarding) */
         get: operations["PublicCatalogController_listModules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/universities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Universidades del país con sus pesos y escala de admisión */
+        get: operations["UniversitiesController_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -822,6 +859,26 @@ export interface paths {
         head?: never;
         /** Cambiar el módulo activo (pill del header) */
         patch: operations["UsersController_setActiveModule"];
+        trace?: never;
+    };
+    "/v1/users/by-code/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Vista previa de un usuario por su código de amigo
+         * @description Para "buscar por código" y el escaneo de QR. Devuelve solo datos ya públicos. Responde 404 tanto si el código no existe como si a esa persona no se la puede agregar (perfil privado, bloqueo, no acepta solicitudes, sos vos mismo): no filtra existencia. Rate limit propio de 60/hora por el riesgo de enumeración.
+         */
+        get: operations["UsersController_getByFriendCode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/users/{id}": {
@@ -1387,43 +1444,6 @@ export interface paths {
          * @description Generado async tras completion via job generate-session-debrief.
          */
         get: operations["AIController_getSessionDebrief"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/ai/exam-date": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Setear fecha de examen → encola generación de plan IA
-         * @description El plan se genera asíncronamente; consultar GET /ai/exam-plan/:moduleId luego.
-         */
-        post: operations["AIController_setExamDate"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/ai/exam-plan/{moduleId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Obtener plan de estudio IA (null si aún no generado) */
-        get: operations["AIController_getExamPlan"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2271,6 +2291,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/friends/{friendId}/nudge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dar un toque a un amigo (uno por amigo por día)
+         * @description Le recuerda al amigo que practique. El cupo diario lo garantiza un UNIQUE en la base: repetir el mismo día devuelve 409 NUDGE_ALREADY_SENT.
+         */
+        post: operations["FriendsController_nudge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/friends/requests": {
         parameters: {
             query?: never;
@@ -2302,7 +2342,7 @@ export interface paths {
         put?: never;
         /**
          * Buscar amigos por contactos del teléfono (PRD §7.15 ②)
-         * @description Cliente envía SHA-256 hashes (E.164, lowercase). Si persist_mine=true, registra my_phone_hashes en el lookup table.
+         * @description Cliente envía SHA-256 hashes (E.164, lowercase), máximo 100 por llamada. Apagado por defecto: sin CONTACT_DISCOVERY_ENABLED=true responde 403 FEATURE_DISABLED. Techos: 10/hora por cuenta, 30/hora por IP y 3 000 hashes en toda la vida de la cuenta. Ya no registra hashes propios: Kodi no verifica teléfonos y cualquiera podía reclamar el número de otro.
          */
         post: operations["FriendsController_matchContacts"];
         delete?: never;
@@ -2322,7 +2362,7 @@ export interface paths {
         put?: never;
         /**
          * Buscar amigos por proveedor social (PRD §7.15 ③)
-         * @description Provider: facebook|google|apple. Cliente envía provider_ids de sus contactos en la red.
+         * @description Provider: facebook|google|apple. Cliente envía provider_ids de sus contactos en la red, máximo 100 por llamada. Apagado por defecto: sin CONTACT_DISCOVERY_ENABLED=true responde 403 FEATURE_DISABLED. Mismos techos que contacts/match. Para registrar la identidad propia se manda social_ticket (el que emite POST /v1/auth/social/:provider): el provider_id propio ya no se acepta crudo del body.
          */
         post: operations["FriendsController_matchSocial"];
         delete?: never;
@@ -2338,11 +2378,54 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Listar solicitudes recibidas pendientes */
+        /**
+         * Listar solicitudes recibidas pendientes
+         * @description Rate limit propio de 30/min: el "amigos en común" de cada fila cruza las amistades de las dos puntas y con limit=100 son decenas de miles de filas por llamada.
+         */
         get: operations["FriendsController_listReceivedRequests"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/friends/requests/sent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar mis solicitudes enviadas que siguen pendientes
+         * @description Solo `pending`: las aceptadas ya son amistades y las rechazadas/canceladas no se muestran.
+         */
+        get: operations["FriendsController_listSentRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/friends/requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Cancelar una solicitud de amistad propia
+         * @description Solo el emisor y solo mientras esté pendiente. Deja la fila en `cancelled` (no la borra) para conservar el historial; el par queda libre para reintentar.
+         */
+        delete: operations["FriendsController_cancelRequest"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2446,7 +2529,7 @@ export interface paths {
         };
         /**
          * Feed de actividad de amigos (últimos 30 días)
-         * @description event_type ∈ league_promotion, streak_milestone, achievement, simulacro_completed.
+         * @description event_type ∈ league_promotion, streak_milestone, achievement, simulacro_completed, shared_streak. Rate limit propio de 30/min: cada llamada cuesta 3 consultas y la app lo pide al enfocar la pestaña.
          */
         get: operations["FeedController_list"];
         put?: never;
@@ -3067,6 +3150,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Bandeja personal de avisos ("Para vos"), más nuevos primero
+         * @description Solo los del usuario del token. `meta.unread_count` es el total sin leer del usuario (no de la página) — es el punto de la campana. Retención de 90 días: lo más viejo lo borra el cron `notifications-purge`. Rate limit propio de 30/min (bucket `notifications_inbox`): la llamada cuesta la página más dos `COUNT`.
+         */
+        get: operations["NotificationsController_listInbox"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marcar la bandeja como leída
+         * @description Apaga el punto de la campana. `seen_up_to` (opcional) es el `created_at` del aviso más nuevo que la app mostró: lo que entró después de ese instante sigue contando como no leído. Sin el campo, el corte es `now`. El servidor lo acota a `now`. Idempotente — solo toca lo que está sin leer. Mismo criterio que `POST /v1/news/seen`.
+         */
+        post: operations["NotificationsController_markInboxRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/notifications/settings": {
         parameters: {
             query?: never;
@@ -3092,7 +3215,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Ítems del test vocacional (RIASEC) — sin la clave de scoring */
+        /** Ítems del test vocacional (RIASEC) con su dimensión */
         get: operations["VocationalController_getTest"];
         put?: never;
         /** Enviar respuestas → código Holland + top carreras por encaje */
@@ -7867,6 +7990,10 @@ export interface components {
                 has_admission_cutoffs: boolean;
                 exam_duration_min: number | null;
                 exam_question_count: number | null;
+                exams: {
+                    exam_key: string;
+                    name: string;
+                }[];
             }[];
             meta: {
                 page: number;
@@ -7967,6 +8094,17 @@ export interface components {
                 total: number;
             };
         };
+        DemoAnswerDto: {
+            /** Format: uuid */
+            question_id: string;
+            option_id: string;
+        };
+        DemoAnswerResponse: {
+            data: {
+                is_correct: boolean;
+                correct_option_id: string;
+            };
+        };
         NewsListResponse: {
             data: {
                 /** Format: uuid */
@@ -8018,6 +8156,7 @@ export interface components {
                 }[];
                 plan_stage: {
                     exam_key: string;
+                    exam_name: string;
                     focus: string;
                     week_current: number;
                     week_total: number;
@@ -8101,6 +8240,21 @@ export interface components {
                     exam_key: string;
                     name: string;
                 }[];
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        UniversityListResponse: {
+            data: {
+                code: string;
+                name: string;
+                exam_weight: number;
+                presentation_weight: number;
+                scale_min: number;
+                scale_max: number;
             }[];
             meta: {
                 page: number;
@@ -8350,6 +8504,17 @@ export interface components {
             data: {
                 /** Format: uuid */
                 active_module_id: string;
+            };
+        };
+        FriendCodePreviewResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                display_name: string;
+                username: string | null;
+                /** Format: uuid */
+                avatar_item_id: string | null;
+                friend_code: string;
             };
         };
         PublicProfileResponse: {
@@ -8958,30 +9123,6 @@ export interface components {
                 ai_debrief: string | null;
             };
         };
-        SetExamDateDto: {
-            /** Format: uuid */
-            module_id: string;
-            exam_date: string;
-        };
-        ExamDateSetResponse: {
-            data: {
-                /** Format: uuid */
-                id: string;
-                /** Format: uuid */
-                module_id: string;
-                exam_date: string;
-                ai_plan_text: string | null;
-                ai_plan_generated_at: string | null;
-            };
-        };
-        ExamPlanResponse: {
-            data: {
-                exam_date: string;
-                ai_plan_text: string | null;
-                ai_plan_generated_at: string | null;
-                days_remaining: number;
-            } | null;
-        };
         DailyPlanResponse: {
             data: {
                 /** Format: uuid */
@@ -9006,6 +9147,8 @@ export interface components {
                 module_id: string;
                 exam_date: string | null;
                 is_active: boolean;
+                /** @enum {string|null} */
+                plan_status: "pending" | "ready" | "failed" | null;
                 week_current: number | null;
                 week_total: number | null;
                 stages: {
@@ -9016,6 +9159,7 @@ export interface components {
                     tag: "critico" | null;
                     reason: string;
                     topic_ids: string[];
+                    topic_names: string[];
                 }[] | null;
                 plan_generated_at: string | null;
             }[];
@@ -9419,7 +9563,7 @@ export interface components {
                 qualified_count: number;
                 milestones: {
                     threshold: number;
-                    label: string;
+                    label: string | null;
                     reward: unknown;
                     reached: boolean;
                     claimed: boolean;
@@ -9644,23 +9788,35 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     display_name: string;
+                    username: string | null;
+                    friend_code: string;
                     /** Format: uuid */
                     avatar_item_id: string | null;
                     streak_days: number;
                     last_active_at: string;
+                    /** @enum {string|null} */
+                    league_level: "aprendiz" | "avanzado" | "experto" | "genio" | null;
                     shared_streak: {
-                        /** @enum {string|null} */
-                        state: "pending" | "active" | "broken" | null;
+                        /** @enum {string} */
+                        state: "no-racha" | "enviada" | "recibida" | "activa" | "rota";
                         days: number;
                         started_at: string | null;
                         invited_at: string | null;
                     };
+                    nudged_today: boolean;
                 };
             }[];
             meta: {
                 page: number;
                 limit: number;
                 total: number;
+            };
+        };
+        FriendNudgeResponse: {
+            data: {
+                /** @enum {boolean} */
+                nudged_today: true;
+                nudged_at: string;
             };
         };
         SendFriendRequestDto: {
@@ -9684,8 +9840,6 @@ export interface components {
         };
         ContactsMatchDto: {
             phone_hashes: string[];
-            persist_mine?: boolean;
-            my_phone_hashes?: string[];
         };
         FriendMatchesResponse: {
             data: {
@@ -9701,7 +9855,7 @@ export interface components {
             /** @enum {string} */
             provider: "facebook" | "google" | "apple";
             provider_ids: string[];
-            register_self_provider_id?: string;
+            social_ticket?: string;
         };
         ReceivedRequestListResponse: {
             data: {
@@ -9711,8 +9865,33 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     display_name: string;
+                    username: string | null;
+                    friend_code: string;
                     /** Format: uuid */
                     avatar_item_id: string | null;
+                    mutual_friends: number;
+                };
+                created_at: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        SentRequestListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                to_user: {
+                    /** Format: uuid */
+                    id: string;
+                    display_name: string;
+                    username: string | null;
+                    friend_code: string;
+                    /** Format: uuid */
+                    avatar_item_id: string | null;
+                    mutual_friends: number;
                 };
                 created_at: string;
             }[];
@@ -9790,8 +9969,8 @@ export interface components {
         };
         SharedStreakResponse: {
             data: {
-                /** @enum {string|null} */
-                state: "pending" | "active" | "broken" | null;
+                /** @enum {string} */
+                state: "no-racha" | "enviada" | "recibida" | "activa" | "rota";
                 days: number;
                 started_at: string | null;
                 invited_at: string | null;
@@ -10326,6 +10505,30 @@ export interface components {
                 created_at: string;
             };
         };
+        NotificationsListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                type: string;
+                title: string;
+                body: string;
+                data: {
+                    [key: string]: unknown;
+                };
+                read_at: string | null;
+                created_at: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+                unread_count: number;
+            };
+        };
+        MarkNotificationsReadDto: {
+            /** Format: date-time */
+            seen_up_to?: string;
+        };
         NotificationSettingsResponse: {
             data: {
                 streak_reminder: boolean;
@@ -10336,6 +10539,7 @@ export interface components {
                 surprise_exam: boolean;
                 friend_requests: boolean;
                 friend_streak_invites: boolean;
+                friend_nudges: boolean;
                 friend_activity: boolean;
                 news_promos: boolean;
             };
@@ -10350,6 +10554,8 @@ export interface components {
                     id: string;
                     text: string;
                     order: number;
+                    /** @enum {string} */
+                    dimension: "R" | "I" | "A" | "S" | "E" | "C";
                 }[];
             };
         };
@@ -10374,6 +10580,10 @@ export interface components {
                     name: string;
                     area: string | null;
                     fit_score: number;
+                    duration_years: number | null;
+                    avg_salary_monthly: number | null;
+                    demand_level: string | null;
+                    universities: string[];
                 }[];
             };
         };
@@ -10394,6 +10604,10 @@ export interface components {
                     name: string;
                     area: string | null;
                     fit_score: number;
+                    duration_years: number | null;
+                    avg_salary_monthly: number | null;
+                    demand_level: string | null;
+                    universities: string[];
                 }[];
             };
         };
@@ -10438,6 +10652,11 @@ export interface components {
                     avg_salary_monthly: number | null;
                     demand_level: string | null;
                     employment_rate: number | null;
+                    universities: {
+                        university: string;
+                        cutoff_min: number;
+                        year: number;
+                    }[];
                     cutoff_min: number | null;
                     riasec_fit: number | null;
                 }[];
@@ -10493,8 +10712,9 @@ export interface components {
                         min: number;
                         max: number;
                     };
-                    admission_score: number | null;
-                    gap: number | null;
+                    exam_projected: number;
+                    admission_score: number;
+                    gap: number;
                 }[];
                 weak_topics: {
                     /** Format: uuid */
@@ -11290,6 +11510,7 @@ export interface components {
                     difficulty: string;
                     status: string;
                     generationSource: string;
+                    isDemoPool: boolean;
                     /** Format: uuid */
                     moduleId: string;
                     /** Format: uuid */
@@ -11397,6 +11618,7 @@ export interface components {
                 difficulty: string;
                 status: string;
                 generationSource: string;
+                isDemoPool: boolean;
                 /** Format: uuid */
                 createdBy: string | null;
                 /** Format: uuid */
@@ -11432,6 +11654,8 @@ export interface components {
             explanation?: string;
             /** @enum {string} */
             difficulty: "easy" | "medium" | "hard";
+            /** @default false */
+            isDemoPool: boolean;
         };
         QuestionAdminResponse: {
             data: {
@@ -11450,6 +11674,7 @@ export interface components {
                 difficulty: string;
                 status: string;
                 generationSource: string;
+                isDemoPool: boolean;
                 /** Format: uuid */
                 createdBy: string | null;
                 /** Format: uuid */
@@ -11469,6 +11694,7 @@ export interface components {
             explanation?: string | null;
             /** @enum {string} */
             difficulty?: "easy" | "medium" | "hard";
+            isDemoPool?: boolean;
         };
         UploadAssetDto: {
             filename: string;
@@ -16386,6 +16612,13 @@ export interface operations {
                     "text/html": string;
                 };
             };
+            /** @description Rate limit (100/min IP) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     AuthController_parentalConsentApprove: {
@@ -16401,6 +16634,13 @@ export interface operations {
         responses: {
             /** @description Redirect a deep link kodi:// */
             302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limit (100/min IP) */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16539,8 +16779,8 @@ export interface operations {
     };
     QuestionsController_demo: {
         parameters: {
-            query?: {
-                module_id?: string;
+            query: {
+                module_id: string;
                 limit?: number;
             };
             header?: never;
@@ -16556,6 +16796,50 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DemoQuestionListResponse"];
                 };
+            };
+        };
+    };
+    QuestionsController_answerDemo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DemoAnswerDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoAnswerResponse"];
+                };
+            };
+            /** @description RESOURCE_NOT_FOUND — la pregunta no está en el mazo demo */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description WRONG_ANSWER_FORMAT — la opción no pertenece a la pregunta */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description RATE_LIMIT_EXCEEDED — tope de correcciones por IP */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -16782,6 +17066,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PublicModuleListResponse"];
+                };
+            };
+        };
+    };
+    UniversitiesController_list: {
+        parameters: {
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UniversityListResponse"];
                 };
             };
         };
@@ -17107,6 +17412,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActiveModuleResponse"];
+                };
+            };
+        };
+    };
+    UsersController_getByFriendCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FriendCodePreviewResponse"];
                 };
             };
         };
@@ -17792,50 +18118,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SessionDebriefResponse"];
-                };
-            };
-        };
-    };
-    AIController_setExamDate: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetExamDateDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExamDateSetResponse"];
-                };
-            };
-        };
-    };
-    AIController_getExamPlan: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                moduleId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExamPlanResponse"];
                 };
             };
         };
@@ -18873,6 +19155,27 @@ export interface operations {
             };
         };
     };
+    FriendsController_nudge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                friendId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FriendNudgeResponse"];
+                };
+            };
+        };
+    };
     FriendsController_sendRequest: {
         parameters: {
             query?: never;
@@ -18961,6 +19264,48 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ReceivedRequestListResponse"];
                 };
+            };
+        };
+    };
+    FriendsController_listSentRequests: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SentRequestListResponse"];
+                };
+            };
+        };
+    };
+    FriendsController_cancelRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Solicitud cancelada */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -19913,6 +20258,50 @@ export interface operations {
             };
         };
     };
+    NotificationsController_listInbox: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationsListResponse"];
+                };
+            };
+        };
+    };
+    NotificationsController_markInboxRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MarkNotificationsReadDto"];
+            };
+        };
+        responses: {
+            /** @description Bandeja marcada como leída */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     NotificationsController_getSettings: {
         parameters: {
             query?: never;
@@ -20021,6 +20410,8 @@ export interface operations {
             query?: {
                 country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
                 riasec?: "R" | "I" | "A" | "S" | "E" | "C";
+                q?: string;
+                area?: string;
                 sort?: "name" | "demand" | "salary" | "employment";
                 page?: number;
                 pageSize?: number;
@@ -21600,6 +21991,7 @@ export interface operations {
                 topicId?: string;
                 difficulty?: "easy" | "medium" | "hard";
                 status?: "draft" | "review" | "active" | "inactive";
+                isDemoPool?: "true" | "false";
                 search?: string;
                 page?: number;
                 pageSize?: number;

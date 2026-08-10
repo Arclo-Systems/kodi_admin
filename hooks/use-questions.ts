@@ -13,6 +13,7 @@ export type QuestionListItem = {
   difficulty: Difficulty;
   status: QuestionStatus;
   generationSource: GenerationSource;
+  isDemoPool: boolean;
   moduleId: string;
   subjectId: string;
   topicId: string;
@@ -25,6 +26,7 @@ export type QuestionListQuery = {
   topicId?: string;
   difficulty?: Difficulty;
   status?: QuestionStatus;
+  isDemoPool?: boolean;
   search?: string;
   page: number;
   pageSize: number;
@@ -68,6 +70,7 @@ export type QuestionDetail = {
   difficulty: Difficulty;
   status: QuestionStatus;
   generationSource: GenerationSource;
+  isDemoPool: boolean;
   version: number;
   reviewedBy: string | null;
   reviewedAt: string | null;

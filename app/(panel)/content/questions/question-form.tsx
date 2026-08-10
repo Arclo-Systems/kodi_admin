@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { CircleHelpIcon, EyeIcon, LayersIcon, PlusIcon, SaveIcon, Trash2Icon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Switch } from '@/components/ui/switch';
 import { MarkdownField } from '@/components/rich-content/markdown-field';
 import {
@@ -41,6 +41,7 @@ const FormSchema = z
     options: z.array(OptionSchema).min(2).max(6),
     correctOptionId: z.string().min(1, 'Elegí la opción correcta'),
     difficulty: z.enum(['easy', 'medium', 'hard']),
+    isDemoPool: z.boolean(),
     explanation: z.string().trim().max(40000, 'Máximo 40000 caracteres').optional(),
   })
   .refine((q) => q.options.some((o) => o.id === q.correctOptionId), {
@@ -87,6 +88,7 @@ export function QuestionForm({
           options: initial.options,
           correctOptionId: initial.correctOptionId,
           difficulty: initial.difficulty,
+          isDemoPool: initial.isDemoPool,
           explanation: initial.explanation ?? '',
         }
       : {
@@ -102,6 +104,7 @@ export function QuestionForm({
           ],
           correctOptionId: '',
           difficulty: 'medium',
+          isDemoPool: false,
           explanation: '',
         },
   });
@@ -137,6 +140,7 @@ export function QuestionForm({
             options: v.options,
             correctOptionId: v.correctOptionId,
             difficulty: v.difficulty,
+            isDemoPool: v.isDemoPool,
             explanation: v.explanation || undefined,
           }
         : {
@@ -144,6 +148,7 @@ export function QuestionForm({
             options: v.options,
             correctOptionId: v.correctOptionId,
             difficulty: v.difficulty,
+            isDemoPool: v.isDemoPool,
             explanation: v.explanation || null,
           };
     const url =
@@ -392,6 +397,31 @@ export function QuestionForm({
               )}
             />
           </div>
+
+          <Controller
+            name="isDemoPool"
+            control={form.control}
+            render={({ field }) => (
+              <Field>
+                <FieldLabel htmlFor="q-demo">Mazo del demo público</FieldLabel>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="q-demo"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                  <span className="text-sm">
+                    {field.value ? 'Pregunta del demo público' : 'Pregunta del banco'}
+                  </span>
+                </div>
+                <FieldDescription>
+                  El demo del onboarding corre sin cuenta y revela la respuesta correcta. Una
+                  pregunta del mazo deja de aparecer en práctica, simulacros, Partida Kodi, arena
+                  y examen sorpresa.
+                </FieldDescription>
+              </Field>
+            )}
+          />
 
           <Controller
             name="explanation"

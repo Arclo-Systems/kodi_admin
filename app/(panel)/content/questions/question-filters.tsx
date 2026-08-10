@@ -138,6 +138,20 @@ export function QuestionFilters({
           ))}
         </SelectContent>
       </Select>
+
+      <Select
+        value={value.isDemoPool === undefined ? ALL : value.isDemoPool ? 'true' : 'false'}
+        onValueChange={(v) => set({ isDemoPool: v === ALL ? undefined : v === 'true' })}
+      >
+        <SelectTrigger className="w-40" aria-label="Filtrar por mazo del demo">
+          <SelectValue placeholder="Demo" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>Demo y banco</SelectItem>
+          <SelectItem value="true">Solo del demo</SelectItem>
+          <SelectItem value="false">Solo del banco</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 }
