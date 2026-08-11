@@ -4,6 +4,8 @@ import {
   CircleDotIcon,
   CircleSlashIcon,
   ClockIcon,
+  EyeIcon,
+  EyeOffIcon,
   LockIcon,
   MessageCircleIcon,
   RotateCcwIcon,
@@ -11,7 +13,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { StatusTone } from '@/lib/status-badge';
-import type { DeliveryStatus, RaffleStatus } from '@/hooks/use-raffles';
+import type { DeliveryStatus, PublicationStatus, RaffleStatus } from '@/hooks/use-raffles';
 
 // Faro de estado de premiación (única fuente; lo usan la tabla y el detalle).
 export const RAFFLE_STATUS_FARO: Record<RaffleStatus, { tone: StatusTone; icon: LucideIcon }> = {
@@ -22,6 +24,12 @@ export const RAFFLE_STATUS_FARO: Record<RaffleStatus, { tone: StatusTone; icon: 
   awarded_pending_review: { tone: 'info', icon: ClockIcon },
   awarded_final: { tone: 'success', icon: CircleCheckIcon },
   reverted: { tone: 'destructive', icon: RotateCcwIcon },
+};
+
+// Faro de visibilidad: si el mes existe o no para el usuario.
+export const PUBLICATION_FARO: Record<PublicationStatus, { tone: StatusTone; icon: LucideIcon }> = {
+  draft: { tone: 'warning', icon: EyeOffIcon },
+  published: { tone: 'success', icon: EyeIcon },
 };
 
 // Faro de estado de entrega del premio a cada ganador.

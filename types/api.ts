@@ -1412,6 +1412,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/ai/explain-quota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cuota diaria del Tutor IA para el módulo
+         * @description Lectura sin costo para pintar el chip "usadas / tope" antes de la primera explicación del día.
+         */
+        get: operations["AIController_getExplainQuota"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ai/weekly-summary/{moduleId}": {
         parameters: {
             query?: never;
@@ -1499,7 +1519,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * ⑥ Diagnóstico proactivo del coach
+         * @description Card "Pixel detectó un patrón": `summary` es el texto IA generado al detectar 3 fallos seguidos; `detail` se deriva de los temas fallados de esa materia en esa sesión (null si no hay ninguno).
+         */
+        get: operations["AIController_getDiagnostic"];
         put?: never;
         post?: never;
         /**
@@ -6302,6 +6326,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/economy/raffles/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publicar la premiación del mes
+         * @description Enciende la premiación para el usuario: tarjeta de Rankings, pantalla de premiaciones y premiados del cierre. Exige premio cargado (no el placeholder).
+         */
+        post: operations["RafflesAdminController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/economy/raffles/{id}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ocultar la premiación del mes
+         * @description La vuelve a borrador: el usuario deja de ver tarjeta y pantalla, y el cierre no premia ese mes. Solo antes de que la premiación se entregue.
+         */
+        post: operations["RafflesAdminController_unpublish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/economy/raffles/{id}/revert": {
         parameters: {
             query?: never;
@@ -7815,6 +7879,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/game/modes/{mode}/ranking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ModesRankingAdminController_ranking"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/game/wheel-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WheelConfigAdminController_get"];
+        put: operations["WheelConfigAdminController_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/game/wheel-config/upload-asset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WheelConfigAdminController_uploadAsset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/leagues/config": {
         parameters: {
             query?: never;
@@ -8755,6 +8867,8 @@ export interface components {
                     reward_claimed: boolean;
                     promote_count: number;
                     demote_count: number;
+                    gap_to_promotion_xp: number | null;
+                    gap_to_next_position_xp: number | null;
                 } | null;
                 sponsor: {
                     sponsor_name: string;
@@ -9079,6 +9193,7 @@ export interface components {
                 xp_earned: number;
                 kolones_earned: number;
                 ai_debrief: string | null;
+                delta_vs_previous: number | null;
             };
         };
         PracticeSessionResponse: {
@@ -9108,6 +9223,14 @@ export interface components {
                 explanation: string;
                 follow_up_count: number;
                 daily_uses_remaining: number;
+                daily_uses_used: number;
+                daily_uses_max: number;
+            };
+        };
+        ExplainQuotaResponse: {
+            data: {
+                used: number;
+                max: number;
             };
         };
         WeeklySummaryResponse: {
@@ -9137,6 +9260,16 @@ export interface components {
             data: {
                 analysis_text: string | null;
                 generated_at: string | null;
+            };
+        };
+        DiagnosticResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                summary: string;
+                detail: string | null;
+                created_at: string;
+                dismissed_at: string | null;
             };
         };
         UserExamListResponse: {
@@ -9361,6 +9494,10 @@ export interface components {
                 streak_days: number;
                 streak_last_date: string | null;
                 streak_freeze_used_this_week: boolean;
+                week: {
+                    date: string;
+                    done: boolean;
+                }[];
             };
         };
         StreakFrozenResponse: {
@@ -9774,6 +9911,7 @@ export interface components {
                     score: number;
                 }[];
                 ai_analysis: string | null;
+                delta_vs_previous: number | null;
             };
         };
         SimulacroAbandonedResponse: {
@@ -10154,6 +10292,10 @@ export interface components {
                         question_number: number;
                         total_questions: number;
                     }[];
+                } | null;
+                crown: {
+                    asset_url: string | null;
+                    color_hex: string | null;
                 } | null;
                 recent_turns: {
                     /** Format: uuid */
@@ -13946,6 +14088,8 @@ export interface components {
                     prizesCount: number;
                     prizeImageUrl: string | null;
                     status: string;
+                    /** @enum {string} */
+                    publicationStatus: "draft" | "published";
                     drawAt: string;
                     drawnAt: string | null;
                     awardedAt: string | null;
@@ -13990,6 +14134,8 @@ export interface components {
                 prizesCount: number;
                 prizeImageUrl: string | null;
                 status: string;
+                /** @enum {string} */
+                publicationStatus: "draft" | "published";
                 drawAt: string;
                 drawnAt: string | null;
                 awardedAt: string | null;
@@ -16125,6 +16271,39 @@ export interface components {
                 }[];
             };
         };
+        QuickModeRankingAdminResponse: {
+            data: {
+                totalPlayers: number;
+                items: {
+                    position: number;
+                    /** Format: uuid */
+                    userId: string;
+                    displayName: string;
+                    showInRankings: boolean;
+                    bestScore: number;
+                    bestCombo: number;
+                    updatedAt: string;
+                }[];
+            };
+        };
+        GameWheelConfigResponse: {
+            data: {
+                crownAssetUrl: string | null;
+                crownColorHex: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string | null;
+            };
+        };
+        UpdateWheelConfigDto: {
+            crownAssetUrl?: ("" | string) | null;
+            crownColorHex?: ("" | string) | null;
+        };
+        GameWheelAssetUploadResponse: {
+            data: {
+                url: string;
+            };
+        };
         LeagueConfigListResponse: {
             data: {
                 items: {
@@ -16283,6 +16462,13 @@ export interface operations {
             };
             /** @description Credenciales inválidas */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Estado de cuenta que bloquea el acceso: PARENTAL_CONSENT_PENDING, ACCOUNT_PENDING_DELETION (details.deletes_at) o ACCOUNT_SUSPENDED (details.reason con el motivo público de la sanción y details.until con el fin de la suspensión, null si es permanente). */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -18080,6 +18266,27 @@ export interface operations {
             };
         };
     };
+    AIController_getExplainQuota: {
+        parameters: {
+            query?: {
+                module_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplainQuotaResponse"];
+                };
+            };
+        };
+    };
     AIController_getWeeklySummary: {
         parameters: {
             query?: never;
@@ -18160,6 +18367,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SimulacroAnalysisResponse"];
+                };
+            };
+        };
+    };
+    AIController_getDiagnostic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                diagnosticId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosticResponse"];
                 };
             };
         };
@@ -25594,6 +25822,48 @@ export interface operations {
             };
         };
     };
+    RafflesAdminController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaffleActionResponse"];
+                };
+            };
+        };
+    };
+    RafflesAdminController_unpublish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RaffleActionResponse"];
+                };
+            };
+        };
+    };
     RafflesAdminController_revert: {
         parameters: {
             query?: never;
@@ -28529,6 +28799,97 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GameAnnulledResponse"];
+                };
+            };
+        };
+    };
+    ModesRankingAdminController_ranking: {
+        parameters: {
+            query: {
+                module_id: string;
+                country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                exam_subject_id?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                mode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuickModeRankingAdminResponse"];
+                };
+            };
+        };
+    };
+    WheelConfigAdminController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameWheelConfigResponse"];
+                };
+            };
+        };
+    };
+    WheelConfigAdminController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWheelConfigDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameWheelConfigResponse"];
+                };
+            };
+        };
+    };
+    WheelConfigAdminController_uploadAsset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadAssetDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameWheelAssetUploadResponse"];
                 };
             };
         };

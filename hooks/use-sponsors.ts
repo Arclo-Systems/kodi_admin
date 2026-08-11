@@ -3,7 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
 
-export type SponsorOption = { id: string; name: string };
+/** El logo viaja para poder previsualizar lo que verá el usuario sin volver a la ficha. */
+export type SponsorOption = { id: string; name: string; logoUrl: string | null };
 
 export type PipelineStatus = 'prospect' | 'active' | 'lost';
 export type SponsorCurrency = 'CRC' | 'USD';
@@ -95,7 +96,7 @@ export function useSponsorOptions() {
       });
       if (!res.ok) throw new Error('fetch sponsors failed');
       const page = unwrapData<SponsorListPage>(await res.json());
-      return (page?.items ?? []).map((s) => ({ id: s.id, name: s.name }));
+      return (page?.items ?? []).map((s) => ({ id: s.id, name: s.name, logoUrl: s.logoUrl }));
     },
   });
 }

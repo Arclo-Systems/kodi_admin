@@ -1,10 +1,18 @@
 'use client';
 
+import Image from 'next/image';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { SaveIcon } from 'lucide-react';
+import { EyeIcon, EyeOffIcon, SaveIcon } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -14,11 +22,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useSponsorOptions } from '@/hooks/use-sponsors';
+import { useSponsorOptions, type SponsorOption } from '@/hooks/use-sponsors';
 import { useRaffleActions, type CompleteRaffleInput, type RaffleDetail } from '@/hooks/use-raffles';
 import { RafflePrizeUpload } from './raffle-prize-upload';
 
 const NO_SPONSOR = '__none__';
+
+/** El molde mensual nace con este texto: publicarlo sería anunciar un mes vacío. */
+const PLACEHOLDER_PRIZE = 'Premio por definir';
+
+export function hasRealPrize(prizeDescription: string): boolean {
+  const value = prizeDescription.trim();
+  return value.length > 0 && value !== PLACEHOLDER_PRIZE;
+}
 
 type FormValues = {
   name: string;
@@ -108,6 +124,7 @@ export function CompleteRaffleForm({ raffle }: { raffle: RaffleDetail }) {
                     ))}
                   </SelectContent>
                 </Select>
+                <SponsorPreview sponsor={(sponsors ?? []).find((s) => s.id === field.value)} />
               </Field>
             )}
           />
@@ -150,7 +167,85 @@ export function CompleteRaffleForm({ raffle }: { raffle: RaffleDetail }) {
             Guardar premiación
           </Button>
         </div>
+        <PublicationControl raffle={raffle} />
       </FieldGroup>
     </form>
+  );
+}
+
+function SponsorPreview({ sponsor }: { sponsor: SponsorOption | undefined }) {
+  if (!sponsor) return null;
+  return (
+    <>
+      <div className="bg-muted/40 flex items-center gap-3 rounded-md border px-3 py-2">
+        {sponsor.logoUrl ? (
+          <Image
+            src={sponsor.logoUrl}
+            alt=""
+            width={32}
+            height={32}
+            className="size-8 rounded object-contain"
+            unoptimized
+          />
+        ) : (
+          <div className="bg-muted grid size-8 place-items-center rounded text-xs font-medium">
+            {sponsor.name.slice(0, 2).toUpperCase()}
+          </div>
+        )}
+        <span className="text-sm font-medium">{sponsor.name}</span>
+      </div>
+      <FieldDescription>
+        Así se ve en la tarjeta de Rankings. El nombre y el logo salen de la ficha del sponsor: para
+        cambiarlos, se edita el sponsor.
+      </FieldDescription>
+    </>
+  );
+}
+
+export function PublicationControl({ raffle }: { raffle: RaffleDetail }) {
+  const { setPublication } = useRaffleActions(raffle.id);
+  const published = raffle.publicationStatus === 'published';
+  // Se mira lo GUARDADO, no el formulario: publicar con el premio escrito pero sin
+  // guardar lo rechaza el backend igual.
+  const prizeReady = hasRealPrize(raffle.prizeDescription);
+
+  async function toggle(): Promise<void> {
+    try {
+      await setPublication.mutateAsync(published ? 'draft' : 'published');
+      toast.success(published ? 'Premiación oculta' : 'Premiación publicada');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Error cambiando la visibilidad');
+    }
+  }
+
+  return (
+    <div className="space-y-3 border-t pt-5">
+      <Alert>
+        <AlertTitle>
+          {published ? 'Este mes está publicado' : 'Sin publicar, los usuarios no ven nada este mes'}
+        </AlertTitle>
+        <AlertDescription>
+          {published
+            ? 'Los usuarios ven la tarjeta de Rankings y la pantalla de premiaciones, y el cierre premia a los ganadores.'
+            : 'No hay tarjeta en Rankings, la pantalla de premiaciones no muestra este mes y el cierre no premia a nadie.'}
+        </AlertDescription>
+      </Alert>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {!published && !prizeReady && (
+          <p className="text-muted-foreground text-sm">
+            Cargá y guardá el premio para poder publicar.
+          </p>
+        )}
+        <Button
+          type="button"
+          variant={published ? 'outline' : 'default'}
+          disabled={setPublication.isPending || (!published && !prizeReady)}
+          onClick={toggle}
+        >
+          {published ? <EyeOffIcon className="size-4" /> : <EyeIcon className="size-4" />}
+          {published ? 'Ocultar premiación' : 'Publicar premiación'}
+        </Button>
+      </div>
+    </div>
   );
 }

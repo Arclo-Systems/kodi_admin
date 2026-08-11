@@ -19,11 +19,12 @@ import {
   useRaffle,
   useRaffleActions,
   RAFFLE_STATUS_LABELS,
+  PUBLICATION_LABELS,
   DELIVERY_LABELS,
   type RaffleWinner,
 } from '@/hooks/use-raffles';
 import { StatusBadge } from '@/lib/status-badge';
-import { RAFFLE_STATUS_FARO, DELIVERY_FARO } from '@/lib/raffle-status';
+import { RAFFLE_STATUS_FARO, PUBLICATION_FARO, DELIVERY_FARO } from '@/lib/raffle-status';
 import { DataTable } from '@/components/admin/data-table';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { CompleteRaffleForm } from './complete-raffle-form';
@@ -148,8 +149,16 @@ export function RaffleDetail({ id }: { id: string }) {
             {raffle &&
               (() => {
                 const faro = RAFFLE_STATUS_FARO[raffle.status];
+                const pub = PUBLICATION_FARO[raffle.publicationStatus];
                 return (
-                  <StatusBadge tone={faro.tone} icon={faro.icon} label={RAFFLE_STATUS_LABELS[raffle.status]} />
+                  <>
+                    <StatusBadge
+                      tone={pub.tone}
+                      icon={pub.icon}
+                      label={PUBLICATION_LABELS[raffle.publicationStatus]}
+                    />
+                    <StatusBadge tone={faro.tone} icon={faro.icon} label={RAFFLE_STATUS_LABELS[raffle.status]} />
+                  </>
                 );
               })()}
           </div>
@@ -230,7 +239,8 @@ export function RaffleDetail({ id }: { id: string }) {
               Completar premiación
             </CardTitle>
             <CardDescription>
-              Definí premio, sponsor y cantidad de premios antes del sorteo.
+              Definí premio, sponsor y cantidad de premios antes del sorteo, y publicá el mes
+              cuando esté listo.
             </CardDescription>
           </CardHeader>
           <CardContent>

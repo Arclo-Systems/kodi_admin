@@ -12,7 +12,15 @@ export type RaffleStatus =
   | 'awarded_final'
   | 'reverted';
 
+/** Visibilidad para el usuario. Ortogonal al ciclo de vida del sorteo (`RaffleStatus`). */
+export type PublicationStatus = 'draft' | 'published';
+
 export type DeliveryStatus = 'notified' | 'contacted' | 'delivered' | 'unresponsive';
+
+export const PUBLICATION_LABELS: Record<PublicationStatus, string> = {
+  draft: 'Borrador',
+  published: 'Publicada',
+};
 
 export const RAFFLE_STATUS_LABELS: Record<RaffleStatus, string> = {
   scheduled: 'Programada',
@@ -52,6 +60,7 @@ export type Raffle = {
   sponsorId: string | null;
   prizesCount: number;
   status: RaffleStatus;
+  publicationStatus: PublicationStatus;
   drawAt: string;
   awardedAt: string | null;
   reversibleUntil: string | null;
@@ -189,6 +198,16 @@ export function useRaffleActions(id: string) {
     }),
     revert: useMutation({
       mutationFn: () => sendJson(`/api/admin/economy/raffles/${id}/revert`, 'POST', {}),
+      onSuccess: invalidate,
+    }),
+    // Publicar es lo que hace existir el mes para el usuario; ocultar lo apaga entero.
+    setPublication: useMutation({
+      mutationFn: (next: PublicationStatus) =>
+        sendJson(
+          `/api/admin/economy/raffles/${id}/${next === 'published' ? 'publish' : 'unpublish'}`,
+          'POST',
+          {},
+        ),
       onSuccess: invalidate,
     }),
     // Se manda la lista COMPLETA: el backend reemplaza, así que quitar un
