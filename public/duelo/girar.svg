@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- COPIA ESPEJO de frontend/assets/duelo/girar.svg — si cambia allá, cambia acá.
+     Botón GIRAR de la Partida Kodi. Geometría exacta, centro en (12.5, 15.5).
+     · Aro de grosor constante 0.35: el ápice interior sale de desplazar las dos
+       aristas, no de repetir el ángulo, que dejaba el aro más fino en las bases.
+     · Ápice rematado con un arco de 0.4 en vez de punta viva.
+     · Filetes de 0.6 donde las aristas entran al círculo, para que la silueta
+       se lea como un cuerpo continuo y no como un triángulo pegado a un disco.
+     · Rótulo centrado en el eje del círculo (venía 0.035 arriba).
+     · viewBox con 1.5 de margen: la sombra vive dentro del archivo y sigue la
+       silueta, punta incluida. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="25" height="28" viewBox="0 0 25 28">
+  <defs>
+    <filter id="sombraGirar" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="0.45" stdDeviation="0.5"
+                    flood-color="#422622" flood-opacity="0.32"/>
+    </filter>
+  </defs>
+
+  <g id="forma" filter="url(#sombraGirar)">
+    <path fill="#FEFEFE" d="M12.7716 1.7505
+      L16.5410 5.2276
+      A0.6 0.6 0 0 0 16.7178 5.3404
+      A11 11 0 1 1 8.2822 5.3404
+      A0.6 0.6 0 0 0 8.4590 5.2276
+      L12.2284 1.7505
+      A0.4 0.4 0 0 1 12.7716 1.7505 Z"/>
+    <path fill="#E5E5E5" d="M12.5340 2.0075
+      L16.3036 5.4849
+      A0.95 0.95 0 0 0 16.5836 5.6637
+      A10.65 10.65 0 1 1 8.4164 5.6637
+      A0.95 0.95 0 0 0 8.6964 5.4849
+      L12.4660 2.0075
+      A0.05 0.05 0 0 1 12.5340 2.0075 Z"/>
+    <circle cx="12.5" cy="15.5" r="9.75" fill="#FEFEFE"/>
+  </g>
+
+  <g id="rotulo" fill="#171717" transform="translate(1.5 1.535)">
+    <path d="M6.06,13.35c-.06-.11-.15-.2-.26-.26-.11-.06-.25-.09-.41-.09-.27,0-.48.09-.65.26-.16.18-.24.41-.24.71,0,.31.09.56.25.74.17.18.4.26.7.26.2,0,.38-.05.52-.16.14-.1.24-.25.31-.45h-1.05v-.61h1.81v.77c-.06.21-.17.4-.31.58-.15.18-.33.32-.56.43-.23.11-.48.17-.77.17-.34,0-.64-.07-.9-.22-.26-.15-.47-.35-.62-.61-.15-.26-.22-.56-.22-.9s.07-.64.22-.9c.15-.26.35-.47.61-.62.26-.15.56-.22.9-.22.41,0,.75.1,1.03.3.28.2.47.47.56.82h-.92Z"/>
+    <path d="M8.33,12.27v3.41h-.83v-3.41h.83Z"/>
+    <path d="M10.67,15.68l-.71-1.29h-.2v1.29h-.83v-3.41h1.39c.27,0,.5.05.69.14.19.09.33.22.42.39.09.16.14.35.14.55,0,.23-.06.43-.19.61-.13.18-.32.3-.57.38l.79,1.35h-.94ZM9.76,13.81h.51c.15,0,.27-.04.34-.11.08-.07.11-.18.11-.32s-.04-.23-.11-.31c-.08-.07-.19-.11-.34-.11h-.51v.84Z"/>
+    <path d="M14.22,15.08h-1.27l-.2.6h-.87l1.23-3.41h.96l1.23,3.41h-.88l-.2-.6ZM14.01,14.44l-.42-1.25-.42,1.25h.84Z"/>
+    <path d="M17.41,15.68l-.71-1.29h-.2v1.29h-.83v-3.41h1.39c.27,0,.5.05.69.14.19.09.33.22.42.39.09.16.14.35.14.55,0,.23-.06.43-.19.61-.13.18-.32.3-.57.38l.79,1.35h-.94ZM16.51,13.81h.51c.15,0,.27-.04.34-.11.08-.07.11-.18.11-.32s-.04-.23-.11-.31c-.08-.07-.19-.11-.34-.11h-.51v.84Z"/>
+  </g>
+</svg>
