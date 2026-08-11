@@ -45,6 +45,7 @@ export default async function ModulesTreeNodePage({
       subjectId={subjectId}
       canWriteModules={can(user.role, 'content:module:write')}
       canWriteSubjects={can(user.role, 'content:subject:write')}
+      canEditCrown={can(user.role, 'game:wheel-config:write')}
     />
   );
 }

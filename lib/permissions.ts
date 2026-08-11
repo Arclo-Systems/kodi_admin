@@ -121,6 +121,8 @@ export type Action =
   | 'game:annul'
   // Arena Especial (Ola 6): programar eventos — solo admin
   | 'game:schedule'
+  // Corona de la ruleta de Partida Kodi: config global (todos los módulos y países) — solo admin
+  | 'game:wheel-config:write'
   // Bots (Área 24) — solo admin
   | 'view:bots'
   | 'bots:write'
@@ -229,6 +231,7 @@ const matrix: Record<AdminRole, Action[]> = {
     'view:game',
     'game:annul',
     'game:schedule',
+    'game:wheel-config:write',
     'view:bots',
     'bots:write',
     'view:leagues',

@@ -9,9 +9,17 @@ type TreeState = {
   error: Error | null;
 };
 
+type CrownState = {
+  data: { crownAssetUrl: string | null; crownColorHex: string | null } | null;
+  isLoading: boolean;
+};
+
 let treeState: TreeState;
+let crownState: CrownState;
 const updateSubject = vi.fn();
 const updateTopic = vi.fn();
+const updateCrown = vi.fn();
+const wheelConfigEnabled = vi.fn();
 
 vi.mock('@/hooks/use-modules-tree', () => ({
   useModulesTree: () => ({ ...treeState, refetch: vi.fn() }),
@@ -21,6 +29,14 @@ vi.mock('@/hooks/use-content-tree-mutations', () => ({
     updateSubject: { mutateAsync: updateSubject },
     updateTopic: { mutateAsync: updateTopic },
   }),
+}));
+vi.mock('@/hooks/use-wheel-config', () => ({
+  WHEEL_CROWN_ASSET_ENDPOINT: '/api/admin/game/wheel-config/upload-asset',
+  useWheelConfig: (enabled: boolean) => {
+    wheelConfigEnabled(enabled);
+    return crownState;
+  },
+  useUpdateWheelConfig: () => ({ mutateAsync: updateCrown, isPending: false }),
 }));
 
 import { WheelTab } from './wheel-tab';
@@ -80,10 +96,23 @@ function moduleWith(over: Partial<TreeModule>): TreeModule {
   };
 }
 
-function renderTab(over: { canWrite?: boolean } = {}) {
+// La corona es admin-only: por defecto se renderiza sin ella para que los atajos de paleta del
+// bloque no compitan con los de los sectores.
+function renderTab(over: { canWrite?: boolean; canEditCrown?: boolean } = {}) {
   return render(
-    <WheelTab moduleId="mod-1" canWrite={over.canWrite ?? true} onGoToModuleForm={vi.fn()} />,
+    <WheelTab
+      moduleId="mod-1"
+      canWrite={over.canWrite ?? true}
+      canEditCrown={over.canEditCrown ?? false}
+      onGoToModuleForm={vi.fn()}
+    />,
   );
+}
+
+function crownBlock(container: HTMLElement): HTMLElement {
+  const block = container.querySelector('[data-slot="wheel-crown"]');
+  if (!block) throw new Error('no hay bloque de corona');
+  return block as HTMLElement;
 }
 
 function sectorFills(container: HTMLElement): (string | null)[] {
@@ -96,6 +125,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   updateSubject.mockResolvedValue(undefined);
   updateTopic.mockResolvedValue(undefined);
+  updateCrown.mockResolvedValue(undefined);
+  crownState = { data: null, isLoading: false };
   treeState = {
     data: [
       moduleWith({
@@ -201,5 +232,49 @@ describe('WheelTab', () => {
     expect(screen.queryByRole('button', { name: /Guardar/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Morado' })).not.toBeInTheDocument();
     expect(screen.getByText('Español')).toBeInTheDocument();
+  });
+
+  describe('corona', () => {
+    it('sin rol admin no muestra el bloque ni pide la config global', () => {
+      const { container } = renderTab();
+      expect(container.querySelector('[data-slot="wheel-crown"]')).toBeNull();
+      expect(wheelConfigEnabled).toHaveBeenCalledWith(false);
+    });
+
+    it('avisa que la corona aplica a todos los módulos', () => {
+      renderTab({ canEditCrown: true });
+      expect(screen.getByText('Aplica a todos los módulos')).toBeInTheDocument();
+    });
+
+    it('pinta la corona con la config global y refleja el cambio en vivo sin guardar', () => {
+      crownState = {
+        data: { crownAssetUrl: null, crownColorHex: '#123456' },
+        isLoading: false,
+      };
+      const { container } = renderTab({ canEditCrown: true });
+      expect(sectorFills(container).at(-1)).toBe('#123456');
+
+      fireEvent.click(within(crownBlock(container)).getByRole('button', { name: 'Dorado' }));
+      expect(sectorFills(container).at(-1)).toBe('#E3B23C');
+      expect(updateCrown).not.toHaveBeenCalled();
+    });
+
+    it('guarda la corona contra su propio endpoint, sin tocar los sectores', async () => {
+      const { container } = renderTab({ canEditCrown: true });
+      fireEvent.click(within(crownBlock(container)).getByRole('button', { name: 'Morado' }));
+      fireEvent.click(screen.getByRole('button', { name: /Guardar corona/ }));
+
+      await waitFor(() => expect(updateCrown).toHaveBeenCalledTimes(1));
+      expect(updateCrown).toHaveBeenCalledWith({
+        crownAssetUrl: null,
+        crownColorHex: '#B79AE8',
+      });
+      expect(updateSubject).not.toHaveBeenCalled();
+    });
+
+    it('sin cambios no deja guardar la corona', () => {
+      renderTab({ canEditCrown: true });
+      expect(screen.getByRole('button', { name: /Guardar corona/ })).toBeDisabled();
+    });
   });
 });

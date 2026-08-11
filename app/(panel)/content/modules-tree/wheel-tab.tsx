@@ -11,8 +11,10 @@ import { EmptyState } from '@/components/admin/empty-state';
 import { WheelPreview, type WheelPreviewSector } from '@/components/admin/wheel-preview';
 import { useContentTreeMutations } from '@/hooks/use-content-tree-mutations';
 import { useModulesTree, type TreeModule } from '@/hooks/use-modules-tree';
+import { useUpdateWheelConfig, useWheelConfig } from '@/hooks/use-wheel-config';
 import { NodeFooter } from './node-shell';
 import { NodeNotFound } from './node-shared';
+import { WheelCrownEditor, type WheelCrownDraft } from './wheel-crown-editor';
 import {
   WheelSectorEditor,
   WheelSectorSummary,
@@ -28,21 +30,27 @@ const SOURCE_LABEL: Record<TreeModule['duelCategorySource'], string> = {
 
 /**
  * La ruleta de Partida Kodi del módulo: réplica fiel a la izquierda y sus sectores editables a
- * la derecha. No hay campos nuevos ni endpoints nuevos — el color y el arte de cada sector son
- * los de la materia o el tema, y se guardan donde siempre.
+ * la derecha. Los sectores no tienen campos ni endpoints nuevos — el color y el arte son los de
+ * la materia o el tema, y se guardan donde siempre. La corona sí es aparte: config global del
+ * juego, admin-only y con su propio guardado.
  */
 export function WheelTab({
   moduleId,
   canWrite,
+  canEditCrown,
   onGoToModuleForm,
 }: {
   moduleId: string;
   canWrite: boolean;
+  canEditCrown: boolean;
   onGoToModuleForm: () => void;
 }) {
   const { data: tree, isLoading, isError, error, refetch } = useModulesTree();
   const m = useContentTreeMutations();
+  const { data: crownConfig, isLoading: crownLoading } = useWheelConfig(canEditCrown);
+  const updateCrown = useUpdateWheelConfig();
   const [draft, setDraft] = useState<Record<string, WheelSectorDraft>>({});
+  const [crownDraft, setCrownDraft] = useState<WheelCrownDraft | null>(null);
   const [saving, setSaving] = useState(false);
 
   if (isLoading) {
@@ -89,6 +97,29 @@ export function WheelTab({
     return { id: sector.id, name: sector.name, color: v.colorHex, assetUrl: v.wheelAssetUrl };
   });
 
+  const savedCrown: WheelCrownDraft = {
+    assetUrl: crownConfig?.crownAssetUrl ?? null,
+    colorHex: crownConfig?.crownColorHex ?? null,
+  };
+  const crown = crownDraft ?? savedCrown;
+  const crownDirty =
+    crown.assetUrl !== savedCrown.assetUrl || crown.colorHex !== savedCrown.colorHex;
+
+  async function saveCrown(): Promise<void> {
+    try {
+      // El PUT reemplaza la config entera: se mandan siempre los dos campos, y el vacío es
+      // "quitar lo cargado".
+      await updateCrown.mutateAsync({
+        crownAssetUrl: crown.assetUrl?.trim() || null,
+        crownColorHex: crown.colorHex?.trim() || null,
+      });
+      setCrownDraft(null);
+      toast.success('Corona actualizada');
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
   async function save(): Promise<void> {
     setSaving(true);
     try {
@@ -127,7 +158,7 @@ export function WheelTab({
     <div>
       <div className="flex flex-col gap-8 xl:flex-row">
         <div className="space-y-4 xl:sticky xl:top-6 xl:self-start">
-          <WheelPreview sectors={preview} cap={mod.duelCategoryCap} />
+          <WheelPreview sectors={preview} crown={crown} cap={mod.duelCategoryCap} />
 
           <p className="text-muted-foreground flex max-w-70 gap-2 text-xs">
             <ShuffleIcon className="mt-0.5 size-4 shrink-0" />
@@ -209,6 +240,18 @@ export function WheelTab({
                 ),
               )}
             </div>
+          )}
+
+          {canEditCrown && (
+            <WheelCrownEditor
+              value={crown}
+              loading={crownLoading}
+              dirty={crownDirty}
+              saving={updateCrown.isPending}
+              onChange={setCrownDraft}
+              onDiscard={() => setCrownDraft(null)}
+              onSave={() => void saveCrown()}
+            />
           )}
         </div>
       </div>

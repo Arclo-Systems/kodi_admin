@@ -1,8 +1,6 @@
 'use client';
 
-import { KODI_PALETTE } from '@/lib/kodi-palette';
-import { cn } from '@/lib/utils';
-import { AssetField, ColorField } from './visual-identity-fields';
+import { AssetField, ColorField, PaletteSwatches } from './visual-identity-fields';
 
 /** Lo editable de un sector. Los dos campos viven en la materia o el tema, no en la ruleta. */
 export type WheelSectorDraft = {
@@ -69,42 +67,6 @@ export function WheelSectorSummary({ name, value }: { name: string; value: Wheel
         {value.colorHex ?? 'sin color propio'}
         {value.wheelAssetUrl ? ' · con arte' : ' · sin arte'}
       </p>
-    </div>
-  );
-}
-
-/**
- * Atajos a la paleta de marca. El hex escrito a mano sigue siendo válido — esto solo evita
- * inventar tonos con la ruedita del selector nativo.
- */
-function PaletteSwatches({
-  value,
-  onSelect,
-}: {
-  value: string | null;
-  onSelect: (hex: string) => void;
-}) {
-  const current = value?.trim().toUpperCase();
-  return (
-    <div className="flex flex-wrap gap-2">
-      {KODI_PALETTE.map((color) => {
-        const active = current === color.hex;
-        return (
-          <button
-            key={color.hex}
-            type="button"
-            aria-label={color.name}
-            aria-pressed={active}
-            onClick={() => onSelect(color.hex)}
-            style={{ backgroundColor: color.hex }}
-            className={cn(
-              'focus-visible:ring-ring/50 size-8 rounded-md border transition-shadow focus-visible:ring-3',
-              // El estado no se marca solo con color (el botón ES un color): lo dice el aro.
-              active && 'ring-primary ring-offset-card ring-2 ring-offset-2',
-            )}
-          />
-        );
-      })}
     </div>
   );
 }

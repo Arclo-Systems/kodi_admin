@@ -59,6 +59,7 @@ export function NodeEditorClient({
   subjectId,
   canWriteModules,
   canWriteSubjects,
+  canEditCrown,
 }: {
   kind: 'module' | 'subject' | 'topic';
   id: string;
@@ -66,6 +67,8 @@ export function NodeEditorClient({
   subjectId?: string;
   canWriteModules: boolean;
   canWriteSubjects: boolean;
+  /** La corona es config global del juego: solo admin, aunque la pestaña la vea un editor. */
+  canEditCrown: boolean;
 }) {
   const router = useRouter();
   const { data: tree, isLoading, isError, error, refetch } = useModulesTree();
@@ -152,6 +155,7 @@ export function NodeEditorClient({
                 <WheelTab
                   moduleId={view.id}
                   canWrite={canWriteSubjects}
+                  canEditCrown={canEditCrown}
                   onGoToModuleForm={() => setTab(MODULE_TAB)}
                 />
               </TabsContent>

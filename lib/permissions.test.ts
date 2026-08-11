@@ -41,6 +41,15 @@ describe('permissions', () => {
     }
   });
 
+  // La corona de la ruleta es una sola para todos los módulos y países: el editor puede tocar
+  // los sectores de su módulo, pero no algo que le cambia la partida a todo el mundo.
+  it('juego: la corona de la ruleta es admin-only', () => {
+    expect(can('admin', 'game:wheel-config:write')).toBe(true);
+    expect(can('editor', 'game:wheel-config:write')).toBe(false);
+    expect(can('commercial', 'game:wheel-config:write')).toBe(false);
+    expect(can('support', 'game:wheel-config:write')).toBe(false);
+  });
+
   it('economía: roles alineados al RBAC del backend', () => {
     expect(can('commercial', 'economy:sponsor:write')).toBe(true);
     expect(can('commercial', 'economy:achievement:read')).toBe(false);
