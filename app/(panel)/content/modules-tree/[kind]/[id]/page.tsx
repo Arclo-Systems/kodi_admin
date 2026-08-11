@@ -44,6 +44,7 @@ export default async function ModulesTreeNodePage({
       moduleId={moduleId}
       subjectId={subjectId}
       canWriteModules={can(user.role, 'content:module:write')}
+      canWriteSubjects={can(user.role, 'content:subject:write')}
     />
   );
 }

@@ -1,16 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftIcon } from 'lucide-react';
+import { ArrowLeftIcon, Disc3Icon, SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useModulesTree, type TreeModule } from '@/hooks/use-modules-tree';
 import { NodeDetail, type TreeView } from '../../node-detail';
 import { NodeChrome } from '../../node-shell';
+import { WheelTab } from '../../wheel-tab';
 
 const TREE_PATH = '/content/modules-tree';
+const MODULE_TAB = 'modulo';
 
 // El padre de un nodo existente se deriva del árbol en vez de confiar en la
 // query: hoy los formularios solo lo usan al crear, pero dejarlo vacío al editar
@@ -54,15 +58,18 @@ export function NodeEditorClient({
   moduleId,
   subjectId,
   canWriteModules,
+  canWriteSubjects,
 }: {
   kind: 'module' | 'subject' | 'topic';
   id: string;
   moduleId?: string;
   subjectId?: string;
   canWriteModules: boolean;
+  canWriteSubjects: boolean;
 }) {
   const router = useRouter();
   const { data: tree, isLoading, isError, error, refetch } = useModulesTree();
+  const [tab, setTab] = useState(MODULE_TAB);
 
   // El árbol es la única fuente de datos del panel: no hay GET de detalle por
   // nodo, así que el formulario no puede precargarse hasta que llegue.
@@ -100,6 +107,16 @@ export function NodeEditorClient({
     );
   }
 
+  const view = toView(tree ?? [], kind, id, moduleId, subjectId);
+  const detail = (
+    <NodeDetail
+      view={view}
+      tree={tree ?? []}
+      canWriteModules={canWriteModules}
+      onDone={() => router.push(TREE_PATH)}
+    />
+  );
+
   return (
     <div className="space-y-4">
       <Button asChild variant="ghost" size="sm" className="-ml-2">
@@ -113,12 +130,35 @@ export function NodeEditorClient({
           ancho de modal el arte quedaba apilado abajo con media pantalla vacía. */}
       <Card className="p-6">
         <NodeChrome variant="screen">
-          <NodeDetail
-            view={toView(tree ?? [], kind, id, moduleId, subjectId)}
-            tree={tree ?? []}
-            canWriteModules={canWriteModules}
-            onDone={() => router.push(TREE_PATH)}
-          />
+          {/* La ruleta es del módulo pero no se edita con sus campos: sus sectores son las
+              materias o los temas. Por eso va en pestaña propia y no como otro bloque del
+              formulario, que ya es largo. Solo con el módulo creado: sin id no hay sectores. */}
+          {view?.kind === 'module' ? (
+            <Tabs value={tab} onValueChange={setTab}>
+              <TabsList>
+                <TabsTrigger value={MODULE_TAB}>
+                  <SettingsIcon />
+                  Módulo
+                </TabsTrigger>
+                <TabsTrigger value="ruleta">
+                  <Disc3Icon />
+                  Ruleta
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value={MODULE_TAB} className="pt-4">
+                {detail}
+              </TabsContent>
+              <TabsContent value="ruleta" className="pt-4">
+                <WheelTab
+                  moduleId={view.id}
+                  canWrite={canWriteSubjects}
+                  onGoToModuleForm={() => setTab(MODULE_TAB)}
+                />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            detail
+          )}
         </NodeChrome>
       </Card>
     </div>
