@@ -1,10 +1,15 @@
 import { requireAction } from '@/lib/guard';
-import { QuickModesList } from '../quick-modes-list';
+import { COUNTRIES } from '@/lib/countries';
+import { QuickModesTabs } from './quick-modes-tabs';
 
 export const metadata = { title: 'Modos rápidos' };
 
 export default async function QuickModesPage() {
-  await requireAction('view:game');
+  const user = await requireAction('view:game');
+  // Países que el admin puede consultar (global → todos; regional → su scope).
+  const allowedCountries = user.isGlobalScope
+    ? COUNTRIES.map((c) => c.code)
+    : user.assignedCountries;
 
   return (
     <div className="space-y-6">
@@ -14,7 +19,7 @@ export default async function QuickModesPage() {
           Contrarreloj y Supervivencia: inspección y anulación (reversa de Kolones).
         </p>
       </div>
-      <QuickModesList />
+      <QuickModesTabs allowedCountries={allowedCountries} />
     </div>
   );
 }
