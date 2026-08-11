@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ConditionBuilder } from './condition-builder';
+import { ACHIEVEMENT_TIERS } from '@/lib/achievement-tier';
 import {
   useAchievement,
   useAchievementMutations,
@@ -29,24 +30,27 @@ import {
   type AchievementTier,
 } from '@/hooks/use-achievements';
 
-const TIERS: { value: AchievementTier; label: string }[] = [
-  { value: 'common', label: 'Común' },
-  { value: 'uncommon', label: 'Poco común' },
-  { value: 'rare', label: 'Raro' },
-  { value: 'epic', label: 'Épico' },
-];
-
 type FormValues = {
   code: string;
   name: string;
   description: string;
   tier: AchievementTier;
   kokosReward: number;
+  xpReward: number;
+  kolonesReward: number;
   iconUrl: string;
   condition: AchievementCondition;
   isOneTime: boolean;
   isActive: boolean;
 };
+
+type RewardField = 'xpReward' | 'kokosReward' | 'kolonesReward';
+
+// Topes anti-typo del backend (create-achievement.dto.ts): este form EMITE moneda y XP,
+// un cero de más rompe la economía. Sin esto el error llega como 400 sin campo culpable.
+const MAX_XP_REWARD = 5_000;
+const MAX_KOKOS_REWARD = 5_000;
+const MAX_KOLONES_REWARD = 10_000;
 
 function toValues(a: Achievement): FormValues {
   return {
@@ -55,6 +59,8 @@ function toValues(a: Achievement): FormValues {
     description: a.description,
     tier: a.tier,
     kokosReward: a.kokosReward,
+    xpReward: a.xpReward,
+    kolonesReward: a.kolonesReward,
     iconUrl: a.iconUrl,
     condition: a.condition,
     isOneTime: a.isOneTime,
@@ -68,6 +74,8 @@ function toUpdateInput(v: FormValues): Omit<AchievementInput, 'code'> {
     description: v.description.trim(),
     tier: v.tier,
     kokosReward: v.kokosReward,
+    xpReward: v.xpReward,
+    kolonesReward: v.kolonesReward,
     iconUrl: v.iconUrl.trim(),
     condition: v.condition,
     isOneTime: v.isOneTime,
@@ -113,6 +121,8 @@ function AchievementFormInner({
       description: '',
       tier: 'common',
       kokosReward: 0,
+      xpReward: 0,
+      kolonesReward: 0,
       iconUrl: '',
       condition: { type: 'manual' },
       isOneTime: true,
@@ -134,6 +144,35 @@ function AchievementFormInner({
       toast.error(e instanceof Error ? e.message : 'Error guardando el logro');
     }
   }
+
+  // Los tres premios comparten forma y validación; solo cambian el tope del backend.
+  const rewardField = (name: RewardField, label: string, max: number) => (
+    <Controller
+      name={name}
+      control={form.control}
+      rules={{
+        min: { value: 0, message: '≥ 0' },
+        max: { value: max, message: `≤ ${max.toLocaleString('es-CR')}` },
+        validate: (v: number) => Number.isInteger(v) || 'Debe ser entero',
+      }}
+      render={({ field, fieldState }) => (
+        <Field data-invalid={fieldState.invalid}>
+          <FieldLabel htmlFor={`a-${name}`}>{label}</FieldLabel>
+          <Input
+            id={`a-${name}`}
+            type="number"
+            min={0}
+            max={max}
+            step={1}
+            value={field.value}
+            onChange={(e) => field.onChange(e.target.value === '' ? 0 : e.target.valueAsNumber)}
+            aria-invalid={fieldState.invalid}
+          />
+          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+        </Field>
+      )}
+    />
+  );
 
   return (
     <Card>
@@ -216,10 +255,10 @@ function AchievementFormInner({
           <fieldset className="min-w-0 space-y-4">
             <legend className="flex items-center gap-2 text-sm font-medium">
               <CoinsIcon className="text-primary size-4" />
-              Recompensa y rareza
+              Recompensas
             </legend>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <Controller
                 name="tier"
                 control={form.control}
@@ -231,7 +270,7 @@ function AchievementFormInner({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {TIERS.map((t) => (
+                        {ACHIEVEMENT_TIERS.map((t) => (
                           <SelectItem key={t.value} value={t.value}>
                             {t.label}
                           </SelectItem>
@@ -241,43 +280,32 @@ function AchievementFormInner({
                   </Field>
                 )}
               />
-              <Controller
-                name="kokosReward"
-                control={form.control}
-                rules={{ required: 'Requerido', min: { value: 0, message: '≥ 0' } }}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="a-kokos">Recompensa (Kokos)</FieldLabel>
-                    <Input
-                      id="a-kokos"
-                      type="number"
-                      min={0}
-                      value={field.value}
-                      onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
-              <Controller
-                name="iconUrl"
-                control={form.control}
-                rules={{ required: 'Requerido' }}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel>Ícono del logro</FieldLabel>
-                    <AssetUpload
-                      value={field.value || null}
-                      onChange={(url) => field.onChange(url ?? '')}
-                      endpoint="/api/admin/economy/achievements/upload-icon"
-                      label="Subir ícono del logro"
-                    />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
+              {rewardField('xpReward', 'XP', MAX_XP_REWARD)}
+              {rewardField('kokosReward', 'Kokos', MAX_KOKOS_REWARD)}
+              {rewardField('kolonesReward', 'Kolones', MAX_KOLONES_REWARD)}
             </div>
+            <FieldDescription>
+              Un logro puede no pagar nada: la distinción ya es el premio. El XP suma a la liga del
+              módulo activo.
+            </FieldDescription>
+
+            <Controller
+              name="iconUrl"
+              control={form.control}
+              rules={{ required: 'Requerido' }}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Ícono del logro</FieldLabel>
+                  <AssetUpload
+                    value={field.value || null}
+                    onChange={(url) => field.onChange(url ?? '')}
+                    endpoint="/api/admin/economy/achievements/upload-icon"
+                    label="Subir ícono del logro"
+                  />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
           </fieldset>
 
           <fieldset className="min-w-0 space-y-4">

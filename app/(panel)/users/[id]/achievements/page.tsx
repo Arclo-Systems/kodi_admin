@@ -1,6 +1,6 @@
 import { TrophyIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { AchievementTierBadge } from '@/lib/achievement-tier';
 import {
   Table,
   TableBody,
@@ -39,7 +39,7 @@ export default async function AchievementsTab({ params }: { params: Promise<{ id
             <TableHeader>
               <TableRow>
                 <TableHead>Logro</TableHead>
-                <TableHead>Tier</TableHead>
+                <TableHead>Rareza</TableHead>
                 <TableHead>Obtenido</TableHead>
               </TableRow>
             </TableHeader>
@@ -53,7 +53,11 @@ export default async function AchievementsTab({ params }: { params: Promise<{ id
                     )}
                   </TableCell>
                   <TableCell>
-                    {a.achievement.tier ? <Badge variant="outline">{a.achievement.tier}</Badge> : '—'}
+                    {a.achievement.tier ? (
+                      <AchievementTierBadge tier={a.achievement.tier} />
+                    ) : (
+                      '—'
+                    )}
                   </TableCell>
                   <TableCell>{new Date(a.earnedAt).toLocaleDateString('es')}</TableCell>
                 </TableRow>

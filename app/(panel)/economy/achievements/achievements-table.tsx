@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { ColumnDef } from '@tanstack/react-table';
 import { CircleCheckIcon, CircleOffIcon, PencilIcon, PlusIcon } from 'lucide-react';
 import {
@@ -15,7 +16,8 @@ import { describeCondition } from './condition-builder';
 import { can } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
 import { DataTable } from '@/components/admin/data-table';
-import { Badge } from '@/components/ui/badge';
+import { AchievementTierBadge, ACHIEVEMENT_TIER_FILTERS } from '@/lib/achievement-tier';
+import { achievementRewardLabel } from '@/lib/achievement-reward';
 import { StatusBadge } from '@/lib/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,17 +31,24 @@ import {
 
 const ALL = '__all__';
 
-const TIER_CFG: Record<
-  AchievementTier,
-  { v: 'default' | 'secondary' | 'outline'; l: string }
-> = {
-  common: { v: 'outline', l: 'Común' },
-  uncommon: { v: 'outline', l: 'Poco común' },
-  rare: { v: 'secondary', l: 'Raro' },
-  epic: { v: 'default', l: 'Épico' },
-};
-
 const columns: ColumnDef<Achievement, unknown>[] = [
+  {
+    id: 'thumb',
+    header: '',
+    cell: ({ row }) =>
+      row.original.iconUrl ? (
+        <Image
+          src={row.original.iconUrl}
+          alt=""
+          width={36}
+          height={36}
+          className="rounded object-cover"
+          unoptimized
+        />
+      ) : (
+        <div className="bg-muted size-9 rounded" />
+      ),
+  },
   {
     accessorKey: 'name',
     header: 'Logro',
@@ -53,15 +62,12 @@ const columns: ColumnDef<Achievement, unknown>[] = [
   {
     accessorKey: 'tier',
     header: 'Rareza',
-    cell: ({ row }) => {
-      const c = TIER_CFG[row.original.tier];
-      return <Badge variant={c.v}>{c.l}</Badge>;
-    },
+    cell: ({ row }) => <AchievementTierBadge tier={row.original.tier} />,
   },
   {
-    accessorKey: 'kokosReward',
-    header: 'Kokos',
-    cell: ({ row }) => row.original.kokosReward.toLocaleString('es-CR'),
+    id: 'reward',
+    header: 'Recompensa',
+    cell: ({ row }) => <span className="text-sm">{achievementRewardLabel(row.original)}</span>,
   },
   {
     id: 'condition',
@@ -123,10 +129,11 @@ export function AchievementsTable({ role }: { role: AdminRole }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>Todas las rarezas</SelectItem>
-              <SelectItem value="common">Común</SelectItem>
-              <SelectItem value="uncommon">Poco común</SelectItem>
-              <SelectItem value="rare">Raro</SelectItem>
-              <SelectItem value="epic">Épico</SelectItem>
+              {ACHIEVEMENT_TIER_FILTERS.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select

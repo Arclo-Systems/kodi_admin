@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
 
-export type AchievementTier = 'common' | 'uncommon' | 'rare' | 'epic';
+export type AchievementTier = 'common' | 'uncommon' | 'rare' | 'epic' | 'limited';
 
 // Condition union — espejo de backend achievement-condition.schema.ts (NO inventar tipos).
 export const COUNTER_FIELDS = ['streak_days', 'goal_streak_days'] as const;
@@ -39,6 +39,8 @@ export type Achievement = {
   description: string;
   tier: AchievementTier;
   kokosReward: number;
+  xpReward: number;
+  kolonesReward: number;
   iconUrl: string;
   condition: AchievementCondition;
   isOneTime: boolean;
@@ -54,6 +56,8 @@ export type AchievementInput = {
   description: string;
   tier: AchievementTier;
   kokosReward: number;
+  xpReward: number;
+  kolonesReward: number;
   iconUrl: string;
   condition: AchievementCondition;
   isOneTime: boolean;
