@@ -59,8 +59,10 @@ function toValues(a: Achievement): FormValues {
     description: a.description,
     tier: a.tier,
     kokosReward: a.kokosReward,
-    xpReward: a.xpReward,
-    kolonesReward: a.kolonesReward,
+    // El panel puede desplegarse antes que el backend: sin el fallback el input queda
+    // no controlado y la validación de entero dispara sobre `undefined`.
+    xpReward: a.xpReward ?? 0,
+    kolonesReward: a.kolonesReward ?? 0,
     iconUrl: a.iconUrl,
     condition: a.condition,
     isOneTime: a.isOneTime,
@@ -258,7 +260,7 @@ function AchievementFormInner({
               Recompensas
             </legend>
 
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Controller
                 name="tier"
                 control={form.control}
@@ -284,10 +286,10 @@ function AchievementFormInner({
               {rewardField('kokosReward', 'Kokos', MAX_KOKOS_REWARD)}
               {rewardField('kolonesReward', 'Kolones', MAX_KOLONES_REWARD)}
             </div>
-            <FieldDescription>
+            <p className="text-muted-foreground text-sm">
               Un logro puede no pagar nada: la distinción ya es el premio. El XP suma a la liga del
               módulo activo.
-            </FieldDescription>
+            </p>
 
             <Controller
               name="iconUrl"

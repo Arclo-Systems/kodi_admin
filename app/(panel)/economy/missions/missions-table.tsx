@@ -13,6 +13,7 @@ import {
   type MissionType,
 } from '@/hooks/use-missions';
 import { DataTable } from '@/components/admin/data-table';
+import { rewardLabel } from '@/lib/reward-label';
 import { StatusBadge } from '@/lib/status-badge';
 import { RefreshConfigDialog } from './refresh-config-form';
 import { Button } from '@/components/ui/button';
@@ -29,14 +30,6 @@ const ALL = '__all__';
 
 function countryLabel(code: string): string {
   return COUNTRIES.find((c) => c.code === code)?.label ?? code;
-}
-
-function rewardLabel(t: MissionTemplate): string {
-  const parts: string[] = [];
-  if (t.xpReward > 0) parts.push(`${t.xpReward} XP`);
-  if (t.kokosReward > 0) parts.push(`${t.kokosReward} Kokos`);
-  if (t.kolonesReward > 0) parts.push(`${t.kolonesReward} Kolones`);
-  return parts.join(' · ') || '—';
 }
 
 const columns: ColumnDef<MissionTemplate, unknown>[] = [

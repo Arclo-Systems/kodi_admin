@@ -10,14 +10,13 @@ import {
   useAchievements,
   type Achievement,
   type AchievementListQuery,
-  type AchievementTier,
 } from '@/hooks/use-achievements';
 import { describeCondition } from './condition-builder';
 import { can } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
 import { DataTable } from '@/components/admin/data-table';
 import { AchievementTierBadge, ACHIEVEMENT_TIER_FILTERS } from '@/lib/achievement-tier';
-import { achievementRewardLabel } from '@/lib/achievement-reward';
+import { rewardLabel } from '@/lib/reward-label';
 import { StatusBadge } from '@/lib/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,7 +66,7 @@ const columns: ColumnDef<Achievement, unknown>[] = [
   {
     id: 'reward',
     header: 'Recompensa',
-    cell: ({ row }) => <span className="text-sm">{achievementRewardLabel(row.original)}</span>,
+    cell: ({ row }) => <span className="text-sm">{rewardLabel(row.original)}</span>,
   },
   {
     id: 'condition',
@@ -122,7 +121,9 @@ export function AchievementsTable({ role }: { role: AdminRole }) {
           />
           <Select
             value={query.tier ?? ALL}
-            onValueChange={(v) => set({ tier: v === ALL ? undefined : (v as AchievementTier) })}
+            onValueChange={(v) =>
+              set({ tier: v === ALL ? undefined : (v as AchievementListQuery['tier']) })
+            }
           >
             <SelectTrigger className="w-40" size="sm" aria-label="Filtrar por rareza">
               <SelectValue placeholder="Rareza" />

@@ -18,7 +18,7 @@ import {
 import { toast } from 'sonner';
 import { useAchievement, useRegrant } from '@/hooks/use-achievements';
 import { describeCondition } from './condition-builder';
-import { achievementRewardLabel } from '@/lib/achievement-reward';
+import { rewardLabel } from '@/lib/reward-label';
 import { AchievementTierBadge } from '@/lib/achievement-tier';
 import { can } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
@@ -82,19 +82,21 @@ export function AchievementDetail({ id, role }: { id: string; role: AdminRole })
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
-          {a &&
-            (a.iconUrl ? (
-              <Image
-                src={a.iconUrl}
-                alt=""
-                width={64}
-                height={64}
-                className="mt-5 rounded-md border object-cover"
-                unoptimized
-              />
-            ) : (
-              <div className="bg-muted mt-5 size-16 rounded-md" />
-            ))}
+          {/* El hueco se reserva mientras carga: si no, el título salta al llegar el ícono. */}
+          {!a ? (
+            <Skeleton className="mt-5 size-16 rounded-md" />
+          ) : a.iconUrl ? (
+            <Image
+              src={a.iconUrl}
+              alt=""
+              width={64}
+              height={64}
+              className="mt-5 rounded-md border object-cover"
+              unoptimized
+            />
+          ) : (
+            <div className="bg-muted mt-5 size-16 rounded-md" />
+          )}
           <div className="space-y-1">
             <BackLink />
             <div className="flex flex-wrap items-center gap-2">
@@ -135,7 +137,7 @@ export function AchievementDetail({ id, role }: { id: string; role: AdminRole })
               <DetailRow label="Rareza">
                 <AchievementTierBadge tier={a.tier} />
               </DetailRow>
-              <DetailRow label="Recompensa">{achievementRewardLabel(a)}</DetailRow>
+              <DetailRow label="Recompensa">{rewardLabel(a)}</DetailRow>
               <DetailRow label="Condición">{describeCondition(a.condition)}</DetailRow>
               <DetailRow label="Una sola vez">{a.isOneTime ? 'Sí' : 'No'}</DetailRow>
               <DetailRow label="Desbloqueado por">{a.unlockedBy} usuario(s)</DetailRow>

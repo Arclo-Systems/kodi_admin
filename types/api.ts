@@ -8670,6 +8670,8 @@ export interface components {
                         description: string;
                         tier: string;
                         kokos_reward: number;
+                        xp_reward: number;
+                        kolones_reward: number;
                         icon_url: string;
                         /** @enum {string} */
                         group: "simulacro" | "racha" | "acierto" | "duelo" | "combo" | "meta" | "arena" | "primeras" | "limited";
@@ -8993,6 +8995,8 @@ export interface components {
                 description: string;
                 tier: string;
                 kokos_reward: number;
+                xp_reward: number;
+                kolones_reward: number;
                 icon_url: string;
                 /** @enum {string} */
                 group: "simulacro" | "racha" | "acierto" | "duelo" | "combo" | "meta" | "arena" | "primeras" | "limited";
@@ -13470,8 +13474,12 @@ export interface components {
             name: string;
             description: string;
             /** @enum {string} */
-            tier: "common" | "uncommon" | "rare" | "epic";
+            tier: "common" | "uncommon" | "rare" | "epic" | "limited";
             kokosReward: number;
+            /** @default 0 */
+            xpReward: number;
+            /** @default 0 */
+            kolonesReward: number;
             iconUrl: string;
             condition: {
                 /** @enum {string} */
@@ -13533,8 +13541,10 @@ export interface components {
             iconUrl?: string;
             isActive?: boolean;
             /** @enum {string} */
-            tier?: "common" | "uncommon" | "rare" | "epic";
+            tier?: "common" | "uncommon" | "rare" | "epic" | "limited";
             kokosReward?: number;
+            xpReward?: number;
+            kolonesReward?: number;
             condition?: {
                 /** @enum {string} */
                 type: "counter_gte";

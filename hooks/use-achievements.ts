@@ -65,7 +65,9 @@ export type AchievementInput = {
 };
 
 export type AchievementListQuery = {
-  tier?: AchievementTier;
+  // El filtro del listado admin no acepta 'limited' (daría 400): lo sostiene el compilador,
+  // no un comentario. Cuando el backend lo agregue, volver a `AchievementTier`.
+  tier?: Exclude<AchievementTier, 'limited'>;
   isActive?: boolean;
   search?: string;
   page: number;
