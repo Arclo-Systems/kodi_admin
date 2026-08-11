@@ -184,7 +184,11 @@ export function useRegrant(id: string, enabled: boolean) {
     },
   });
   const run = useMutation({
-    mutationFn: () => sendJson(`/api/admin/economy/achievements/${id}/regrant`, 'POST', {}),
+    // La clave identifica ESTA operación: si el POST se reenvía (doble click, retry de red)
+    // el backend la rebota y no vuelve a pagar. Un re-otorgamiento deliberado posterior
+    // genera otra clave y sí paga de nuevo.
+    mutationFn: (idempotencyKey: string) =>
+      sendJson(`/api/admin/economy/achievements/${id}/regrant`, 'POST', { idempotencyKey }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['achievement-regrant-preview', id] });
       qc.invalidateQueries({ queryKey: ['achievement', id] });

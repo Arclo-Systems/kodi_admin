@@ -13580,6 +13580,10 @@ export interface components {
             };
             isOneTime?: boolean;
         };
+        RegrantAchievementDto: {
+            /** Format: uuid */
+            idempotencyKey: string;
+        };
         AchievementRegrantResponse: {
             data: {
                 /** Format: uuid */
@@ -25085,7 +25089,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegrantAchievementDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {

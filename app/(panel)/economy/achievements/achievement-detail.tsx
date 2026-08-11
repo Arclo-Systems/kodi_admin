@@ -61,6 +61,11 @@ export function AchievementDetail({ id, role }: { id: string; role: AdminRole })
   const canRegrant = can(role, 'economy:achievement:regrant');
   const { preview, run } = useRegrant(id, canRegrant);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Clave de ESTA operación de re-otorgamiento. Se conserva mientras el intento no haya
+  // cerrado bien: si falló la red, reintentar con la misma clave es seguro aunque el pago
+  // hubiera entrado. Se limpia al terminar, así un re-otorgamiento deliberado posterior
+  // viaja con otra clave y sí vuelve a pagar.
+  const [opKey, setOpKey] = useState<string | null>(null);
 
   if (!isLoading && !a) {
     return (
@@ -84,8 +89,14 @@ export function AchievementDetail({ id, role }: { id: string; role: AdminRole })
   const paysSomething = !!perUser && rewardLabel(perUser) !== '—';
   const canRun = !!p && p.affectedUsers > 0 && paysSomething;
 
+  function openConfirm(): void {
+    setOpKey((k) => k ?? crypto.randomUUID());
+    setConfirmOpen(true);
+  }
+
   async function runRegrant(): Promise<void> {
-    const body = await run.mutateAsync();
+    const body = await run.mutateAsync(opKey ?? crypto.randomUUID());
+    setOpKey(null);
     const r = unwrapData<RegrantResult>(body);
     const total = rewardLabel({
       xpReward: r?.totalXp ?? 0,
@@ -224,7 +235,7 @@ export function AchievementDetail({ id, role }: { id: string; role: AdminRole })
               </p>
             )}
             <div className="flex justify-end">
-              <Button disabled={!canRun || run.isPending} onClick={() => setConfirmOpen(true)}>
+              <Button disabled={!canRun || run.isPending} onClick={openConfirm}>
                 <CoinsIcon className="size-4" />
                 Re-otorgar premio
               </Button>
