@@ -13464,9 +13464,13 @@ export interface components {
             data: {
                 /** Format: uuid */
                 achievementId: string;
-                kokosPerUser: number;
                 affectedUsers: number;
+                kokosPerUser: number;
+                xpPerUser: number;
+                kolonesPerUser: number;
                 totalKokos: number;
+                totalXp: number;
+                totalKolones: number;
             };
         };
         CreateAchievementDto: {
@@ -13582,7 +13586,11 @@ export interface components {
                 achievementId: string;
                 granted: number;
                 kokosPerUser: number;
+                xpPerUser: number;
+                kolonesPerUser: number;
                 totalKokos: number;
+                totalXp: number;
+                totalKolones: number;
                 /** Format: uuid */
                 actorId: string;
             };
@@ -14929,8 +14937,6 @@ export interface components {
                 streakKolones: number;
                 streakKokos: number;
                 streakLeagueXp: number;
-                achievementKolones: number;
-                achievementXp: number;
                 kokosPerVideo: number;
                 kolonesPerVideo: number;
                 videoXp: number;
@@ -14977,8 +14983,6 @@ export interface components {
             streakKolones: number;
             streakKokos: number;
             streakLeagueXp: number;
-            achievementKolones: number;
-            achievementXp: number;
             kokosPerVideo: number;
             kolonesPerVideo: number;
             videoXp: number;
@@ -24960,7 +24964,7 @@ export interface operations {
     AchievementsAdminController_search: {
         parameters: {
             query?: {
-                tier?: "common" | "uncommon" | "rare" | "epic";
+                tier?: "common" | "uncommon" | "rare" | "epic" | "limited";
                 isActive?: boolean;
                 search?: string;
                 page?: number;

@@ -20,10 +20,6 @@ export const ACHIEVEMENT_TIERS = (
   Object.entries(TIER_META) as [AchievementTier, { label: string }][]
 ).map(([value, meta]) => ({ value, label: meta.label }));
 
-// El filtro de listado del backend (ListAchievementsSchema) todavía no acepta 'limited':
-// ofrecerlo daría 400. Se filtra acá hasta que el backend lo agregue.
-export const ACHIEVEMENT_TIER_FILTERS = ACHIEVEMENT_TIERS.filter((t) => t.value !== 'limited');
-
 export function achievementTierLabel(tier: string): string {
   return TIER_META[tier as AchievementTier]?.label ?? tier;
 }

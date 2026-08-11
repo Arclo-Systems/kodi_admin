@@ -36,8 +36,6 @@ export type RewardConfigValues = {
   streakKolones: number;
   streakKokos: number;
   streakLeagueXp: number;
-  achievementKolones: number;
-  achievementXp: number;
   kokosPerVideo: number;
   kolonesPerVideo: number;
   videoXp: number;
@@ -83,8 +81,6 @@ export const REWARD_DEFAULTS: RewardConfigValues = {
   streakKolones: 5,
   streakKokos: 0,
   streakLeagueXp: 5,
-  achievementKolones: 15,
-  achievementXp: 0,
   kokosPerVideo: 1,
   kolonesPerVideo: 0,
   videoXp: 0,

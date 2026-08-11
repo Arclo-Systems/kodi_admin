@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ACHIEVEMENT_TIERS,
-  ACHIEVEMENT_TIER_FILTERS,
-  achievementTierLabel,
-} from './achievement-tier';
+import { ACHIEVEMENT_TIERS, achievementTierLabel } from './achievement-tier';
 
 describe('achievementTierLabel', () => {
   it('traduce las cinco rarezas al español', () => {
@@ -27,18 +23,6 @@ describe('ACHIEVEMENT_TIERS', () => {
       'rare',
       'epic',
       'limited',
-    ]);
-  });
-});
-
-describe('ACHIEVEMENT_TIER_FILTERS', () => {
-  // El filtro de listado del backend rechaza 'limited' con 400: no se puede ofrecer.
-  it('deja fuera la rareza que el listado del backend no acepta', () => {
-    expect(ACHIEVEMENT_TIER_FILTERS.map((t) => t.value)).toEqual([
-      'common',
-      'uncommon',
-      'rare',
-      'epic',
     ]);
   });
 });

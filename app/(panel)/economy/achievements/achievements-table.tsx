@@ -15,7 +15,7 @@ import { describeCondition } from './condition-builder';
 import { can } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
 import { DataTable } from '@/components/admin/data-table';
-import { AchievementTierBadge, ACHIEVEMENT_TIER_FILTERS } from '@/lib/achievement-tier';
+import { AchievementTierBadge, ACHIEVEMENT_TIERS } from '@/lib/achievement-tier';
 import { rewardLabel } from '@/lib/reward-label';
 import { StatusBadge } from '@/lib/status-badge';
 import { Button } from '@/components/ui/button';
@@ -130,7 +130,7 @@ export function AchievementsTable({ role }: { role: AdminRole }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>Todas las rarezas</SelectItem>
-              {ACHIEVEMENT_TIER_FILTERS.map((t) => (
+              {ACHIEVEMENT_TIERS.map((t) => (
                 <SelectItem key={t.value} value={t.value}>
                   {t.label}
                 </SelectItem>

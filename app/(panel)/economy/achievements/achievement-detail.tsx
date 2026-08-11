@@ -16,7 +16,11 @@ import {
   WalletIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAchievement, useRegrant } from '@/hooks/use-achievements';
+import {
+  useAchievement,
+  useRegrant,
+  type RegrantResult,
+} from '@/hooks/use-achievements';
 import { describeCondition } from './condition-builder';
 import { rewardLabel } from '@/lib/reward-label';
 import { AchievementTierBadge } from '@/lib/achievement-tier';
@@ -68,14 +72,27 @@ export function AchievementDetail({ id, role }: { id: string; role: AdminRole })
   }
 
   const p = preview.data;
-  const canRun = !!p && p.affectedUsers > 0 && p.kokosPerUser > 0;
+  const perUser = p
+    ? {
+        xpReward: p.xpPerUser,
+        kokosReward: p.kokosPerUser,
+        kolonesReward: p.kolonesPerUser,
+      }
+    : null;
+  // Un logro de puro honor (0/0/0) no tiene nada que re-pagar: correrlo solo dejaría
+  // una entrada de auditoría sin movimiento.
+  const paysSomething = !!perUser && rewardLabel(perUser) !== '—';
+  const canRun = !!p && p.affectedUsers > 0 && paysSomething;
 
   async function runRegrant(): Promise<void> {
     const body = await run.mutateAsync();
-    const r = unwrapData<{ granted: number; totalKokos: number }>(body);
-    toast.success(
-      `Re-otorgado a ${r?.granted ?? 0} usuario(s) (${(r?.totalKokos ?? 0).toLocaleString('es-CR')} Kokos)`,
-    );
+    const r = unwrapData<RegrantResult>(body);
+    const total = rewardLabel({
+      xpReward: r?.totalXp ?? 0,
+      kokosReward: r?.totalKokos ?? 0,
+      kolonesReward: r?.totalKolones ?? 0,
+    });
+    toast.success(`Re-otorgado a ${r?.granted ?? 0} usuario(s) (${total})`);
   }
 
   return (
@@ -157,11 +174,12 @@ export function AchievementDetail({ id, role }: { id: string; role: AdminRole })
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <GiftIcon className="text-primary size-4" />
-              Re-otorgar Kokos
+              Re-otorgar premio
             </CardTitle>
             <CardDescription>
-              Paga los Kokos del logro a cada usuario que ya lo tiene (vía ledger, ajuste manual).
-              El XP y los Kolones no se re-pagan, y no se re-evalúa la condición.
+              Vuelve a pagar el premio completo (XP, Kokos y Kolones) a cada usuario que ya tiene
+              el logro. Las monedas van por el ledger como ajuste manual; el XP suma a la liga de
+              su módulo activo. No re-evalúa la condición.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -174,15 +192,23 @@ export function AchievementDetail({ id, role }: { id: string; role: AdminRole })
                 loading={preview.isLoading}
               />
               <KpiCard
-                label="Kokos por usuario"
-                value={p?.kokosPerUser ?? 0}
+                label="Premio por usuario"
+                value={perUser ? rewardLabel(perUser) : '—'}
                 icon={<CoinsIcon />}
                 tone="amber"
                 loading={preview.isLoading}
               />
               <KpiCard
                 label="Costo total"
-                value={(p?.totalKokos ?? 0).toLocaleString('es-CR')}
+                value={
+                  p
+                    ? rewardLabel({
+                        xpReward: p.totalXp,
+                        kokosReward: p.totalKokos,
+                        kolonesReward: p.totalKolones,
+                      })
+                    : '—'
+                }
                 icon={<WalletIcon />}
                 tone="teal"
                 loading={preview.isLoading}
@@ -191,13 +217,16 @@ export function AchievementDetail({ id, role }: { id: string; role: AdminRole })
             {!!p && p.affectedUsers === 0 && (
               <p className="text-muted-foreground text-sm">Nadie tiene este logro todavía.</p>
             )}
-            {!!p && p.kokosPerUser === 0 && (
-              <p className="text-muted-foreground text-sm">El logro no otorga Kokos.</p>
+            {!!p && !paysSomething && (
+              <p className="text-muted-foreground text-sm">
+                El logro no otorga premio: la distinción es todo el valor, no hay nada que
+                re-pagar.
+              </p>
             )}
             <div className="flex justify-end">
               <Button disabled={!canRun || run.isPending} onClick={() => setConfirmOpen(true)}>
                 <CoinsIcon className="size-4" />
-                Re-otorgar Kokos
+                Re-otorgar premio
               </Button>
             </div>
           </CardContent>
@@ -207,10 +236,10 @@ export function AchievementDetail({ id, role }: { id: string; role: AdminRole })
       <ConfirmDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="Re-otorgar Kokos"
+        title="Re-otorgar premio"
         description={
-          p
-            ? `Se acreditarán ${p.kokosPerUser.toLocaleString('es-CR')} Kokos a ${p.affectedUsers} usuario(s) (${p.totalKokos.toLocaleString('es-CR')} en total). No se puede deshacer.`
+          p && perUser
+            ? `Se acreditará ${rewardLabel(perUser)} a ${p.affectedUsers} usuario(s) (${rewardLabel({ xpReward: p.totalXp, kokosReward: p.totalKokos, kolonesReward: p.totalKolones })} en total). No se puede deshacer.`
             : undefined
         }
         destructive

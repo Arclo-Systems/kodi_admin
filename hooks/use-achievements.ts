@@ -65,9 +65,7 @@ export type AchievementInput = {
 };
 
 export type AchievementListQuery = {
-  // El filtro del listado admin no acepta 'limited' (daría 400): lo sostiene el compilador,
-  // no un comentario. Cuando el backend lo agregue, volver a `AchievementTier`.
-  tier?: Exclude<AchievementTier, 'limited'>;
+  tier?: AchievementTier;
   isActive?: boolean;
   search?: string;
   page: number;
@@ -83,9 +81,20 @@ type AchievementListPage = {
 
 export type RegrantPreview = {
   achievementId: string;
-  kokosPerUser: number;
   affectedUsers: number;
+  kokosPerUser: number;
+  xpPerUser: number;
+  kolonesPerUser: number;
   totalKokos: number;
+  totalXp: number;
+  totalKolones: number;
+};
+
+export type RegrantResult = {
+  granted: number;
+  totalKokos: number;
+  totalXp: number;
+  totalKolones: number;
 };
 
 export function useAchievements(query: AchievementListQuery) {

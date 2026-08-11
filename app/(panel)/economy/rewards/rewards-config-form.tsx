@@ -55,8 +55,6 @@ const FormSchema = z.object({
   streakKolones: kolones,
   streakKokos: kokos,
   streakLeagueXp: xp,
-  achievementKolones: kolones,
-  achievementXp: xp,
   kokosPerVideo: kokos,
   kolonesPerVideo: kolones,
   videoXp: xp,
@@ -69,11 +67,7 @@ const pick = (data: RewardConfigValues): FormValues =>
 
 // Cada modo tiene su XP + Kolones + Kokos (matriz completa); los XP compartidos entre
 // modos (correcta / modo completado) viven en la sección XP para no duplicarlos.
-const SECTIONS: {
-  title: string;
-  note?: string;
-  fields: [keyof FormValues, string][];
-}[] = [
+const SECTIONS: { title: string; fields: [keyof FormValues, string][] }[] = [
   {
     title: 'XP (todo XP suma a la liga)',
     fields: [
@@ -152,14 +146,6 @@ const SECTIONS: {
       ['videoXp', 'Video: XP'],
     ],
   },
-  {
-    title: 'Logros',
-    note: 'Ahora por logro: el premio (XP, Kokos y Kolones) se edita en cada logro. Estos dos campos ya no se pagan.',
-    fields: [
-      ['achievementKolones', 'Logro: Kolones (sin efecto)'],
-      ['achievementXp', 'Logro: XP (sin efecto)'],
-    ],
-  },
 ];
 
 export function RewardsConfigForm({ country }: { country: string | null }) {
@@ -230,9 +216,6 @@ export function RewardsConfigForm({ country }: { country: string | null }) {
               <div key={section.title} className="space-y-3">
                 {i > 0 && <Separator />}
                 <h3 className="text-sm font-medium">{section.title}</h3>
-                {section.note && (
-                  <p className="text-muted-foreground text-sm">{section.note}</p>
-                )}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {section.fields.map(([name, label]) => num(name, label))}
                 </div>
