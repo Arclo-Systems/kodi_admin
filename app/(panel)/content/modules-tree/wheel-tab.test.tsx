@@ -39,7 +39,7 @@ vi.mock('@/hooks/use-wheel-config', () => ({
   useUpdateWheelConfig: () => ({ mutateAsync: updateCrown, isPending: false }),
 }));
 
-import { WheelTab } from './wheel-tab';
+import { WheelTab, wheelCatalog } from './wheel-tab';
 
 const COUNTS = { draft: 0, review: 0, active: 0, inactive: 0 };
 
@@ -113,6 +113,41 @@ function crownBlock(container: HTMLElement): HTMLElement {
   const block = container.querySelector('[data-slot="wheel-crown"]');
   if (!block) throw new Error('no hay bloque de corona');
   return block as HTMLElement;
+}
+
+// Admisión real: cada materia ES un examen y sus temas son lo que el jugador percibe como materia.
+function admissionModule(over: Partial<TreeModule> = {}): TreeModule {
+  return moduleWith({
+    examMode: 'admission',
+    duelCategorySource: 'topics',
+    subjects: [
+      subject({
+        id: 'sub-ucr',
+        name: 'PAA UCR',
+        topics: [
+          topic({ id: 'top-verbal', name: 'Razonamiento verbal', colorHex: '#F47C6B' }),
+          topic({ id: 'top-mate', name: 'Razonamiento matemático', colorHex: '#5DB7E8' }),
+        ],
+      }),
+      subject({
+        id: 'sub-tec',
+        name: 'Admisión TEC',
+        topics: [topic({ id: 'top-numerico', name: 'Razonamiento numérico', colorHex: '#9BCB6C' })],
+      }),
+    ],
+    ...over,
+  });
+}
+
+// Radix abre con teclado y selecciona con teclado: en jsdom no hay PointerEvent que valga.
+function pickView(option: string): void {
+  fireEvent.keyDown(screen.getByRole('combobox', { name: 'Vista' }), { key: 'ArrowDown' });
+  fireEvent.keyDown(screen.getByRole('option', { name: option }), { key: 'Enter' });
+}
+
+/** La réplica enumera sus sectores en el `aria-label`: es la forma de leer qué dibujó. */
+function wheelLabel(): string {
+  return screen.getByRole('img').getAttribute('aria-label') ?? '';
 }
 
 function sectorFills(container: HTMLElement): (string | null)[] {
@@ -234,6 +269,111 @@ describe('WheelTab', () => {
     expect(screen.getByText('Español')).toBeInTheDocument();
   });
 
+  // En admisión la partida arma la ruleta SOLO con los temas del examen que el jugador declaró
+  // (`buildMatchCategories`): el módulo no tiene una ruleta, tiene una por examen.
+  describe('vista por examen', () => {
+    it('en un módulo que no es de admisión no ofrece el filtro', () => {
+      renderTab();
+      expect(screen.queryByRole('combobox', { name: 'Vista' })).not.toBeInTheDocument();
+    });
+
+    it('arranca en la vista de quien no declaró examen: todos los temas mezclados', () => {
+      treeState.data = [admissionModule()];
+      renderTab();
+
+      expect(screen.getByText('Así ve la ruleta quien no declaró examen')).toBeInTheDocument();
+      expect(wheelLabel()).toContain('Razonamiento verbal');
+      expect(wheelLabel()).toContain('Razonamiento numérico');
+      expect(screen.getByText('Razonamiento matemático')).toBeInTheDocument();
+    });
+
+    it('elegir un examen deja solo sus temas, en la réplica y en la lista', () => {
+      treeState.data = [admissionModule()];
+      const { container } = renderTab();
+      pickView('PAA UCR');
+
+      expect(screen.getByText('Así ve la ruleta quien declaró este examen')).toBeInTheDocument();
+      expect(wheelLabel()).toContain('Razonamiento verbal');
+      expect(wheelLabel()).not.toContain('Razonamiento numérico');
+      expect(screen.queryByText('Razonamiento numérico')).not.toBeInTheDocument();
+      // Los dos temas de UCR más la corona.
+      expect(sectorFills(container)).toEqual(['#F47C6B', '#5DB7E8', '#B79AE8']);
+    });
+
+    it('volver a todos los exámenes devuelve la mezcla', () => {
+      treeState.data = [admissionModule()];
+      renderTab();
+      pickView('Admisión TEC');
+      expect(screen.queryByText('Razonamiento verbal')).not.toBeInTheDocument();
+
+      pickView('Todos los exámenes');
+      expect(screen.getByText('Razonamiento verbal')).toBeInTheDocument();
+      expect(screen.getByText('Razonamiento numérico')).toBeInTheDocument();
+    });
+
+    // Caso PAA: el módulo arma por materias, pero al jugador con examen declarado el backend le
+    // arma con temas igual. La vista tiene que decir la verdad.
+    it('con examen muestra temas aunque el módulo arme por materias', () => {
+      treeState.data = [admissionModule({ duelCategorySource: 'subjects' })];
+      renderTab();
+      expect(screen.getByText('PAA UCR')).toBeInTheDocument();
+
+      pickView('PAA UCR');
+      expect(screen.getByText('Sectores · Temas')).toBeInTheDocument();
+      expect(screen.getByText('Razonamiento verbal')).toBeInTheDocument();
+      expect(screen.queryByText('Admisión TEC')).not.toBeInTheDocument();
+    });
+
+    it('un examen sin temas lo dice en vez de fingir una ruleta vacía', () => {
+      treeState.data = [
+        admissionModule({
+          subjects: [subject({ id: 'sub-una', name: 'Admisión UNA', topics: [] })],
+        }),
+      ];
+      renderTab();
+      pickView('Admisión UNA');
+
+      expect(screen.getByText('Este examen todavía no tiene temas')).toBeInTheDocument();
+    });
+
+    it('editar dentro de una vista guarda contra el endpoint del tema', async () => {
+      treeState.data = [admissionModule()];
+      renderTab();
+      pickView('Admisión TEC');
+
+      const sector = screen.getByText('Razonamiento numérico').closest('div[class*="rounded-xl"]');
+      fireEvent.click(within(sector as HTMLElement).getByRole('button', { name: 'Morado' }));
+      fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
+
+      await waitFor(() => expect(updateTopic).toHaveBeenCalledTimes(1));
+      expect(updateTopic).toHaveBeenCalledWith({
+        id: 'top-numerico',
+        colorHex: '#B79AE8',
+        wheelAssetUrl: null,
+      });
+      expect(updateSubject).not.toHaveBeenCalled();
+    });
+
+    // El borrador vive por sector: cambiar de vista no puede tragarse lo editado.
+    it('lo editado en un examen sigue pendiente al cambiar de vista', async () => {
+      treeState.data = [admissionModule()];
+      renderTab();
+      pickView('PAA UCR');
+
+      const sector = screen.getByText('Razonamiento verbal').closest('div[class*="rounded-xl"]');
+      fireEvent.click(within(sector as HTMLElement).getByRole('button', { name: 'Morado' }));
+      pickView('Admisión TEC');
+
+      fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
+      await waitFor(() => expect(updateTopic).toHaveBeenCalledTimes(1));
+      expect(updateTopic).toHaveBeenCalledWith({
+        id: 'top-verbal',
+        colorHex: '#B79AE8',
+        wheelAssetUrl: null,
+      });
+    });
+  });
+
   describe('corona', () => {
     it('sin rol admin no muestra el bloque ni pide la config global', () => {
       const { container } = renderTab();
@@ -276,5 +416,97 @@ describe('WheelTab', () => {
       renderTab({ canEditCrown: true });
       expect(screen.getByRole('button', { name: /Guardar corona/ })).toBeDisabled();
     });
+  });
+});
+
+// Espejo de `buildMatchCategories` (backend): si el filtrado se desvía de esto, el panel enseña
+// una ruleta que nadie juega.
+describe('wheelCatalog', () => {
+  const admision = () =>
+    moduleWith({
+      examMode: 'admission',
+      duelCategorySource: 'topics',
+      subjects: [
+        subject({
+          id: 'sub-ucr',
+          name: 'PAA UCR',
+          topics: [topic({ id: 'top-verbal', name: 'Razonamiento verbal' })],
+        }),
+        subject({
+          id: 'sub-tec',
+          name: 'Admisión TEC',
+          topics: [topic({ id: 'top-numerico', name: 'Razonamiento numérico' })],
+        }),
+      ],
+    });
+
+  it('sin examen y armando por materias, los sectores son las materias', () => {
+    const mod = moduleWith({
+      subjects: [subject({ id: 'sub-1', name: 'Español' }), subject({ id: 'sub-2', name: 'Mate' })],
+    });
+
+    expect(wheelCatalog(mod, null).map((s) => s.id)).toEqual(['sub-1', 'sub-2']);
+    expect(wheelCatalog(mod, null).every((s) => s.kind === 'subject')).toBe(true);
+  });
+
+  it('sin examen y armando por temas, mezcla los temas de todos los exámenes', () => {
+    expect(wheelCatalog(admision(), null).map((s) => s.id)).toEqual(['top-verbal', 'top-numerico']);
+  });
+
+  it('con examen deja solo los temas de ese examen', () => {
+    const sectors = wheelCatalog(admision(), 'sub-ucr');
+
+    expect(sectors.map((s) => s.id)).toEqual(['top-verbal']);
+    expect(sectors.every((s) => s.kind === 'topic')).toBe(true);
+  });
+
+  // El módulo arma por materias, pero con examen declarado el backend igual arma con temas: una
+  // ruleta de una sola materia no existe.
+  it('con examen arma con temas aunque el módulo arme por materias', () => {
+    const mod = moduleWith({ ...admision(), duelCategorySource: 'subjects' });
+
+    expect(wheelCatalog(mod, 'sub-tec').map((s) => s.id)).toEqual(['top-numerico']);
+    expect(wheelCatalog(mod, null).map((s) => s.id)).toEqual(['sub-ucr', 'sub-tec']);
+  });
+
+  it('un examen sin temas deja la ruleta sin sectores', () => {
+    const mod = moduleWith({
+      examMode: 'admission',
+      duelCategorySource: 'topics',
+      subjects: [subject({ id: 'sub-una', name: 'Admisión UNA', topics: [] })],
+    });
+
+    expect(wheelCatalog(mod, 'sub-una')).toEqual([]);
+  });
+
+  it('arrastra el color y el arte de cada sector', () => {
+    const mod = moduleWith({
+      examMode: 'admission',
+      duelCategorySource: 'topics',
+      subjects: [
+        subject({
+          id: 'sub-ucr',
+          name: 'PAA UCR',
+          topics: [
+            topic({
+              id: 'top-verbal',
+              name: 'Razonamiento verbal',
+              colorHex: '#F47C6B',
+              wheelAssetUrl: 'https://cdn/verbal.svg',
+            }),
+          ],
+        }),
+      ],
+    });
+
+    expect(wheelCatalog(mod, 'sub-ucr')).toEqual([
+      {
+        id: 'top-verbal',
+        name: 'Razonamiento verbal',
+        kind: 'topic',
+        colorHex: '#F47C6B',
+        wheelAssetUrl: 'https://cdn/verbal.svg',
+      },
+    ]);
   });
 });
