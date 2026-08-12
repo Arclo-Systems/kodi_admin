@@ -29,6 +29,10 @@ const FormSchema = z.object({
   practiceKokosPerCorrect: kokos,
   quickKolonesPerCorrect: kolones,
   quickKokosPerCorrect: kokos,
+  // El backend exige la matriz COMPLETA (schema .strict()): un campo que no
+  // viaje acá rompe el guardado entero, no solo el suyo.
+  quickSpeedBonusXp: xp,
+  reviveKokosPrice: z.number().int().min(0).max(10000),
   surpriseExamBaseXp: xp,
   surpriseExamWindowFactor: z.number().int().min(1).max(10),
   surpriseExamKolones: kolones,
@@ -58,6 +62,7 @@ const FormSchema = z.object({
   kokosPerVideo: kokos,
   kolonesPerVideo: kolones,
   videoXp: xp,
+  flashcardSessionXp: xp,
 });
 type FormValues = z.infer<typeof FormSchema>;
 
@@ -79,6 +84,8 @@ const SECTIONS: { title: string; fields: [keyof FormValues, string][] }[] = [
       ['surpriseExamWindowFactor', 'Examen sorpresa: multiplicador en ventana (×)'],
       ['goalXp', 'Meta diaria'],
       ['streakLeagueXp', 'Racha: por día'],
+      ['quickSpeedBonusXp', 'Contrarreloj: bonus por correcta en menos de 3 s'],
+      ['flashcardSessionXp', 'Material de repaso: sesión diaria de tarjetas completa'],
     ],
   },
   {
@@ -145,6 +152,10 @@ const SECTIONS: { title: string; fields: [keyof FormValues, string][] }[] = [
       ['kolonesPerVideo', 'Video: Kolones'],
       ['videoXp', 'Video: XP'],
     ],
+  },
+  {
+    title: 'Modos rápidos — costos',
+    fields: [['reviveKokosPrice', 'Supervivencia: Kokos de la segunda oportunidad']],
   },
 ];
 

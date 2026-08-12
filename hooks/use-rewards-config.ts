@@ -10,6 +10,10 @@ export type RewardConfigValues = {
   practiceKokosPerCorrect: number;
   quickKolonesPerCorrect: number;
   quickKokosPerCorrect: number;
+  /** Contrarreloj: XP extra por correcta en menos de 3 s. */
+  quickSpeedBonusXp: number;
+  /** Supervivencia: precio en Kokos de la segunda oportunidad. */
+  reviveKokosPrice: number;
   surpriseExamBaseXp: number;
   surpriseExamWindowFactor: number;
   surpriseExamKolones: number;
@@ -39,6 +43,8 @@ export type RewardConfigValues = {
   kokosPerVideo: number;
   kolonesPerVideo: number;
   videoXp: number;
+  /** Material de repaso: EXP por completar la sesión diaria de tarjetas. */
+  flashcardSessionXp: number;
 };
 
 export type RewardConfig = RewardConfigValues & {
@@ -55,6 +61,8 @@ export const REWARD_DEFAULTS: RewardConfigValues = {
   practiceKokosPerCorrect: 0,
   quickKolonesPerCorrect: 1,
   quickKokosPerCorrect: 0,
+  quickSpeedBonusXp: 15,
+  reviveKokosPrice: 80,
   surpriseExamBaseXp: 30,
   surpriseExamWindowFactor: 2,
   surpriseExamKolones: 0,
@@ -84,6 +92,7 @@ export const REWARD_DEFAULTS: RewardConfigValues = {
   kokosPerVideo: 1,
   kolonesPerVideo: 0,
   videoXp: 0,
+  flashcardSessionXp: 15,
 };
 
 const countryQs = (country: string | null) => (country ? `?country=${country}` : '');
