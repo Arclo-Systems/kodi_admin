@@ -748,6 +748,537 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/topics/{id}/review-material": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Material de repaso publicado de un tema
+         * @description Devuelve solo las piezas PUBLICADAS. El primer tema de cada materia es la probadita gratis; el resto exige Plus del módulo y entonces cada pieza viaja como `{ status: "locked" }` sin contenido — el candado lo decide el servidor.
+         */
+        get: operations["ReviewMaterialController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/review-cards/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sesión de tarjetas del día
+         * @description Tarjetas vencidas de los temas accesibles del módulo activo, mezcladas y con el tope configurable del panel. Si lo vencido no llena el tope, se rellena con tarjetas nuevas de temas que el usuario YA empezó a estudiar.
+         */
+        get: operations["ReviewCardsController_session"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/review-cards/session/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cerrar la sesión del día (paga EXP una sola vez)
+         * @description Idempotente por usuario+día: el EXP se otorga en el primer cierre y los reintentos devuelven `already_completed: true` con `xp_earned: 0`.
+         */
+        post: operations["ReviewCardsController_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/review-cards/{cardId}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Responder una tarjeta (cajas Leitner)
+         * @description "La sabía" sube de caja (máx 3) y aleja el repaso 1/3/7 días; "no la sabía" vuelve a la caja 1 y la trae a mañana. Repetir la respuesta el mismo día es un no-op que devuelve el estado vigente.
+         */
+        post: operations["ReviewCardsController_answer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/daily-progress/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Progreso diario del usuario hoy (CR timezone) */
+        get: operations["DailyProgressController_getToday"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/daily-goal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Estado de la meta diaria (target/current/met/claimed) */
+        get: operations["DailyGoalController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Cambiar el target diario (preguntas/día) */
+        patch: operations["DailyGoalController_update"];
+        trace?: never;
+    };
+    "/v1/daily-goal/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reclamar recompensa de meta diaria
+         * @description Atómico en TX: marca claimed + +Kolones + +XP + +XP liga.
+         */
+        post: operations["DailyGoalController_claim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Misiones diarias del user (genera lazy si no existen aún) */
+        get: operations["MissionsController_listToday"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/weekly": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Misiones semanales del user (genera lazy si no existen aún) */
+        get: operations["MissionsController_listWeekly"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/refresh-state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Costo y topes del cambio de misión, con lo usado hoy */
+        get: operations["MissionsController_refreshState"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/missions/{id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cambiar una misión por otra
+         * @description Gratis viendo un rewarded (tope diario de videos) o pagando Kokos. Solo misiones sin completar; el costo y los topes salen de MissionRefreshConfig.
+         */
+        post: operations["MissionsController_refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/streak": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Estado de racha actual del usuario */
+        get: operations["StreakController_getMyStreak"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/streak/freeze": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activar congelamiento de racha (1/semana)
+         * @description Consume el slot semanal y protege la racha del próximo día sin práctica.
+         */
+        post: operations["StreakController_freeze"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Listar items de la tienda con filtros */
+        get: operations["StoreController_listItems"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/store/items/{id}/purchase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Comprar item con Kokos
+         * @description Atómico: debit Kokos + create UserInventory en la misma TX.
+         */
+        post: operations["StoreController_purchase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inventario del user (avatares, marcos, ítems funcionales) */
+        get: operations["InventoryController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/inventory/{id}/equip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Equipar/desequipar item del inventario
+         * @description Para avatares y marcos: actualiza User.avatarItemId/frameItemId.
+         */
+        patch: operations["InventoryController_equip"];
+        trace?: never;
+    };
+    "/v1/leagues/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Membership de liga + sponsor del ciclo actual */
+        get: operations["LeaguesController_getCurrent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leagues/rewards-table": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Premios de las cuatro ligas (SCR-RANK04)
+         * @description Montos y cosméticos por tramo (1-3 / 4-10 / resto) del país del usuario, leídos de LeagueConfig. `grants_insignia` marca los tramos que además suben de liga.
+         */
+        get: operations["LeaguesController_getRewardsTable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leagues/current/leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Top N de la lista de liga (módulo+país+tier) + vecindario del user
+         * @description Lista única. Sirve top N + el vecindario del usuario si no entra en el top.
+         */
+        get: operations["LeaguesController_getLeaderboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leagues/current/friends-leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ranking entre amigos del usuario en el ciclo actual */
+        get: operations["LeaguesController_getFriendsLeaderboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leagues/rewards/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resultado del ciclo cerrado sin ver (SCR-MOD12)
+         * @description null si no hay nada pendiente. El premio ya se otorgó al cerrar el ciclo; esto alimenta el modal y su botón hace el ack en rewards/claim.
+         */
+        get: operations["LeaguesController_pendingResult"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/leagues/rewards/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ack del reward del ciclo cerrado
+         * @description El reward ya se otorgó automáticamente al cerrar el ciclo (closeCycle). Esto solo marca reward_claimed (idempotente) para la animación de UI.
+         */
+        post: operations["LeaguesController_claim"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/videos/ad-reward": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Acreditar crédito por rewarded de AdMob (juego, misión o práctica)
+         * @description game/mission: un solo crédito pendiente a la vez + tope diario. practice: desbloquea el siguiente bloque de preguntas gratis (mismo efecto que un video sponsor de práctica), con el tope diario del país (FreeLimitConfig). Con ADMOB_SSV_ENFORCED=true no acredita: responde AWAITING_SSV y el crédito llega por el callback firmado.
+         */
+        post: operations["VideosController_adReward"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/videos/kokos-quota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Videos por Kokos usados hoy, tope y premio por video
+         * @description La tienda lo usa para mostrar "usados de tope" antes de tocar. El premio sale de RewardConfig del país (configurable desde el panel).
+         */
+        get: operations["VideosController_kokosQuota"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/videos/game-credit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Estado del crédito pendiente (juego, misión o práctica)
+         * @description Con SSV activo el crédito lo emite el callback firmado de Google, no la app: este endpoint permite esperar a que llegue antes de reintentar. game/mission: hay una impresión acreditada sin consumir. practice: quedan preguntas desbloqueadas sin responder — el mismo predicado que evalúa FreeQuotaGuard para dejar seguir practicando.
+         */
+        get: operations["VideosController_gameCredit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/videos/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Siguiente video sponsor para reproducir
+         * @description Selección random ponderada del catálogo, excluyendo los completados hoy en el mismo contexto. Devuelve impressionId + token HMAC para validar al completar.
+         */
+        get: operations["VideosController_getNext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/videos/{impressionId}/completed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar visualización completa y otorgar reward
+         * @description Valida token HMAC + watch_time_ms ≥ duration*0.95. Reward depende del contexto: kokos→+1 Kokos, practice→videos_practice_count++, game→credit pendiente para la próxima sesión.
+         */
+        post: operations["VideosController_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/users/username-available": {
         parameters: {
             query?: never;
@@ -1070,120 +1601,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/leagues/current": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Membership de liga + sponsor del ciclo actual */
-        get: operations["LeaguesController_getCurrent"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/leagues/rewards-table": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Premios de las cuatro ligas (SCR-RANK04)
-         * @description Montos y cosméticos por tramo (1-3 / 4-10 / resto) del país del usuario, leídos de LeagueConfig. `grants_insignia` marca los tramos que además suben de liga.
-         */
-        get: operations["LeaguesController_getRewardsTable"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/leagues/current/leaderboard": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Top N de la lista de liga (módulo+país+tier) + vecindario del user
-         * @description Lista única. Sirve top N + el vecindario del usuario si no entra en el top.
-         */
-        get: operations["LeaguesController_getLeaderboard"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/leagues/current/friends-leaderboard": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Ranking entre amigos del usuario en el ciclo actual */
-        get: operations["LeaguesController_getFriendsLeaderboard"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/leagues/rewards/pending": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Resultado del ciclo cerrado sin ver (SCR-MOD12)
-         * @description null si no hay nada pendiente. El premio ya se otorgó al cerrar el ciclo; esto alimenta el modal y su botón hace el ack en rewards/claim.
-         */
-        get: operations["LeaguesController_pendingResult"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/leagues/rewards/claim": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Ack del reward del ciclo cerrado
-         * @description El reward ya se otorgó automáticamente al cerrar el ciclo (closeCycle). Esto solo marca reward_claimed (idempotente) para la animación de UI.
-         */
-        post: operations["LeaguesController_claim"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/achievements/progress": {
         parameters: {
             query?: never;
@@ -1306,7 +1723,7 @@ export interface paths {
         put?: never;
         /**
          * Iniciar práctica (módulo, materia o tema) + primer lote de preguntas
-         * @description Ola 2 D1: topic_id/subject_id opcionales acotan la sesión. Free users limitados por cuota diaria (FreeQuotaGuard).
+         * @description Ola 2 D1: topic_id/subject_id opcionales acotan la sesión. Free users limitados por cuota diaria (FreeQuotaGuard). Presets componibles: only_hard (solo preguntas de dificultad hard) y review_failed (hasta las 200 más recientes cuya ÚLTIMA respuesta del usuario fue incorrecta, en cualquier modo). timer_enabled NO filtra: es config declarada del cliente — en práctica el servidor no impone tiempo ni rechaza respuestas tardías. available_questions dice cuántas cumplen el filtro (null si no hay filtro; con review_failed nunca pasa de 200): con pocas, el lote es corto a propósito, nunca se rellena con preguntas fuera del filtro.
          */
         post: operations["PracticeController_create"];
         delete?: never;
@@ -1326,7 +1743,7 @@ export interface paths {
         put?: never;
         /**
          * Siguiente lote de preguntas de la sesión (refill, Ola 2 D2)
-         * @description La sesión no tiene largo fijo: entrega otro lote respetando el alcance de la sesión y excluyendo respondidas. La cuota free limita igual que al responder.
+         * @description La sesión no tiene largo fijo: entrega otro lote respetando el alcance Y los presets de la sesión, y excluyendo respondidas. Al agotarse el filtro devuelve una lista vacía — nunca lo ensancha. La cuota free limita igual que al responder.
          */
         post: operations["PracticeController_nextQuestions"];
         delete?: never;
@@ -1586,343 +2003,6 @@ export interface paths {
         head?: never;
         /** Fijar el examen activo del módulo (sub-módulos) */
         patch: operations["UserExamsController_setActive"];
-        trace?: never;
-    };
-    "/v1/store/items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Listar items de la tienda con filtros */
-        get: operations["StoreController_listItems"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/store/items/{id}/purchase": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Comprar item con Kokos
-         * @description Atómico: debit Kokos + create UserInventory en la misma TX.
-         */
-        post: operations["StoreController_purchase"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/inventory": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Inventario del user (avatares, marcos, ítems funcionales) */
-        get: operations["InventoryController_list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/inventory/{id}/equip": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Equipar/desequipar item del inventario
-         * @description Para avatares y marcos: actualiza User.avatarItemId/frameItemId.
-         */
-        patch: operations["InventoryController_equip"];
-        trace?: never;
-    };
-    "/v1/daily-progress/today": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Progreso diario del usuario hoy (CR timezone) */
-        get: operations["DailyProgressController_getToday"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/daily-goal": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Estado de la meta diaria (target/current/met/claimed) */
-        get: operations["DailyGoalController_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Cambiar el target diario (preguntas/día) */
-        patch: operations["DailyGoalController_update"];
-        trace?: never;
-    };
-    "/v1/daily-goal/claim": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reclamar recompensa de meta diaria
-         * @description Atómico en TX: marca claimed + +Kolones + +XP + +XP liga.
-         */
-        post: operations["DailyGoalController_claim"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/missions/today": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Misiones diarias del user (genera lazy si no existen aún) */
-        get: operations["MissionsController_listToday"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/missions/weekly": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Misiones semanales del user (genera lazy si no existen aún) */
-        get: operations["MissionsController_listWeekly"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/missions/refresh-state": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Costo y topes del cambio de misión, con lo usado hoy */
-        get: operations["MissionsController_refreshState"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/missions/{id}/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Cambiar una misión por otra
-         * @description Gratis viendo un rewarded (tope diario de videos) o pagando Kokos. Solo misiones sin completar; el costo y los topes salen de MissionRefreshConfig.
-         */
-        post: operations["MissionsController_refresh"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/streak": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Estado de racha actual del usuario */
-        get: operations["StreakController_getMyStreak"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/streak/freeze": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Activar congelamiento de racha (1/semana)
-         * @description Consume el slot semanal y protege la racha del próximo día sin práctica.
-         */
-        post: operations["StreakController_freeze"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/videos/ad-reward": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Acreditar crédito de juego por rewarded de AdMob
-         * @description Un solo crédito pendiente a la vez + tope diario. Con ADMOB_SSV_ENFORCED=true no acredita: responde AWAITING_SSV y el crédito llega por el callback firmado.
-         */
-        post: operations["VideosController_adReward"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/videos/kokos-quota": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Videos por Kokos usados hoy, tope y premio por video
-         * @description La tienda lo usa para mostrar "usados de tope" antes de tocar. El premio sale de RewardConfig del país (configurable desde el panel).
-         */
-        get: operations["VideosController_kokosQuota"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/videos/game-credit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Estado del crédito de juego pendiente
-         * @description Con SSV activo el crédito lo emite el callback firmado de Google, no la app: este endpoint permite esperar a que llegue antes de reintentar la partida.
-         */
-        get: operations["VideosController_gameCredit"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/videos/next": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Siguiente video sponsor para reproducir
-         * @description Selección random ponderada del catálogo, excluyendo los completados hoy en el mismo contexto. Devuelve impressionId + token HMAC para validar al completar.
-         */
-        get: operations["VideosController_getNext"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/videos/{impressionId}/completed": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Confirmar visualización completa y otorgar reward
-         * @description Valida token HMAC + watch_time_ms ≥ duration*0.95. Reward depende del contexto: kokos→+1 Kokos, practice→videos_practice_count++, game→credit pendiente para la próxima sesión.
-         */
-        post: operations["VideosController_complete"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/v1/coupons": {
@@ -5346,6 +5426,230 @@ export interface paths {
         patch: operations["UniversityAdminController_update"];
         trace?: never;
     };
+    "/v1/admin/content/review-material/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewMaterialAdminController_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewMaterialAdminController_getConfig"];
+        put: operations["ReviewMaterialAdminController_upsertConfig"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/character-voices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewMaterialAdminController_listCharacterVoices"];
+        put?: never;
+        post: operations["ReviewMaterialAdminController_createCharacterVoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/character-voices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["ReviewMaterialAdminController_deactivateCharacterVoice"];
+        options?: never;
+        head?: never;
+        patch: operations["ReviewMaterialAdminController_updateCharacterVoice"];
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/flashcards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewMaterialAdminController_getFlashcards"];
+        put: operations["ReviewMaterialAdminController_upsertFlashcards"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewMaterialAdminController_getSummary"];
+        put: operations["ReviewMaterialAdminController_upsertSummary"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/podcast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewMaterialAdminController_getPodcast"];
+        put: operations["ReviewMaterialAdminController_upsertPodcast"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/podcast/approve-script": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_approveScript"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/podcast/audio/presign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_presignAudio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/podcast/audio/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_confirmAudio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/podcast/generate-audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_generateAudio"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/{piece}/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_generate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/{piece}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/{piece}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_unpublish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/moderation/reports": {
         parameters: {
             query?: never;
@@ -8163,6 +8467,9 @@ export interface components {
                 exam_weight: number | null;
                 color_hex: string | null;
                 wheel_asset_url: string | null;
+                has_flashcards: boolean;
+                has_summary: boolean;
+                has_podcast: boolean;
             }[];
             meta: {
                 page: number;
@@ -8447,6 +8754,444 @@ export interface components {
                 amount_credited: number;
                 kokos_balance: number;
             };
+        };
+        TopicReviewMaterialResponse: {
+            data: {
+                /** Format: uuid */
+                topic_id: string;
+                flashcards?: {
+                    /** @enum {string} */
+                    status: "available";
+                    card_count: number;
+                } | {
+                    /** @enum {string} */
+                    status: "locked";
+                    /** @enum {string} */
+                    required_plan: "plus";
+                };
+                summary?: {
+                    /** @enum {string} */
+                    status: "available";
+                    content: string;
+                } | {
+                    /** @enum {string} */
+                    status: "locked";
+                    /** @enum {string} */
+                    required_plan: "plus";
+                };
+                podcast?: {
+                    /** @enum {string} */
+                    status: "available";
+                    title: string | null;
+                    audio_url: string | null;
+                    duration_seconds: number | null;
+                    characters: {
+                        key: string;
+                        display_name: string;
+                    }[];
+                } | {
+                    /** @enum {string} */
+                    status: "locked";
+                    /** @enum {string} */
+                    required_plan: "plus";
+                };
+            };
+        };
+        ReviewDailySessionResponse: {
+            data: {
+                day: string;
+                completed: boolean;
+                daily_cap: number;
+                cards: {
+                    /** Format: uuid */
+                    id: string;
+                    front: string;
+                    back: string;
+                    /** Format: uuid */
+                    topic_id: string;
+                    topic_name: string;
+                    box: number;
+                }[];
+            };
+        };
+        ReviewSessionCompletedResponse: {
+            data: {
+                day: string;
+                xp_earned: number;
+                already_completed: boolean;
+            };
+        };
+        AnswerCardDto: {
+            knew: boolean;
+        };
+        ReviewCardAnswerResponse: {
+            data: {
+                /** Format: uuid */
+                card_id: string;
+                box: number;
+                next_review_at: string;
+                already_answered_today: boolean;
+            };
+        };
+        DailyProgressResponse: {
+            data: {
+                date: string;
+                questions_answered: number;
+                goal_met: boolean;
+                goal_claimed: boolean;
+                practice_done: boolean;
+                videos_practice_count: number;
+                videos_kokos_count: number;
+                xp_earned: number;
+                kolones_earned: number;
+            };
+        };
+        DailyGoalResponse: {
+            data: {
+                target: number;
+                current: number;
+                met: boolean;
+                claimed: boolean;
+            };
+        };
+        UpdateDailyGoalDto: {
+            target: number;
+        };
+        DailyGoalUpdatedResponse: {
+            data: {
+                target: number;
+            };
+        };
+        DailyGoalClaimedResponse: {
+            data: {
+                kolones_earned: number;
+                xp_earned: number;
+            };
+        };
+        MissionListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                /** @enum {string} */
+                cadence: "daily" | "weekly";
+                title: string;
+                description: string;
+                target_count: number;
+                progress: number;
+                completed: boolean;
+                kolones_reward: number;
+                kokos_reward: number;
+                xp_reward: number;
+                /** Format: uuid */
+                target_subject_id: string | null;
+                target_subject_name: string | null;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        MissionRefreshStateResponse: {
+            data: {
+                kokos_cost: number;
+                used_today: number;
+                daily_limit: number;
+                videos_used_today: number;
+                videos_daily_limit: number;
+            };
+        };
+        RefreshMissionDto: {
+            /** @enum {string} */
+            payment: "video" | "kokos";
+        };
+        MissionRefreshedResponse: {
+            data: {
+                mission: {
+                    /** Format: uuid */
+                    id: string;
+                    /** @enum {string} */
+                    type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                    /** @enum {string} */
+                    cadence: "daily" | "weekly";
+                    title: string;
+                    description: string;
+                    target_count: number;
+                    progress: number;
+                    completed: boolean;
+                    kolones_reward: number;
+                    kokos_reward: number;
+                    xp_reward: number;
+                    /** Format: uuid */
+                    target_subject_id: string | null;
+                    target_subject_name: string | null;
+                };
+                kokos_spent: number;
+            };
+        };
+        StreakResponse: {
+            data: {
+                streak_days: number;
+                streak_last_date: string | null;
+                streak_freeze_used_this_week: boolean;
+                week: {
+                    date: string;
+                    done: boolean;
+                }[];
+            };
+        };
+        StreakFrozenResponse: {
+            data: {
+                streak_days: number;
+                freeze_applied: boolean;
+            };
+        };
+        StoreItemListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                description: string;
+                /** @enum {string} */
+                category: "cosmetic" | "functional";
+                /** @enum {string} */
+                item_type: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                /** @enum {string} */
+                tier: "basico" | "estandar" | "premium";
+                kokos_price: number;
+                preview_url: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        PurchaseResponse: {
+            data: {
+                /** Format: uuid */
+                inventory_item_id: string;
+                /** Format: uuid */
+                item_id: string;
+                quantity: number;
+                acquired_at: string;
+            };
+        };
+        InventoryListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                item: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    /** @enum {string} */
+                    category: "cosmetic" | "functional";
+                    /** @enum {string} */
+                    item_type: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                    preview_url: string;
+                };
+                /** @enum {string} */
+                source: "purchased" | "league_reward" | "achievement_reward" | "arena_reward" | "admin_gift" | "referral_reward" | "founder_reward";
+                quantity: number;
+                is_equipped: boolean;
+                acquired_at: string;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        EquipItemDto: {
+            equip: boolean;
+        };
+        ItemEquippedResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                is_equipped: boolean;
+            };
+        };
+        LeagueCurrentResponse: {
+            data: {
+                cycle: {
+                    /** Format: uuid */
+                    id: string;
+                    iso_year: number;
+                    iso_week: number;
+                    started_at: string;
+                    ends_at: string;
+                } | null;
+                membership: {
+                    /** @enum {string} */
+                    league_level: "aprendiz" | "avanzado" | "experto" | "genio";
+                    xp_this_cycle: number;
+                    rank: number | null;
+                    total: number;
+                    is_first_cycle: boolean;
+                    reward_claimed: boolean;
+                    promote_count: number;
+                    demote_count: number;
+                    gap_to_promotion_xp: number | null;
+                    gap_to_next_position_xp: number | null;
+                } | null;
+                sponsor: {
+                    sponsor_name: string;
+                    sponsor_logo_url: string | null;
+                    prize_description: string;
+                    top_places_awarded: number;
+                } | null;
+            };
+        };
+        LeagueRewardsTableResponse: {
+            data: {
+                tiers: {
+                    /** @enum {string} */
+                    level: "aprendiz" | "avanzado" | "experto" | "genio";
+                    total: number;
+                    promote_count: number;
+                    demote_count: number;
+                    /** Format: uuid */
+                    insignia_item_id: string | null;
+                    brackets: {
+                        positions_label: string;
+                        first_position: number;
+                        grants_insignia: boolean;
+                        kokos: number;
+                        kolones: number;
+                        items: {
+                            /** Format: uuid */
+                            item_id: string;
+                            quantity: number;
+                        }[];
+                    }[];
+                }[];
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    preview_url: string;
+                }[];
+            };
+        };
+        LeagueLeaderboardResponse: {
+            /** @enum {string|null} */
+            level: "aprendiz" | "avanzado" | "experto" | "genio" | null;
+            data: {
+                rank: number;
+                /** Format: uuid */
+                user_id: string;
+                display_name: string;
+                username: string | null;
+                /** Format: uuid */
+                avatar_item_id: string | null;
+                xp_this_cycle: number;
+                is_me: boolean;
+            }[];
+            neighborhood: {
+                rank: number;
+                /** Format: uuid */
+                user_id: string;
+                display_name: string;
+                username: string | null;
+                /** Format: uuid */
+                avatar_item_id: string | null;
+                xp_this_cycle: number;
+                is_me: boolean;
+            }[];
+            meta: {
+                total: number;
+            };
+            promote_count: number;
+            demote_count: number;
+        };
+        FriendsLeaderboardResponse: {
+            data: {
+                rank: number;
+                /** Format: uuid */
+                user_id: string;
+                display_name: string;
+                username: string | null;
+                /** Format: uuid */
+                avatar_item_id: string | null;
+                xp_this_cycle: number;
+                is_me: boolean;
+                /** @enum {string} */
+                league_level: "aprendiz" | "avanzado" | "experto" | "genio";
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        PendingCycleResultResponse: {
+            data: {
+                result: {
+                    /** Format: uuid */
+                    cycle_id: string;
+                    /** @enum {string} */
+                    tier: "aprendiz" | "avanzado" | "experto" | "genio";
+                    /** @enum {string} */
+                    outcome: "promoted" | "stayed" | "demoted";
+                    final_rank: number;
+                    reward_kokos: number;
+                    reward_kolones: number;
+                } | null;
+            };
+        };
+        ClaimRewardDto: {
+            /** Format: uuid */
+            cycle_id: string;
+        };
+        RewardClaimedResponse: {
+            data: {
+                claimed: boolean;
+            };
+        };
+        AdRewardDto: {
+            /** @enum {string} */
+            context?: "game" | "mission" | "practice";
+        };
+        VideoCompletedResponse: {
+            data: {
+                rewarded: boolean;
+                details: unknown;
+            };
+        };
+        KokosQuotaResponse: {
+            data: {
+                used: number;
+                max: number;
+                kokos_per_video: number;
+            };
+        };
+        GameCreditResponse: {
+            data: {
+                pending: boolean;
+            };
+        };
+        NextVideoResponse: {
+            data: {
+                /** Format: uuid */
+                impression_id: string;
+                token: string;
+                video: {
+                    /** Format: uuid */
+                    id: string;
+                    sponsor_name: string;
+                    sponsor_logo_url: string | null;
+                    video_url: string;
+                    duration_sec: number;
+                };
+            };
+        };
+        CompleteVideoDto: {
+            token: string;
+            watch_time_ms: number;
         };
         UsernameAvailableResponse: {
             data: {
@@ -8849,143 +9594,6 @@ export interface components {
                 } | null;
             };
         };
-        LeagueCurrentResponse: {
-            data: {
-                cycle: {
-                    /** Format: uuid */
-                    id: string;
-                    iso_year: number;
-                    iso_week: number;
-                    started_at: string;
-                    ends_at: string;
-                } | null;
-                membership: {
-                    /** @enum {string} */
-                    league_level: "aprendiz" | "avanzado" | "experto" | "genio";
-                    xp_this_cycle: number;
-                    rank: number | null;
-                    total: number;
-                    is_first_cycle: boolean;
-                    reward_claimed: boolean;
-                    promote_count: number;
-                    demote_count: number;
-                    gap_to_promotion_xp: number | null;
-                    gap_to_next_position_xp: number | null;
-                } | null;
-                sponsor: {
-                    sponsor_name: string;
-                    sponsor_logo_url: string | null;
-                    prize_description: string;
-                    top_places_awarded: number;
-                } | null;
-            };
-        };
-        LeagueRewardsTableResponse: {
-            data: {
-                tiers: {
-                    /** @enum {string} */
-                    level: "aprendiz" | "avanzado" | "experto" | "genio";
-                    total: number;
-                    promote_count: number;
-                    demote_count: number;
-                    /** Format: uuid */
-                    insignia_item_id: string | null;
-                    brackets: {
-                        positions_label: string;
-                        first_position: number;
-                        grants_insignia: boolean;
-                        kokos: number;
-                        kolones: number;
-                        items: {
-                            /** Format: uuid */
-                            item_id: string;
-                            quantity: number;
-                        }[];
-                    }[];
-                }[];
-                items: {
-                    /** Format: uuid */
-                    id: string;
-                    name: string;
-                    preview_url: string;
-                }[];
-            };
-        };
-        LeagueLeaderboardResponse: {
-            /** @enum {string|null} */
-            level: "aprendiz" | "avanzado" | "experto" | "genio" | null;
-            data: {
-                rank: number;
-                /** Format: uuid */
-                user_id: string;
-                display_name: string;
-                username: string | null;
-                /** Format: uuid */
-                avatar_item_id: string | null;
-                xp_this_cycle: number;
-                is_me: boolean;
-            }[];
-            neighborhood: {
-                rank: number;
-                /** Format: uuid */
-                user_id: string;
-                display_name: string;
-                username: string | null;
-                /** Format: uuid */
-                avatar_item_id: string | null;
-                xp_this_cycle: number;
-                is_me: boolean;
-            }[];
-            meta: {
-                total: number;
-            };
-            promote_count: number;
-            demote_count: number;
-        };
-        FriendsLeaderboardResponse: {
-            data: {
-                rank: number;
-                /** Format: uuid */
-                user_id: string;
-                display_name: string;
-                username: string | null;
-                /** Format: uuid */
-                avatar_item_id: string | null;
-                xp_this_cycle: number;
-                is_me: boolean;
-                /** @enum {string} */
-                league_level: "aprendiz" | "avanzado" | "experto" | "genio";
-            }[];
-            meta: {
-                page: number;
-                limit: number;
-                total: number;
-            };
-        };
-        PendingCycleResultResponse: {
-            data: {
-                result: {
-                    /** Format: uuid */
-                    cycle_id: string;
-                    /** @enum {string} */
-                    tier: "aprendiz" | "avanzado" | "experto" | "genio";
-                    /** @enum {string} */
-                    outcome: "promoted" | "stayed" | "demoted";
-                    final_rank: number;
-                    reward_kokos: number;
-                    reward_kolones: number;
-                } | null;
-            };
-        };
-        ClaimRewardDto: {
-            /** Format: uuid */
-            cycle_id: string;
-        };
-        RewardClaimedResponse: {
-            data: {
-                claimed: boolean;
-            };
-        };
         AchievementProgressListResponse: {
             data: {
                 /** Format: uuid */
@@ -9119,6 +9727,9 @@ export interface components {
             topic_id?: string;
             /** Format: uuid */
             subject_id?: string;
+            only_hard?: boolean;
+            review_failed?: boolean;
+            timer_enabled?: boolean;
         };
         PracticeSessionCreatedResponse: {
             data: {
@@ -9143,6 +9754,12 @@ export interface components {
                     subject_name?: string;
                     subject_color?: string;
                 }[];
+                filters: {
+                    only_hard: boolean;
+                    review_failed: boolean;
+                    timer_enabled: boolean;
+                };
+                available_questions: number | null;
             };
         };
         PracticeQuestionsRefillResponse: {
@@ -9215,6 +9832,11 @@ export interface components {
                 xp_earned: number;
                 kolones_earned: number;
                 ai_debrief: string | null;
+                filters: {
+                    only_hard: boolean;
+                    review_failed: boolean;
+                    timer_enabled: boolean;
+                };
             };
         };
         ExplainDto: {
@@ -9327,229 +9949,6 @@ export interface components {
                 /** @enum {boolean} */
                 is_active: true;
             };
-        };
-        StoreItemListResponse: {
-            data: {
-                /** Format: uuid */
-                id: string;
-                name: string;
-                description: string;
-                /** @enum {string} */
-                category: "cosmetic" | "functional";
-                /** @enum {string} */
-                item_type: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
-                /** @enum {string} */
-                tier: "basico" | "estandar" | "premium";
-                kokos_price: number;
-                preview_url: string;
-            }[];
-            meta: {
-                page: number;
-                limit: number;
-                total: number;
-            };
-        };
-        PurchaseResponse: {
-            data: {
-                /** Format: uuid */
-                inventory_item_id: string;
-                /** Format: uuid */
-                item_id: string;
-                quantity: number;
-                acquired_at: string;
-            };
-        };
-        InventoryListResponse: {
-            data: {
-                /** Format: uuid */
-                id: string;
-                item: {
-                    /** Format: uuid */
-                    id: string;
-                    name: string;
-                    /** @enum {string} */
-                    category: "cosmetic" | "functional";
-                    /** @enum {string} */
-                    item_type: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
-                    preview_url: string;
-                };
-                /** @enum {string} */
-                source: "purchased" | "league_reward" | "achievement_reward" | "arena_reward" | "admin_gift" | "referral_reward" | "founder_reward";
-                quantity: number;
-                is_equipped: boolean;
-                acquired_at: string;
-            }[];
-            meta: {
-                page: number;
-                limit: number;
-                total: number;
-            };
-        };
-        EquipItemDto: {
-            equip: boolean;
-        };
-        ItemEquippedResponse: {
-            data: {
-                /** Format: uuid */
-                id: string;
-                is_equipped: boolean;
-            };
-        };
-        DailyProgressResponse: {
-            data: {
-                date: string;
-                questions_answered: number;
-                goal_met: boolean;
-                goal_claimed: boolean;
-                practice_done: boolean;
-                videos_practice_count: number;
-                videos_kokos_count: number;
-                xp_earned: number;
-                kolones_earned: number;
-            };
-        };
-        DailyGoalResponse: {
-            data: {
-                target: number;
-                current: number;
-                met: boolean;
-                claimed: boolean;
-            };
-        };
-        UpdateDailyGoalDto: {
-            target: number;
-        };
-        DailyGoalUpdatedResponse: {
-            data: {
-                target: number;
-            };
-        };
-        DailyGoalClaimedResponse: {
-            data: {
-                kolones_earned: number;
-                xp_earned: number;
-            };
-        };
-        MissionListResponse: {
-            data: {
-                /** Format: uuid */
-                id: string;
-                /** @enum {string} */
-                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
-                /** @enum {string} */
-                cadence: "daily" | "weekly";
-                title: string;
-                description: string;
-                target_count: number;
-                progress: number;
-                completed: boolean;
-                kolones_reward: number;
-                kokos_reward: number;
-                xp_reward: number;
-                /** Format: uuid */
-                target_subject_id: string | null;
-                target_subject_name: string | null;
-            }[];
-            meta: {
-                page: number;
-                limit: number;
-                total: number;
-            };
-        };
-        MissionRefreshStateResponse: {
-            data: {
-                kokos_cost: number;
-                used_today: number;
-                daily_limit: number;
-                videos_used_today: number;
-                videos_daily_limit: number;
-            };
-        };
-        RefreshMissionDto: {
-            /** @enum {string} */
-            payment: "video" | "kokos";
-        };
-        MissionRefreshedResponse: {
-            data: {
-                mission: {
-                    /** Format: uuid */
-                    id: string;
-                    /** @enum {string} */
-                    type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
-                    /** @enum {string} */
-                    cadence: "daily" | "weekly";
-                    title: string;
-                    description: string;
-                    target_count: number;
-                    progress: number;
-                    completed: boolean;
-                    kolones_reward: number;
-                    kokos_reward: number;
-                    xp_reward: number;
-                    /** Format: uuid */
-                    target_subject_id: string | null;
-                    target_subject_name: string | null;
-                };
-                kokos_spent: number;
-            };
-        };
-        StreakResponse: {
-            data: {
-                streak_days: number;
-                streak_last_date: string | null;
-                streak_freeze_used_this_week: boolean;
-                week: {
-                    date: string;
-                    done: boolean;
-                }[];
-            };
-        };
-        StreakFrozenResponse: {
-            data: {
-                streak_days: number;
-                freeze_applied: boolean;
-            };
-        };
-        AdRewardDto: {
-            /** @enum {string} */
-            context?: "game" | "mission";
-        };
-        VideoCompletedResponse: {
-            data: {
-                rewarded: boolean;
-                details: unknown;
-            };
-        };
-        KokosQuotaResponse: {
-            data: {
-                used: number;
-                max: number;
-                kokos_per_video: number;
-            };
-        };
-        GameCreditResponse: {
-            data: {
-                pending: boolean;
-            };
-        };
-        NextVideoResponse: {
-            data: {
-                /** Format: uuid */
-                impression_id: string;
-                token: string;
-                video: {
-                    /** Format: uuid */
-                    id: string;
-                    sponsor_name: string;
-                    sponsor_logo_url: string | null;
-                    video_url: string;
-                    duration_sec: number;
-                };
-            };
-        };
-        CompleteVideoDto: {
-            token: string;
-            watch_time_ms: number;
         };
         CouponListResponse: {
             data: {
@@ -12735,6 +13134,187 @@ export interface components {
             examSubjectId?: string | null;
             isActive?: boolean;
         };
+        ReviewMaterialOverviewResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string;
+                shortName: string;
+                fullName: string;
+                subjects: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    order: number;
+                    topics: {
+                        /** Format: uuid */
+                        id: string;
+                        name: string;
+                        order: number;
+                        flashcards: string;
+                        cardCount: number;
+                        summary: string;
+                        podcast: string;
+                    }[];
+                }[];
+            }[];
+        };
+        ReviewSessionConfigResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                country: string | null;
+                dailyCardCap: number;
+                /** Format: uuid */
+                updatedBy: string | null;
+                updatedAt: string;
+            } | null;
+        };
+        ReviewSessionConfigDto: {
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            dailyCardCap: number;
+        };
+        CharacterVoiceListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                displayName: string;
+                provider: string | null;
+                voiceId: string | null;
+                isActive: boolean;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            }[];
+        };
+        CreateCharacterVoiceDto: {
+            key: string;
+            displayName: string;
+            provider?: string | null;
+            voiceId?: string | null;
+            isActive?: boolean;
+        };
+        CharacterVoiceResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                key: string;
+                displayName: string;
+                provider: string | null;
+                voiceId: string | null;
+                isActive: boolean;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        UpdateCharacterVoiceDto: {
+            key?: string;
+            displayName?: string;
+            provider?: string | null;
+            voiceId?: string | null;
+            isActive?: boolean;
+        };
+        ReviewFlashcardsAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string | null;
+                status: string;
+                updatedAt: string | null;
+                cards: {
+                    /** Format: uuid */
+                    id: string;
+                    front: string;
+                    back: string;
+                    order: number;
+                }[];
+            };
+        };
+        UpsertFlashcardsDto: {
+            cards: {
+                /** Format: uuid */
+                id?: string;
+                front: string;
+                back: string;
+            }[];
+        };
+        ReviewSummaryAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string | null;
+                content: string;
+                status: string;
+                updatedAt: string | null;
+            };
+        };
+        UpsertSummaryDto: {
+            content: string;
+        };
+        ReviewPodcastAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string | null;
+                title: string | null;
+                script: {
+                    characterKey: string;
+                    text: string;
+                }[];
+                status: string;
+                audioUrl: string | null;
+                durationSeconds: number | null;
+                updatedAt: string | null;
+            };
+        };
+        UpsertPodcastDto: {
+            title?: string | null;
+            script: {
+                characterKey: string;
+                text: string;
+            }[];
+        };
+        ReviewPieceStatusResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                status: string;
+            };
+        };
+        PresignPodcastAudioDto: {
+            filename: string;
+            /** @enum {string} */
+            contentType: "audio/mpeg" | "audio/mp4";
+        };
+        ReviewPodcastPresignResponse: {
+            data: {
+                uploadUrl: string;
+                publicUrl: string;
+            };
+        };
+        ConfirmPodcastAudioDto: {
+            key: string;
+            durationSeconds: number;
+        };
+        ReviewPodcastAudioResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                status: string;
+                audioUrl: string | null;
+                durationSeconds: number | null;
+            };
+        };
+        GeneratePieceDto: {
+            count?: number;
+        };
+        ReviewMaterialGeneratedResponse: {
+            data: {
+                generated: number;
+            };
+        };
         ModerationReportListResponse: {
             data: {
                 items: {
@@ -14944,6 +15524,7 @@ export interface components {
                 kokosPerVideo: number;
                 kolonesPerVideo: number;
                 videoXp: number;
+                flashcardSessionXp: number;
                 /** Format: uuid */
                 id: string;
                 country: string | null;
@@ -14990,6 +15571,7 @@ export interface components {
             kokosPerVideo: number;
             kolonesPerVideo: number;
             videoXp: number;
+            flashcardSessionXp: number;
         };
         PresignVideoDto: {
             filename: string;
@@ -17457,6 +18039,636 @@ export interface operations {
             };
         };
     };
+    ReviewMaterialController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopicReviewMaterialResponse"];
+                };
+            };
+            /** @description El tema no existe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReviewCardsController_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDailySessionResponse"];
+                };
+            };
+        };
+    };
+    ReviewCardsController_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSessionCompletedResponse"];
+                };
+            };
+        };
+    };
+    ReviewCardsController_answer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cardId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerCardDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewCardAnswerResponse"];
+                };
+            };
+            /** @description PLAN_REQUIRED — el tema de la tarjeta exige Plus del módulo. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DailyProgressController_getToday: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyProgressResponse"];
+                };
+            };
+        };
+    };
+    DailyGoalController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyGoalResponse"];
+                };
+            };
+        };
+    };
+    DailyGoalController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDailyGoalDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyGoalUpdatedResponse"];
+                };
+            };
+        };
+    };
+    DailyGoalController_claim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyGoalClaimedResponse"];
+                };
+            };
+        };
+    };
+    MissionsController_listToday: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionListResponse"];
+                };
+            };
+        };
+    };
+    MissionsController_listWeekly: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionListResponse"];
+                };
+            };
+        };
+    };
+    MissionsController_refreshState: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionRefreshStateResponse"];
+                };
+            };
+        };
+    };
+    MissionsController_refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshMissionDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionRefreshedResponse"];
+                };
+            };
+        };
+    };
+    StreakController_getMyStreak: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StreakResponse"];
+                };
+            };
+        };
+    };
+    StreakController_freeze: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StreakFrozenResponse"];
+                };
+            };
+        };
+    };
+    StoreController_listItems: {
+        parameters: {
+            query?: {
+                category?: "cosmetic" | "functional";
+                item_type?: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreItemListResponse"];
+                };
+            };
+        };
+    };
+    StoreController_purchase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseResponse"];
+                };
+            };
+        };
+    };
+    InventoryController_list: {
+        parameters: {
+            query?: {
+                category?: "cosmetic" | "functional";
+                item_type?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryListResponse"];
+                };
+            };
+        };
+    };
+    InventoryController_equip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EquipItemDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemEquippedResponse"];
+                };
+            };
+        };
+    };
+    LeaguesController_getCurrent: {
+        parameters: {
+            query?: {
+                module_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeagueCurrentResponse"];
+                };
+            };
+        };
+    };
+    LeaguesController_getRewardsTable: {
+        parameters: {
+            query?: {
+                module_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeagueRewardsTableResponse"];
+                };
+            };
+        };
+    };
+    LeaguesController_getLeaderboard: {
+        parameters: {
+            query?: {
+                moduleId?: string;
+                level?: "aprendiz" | "avanzado" | "experto" | "genio";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeagueLeaderboardResponse"];
+                };
+            };
+        };
+    };
+    LeaguesController_getFriendsLeaderboard: {
+        parameters: {
+            query?: {
+                module_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FriendsLeaderboardResponse"];
+                };
+            };
+        };
+    };
+    LeaguesController_pendingResult: {
+        parameters: {
+            query?: {
+                module_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingCycleResultResponse"];
+                };
+            };
+        };
+    };
+    LeaguesController_claim: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRewardDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RewardClaimedResponse"];
+                };
+            };
+        };
+    };
+    VideosController_adReward: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdRewardDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoCompletedResponse"];
+                };
+            };
+        };
+    };
+    VideosController_kokosQuota: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KokosQuotaResponse"];
+                };
+            };
+        };
+    };
+    VideosController_gameCredit: {
+        parameters: {
+            query?: {
+                context?: "game" | "mission" | "practice";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameCreditResponse"];
+                };
+            };
+        };
+    };
+    VideosController_getNext: {
+        parameters: {
+            query: {
+                context: "practice" | "game" | "kokos" | "energy";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NextVideoResponse"];
+                };
+            };
+        };
+    };
+    VideosController_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                impressionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteVideoDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideoCompletedResponse"];
+                };
+            };
+        };
+    };
     UsersController_usernameAvailable: {
         parameters: {
             query: {
@@ -17873,135 +19085,6 @@ export interface operations {
             };
         };
     };
-    LeaguesController_getCurrent: {
-        parameters: {
-            query?: {
-                module_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LeagueCurrentResponse"];
-                };
-            };
-        };
-    };
-    LeaguesController_getRewardsTable: {
-        parameters: {
-            query?: {
-                module_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LeagueRewardsTableResponse"];
-                };
-            };
-        };
-    };
-    LeaguesController_getLeaderboard: {
-        parameters: {
-            query?: {
-                moduleId?: string;
-                level?: "aprendiz" | "avanzado" | "experto" | "genio";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LeagueLeaderboardResponse"];
-                };
-            };
-        };
-    };
-    LeaguesController_getFriendsLeaderboard: {
-        parameters: {
-            query?: {
-                module_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FriendsLeaderboardResponse"];
-                };
-            };
-        };
-    };
-    LeaguesController_pendingResult: {
-        parameters: {
-            query?: {
-                module_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PendingCycleResultResponse"];
-                };
-            };
-        };
-    };
-    LeaguesController_claim: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClaimRewardDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RewardClaimedResponse"];
-                };
-            };
-        };
-    };
     AchievementsController_progress: {
         parameters: {
             query?: never;
@@ -18156,6 +19239,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PracticeSessionCreatedResponse"];
                 };
+            };
+            /** @description PRACTICE_FILTER_EMPTY — ninguna pregunta cumple el filtro; no se crea la sesión. DAILY_LIMIT_REACHED — free user agotó la cuota diaria. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -18518,409 +19608,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserExamActiveResponse"];
-                };
-            };
-        };
-    };
-    StoreController_listItems: {
-        parameters: {
-            query?: {
-                category?: "cosmetic" | "functional";
-                item_type?: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
-                page?: number;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StoreItemListResponse"];
-                };
-            };
-        };
-    };
-    StoreController_purchase: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PurchaseResponse"];
-                };
-            };
-        };
-    };
-    InventoryController_list: {
-        parameters: {
-            query?: {
-                category?: "cosmetic" | "functional";
-                item_type?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
-                page?: number;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InventoryListResponse"];
-                };
-            };
-        };
-    };
-    InventoryController_equip: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EquipItemDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ItemEquippedResponse"];
-                };
-            };
-        };
-    };
-    DailyProgressController_getToday: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DailyProgressResponse"];
-                };
-            };
-        };
-    };
-    DailyGoalController_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DailyGoalResponse"];
-                };
-            };
-        };
-    };
-    DailyGoalController_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateDailyGoalDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DailyGoalUpdatedResponse"];
-                };
-            };
-        };
-    };
-    DailyGoalController_claim: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DailyGoalClaimedResponse"];
-                };
-            };
-        };
-    };
-    MissionsController_listToday: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MissionListResponse"];
-                };
-            };
-        };
-    };
-    MissionsController_listWeekly: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MissionListResponse"];
-                };
-            };
-        };
-    };
-    MissionsController_refreshState: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MissionRefreshStateResponse"];
-                };
-            };
-        };
-    };
-    MissionsController_refresh: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RefreshMissionDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MissionRefreshedResponse"];
-                };
-            };
-        };
-    };
-    StreakController_getMyStreak: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StreakResponse"];
-                };
-            };
-        };
-    };
-    StreakController_freeze: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StreakFrozenResponse"];
-                };
-            };
-        };
-    };
-    VideosController_adReward: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdRewardDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VideoCompletedResponse"];
-                };
-            };
-        };
-    };
-    VideosController_kokosQuota: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["KokosQuotaResponse"];
-                };
-            };
-        };
-    };
-    VideosController_gameCredit: {
-        parameters: {
-            query?: {
-                context?: "game" | "mission";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GameCreditResponse"];
-                };
-            };
-        };
-    };
-    VideosController_getNext: {
-        parameters: {
-            query: {
-                context: "practice" | "game" | "kokos" | "energy";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NextVideoResponse"];
-                };
-            };
-        };
-    };
-    VideosController_complete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                impressionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CompleteVideoDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VideoCompletedResponse"];
                 };
             };
         };
@@ -23863,6 +24550,459 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UniversityAdminResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_overview: {
+        parameters: {
+            query: {
+                country: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewMaterialOverviewResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_getConfig: {
+        parameters: {
+            query: {
+                country: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSessionConfigResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_upsertConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewSessionConfigDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSessionConfigResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_listCharacterVoices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CharacterVoiceListResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_createCharacterVoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCharacterVoiceDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CharacterVoiceResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_deactivateCharacterVoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CharacterVoiceResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_updateCharacterVoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCharacterVoiceDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CharacterVoiceResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_getFlashcards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewFlashcardsAdminResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_upsertFlashcards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertFlashcardsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewFlashcardsAdminResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_getSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSummaryAdminResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_upsertSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertSummaryDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSummaryAdminResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_getPodcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPodcastAdminResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_upsertPodcast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertPodcastDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPodcastAdminResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_approveScript: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPieceStatusResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_presignAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PresignPodcastAudioDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPodcastPresignResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_confirmAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPodcastAudioDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPodcastAudioResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_generateAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPodcastAudioResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_generate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+                piece: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratePieceDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewMaterialGeneratedResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+                piece: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPieceStatusResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_unpublish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+                piece: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPieceStatusResponse"];
                 };
             };
         };
