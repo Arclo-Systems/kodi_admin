@@ -5,6 +5,7 @@ import {
   FileQuestionIcon,
   FolderTreeIcon,
   GraduationCapIcon,
+  LayersIcon,
   ListChecksIcon,
   NewspaperIcon,
   SparklesIcon,
@@ -43,6 +44,13 @@ const AREAS: AreaCard[] = [
     description: 'Árbol de módulos, materias y temas con reordenamiento.',
     icon: FolderTreeIcon,
     action: 'view:content',
+  },
+  {
+    href: '/content/review-material',
+    label: 'Material de repaso',
+    description: 'Tarjetas, resúmenes y podcasts por tema: borradores con IA o a mano, y publicación por pieza.',
+    icon: LayersIcon,
+    action: 'content:review-material:write',
   },
   {
     href: '/content/news',

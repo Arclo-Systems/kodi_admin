@@ -50,6 +50,16 @@ describe('permissions', () => {
     expect(can('support', 'game:wheel-config:write')).toBe(false);
   });
 
+  // Material de repaso: el editor carga y edita, pero publicar es lo que ven los
+  // usuarios y el backend lo tiene con @RequireRole(admin).
+  it('material de repaso: escribe el editor, publica solo el admin', () => {
+    expect(can('editor', 'content:review-material:write')).toBe(true);
+    expect(can('editor', 'content:review-material:publish')).toBe(false);
+    expect(can('admin', 'content:review-material:publish')).toBe(true);
+    expect(can('support', 'content:review-material:write')).toBe(false);
+    expect(can('commercial', 'content:review-material:write')).toBe(false);
+  });
+
   it('economía: roles alineados al RBAC del backend', () => {
     expect(can('commercial', 'economy:sponsor:write')).toBe(true);
     expect(can('commercial', 'economy:achievement:read')).toBe(false);

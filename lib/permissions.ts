@@ -45,6 +45,10 @@ export type Action =
   | 'content:career:approve'
   // Universidades (nota de admisión): pesos + escala = solo admin.
   | 'content:university:write'
+  // Material de repaso: editar lo puede el editor; publicar (lo que ven los
+  // usuarios) es solo admin, igual que aprobar una pregunta.
+  | 'content:review-material:write'
+  | 'content:review-material:publish'
   // Economía (Ola 2b)
   | 'view:economy'
   | 'economy:achievement:read'
@@ -175,6 +179,8 @@ const matrix: Record<AdminRole, Action[]> = {
     'content:career:upload',
     'content:career:approve',
     'content:university:write',
+    'content:review-material:write',
+    'content:review-material:publish',
     'view:economy',
     'economy:achievement:read',
     'economy:achievement:write',
@@ -250,6 +256,7 @@ const matrix: Record<AdminRole, Action[]> = {
     'content:cutoffs:upload',
     'content:career:upload',
     'content:ai-prompt:write',
+    'content:review-material:write',
     'view:economy',
     'economy:achievement:read',
     'economy:banner:read',
