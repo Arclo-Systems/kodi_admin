@@ -9,6 +9,24 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 ## [Unreleased]
 
 ### Added
+- ✨ **Contenido → Material de repaso:** sección nueva con el árbol módulo→materia→tema y el estado
+  de las tres piezas por tema (tarjetas, resumen, podcast). Editor por tema en pestañas, con **vista
+  previa en las tres** — la tarjeta se ve como tarjeta y se da vuelta, el resumen se renderiza al
+  lado del Markdown y el guión se lee como transcript con preescucha del audio (`AudioPreview`,
+  primer componente de audio del panel). Subida de audio **directo a R2** con URL firmada (el BFF
+  solo firma y confirma) y "Generar con IA" por pieza que deja un borrador cargado en el editor.
+  "Generar audio" queda visible pero deshabilitado hasta que se elija proveedor de voces.
+  Sub-página de configuración (admin) con el tope de la sesión diaria (global + override por país)
+  y el catálogo personaje→voz. Permisos nuevos `content:review-material:write` (admin+editor) y
+  `content:review-material:publish` (admin).
+
+### Fixed
+- 🐛 **Economía → Recompensas:** el formulario no mandaba `quickSpeedBonusXp` ni `reviveKokosPrice`
+  y el backend valida la matriz completa con un schema estricto, así que **cualquier guardado de
+  recompensas salía rechazado**. Entran los dos campos que faltaban (más el EXP de la sesión diaria
+  de tarjetas del material de repaso).
+
+### Added (previo)
 - ✨ SVG inline en preguntas: pegá código SVG (enunciado/explicación y CSV) con render seguro vía data-URI, optimización SVGO y semáforo de peso (bloquea >30 KB).
 - ✨ Referencia de IDs de materias/temas para import CSV: página con tabs y tablas id+nombre (copiar-al-clic); plantilla CSV simplificada.
 - **Economía → Recompensas:** pantalla nueva (espejo de Energía: Default + override por país)
