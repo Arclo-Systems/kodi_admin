@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowLeftIcon } from 'lucide-react';
+import { ArrowLeftIcon, FileTextIcon, PodcastIcon, WalletCardsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,9 +44,18 @@ export function TopicMaterialTabs({
 
       <Tabs defaultValue="flashcards">
         <TabsList>
-          <TabsTrigger value="flashcards">Tarjetas</TabsTrigger>
-          <TabsTrigger value="summary">Resumen</TabsTrigger>
-          <TabsTrigger value="podcast">Podcast</TabsTrigger>
+          <TabsTrigger value="flashcards">
+            <WalletCardsIcon />
+            Tarjetas
+          </TabsTrigger>
+          <TabsTrigger value="summary">
+            <FileTextIcon />
+            Resumen
+          </TabsTrigger>
+          <TabsTrigger value="podcast">
+            <PodcastIcon />
+            Podcast
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="flashcards" className="mt-4">
           <FlashcardsTab topicId={topicId} canPublish={canPublish} />
