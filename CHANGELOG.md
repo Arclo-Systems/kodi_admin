@@ -9,6 +9,15 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 ## [Unreleased]
 
 ### Added
+- ✨ **Material de repaso — ampliación editorial:** frente/dorso de tarjetas y el resumen editan con
+  el **mismo set de herramientas que el enunciado de una pregunta** (fórmula, tabla, imagen,
+  diagrama y figura SVG) contra el endpoint de imagen propio del material. **Importar CSV** de
+  tarjetas por tema, con revisión fila por fila antes de confirmar y reporte de errores.
+  **Ciclo de revisión** en la barra de cada pieza: enviar a revisión (editor), aprobar y publicar o
+  rechazar con motivo (admin), con el badge "En revisión" en el mismo lenguaje visual que las
+  preguntas. **Portada del episodio** de podcast (`AssetUpload`) visible en la vista previa. El
+  árbol muestra el icono del módulo y un punto con el color de cada materia. Se va el subtítulo
+  técnico "Markdown + LaTeX + Mermaid" del editor de resumen: la toolbar ya lo dice.
 - ✨ **Contenido → Material de repaso:** sección nueva con el árbol módulo→materia→tema y el estado
   de las tres piezas por tema (tarjetas, resumen, podcast). Editor por tema en pestañas, con **vista
   previa en las tres** — la tarjeta se ve como tarjeta y se da vuelta, el resumen se renderiza al
