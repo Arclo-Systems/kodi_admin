@@ -69,41 +69,43 @@ export function QuestionFilters({
         </SelectContent>
       </Select>
 
-      <Select
-        value={value.subjectId ?? ALL}
-        onValueChange={(v) => set({ subjectId: v === ALL ? undefined : v, topicId: undefined })}
-        disabled={!value.moduleId}
-      >
-        <SelectTrigger className="w-40" aria-label="Filtrar por materia">
-          <SelectValue placeholder="Materia" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL}>Todas las materias</SelectItem>
-          {subjects.map((s) => (
-            <SelectItem key={s.id} value={s.id}>
-              {s.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {value.moduleId ? (
+        <Select
+          value={value.subjectId ?? ALL}
+          onValueChange={(v) => set({ subjectId: v === ALL ? undefined : v, topicId: undefined })}
+        >
+          <SelectTrigger className="w-40" aria-label="Filtrar por materia">
+            <SelectValue placeholder="Materia" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Todas las materias</SelectItem>
+            {subjects.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : null}
 
-      <Select
-        value={value.topicId ?? ALL}
-        onValueChange={(v) => set({ topicId: v === ALL ? undefined : v })}
-        disabled={!value.subjectId}
-      >
-        <SelectTrigger className="w-40" aria-label="Filtrar por tema">
-          <SelectValue placeholder="Tema" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ALL}>Todos los temas</SelectItem>
-          {topics.map((t) => (
-            <SelectItem key={t.id} value={t.id}>
-              {t.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {value.subjectId ? (
+        <Select
+          value={value.topicId ?? ALL}
+          onValueChange={(v) => set({ topicId: v === ALL ? undefined : v })}
+        >
+          <SelectTrigger className="w-40" aria-label="Filtrar por tema">
+            <SelectValue placeholder="Tema" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Todos los temas</SelectItem>
+            {topics.map((t) => (
+              <SelectItem key={t.id} value={t.id}>
+                {t.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : null}
 
       <Select
         value={value.status ?? ALL}
