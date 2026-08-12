@@ -5442,6 +5442,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/content/review-material/upload-image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_uploadImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/content/review-material/config": {
         parameters: {
             query?: never;
@@ -5500,6 +5516,38 @@ export interface paths {
         get: operations["ReviewMaterialAdminController_getFlashcards"];
         put: operations["ReviewMaterialAdminController_upsertFlashcards"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/flashcards/bulk-import/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_bulkImportPreview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/flashcards/bulk-import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_bulkImport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5612,6 +5660,54 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["ReviewMaterialAdminController_generate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/{piece}/submit-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_submitReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/{piece}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/{piece}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_reject"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8783,6 +8879,7 @@ export interface components {
                     /** @enum {string} */
                     status: "available";
                     title: string | null;
+                    artwork_url: string | null;
                     audio_url: string | null;
                     duration_seconds: number | null;
                     characters: {
@@ -13141,11 +13238,13 @@ export interface components {
                 country: string;
                 shortName: string;
                 fullName: string;
+                iconUrl: string | null;
                 subjects: {
                     /** Format: uuid */
                     id: string;
                     name: string;
                     order: number;
+                    colorHex: string;
                     topics: {
                         /** Format: uuid */
                         id: string;
@@ -13158,6 +13257,11 @@ export interface components {
                     }[];
                 }[];
             }[];
+        };
+        ReviewMaterialUploadImageResponse: {
+            data: {
+                url: string;
+            };
         };
         ReviewSessionConfigResponse: {
             data: {
@@ -13242,6 +13346,37 @@ export interface components {
                 back: string;
             }[];
         };
+        ImportFlashcardsDto: {
+            csv: string;
+            selectedRows?: number[];
+        };
+        FlashcardBulkPreviewResponse: {
+            data: {
+                total: number;
+                validCount: number;
+                errors: {
+                    row: number;
+                    message: string;
+                }[];
+                rows: {
+                    row: number;
+                    valid: boolean;
+                    error: string | null;
+                    front: string;
+                    back: string;
+                    order: number;
+                }[];
+            };
+        };
+        FlashcardBulkImportResponse: {
+            data: {
+                inserted: number;
+                errors: {
+                    row: number;
+                    message: string;
+                }[];
+            };
+        };
         ReviewSummaryAdminResponse: {
             data: {
                 /** Format: uuid */
@@ -13259,6 +13394,7 @@ export interface components {
                 /** Format: uuid */
                 id: string | null;
                 title: string | null;
+                artworkUrl: string | null;
                 script: {
                     characterKey: string;
                     text: string;
@@ -13271,6 +13407,8 @@ export interface components {
         };
         UpsertPodcastDto: {
             title?: string | null;
+            /** Format: uri */
+            artworkUrl?: string | null;
             script: {
                 characterKey: string;
                 text: string;
@@ -13314,6 +13452,9 @@ export interface components {
             data: {
                 generated: number;
             };
+        };
+        RejectPieceDto: {
+            reason: string;
         };
         ModerationReportListResponse: {
             data: {
@@ -24575,6 +24716,25 @@ export interface operations {
             };
         };
     };
+    ReviewMaterialAdminController_uploadImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewMaterialUploadImageResponse"];
+                };
+            };
+        };
+    };
     ReviewMaterialAdminController_getConfig: {
         parameters: {
             query: {
@@ -24749,6 +24909,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReviewFlashcardsAdminResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_bulkImportPreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportFlashcardsDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlashcardBulkPreviewResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_bulkImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportFlashcardsDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlashcardBulkImportResponse"];
                 };
             };
         };
@@ -24959,6 +25169,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReviewMaterialGeneratedResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_submitReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+                piece: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPieceStatusResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+                piece: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPieceStatusResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+                piece: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectPieceDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPieceStatusResponse"];
                 };
             };
         };

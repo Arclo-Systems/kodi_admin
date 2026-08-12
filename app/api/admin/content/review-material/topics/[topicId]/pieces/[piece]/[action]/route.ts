@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { forwardToBackend } from '@/lib/proxy';
 
 const PIECES = ['flashcards', 'summary', 'podcast'];
-const ACTIONS = ['generate', 'publish', 'unpublish'];
+const ACTIONS = [
+  'generate',
+  'publish',
+  'unpublish',
+  'submit-review',
+  'approve',
+  'reject',
+];
 
 /**
  * Acciones por pieza (`/pieces/<piece>/<action>` acá → `/<piece>/<action>` en el

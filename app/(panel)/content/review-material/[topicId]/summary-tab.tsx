@@ -6,14 +6,17 @@ import { SaveIcon } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldLabel } from '@/components/ui/field';
+import { Field } from '@/components/ui/field';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MarkdownField } from '@/components/rich-content/markdown-field';
+import { MarkdownField, type RichTool } from '@/components/rich-content/markdown-field';
 import { RichContent } from '@/components/rich-content/rich-content';
 import { useReviewMaterialMutations, useTopicSummary } from '@/hooks/use-review-material';
 import { PieceActions } from './piece-actions';
 
 const MAX_LEN = 40000;
+// Mismo set que el enunciado de una pregunta, SVG incluido.
+const SUMMARY_TOOLS: RichTool[] = ['formula', 'table', 'image', 'mermaid', 'svg'];
+const UPLOAD_URL = '/api/admin/content/review-material/upload-image';
 
 export function SummaryTab({ topicId, canPublish }: { topicId: string; canPublish: boolean }) {
   const { data, isLoading, isError, error } = useTopicSummary(topicId);
@@ -68,15 +71,15 @@ export function SummaryTab({ topicId, canPublish }: { topicId: string; canPublis
           </CardHeader>
           <CardContent>
             <Field>
-              <FieldLabel htmlFor="summary-content">Markdown + LaTeX + Mermaid</FieldLabel>
               <MarkdownField
                 id="summary-content"
                 value={content}
                 onChange={setContent}
-                tools={['formula', 'table', 'image', 'mermaid']}
+                tools={SUMMARY_TOOLS}
                 maxLength={MAX_LEN}
                 rows={20}
-                uploadUrl="/api/admin/content/questions/upload-image"
+                uploadUrl={UPLOAD_URL}
+                ariaLabel="Contenido del resumen"
                 placeholder="Resumen del tema para repasar antes del examen"
               />
             </Field>

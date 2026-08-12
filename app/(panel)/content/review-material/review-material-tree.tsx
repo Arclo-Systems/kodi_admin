@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { LayersIcon } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -72,7 +73,19 @@ export function ReviewMaterialTree() {
         data?.map((examModule) => (
           <Card key={examModule.id}>
             <CardHeader>
-              <CardTitle className="flex flex-wrap items-baseline gap-2">
+              <CardTitle className="flex flex-wrap items-center gap-2">
+                {/* Identidad del módulo: decorativa, el nombre ya está al lado.
+                    Sin `iconUrl` no se pinta nada (nada de placeholder roto). */}
+                {examModule.iconUrl && (
+                  <Image
+                    src={examModule.iconUrl}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="rounded-md object-cover"
+                    unoptimized
+                  />
+                )}
                 <span>{examModule.shortName}</span>
                 <span className="text-muted-foreground text-sm font-normal">
                   {examModule.country} · {examModule.fullName}
@@ -85,7 +98,15 @@ export function ReviewMaterialTree() {
               )}
               {examModule.subjects.map((subject) => (
                 <section key={subject.id} className="space-y-2">
-                  <h3 className="text-sm font-semibold">{subject.name}</h3>
+                  <h3 className="flex items-center gap-2 text-sm font-semibold">
+                    {/* Mismo punto de color que el editor de sectores de la ruleta. */}
+                    <span
+                      aria-hidden
+                      className="size-2.5 shrink-0 rounded-full border"
+                      style={{ backgroundColor: subject.colorHex }}
+                    />
+                    {subject.name}
+                  </h3>
                   {subject.topics.length === 0 ? (
                     <p className="text-muted-foreground text-sm">Sin temas.</p>
                   ) : (

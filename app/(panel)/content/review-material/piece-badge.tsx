@@ -1,13 +1,22 @@
-import { CheckCircle2Icon, CircleDashedIcon, MicIcon, PencilLineIcon } from 'lucide-react';
+import {
+  CheckCircle2Icon,
+  CircleDashedIcon,
+  ClockIcon,
+  MicIcon,
+  PencilLineIcon,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { PieceState, PodcastState } from '@/hooks/use-review-material';
 
 type AnyState = PieceState | PodcastState;
 
 // Estado nunca solo por color (U5): cada uno lleva su etiqueta y su icono.
+// `review` copia el lenguaje visual de las preguntas (lib/question-status): "En
+// revisión", reloj y tono info.
 const LABELS: Record<AnyState, string> = {
   empty: 'Sin material',
   draft: 'Borrador',
+  review: 'En revisión',
   script_approved: 'Guión aprobado',
   audio_ready: 'Audio listo',
   published: 'Publicado',
@@ -16,6 +25,7 @@ const LABELS: Record<AnyState, string> = {
 const TONES: Record<AnyState, string> = {
   empty: 'text-muted-foreground border-dashed',
   draft: 'border-warning/40 bg-warning/10 text-warning',
+  review: 'border-info/40 bg-info/10 text-info',
   script_approved: 'border-info/40 bg-info/10 text-info',
   audio_ready: 'border-info/40 bg-info/10 text-info',
   published: 'border-success/40 bg-success/10 text-success',
@@ -24,6 +34,7 @@ const TONES: Record<AnyState, string> = {
 const ICONS: Record<AnyState, typeof CheckCircle2Icon> = {
   empty: CircleDashedIcon,
   draft: PencilLineIcon,
+  review: ClockIcon,
   script_approved: PencilLineIcon,
   audio_ready: MicIcon,
   published: CheckCircle2Icon,

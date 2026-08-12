@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { EyeOffIcon, SendIcon, SparklesIcon } from 'lucide-react';
+import { CheckIcon, EyeOffIcon, SendIcon, SparklesIcon, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -29,6 +29,27 @@ const PIECE_LABEL: Record<ReviewPiece, string> = {
   podcast: 'el podcast',
 };
 
+type ConfirmKind = 'publish' | 'unpublish' | 'reject';
+
+const CONFIRM_TITLE: Record<ConfirmKind, string> = {
+  publish: 'Publicar pieza',
+  unpublish: 'Despublicar pieza',
+  reject: 'Rechazar la revisión',
+};
+
+const CONFIRM_LABEL: Record<ConfirmKind, string> = {
+  publish: 'Publicar',
+  unpublish: 'Despublicar',
+  reject: 'Rechazar',
+};
+
+function confirmDescription(kind: ConfirmKind | null, piece: string): string {
+  if (kind === 'unpublish') return `Los usuarios dejan de ver ${piece} de este tema.`;
+  if (kind === 'reject')
+    return `${piece} vuelve a borrador y el motivo queda en el historial del tema.`;
+  return `${piece} de este tema queda visible para los usuarios con acceso.`;
+}
+
 /**
  * Barra de acciones de una pieza: estado, generación con IA y publicación.
  * Publicar/despublicar solo se renderiza para quien puede (U3) — nunca un botón
@@ -47,13 +68,30 @@ export function PieceActions({
   canPublish: boolean;
   withCount?: boolean;
 }) {
-  const { generateWithAi, setPublished } = useReviewMaterialMutations(topicId);
+  const { generateWithAi, setPublished, runWorkflow } =
+    useReviewMaterialMutations(topicId);
   const [aiOpen, setAiOpen] = useState(false);
   const [count, setCount] = useState(10);
-  const [confirm, setConfirm] = useState<'publish' | 'unpublish' | null>(null);
+  const [confirm, setConfirm] = useState<ConfirmKind | null>(null);
 
   const published = state === 'published';
   const exists = state !== 'empty';
+  const inReview = state === 'review';
+  // El podcast se revisa con su propio circuito (guión → audio → publicar), que
+  // vive en su pestaña: acá no se le ofrece el ciclo de tarjetas/resumen.
+  const hasReviewCycle = piece !== 'podcast';
+
+  async function runAction(
+    action: 'submit-review' | 'approve',
+    ok: string,
+  ): Promise<void> {
+    try {
+      await runWorkflow.mutateAsync({ piece, action });
+      toast.success(ok);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'No se pudo cambiar el estado');
+    }
+  }
 
   async function generate(): Promise<void> {
     try {
@@ -96,6 +134,39 @@ export function PieceActions({
           <SparklesIcon className="size-4" />
           Generar con IA
         </Button>
+        {hasReviewCycle && state === 'draft' && (
+          <Button
+            size="sm"
+            variant={canPublish ? 'outline' : 'default'}
+            disabled={runWorkflow.isPending}
+            onClick={() => void runAction('submit-review', 'Enviado a revisión')}
+          >
+            <SendIcon className="size-4" />
+            Enviar a revisión
+          </Button>
+        )}
+        {hasReviewCycle && inReview && canPublish && (
+          <>
+            <Button
+              size="sm"
+              disabled={runWorkflow.isPending}
+              onClick={() => void runAction('approve', 'Pieza aprobada y publicada')}
+            >
+              <CheckIcon className="size-4" />
+              Aprobar y publicar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              disabled={runWorkflow.isPending}
+              onClick={() => setConfirm('reject')}
+            >
+              <XIcon className="size-4" />
+              Rechazar
+            </Button>
+          </>
+        )}
         {canPublish &&
           (published ? (
             <Button size="sm" variant="outline" onClick={() => setConfirm('unpublish')}>
@@ -103,10 +174,14 @@ export function PieceActions({
               Despublicar
             </Button>
           ) : (
-            <Button size="sm" onClick={() => setConfirm('publish')} disabled={!exists}>
-              <SendIcon className="size-4" />
-              Publicar
-            </Button>
+            // Atajo del admin que edita y publica de una; el camino con revisión
+            // es enviar a revisión y aprobar.
+            !inReview && (
+              <Button size="sm" onClick={() => setConfirm('publish')} disabled={!exists}>
+                <SendIcon className="size-4" />
+                Publicar
+              </Button>
+            )
           ))}
       </div>
 
@@ -143,15 +218,22 @@ export function PieceActions({
       <ConfirmDialog
         open={confirm !== null}
         onOpenChange={(open) => setConfirm(open ? confirm : null)}
-        title={confirm === 'unpublish' ? 'Despublicar pieza' : 'Publicar pieza'}
-        description={
-          confirm === 'unpublish'
-            ? `Los usuarios dejan de ver ${PIECE_LABEL[piece]} de este tema.`
-            : `${PIECE_LABEL[piece]} de este tema queda visible para los usuarios con acceso.`
-        }
-        destructive={confirm === 'unpublish'}
-        confirmLabel={confirm === 'unpublish' ? 'Despublicar' : 'Publicar'}
-        onConfirm={() => togglePublished(confirm === 'publish')}
+        title={CONFIRM_TITLE[confirm ?? 'publish']}
+        description={confirmDescription(confirm, PIECE_LABEL[piece])}
+        destructive={confirm !== 'publish'}
+        // El motivo del rechazo va al audit log: es lo que el editor lee para
+        // saber qué corregir.
+        requireReason={confirm === 'reject'}
+        confirmLabel={CONFIRM_LABEL[confirm ?? 'publish']}
+        onConfirm={async ({ reason }) => {
+          if (confirm === 'reject') {
+            await runWorkflow.mutateAsync({ piece, action: 'reject', reason });
+            toast.success('Devuelto a borrador');
+            setConfirm(null);
+            return;
+          }
+          await togglePublished(confirm === 'publish');
+        }}
       />
     </div>
   );

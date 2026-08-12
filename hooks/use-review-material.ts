@@ -6,10 +6,31 @@ import { unwrapData } from '@/lib/bff';
 const BASE = '/api/admin/content/review-material';
 
 /** Tarjetas y resumen: `empty` = el tema todavía no tiene esa pieza. */
-export type PieceState = 'empty' | 'draft' | 'published';
+export type PieceState = 'empty' | 'draft' | 'review' | 'published';
 /** El podcast tiene dos artefactos (guión y audio) y por eso estados propios. */
 export type PodcastState = 'empty' | 'draft' | 'script_approved' | 'audio_ready' | 'published';
 export type ReviewPiece = 'flashcards' | 'summary' | 'podcast';
+export type PieceWorkflowAction = 'submit-review' | 'approve' | 'reject';
+
+/** Fila del CSV tal como la devolvió la validación del backend. */
+export type FlashcardImportRow = {
+  row: number;
+  valid: boolean;
+  error: string | null;
+  front: string;
+  back: string;
+  order: number;
+};
+export type FlashcardImportPreview = {
+  total: number;
+  validCount: number;
+  errors: { row: number; message: string }[];
+  rows: FlashcardImportRow[];
+};
+export type FlashcardImportResult = {
+  inserted: number;
+  errors: { row: number; message: string }[];
+};
 
 export type OverviewTopic = {
   id: string;
@@ -24,6 +45,8 @@ export type OverviewSubject = {
   id: string;
   name: string;
   order: number;
+  /** Identidad visual de la materia; el árbol la pinta como punto de color. */
+  colorHex: string;
   topics: OverviewTopic[];
 };
 export type OverviewModule = {
@@ -31,6 +54,7 @@ export type OverviewModule = {
   country: string;
   shortName: string;
   fullName: string;
+  iconUrl: string | null;
   subjects: OverviewSubject[];
 };
 
@@ -55,6 +79,8 @@ export type ScriptSegment = { characterKey: string; text: string };
 export type PodcastEpisode = {
   id: string | null;
   title: string | null;
+  /** Portada del episodio; opcional y sin efecto en el pipeline de estados. */
+  artworkUrl: string | null;
   script: ScriptSegment[];
   status: PodcastState;
   audioUrl: string | null;
@@ -181,8 +207,11 @@ export function useReviewMaterialMutations(topicId: string) {
       onSuccess: () => invalidate('summary'),
     }),
     savePodcast: useMutation({
-      mutationFn: (input: { title: string | null; script: ScriptSegment[] }) =>
-        sendJson<PodcastEpisode>(`${BASE}/topics/${topicId}/podcast`, 'PUT', input),
+      mutationFn: (input: {
+        title: string | null;
+        artworkUrl: string | null;
+        script: ScriptSegment[];
+      }) => sendJson<PodcastEpisode>(`${BASE}/topics/${topicId}/podcast`, 'PUT', input),
       onSuccess: () => invalidate('podcast'),
     }),
     approveScript: useMutation({
@@ -210,6 +239,25 @@ export function useReviewMaterialMutations(topicId: string) {
         ),
       onSuccess: (_data, { piece }) => invalidate(piece),
     }),
+    // Ciclo de revisión de mazo y resumen (el podcast tiene el suyo): el editor
+    // manda a revisión, el admin aprueba —que ES publicar— o rechaza con motivo.
+    runWorkflow: useMutation({
+      mutationFn: ({
+        piece,
+        action,
+        reason,
+      }: {
+        piece: ReviewPiece;
+        action: PieceWorkflowAction;
+        reason?: string;
+      }) =>
+        sendJson<{ status: PieceState }>(
+          `${BASE}/topics/${topicId}/pieces/${piece}/${action}`,
+          'POST',
+          action === 'reject' ? { reason } : {},
+        ),
+      onSuccess: (_data, { piece }) => invalidate(piece),
+    }),
     setPublished: useMutation({
       mutationFn: ({ piece, published }: { piece: ReviewPiece; published: boolean }) =>
         sendJson<{ status: string }>(
@@ -217,6 +265,42 @@ export function useReviewMaterialMutations(topicId: string) {
           'POST',
         ),
       onSuccess: (_data, { piece }) => invalidate(piece),
+    }),
+  };
+}
+
+/** Subida masiva por CSV: primero se revisa el archivo, después se confirma. */
+export function useFlashcardImport(topicId: string) {
+  const qc = useQueryClient();
+  return {
+    preview: useMutation({
+      mutationFn: async (csv: string): Promise<FlashcardImportPreview> => {
+        const result = await sendJson<FlashcardImportPreview>(
+          `${BASE}/topics/${topicId}/flashcards/bulk-import/preview`,
+          'POST',
+          { csv },
+        );
+        if (!result) throw new Error('El backend no devolvió la revisión del archivo');
+        return result;
+      },
+    }),
+    confirm: useMutation({
+      mutationFn: async (input: {
+        csv: string;
+        selectedRows?: number[];
+      }): Promise<FlashcardImportResult> => {
+        const result = await sendJson<FlashcardImportResult>(
+          `${BASE}/topics/${topicId}/flashcards/bulk-import`,
+          'POST',
+          input,
+        );
+        if (!result) throw new Error('El backend no devolvió el resultado del import');
+        return result;
+      },
+      onSuccess: () => {
+        void qc.invalidateQueries({ queryKey: ['review-material', 'flashcards', topicId] });
+        void qc.invalidateQueries({ queryKey: ['review-material', 'overview'] });
+      },
     }),
   };
 }

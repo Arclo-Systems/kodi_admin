@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/admin/empty-state';
-import { MarkdownField } from '@/components/rich-content/markdown-field';
+import { MarkdownField, type RichTool } from '@/components/rich-content/markdown-field';
 import { RichContent } from '@/components/rich-content/rich-content';
 import { moveItem } from '@/lib/reorder';
 import {
@@ -25,8 +25,13 @@ import {
   type FlashcardInput,
 } from '@/hooks/use-review-material';
 import { PieceActions } from './piece-actions';
+import { FlashcardsImportDialog } from './flashcards-import-dialog';
 
 const MAX_LEN = 40000;
+// El mismo set que el enunciado de una pregunta: una tarjeta puede necesitar
+// exactamente lo mismo (fórmula, tabla, imagen, diagrama, figura SVG).
+const CARD_TOOLS: RichTool[] = ['formula', 'table', 'image', 'mermaid', 'svg'];
+const UPLOAD_URL = '/api/admin/content/review-material/upload-image';
 const emptyCard = (): FlashcardInput => ({ front: '', back: '' });
 
 export function FlashcardsTab({
@@ -143,7 +148,8 @@ export function FlashcardsTab({
                     id={`front-${index}`}
                     value={card.front}
                     onChange={(v) => update(index, { front: v })}
-                    tools={['formula']}
+                    tools={CARD_TOOLS}
+                    uploadUrl={UPLOAD_URL}
                     maxLength={MAX_LEN}
                     rows={3}
                     placeholder="La pregunta o el concepto"
@@ -155,7 +161,8 @@ export function FlashcardsTab({
                     id={`back-${index}`}
                     value={card.back}
                     onChange={(v) => update(index, { back: v })}
-                    tools={['formula']}
+                    tools={CARD_TOOLS}
+                    uploadUrl={UPLOAD_URL}
                     maxLength={MAX_LEN}
                     rows={3}
                     placeholder="La respuesta, en una o dos frases"
@@ -189,10 +196,13 @@ export function FlashcardsTab({
       </div>
 
       <div className="flex flex-wrap justify-between gap-2">
-        <Button variant="outline" onClick={() => setCards((prev) => [...prev, emptyCard()])}>
-          <PlusIcon className="size-4" />
-          Agregar tarjeta
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={() => setCards((prev) => [...prev, emptyCard()])}>
+            <PlusIcon className="size-4" />
+            Agregar tarjeta
+          </Button>
+          <FlashcardsImportDialog topicId={topicId} />
+        </div>
         <Button onClick={save} disabled={saveFlashcards.isPending}>
           <SaveIcon className="size-4" />
           {saveFlashcards.isPending ? 'Guardando…' : 'Guardar mazo'}

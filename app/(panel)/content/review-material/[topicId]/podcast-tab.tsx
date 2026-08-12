@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import {
   ArrowDownIcon,
@@ -29,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { EmptyState } from '@/components/admin/empty-state';
 import { AudioPreview } from '@/components/admin/audio-preview';
+import { AssetUpload } from '@/components/admin/asset-upload';
 import {
   presignPodcastAudio,
   useCharacterVoices,
@@ -69,6 +71,7 @@ export function PodcastTab({ topicId, canPublish }: { topicId: string; canPublis
   const { savePodcast, approveScript, confirmAudio } = useReviewMaterialMutations(topicId);
   const fileRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
+  const [artworkUrl, setArtworkUrl] = useState<string | null>(null);
   const [script, setScript] = useState<ScriptSegment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [seed, setSeed] = useState<string | null>(null);
@@ -78,6 +81,7 @@ export function PodcastTab({ topicId, canPublish }: { topicId: string; canPublis
   if (data && serverSeed !== seed) {
     setSeed(serverSeed);
     setTitle(data.title ?? '');
+    setArtworkUrl(data.artworkUrl);
     setScript(data.script);
   }
 
@@ -98,7 +102,7 @@ export function PodcastTab({ topicId, canPublish }: { topicId: string; canPublis
       return;
     }
     try {
-      await savePodcast.mutateAsync({ title: title.trim() || null, script });
+      await savePodcast.mutateAsync({ title: title.trim() || null, artworkUrl, script });
       toast.success(`Guión guardado (${script.length} segmentos)`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'No se pudo guardar el guión');
@@ -190,6 +194,19 @@ export function PodcastTab({ topicId, canPublish }: { topicId: string; canPublis
                 maxLength={200}
                 placeholder="Álgebra en 15 minutos"
               />
+            </Field>
+
+            <Field>
+              <FieldLabel>Portada del episodio</FieldLabel>
+              <AssetUpload
+                value={artworkUrl}
+                onChange={setArtworkUrl}
+                endpoint="/api/admin/content/review-material/upload-image"
+                label="Subir portada"
+              />
+              <FieldDescription>
+                Opcional: el episodio se publica con o sin arte. Se guarda con el guión.
+              </FieldDescription>
             </Field>
 
             {script.length === 0 && (
@@ -285,6 +302,19 @@ export function PodcastTab({ topicId, canPublish }: { topicId: string; canPublis
               <CardTitle className="text-sm">Vista previa del guión</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {artworkUrl && (
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={artworkUrl}
+                    alt=""
+                    width={96}
+                    height={96}
+                    className="rounded-lg border object-cover"
+                    unoptimized
+                  />
+                  <p className="text-sm font-medium">{title || 'Episodio sin título'}</p>
+                </div>
+              )}
               {script.length === 0 ? (
                 <p className="text-muted-foreground text-sm">Sin parlamentos todavía.</p>
               ) : (
