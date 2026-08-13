@@ -26,7 +26,13 @@ const TEMPLATE_EXAMPLE = '¿Cuánto es $2^3$?,8,1';
  * revisión vive en el mismo diálogo y no en una página aparte: el archivo es de
  * UN tema, tope 200 filas, así que la tabla entra sin paginar.
  */
-export function FlashcardsImportDialog({ topicId }: { topicId: string }) {
+export function FlashcardsImportDialog({
+  topicId,
+  disabled = false,
+}: {
+  topicId: string;
+  disabled?: boolean;
+}) {
   const { preview, confirm } = useFlashcardImport(topicId);
   const fileRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
@@ -88,7 +94,12 @@ export function FlashcardsImportDialog({ topicId }: { topicId: string }) {
       }}
     >
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={disabled}
+          title={disabled ? 'Despublicá el mazo para importar tarjetas' : undefined}
+        >
           <UploadIcon className="size-4" />
           Importar CSV
         </Button>

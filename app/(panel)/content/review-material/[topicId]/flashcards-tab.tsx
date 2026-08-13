@@ -43,6 +43,7 @@ export function FlashcardsTab({
 }) {
   const { data, isLoading, isError, error } = useFlashcardDeck(topicId);
   const { saveFlashcards } = useReviewMaterialMutations(topicId);
+  const published = data?.status === 'published';
   const [cards, setCards] = useState<FlashcardInput[]>([]);
   const [flipped, setFlipped] = useState<number | null>(null);
   const [seed, setSeed] = useState<string | null>(null);
@@ -201,9 +202,13 @@ export function FlashcardsTab({
             <PlusIcon className="size-4" />
             Agregar tarjeta
           </Button>
-          <FlashcardsImportDialog topicId={topicId} />
+          <FlashcardsImportDialog topicId={topicId} disabled={published} />
         </div>
-        <Button onClick={save} disabled={saveFlashcards.isPending}>
+        <Button
+          onClick={save}
+          disabled={published || saveFlashcards.isPending}
+          title={published ? 'Despublicá el mazo para editarlo' : undefined}
+        >
           <SaveIcon className="size-4" />
           {saveFlashcards.isPending ? 'Guardando…' : 'Guardar mazo'}
         </Button>

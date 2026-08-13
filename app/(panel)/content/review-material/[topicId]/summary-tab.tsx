@@ -27,6 +27,7 @@ export function SummaryTab({ topicId, canPublish }: { topicId: string; canPublis
   const { data, isLoading, isError, error } = useTopicSummary(topicId);
   const { saveSummary } = useReviewMaterialMutations(topicId);
   const versions = useSummaryVersions(topicId);
+  const published = data?.status === 'published';
   const [content, setContent] = useState('');
   const [seed, setSeed] = useState<string | null>(null);
 
@@ -118,7 +119,11 @@ export function SummaryTab({ topicId, canPublish }: { topicId: string; canPublis
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={save} disabled={saveSummary.isPending}>
+        <Button
+          onClick={save}
+          disabled={published || saveSummary.isPending}
+          title={published ? 'Despublicá el resumen para editarlo' : undefined}
+        >
           <SaveIcon className="size-4" />
           {saveSummary.isPending ? 'Guardando…' : 'Guardar resumen'}
         </Button>
