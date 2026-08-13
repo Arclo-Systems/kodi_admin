@@ -5570,6 +5570,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/content/review-material/topics/{topicId}/summary/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewMaterialAdminController_summaryVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/summary/versions/{versionId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_restoreSummaryVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/content/review-material/topics/{topicId}/podcast": {
         parameters: {
             query?: never;
@@ -5580,6 +5612,38 @@ export interface paths {
         get: operations["ReviewMaterialAdminController_getPodcast"];
         put: operations["ReviewMaterialAdminController_upsertPodcast"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/podcast/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ReviewMaterialAdminController_scriptVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/review-material/topics/{topicId}/podcast/versions/{versionId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["ReviewMaterialAdminController_restoreScriptVersion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13389,6 +13453,17 @@ export interface components {
         UpsertSummaryDto: {
             content: string;
         };
+        ReviewSummaryVersionListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                version: number;
+                content: string;
+                /** Format: uuid */
+                createdBy: string | null;
+                createdAt: string;
+            }[];
+        };
         ReviewPodcastAdminResponse: {
             data: {
                 /** Format: uuid */
@@ -13412,6 +13487,20 @@ export interface components {
             script: {
                 characterKey: string;
                 text: string;
+            }[];
+        };
+        ReviewScriptVersionListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                version: number;
+                script: {
+                    characterKey: string;
+                    text: string;
+                }[];
+                /** Format: uuid */
+                createdBy: string | null;
+                createdAt: string;
             }[];
         };
         ReviewPieceStatusResponse: {
@@ -25009,6 +25098,49 @@ export interface operations {
             };
         };
     };
+    ReviewMaterialAdminController_summaryVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSummaryVersionListResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_restoreSummaryVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+                versionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSummaryAdminResponse"];
+                };
+            };
+        };
+    };
     ReviewMaterialAdminController_getPodcast: {
         parameters: {
             query?: never;
@@ -25046,6 +25178,49 @@ export interface operations {
         };
         responses: {
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewPodcastAdminResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_scriptVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewScriptVersionListResponse"];
+                };
+            };
+        };
+    };
+    ReviewMaterialAdminController_restoreScriptVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topicId: string;
+                versionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

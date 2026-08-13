@@ -9,6 +9,11 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 ## [Unreleased]
 
 ### Added
+- ✨ **Material de repaso — generar suma e historial de versiones:** "Generar con IA" en tarjetas
+  ahora **agrega al final del mazo** (antes reemplazaba el mazo entero y se llevaba puesto el trabajo
+  del editor). Resumen y guión de podcast tienen **historial de versiones** con ver y restaurar, con
+  el mismo lenguaje que el historial de prompts IA: cada guardado que pisa contenido distinto archiva
+  el anterior, y restaurar archiva lo vigente antes de volver atrás — no se pierde nada.
 - ✨ **Material de repaso — ampliación editorial:** frente/dorso de tarjetas y el resumen editan con
   el **mismo set de herramientas que el enunciado de una pregunta** (fórmula, tabla, imagen,
   diagrama y figura SVG) contra el endpoint de imagen propio del material. **Importar CSV** de

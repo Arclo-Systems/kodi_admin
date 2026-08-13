@@ -193,6 +193,13 @@ export function useReviewMaterialMutations(topicId: string) {
   const invalidate = (piece: ReviewPiece) => {
     void qc.invalidateQueries({ queryKey: ['review-material', piece, topicId] });
     void qc.invalidateQueries({ queryKey: ['review-material', 'overview'] });
+    // Toda escritura puede haber archivado la versión anterior: el historial
+    // que se está mirando quedaría viejo.
+    if (piece === 'summary' || piece === 'podcast') {
+      void qc.invalidateQueries({
+        queryKey: ['review-material', `${piece === 'summary' ? 'summary' : 'podcast'}-versions`, topicId],
+      });
+    }
   };
 
   return {
@@ -267,6 +274,53 @@ export function useReviewMaterialMutations(topicId: string) {
       onSuccess: (_data, { piece }) => invalidate(piece),
     }),
   };
+}
+
+/** Historial append-only: cada vez que se pisa el contenido, el anterior queda acá. */
+export type SummaryVersion = {
+  id: string;
+  version: number;
+  content: string;
+  createdBy: string | null;
+  createdAt: string;
+};
+export type ScriptVersion = {
+  id: string;
+  version: number;
+  script: ScriptSegment[];
+  createdBy: string | null;
+  createdAt: string;
+};
+
+export function useSummaryVersions(topicId: string) {
+  return useQuery({
+    queryKey: ['review-material', 'summary-versions', topicId],
+    queryFn: async (): Promise<SummaryVersion[]> =>
+      (await readJson<SummaryVersion[]>(`${BASE}/topics/${topicId}/summary/versions`)) ?? [],
+  });
+}
+
+export function useScriptVersions(topicId: string) {
+  return useQuery({
+    queryKey: ['review-material', 'podcast-versions', topicId],
+    queryFn: async (): Promise<ScriptVersion[]> =>
+      (await readJson<ScriptVersion[]>(`${BASE}/topics/${topicId}/podcast/versions`)) ?? [],
+  });
+}
+
+/** Restaurar no borra: archiva lo vigente y vuelve la pieza a borrador. */
+export function useRestoreVersion(topicId: string, piece: 'summary' | 'podcast') {
+  const qc = useQueryClient();
+  const historyKey = piece === 'summary' ? 'summary-versions' : 'podcast-versions';
+  return useMutation({
+    mutationFn: (versionId: string) =>
+      sendJson(`${BASE}/topics/${topicId}/${piece}/versions/${versionId}/restore`, 'POST'),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['review-material', piece, topicId] });
+      void qc.invalidateQueries({ queryKey: ['review-material', historyKey, topicId] });
+      void qc.invalidateQueries({ queryKey: ['review-material', 'overview'] });
+    },
+  });
 }
 
 /** Subida masiva por CSV: primero se revisa el archivo, después se confirma. */

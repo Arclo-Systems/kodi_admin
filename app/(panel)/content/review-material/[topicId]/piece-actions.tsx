@@ -101,7 +101,7 @@ export function PieceActions({
       });
       toast.success(
         piece === 'flashcards'
-          ? `${result?.generated ?? 0} tarjetas generadas como borrador`
+          ? `${result?.generated ?? 0} tarjetas agregadas al mazo`
           : 'Borrador generado — revisalo antes de publicar',
       );
       setAiOpen(false);
@@ -190,7 +190,9 @@ export function PieceActions({
           <DialogHeader>
             <DialogTitle>Generar {PIECE_LABEL[piece]} con IA</DialogTitle>
             <DialogDescription>
-              El resultado entra como borrador y reemplaza lo que haya sin publicar.
+              {piece === 'flashcards'
+                ? 'Las tarjetas se agregan al final del mazo; las que ya están no se tocan.'
+                : 'El borrador reemplaza el contenido actual, que queda guardado en el historial de versiones.'}
             </DialogDescription>
           </DialogHeader>
           {withCount && (

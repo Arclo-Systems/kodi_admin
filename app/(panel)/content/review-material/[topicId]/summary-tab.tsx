@@ -10,8 +10,13 @@ import { Field } from '@/components/ui/field';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MarkdownField, type RichTool } from '@/components/rich-content/markdown-field';
 import { RichContent } from '@/components/rich-content/rich-content';
-import { useReviewMaterialMutations, useTopicSummary } from '@/hooks/use-review-material';
+import {
+  useReviewMaterialMutations,
+  useSummaryVersions,
+  useTopicSummary,
+} from '@/hooks/use-review-material';
 import { PieceActions } from './piece-actions';
+import { VersionHistory } from './version-history';
 
 const MAX_LEN = 40000;
 // Mismo set que el enunciado de una pregunta, SVG incluido.
@@ -21,6 +26,7 @@ const UPLOAD_URL = '/api/admin/content/review-material/upload-image';
 export function SummaryTab({ topicId, canPublish }: { topicId: string; canPublish: boolean }) {
   const { data, isLoading, isError, error } = useTopicSummary(topicId);
   const { saveSummary } = useReviewMaterialMutations(topicId);
+  const versions = useSummaryVersions(topicId);
   const [content, setContent] = useState('');
   const [seed, setSeed] = useState<string | null>(null);
 
@@ -87,14 +93,28 @@ export function SummaryTab({ topicId, canPublish }: { topicId: string; canPublis
         </Card>
 
         {/* Preview renderizado al lado, como en el editor de preguntas. */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Vista previa</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RichContent value={content || '_Sin contenido todavía_'} />
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Vista previa</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RichContent value={content || '_Sin contenido todavía_'} />
+            </CardContent>
+          </Card>
+
+          <VersionHistory
+            topicId={topicId}
+            piece="summary"
+            isLoading={versions.isLoading}
+            entries={(versions.data ?? []).map((v) => ({
+              id: v.id,
+              version: v.version,
+              createdAt: v.createdAt,
+              preview: v.content,
+            }))}
+          />
+        </div>
       </div>
 
       <div className="flex justify-end">

@@ -36,10 +36,12 @@ import {
   useCharacterVoices,
   usePodcastEpisode,
   useReviewMaterialMutations,
+  useScriptVersions,
   type ScriptSegment,
 } from '@/hooks/use-review-material';
 import { moveItem } from '@/lib/reorder';
 import { PieceActions } from './piece-actions';
+import { VersionHistory } from './version-history';
 
 const AUDIO_TYPES: Record<string, string> = {
   mp3: 'audio/mpeg',
@@ -69,6 +71,7 @@ export function PodcastTab({ topicId, canPublish }: { topicId: string; canPublis
   const { data, isLoading, isError, error } = usePodcastEpisode(topicId);
   const { data: voices } = useCharacterVoices();
   const { savePodcast, approveScript, confirmAudio } = useReviewMaterialMutations(topicId);
+  const versions = useScriptVersions(topicId);
   const fileRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
   const [artworkUrl, setArtworkUrl] = useState<string | null>(null);
@@ -329,6 +332,18 @@ export function PodcastTab({ topicId, canPublish }: { topicId: string; canPublis
               )}
             </CardContent>
           </Card>
+
+          <VersionHistory
+            topicId={topicId}
+            piece="podcast"
+            isLoading={versions.isLoading}
+            entries={(versions.data ?? []).map((v) => ({
+              id: v.id,
+              version: v.version,
+              createdAt: v.createdAt,
+              preview: v.script.map((s) => s.text).join(' · '),
+            }))}
+          />
 
           <Card>
             <CardHeader>
