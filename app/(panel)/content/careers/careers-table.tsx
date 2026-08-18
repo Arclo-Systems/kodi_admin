@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
+  AlertTriangleIcon,
   CircleCheckIcon,
   CircleDashedIcon,
   PencilIcon,
@@ -44,12 +45,23 @@ const columns: ColumnDef<Career, unknown>[] = [
     meta: { label: 'Carrera' },
     cell: ({ row }) => (
       <div className="flex flex-col">
-        <span className="font-medium">{row.original.name}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium">{row.original.name}</span>
+          {row.original.hasCompleteProfile === false && (
+            <StatusBadge tone="warning" icon={AlertTriangleIcon} label="Ficha incompleta" />
+          )}
+        </div>
         {row.original.area && (
           <span className="text-muted-foreground text-xs">{row.original.area}</span>
         )}
       </div>
     ),
+  },
+  {
+    accessorKey: 'shortName',
+    header: 'Nombre corto',
+    meta: { label: 'Nombre corto' },
+    cell: ({ row }) => row.original.shortName ?? '—',
   },
   {
     accessorKey: 'riasecCode',

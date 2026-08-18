@@ -300,7 +300,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Listar materias de un módulo */
+        /**
+         * Listar materias de un módulo
+         * @description available_questions dice cuántas preguntas puede servir la práctica en cada materia (activas y fuera del mazo demo). El hub apaga las que están en 0 en vez de abrir una sesión vacía. Sale del MISMO criterio que arma la sesión de práctica.
+         */
         get: operations["ModulesController_listSubjects"];
         put?: never;
         post?: never;
@@ -387,6 +390,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/questions/demo/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cuántas preguntas demo tiene cada módulo (sin auth)
+         * @description El onboarding elige qué módulo demostrar ANTES de que exista cuenta: sin este dato abría la práctica de un módulo sin mazo y mostraba un vacío que se lee como app rota. Máximo 10 ids por consulta. Un módulo sin mazo —o un id inexistente— responde `available: 0`; nunca se omite de la lista. No revela qué preguntas son ni sus respuestas: solo el tamaño del mazo.
+         */
+        get: operations["QuestionsController_demoAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/questions/demo/answer": {
         parameters: {
             query?: never;
@@ -398,7 +421,7 @@ export interface paths {
         put?: never;
         /**
          * Corregir una respuesta del demo (sin auth)
-         * @description Da veredicto y revela la opción correcta SOLO para preguntas del mazo demo — el resto del banco responde 404 igual que una pregunta inexistente. El mazo demo es un conjunto dedicado que ningún modo con recompensa sirve. No acredita XP ni moneda (no hay cuenta) y no devuelve explanation (es beneficio Pro).
+         * @description Da veredicto y revela la opción correcta SOLO para preguntas del mazo demo — el resto del banco responde 404 igual que una pregunta inexistente. El mazo demo es un conjunto dedicado que ningún modo con recompensa sirve. No acredita XP ni moneda (no hay cuenta) y no devuelve explanation: el demo corrige, no enseña.
          */
         post: operations["QuestionsController_answerDemo"];
         delete?: never;
@@ -1723,7 +1746,7 @@ export interface paths {
         put?: never;
         /**
          * Iniciar práctica (módulo, materia o tema) + primer lote de preguntas
-         * @description Ola 2 D1: topic_id/subject_id opcionales acotan la sesión. Free users limitados por cuota diaria (FreeQuotaGuard). Presets componibles: only_hard (solo preguntas de dificultad hard) y review_failed (hasta las 200 más recientes cuya ÚLTIMA respuesta del usuario fue incorrecta, en cualquier modo). timer_enabled NO filtra: es config declarada del cliente — en práctica el servidor no impone tiempo ni rechaza respuestas tardías. available_questions dice cuántas cumplen el filtro (null si no hay filtro; con review_failed nunca pasa de 200): con pocas, el lote es corto a propósito, nunca se rellena con preguntas fuera del filtro.
+         * @description Ola 2 D1: topic_id/subject_id opcionales acotan la sesión. Free users limitados por cuota diaria (FreeQuotaGuard). Presets componibles: only_hard (solo preguntas de dificultad hard) y review_failed (hasta las 200 más recientes cuya ÚLTIMA respuesta del usuario fue incorrecta, en cualquier modo). timer_enabled NO filtra: es config declarada del cliente — en práctica el servidor no impone tiempo ni rechaza respuestas tardías. available_questions SIEMPRE viene y es un número: cuántas preguntas puede servir la sesión (con review_failed nunca pasa de 200). Con pocas, el lote es corto a propósito y nunca se rellena con preguntas fuera del filtro. Sin filtro, 0 crea igual la sesión con first_questions vacío — el banco está vacío y el cliente lo dice; con filtro, 0 es 422 PRACTICE_FILTER_EMPTY y no se crea nada.
          */
         post: operations["PracticeController_create"];
         delete?: never;
@@ -1763,7 +1786,7 @@ export interface paths {
         put?: never;
         /**
          * Responder pregunta en sesión de práctica
-         * @description Aplica XP +10, Kolones +1 si correcto. Pro recibe explanation IA. Free user: requiere bloque de preguntas desbloqueadas vía video sponsor (PRD §13.5).
+         * @description Aplica XP +10, Kolones +1 si correcto. explanation viaja en todos los planes (si la pregunta la tiene). Free user: requiere bloque de preguntas desbloqueadas vía video sponsor (PRD §13.5). proactive_diagnostic YA NO viene en línea (siempre null): con 3 fallos seguidos en la misma materia se responde proactive_diagnostic_pending=true y el diagnóstico se lee después en GET /practice/sessions/:id/diagnostic — generarlo acá metía hasta 8 s en el veredicto.
          */
         post: operations["PracticeController_submitAnswer"];
         delete?: never;
@@ -1807,202 +1830,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/v1/ai/explain": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Tutor IA: explica una pregunta + follow-ups
-         * @description Llama Claude Haiku con stub fallback. 40 usos/día.
-         */
-        post: operations["AIController_explain"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/ai/explain-quota": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Cuota diaria del Tutor IA para el módulo
-         * @description Lectura sin costo para pintar el chip "usadas / tope" antes de la primera explicación del día.
-         */
-        get: operations["AIController_getExplainQuota"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/ai/weekly-summary/{moduleId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Resumen semanal de IA (cron lunes 01:00 CR)
-         * @description Devuelve el resumen más reciente o null si nunca se generó.
-         */
-        get: operations["AIController_getWeeklySummary"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/ai/session-debrief/{sessionId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Debrief IA de una sesión (practice/simulacro)
-         * @description Generado async tras completion via job generate-session-debrief.
-         */
-        get: operations["AIController_getSessionDebrief"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/ai/daily-plan/{moduleId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * ① Plan Diario con Razonamiento (PRD §7.9.1)
-         * @description Retorna el tema recomendado del día con texto IA explicando el por qué. Idempotente por día/módulo.
-         */
-        get: operations["AIController_getDailyPlan"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/ai/simulacro-analysis/{simulacroId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * ⑤ Análisis IA de Simulacro (PRD §7.9.1)
-         * @description Devuelve el análisis IA del simulacro completado. null si aún no se generó.
-         */
-        get: operations["AIController_getSimulacroAnalysis"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/ai/diagnostic/{diagnosticId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * ⑥ Diagnóstico proactivo del coach
-         * @description Card "Pixel detectó un patrón": `summary` es el texto IA generado al detectar 3 fallos seguidos; `detail` se deriva de los temas fallados de esa materia en esa sesión (null si no hay ninguno).
-         */
-        get: operations["AIController_getDiagnostic"];
-        put?: never;
-        post?: never;
-        /**
-         * ⑥ Descartar diagnóstico proactivo
-         * @description Marca el diagnóstico como dismissedAt — no vuelve a aparecer.
-         */
-        delete: operations["AIController_dismissDiagnostic"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/user-exams": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Mis exámenes del módulo: selección, fechas y plan del coach (§35) */
-        get: operations["UserExamsController_list"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/user-exams/{examKey}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Seleccionar un examen y/o fijar su fecha (encola plan del coach) */
-        put: operations["UserExamsController_upsert"];
-        post?: never;
-        /** Quitar un examen de Mis exámenes */
-        delete: operations["UserExamsController_remove"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/user-exams/{examKey}/active": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Fijar el examen activo del módulo (sub-módulos) */
-        patch: operations["UserExamsController_setActive"];
         trace?: never;
     };
     "/v1/coupons": {
@@ -2839,7 +2666,7 @@ export interface paths {
         put?: never;
         /**
          * Girar la ruleta (crea KodiMatchTurn + 3 preguntas)
-         * @description Solo el current_turn_player puede girar. Selecciona materia random no propia.
+         * @description Solo el current_turn_player puede girar. Selecciona materia random no propia. Sector corona: llena la barra y devuelve sector=crown para elegir materia en POST :id/claim.
          */
         post: operations["DuelsController_spin"];
         delete?: never;
@@ -2878,8 +2705,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Reclamar una materia libre con la corona pendiente
-         * @description Consume la corona (barra llena o sector de la ruleta). Sin robo: solo materias libres. No cede el turno; si era la última materia, el match cierra y gana el que tenga más.
+         * Elegir la materia a disputar con la barra llena
+         * @description Consume la barra llena (3 turnos perfectos o sector corona) y abre un TURNO de 3 preguntas de la materia elegida. No otorga nada: la materia se gana acertando las 3 (POST :id/turns/:turnId/answers). Sin robo: solo materias libres.
          */
         post: operations["DuelsController_claim"];
         delete?: never;
@@ -3212,6 +3039,222 @@ export interface paths {
          * @description Sin auth. Sirve para landing pages al abrir el link compartido.
          */
         get: operations["SharesController_getById"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai/explain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tutor IA: explica una pregunta + follow-ups
+         * @description Llama Claude Haiku con stub fallback. 40 usos/día.
+         */
+        post: operations["AIController_explain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai/explain-quota": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Cuota diaria del Tutor IA para el módulo
+         * @description Lectura sin costo para pintar el chip "usadas / tope" antes de la primera explicación del día.
+         */
+        get: operations["AIController_getExplainQuota"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai/weekly-summary/{moduleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resumen semanal de IA (cron lunes 01:00 CR)
+         * @description Devuelve el resumen más reciente o null si nunca se generó.
+         */
+        get: operations["AIController_getWeeklySummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai/session-debrief/{sessionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Debrief IA de una sesión (practice/simulacro)
+         * @description Generado async tras completion via job generate-session-debrief.
+         */
+        get: operations["AIController_getSessionDebrief"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai/daily-plan/{moduleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * ① Plan Diario con Razonamiento (PRD §7.9.1)
+         * @description Retorna el tema recomendado del día con texto IA explicando el por qué. Idempotente por día/módulo.
+         */
+        get: operations["AIController_getDailyPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai/simulacro-analysis/{simulacroId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * ⑤ Análisis IA de Simulacro (PRD §7.9.1)
+         * @description Devuelve el análisis IA del simulacro completado. null si aún no se generó.
+         */
+        get: operations["AIController_getSimulacroAnalysis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/ai/diagnostic/{diagnosticId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * ⑥ Diagnóstico proactivo del coach
+         * @description Card "Pixel detectó un patrón": `summary` es el texto IA generado al detectar 3 fallos seguidos; `detail` se deriva de los temas fallados de esa materia en esa sesión (null si no hay ninguno).
+         */
+        get: operations["AIController_getDiagnostic"];
+        put?: never;
+        post?: never;
+        /**
+         * ⑥ Descartar diagnóstico proactivo
+         * @description Marca el diagnóstico como dismissedAt — no vuelve a aparecer.
+         */
+        delete: operations["AIController_dismissDiagnostic"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user-exams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Mis exámenes del módulo: selección, fechas y plan del coach (§35) */
+        get: operations["UserExamsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user-exams/{examKey}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Seleccionar un examen y/o fijar su fecha (encola plan del coach) */
+        put: operations["UserExamsController_upsert"];
+        post?: never;
+        /** Quitar un examen de Mis exámenes */
+        delete: operations["UserExamsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/user-exams/{examKey}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Fijar el examen activo del módulo (sub-módulos) */
+        patch: operations["UserExamsController_setActive"];
+        trace?: never;
+    };
+    "/v1/practice/sessions/{id}/diagnostic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * ⑥ Diagnóstico proactivo pendiente de una sesión de práctica
+         * @description La respuesta con proactive_diagnostic_pending=true anuncia que la IA está generando el diagnóstico; este endpoint lo devuelve cuando ya existe y responde vacío mientras tanto (el cliente consulta cada 2 s hasta 15 s y después cierra la card sin error). Con subject_id se acota a esa materia; sin él devuelve el más reciente sin descartar de la sesión.
+         */
+        get: operations["PracticeDiagnosticController_getSessionDiagnostic"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5104,6 +5147,22 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/admission-cutoffs/{id}/matches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["AdmissionCutoffsAdminController_matches"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["AdmissionCutoffsAdminController_saveMatches"];
         trace?: never;
     };
     "/v1/admin/content/admission-cutoffs/{id}/approve": {
@@ -8589,6 +8648,7 @@ export interface components {
                 color_hex: string;
                 asset_url: string | null;
                 wheel_asset_url: string | null;
+                available_questions: number;
             }[];
             meta: {
                 page: number;
@@ -8602,10 +8662,18 @@ export interface components {
                 id: string;
                 university: string;
                 career: string;
+                /** Format: uuid */
+                career_profile_id: string | null;
+                career_name: string;
+                career_short_name: string | null;
+                official_name: string;
+                degrees: string[];
+                emphases: string[];
+                modality: string | null;
                 campus: string | null;
                 province: string | null;
                 canton: string | null;
-                cutoff_score: number;
+                cutoff_score: number | null;
                 year: number;
             }[];
             meta: {
@@ -8672,6 +8740,13 @@ export interface components {
                 limit: number;
                 total: number;
             };
+        };
+        DemoAvailabilityResponse: {
+            data: {
+                /** Format: uuid */
+                module_id: string;
+                available: number;
+            }[];
         };
         DemoAnswerDto: {
             /** Format: uuid */
@@ -9920,7 +9995,7 @@ export interface components {
                     review_failed: boolean;
                     timer_enabled: boolean;
                 };
-                available_questions: number | null;
+                available_questions: number;
             };
         };
         PracticeQuestionsRefillResponse: {
@@ -9961,11 +10036,12 @@ export interface components {
                     goal_met: boolean;
                 };
                 explanation?: string;
-                proactive_diagnostic?: {
+                proactive_diagnostic: {
                     /** Format: uuid */
                     id: string;
                     text: string;
-                };
+                } | null;
+                proactive_diagnostic_pending: boolean;
             };
         };
         PracticeCompletedResponse: {
@@ -9998,117 +10074,6 @@ export interface components {
                     review_failed: boolean;
                     timer_enabled: boolean;
                 };
-            };
-        };
-        ExplainDto: {
-            /** Format: uuid */
-            question_id: string;
-            follow_up_text?: string;
-        };
-        ExplainResponse: {
-            data: {
-                explanation: string;
-                follow_up_count: number;
-                daily_uses_remaining: number;
-                daily_uses_used: number;
-                daily_uses_max: number;
-            };
-        };
-        ExplainQuotaResponse: {
-            data: {
-                used: number;
-                max: number;
-            };
-        };
-        WeeklySummaryResponse: {
-            data: {
-                analysis_text: string;
-                week_start: string;
-                generated_at: string;
-                dismissed_at: string | null;
-            } | null;
-        };
-        SessionDebriefResponse: {
-            data: {
-                ai_debrief: string | null;
-            };
-        };
-        DailyPlanResponse: {
-            data: {
-                /** Format: uuid */
-                topic_id: string | null;
-                recommendation: string;
-                reasoning_text: string;
-                estimated_impact: number | null;
-                generated_at: string;
-            };
-        };
-        SimulacroAnalysisResponse: {
-            data: {
-                analysis_text: string | null;
-                generated_at: string | null;
-            };
-        };
-        DiagnosticResponse: {
-            data: {
-                /** Format: uuid */
-                id: string;
-                summary: string;
-                detail: string | null;
-                created_at: string;
-                dismissed_at: string | null;
-            };
-        };
-        UserExamListResponse: {
-            data: {
-                exam_key: string;
-                exam_name: string;
-                /** Format: uuid */
-                module_id: string;
-                exam_date: string | null;
-                is_active: boolean;
-                /** @enum {string|null} */
-                plan_status: "pending" | "ready" | "failed" | null;
-                week_current: number | null;
-                week_total: number | null;
-                stages: {
-                    week_from: number;
-                    week_to: number;
-                    focus: string;
-                    /** @enum {string|null} */
-                    tag: "critico" | null;
-                    reason: string;
-                    topic_ids: string[];
-                    topic_names: string[];
-                }[] | null;
-                plan_generated_at: string | null;
-            }[];
-            meta: {
-                page: number;
-                limit: number;
-                total: number;
-            };
-        };
-        UpsertUserExamDto: {
-            /** Format: uuid */
-            module_id: string;
-            exam_date?: string | null;
-        };
-        UserExamUpsertResponse: {
-            data: {
-                exam_key: string;
-                plan_queued: boolean;
-            };
-        };
-        ModuleIdBodyDto: {
-            /** Format: uuid */
-            module_id: string;
-        };
-        UserExamActiveResponse: {
-            data: {
-                exam_key: string;
-                /** @enum {boolean} */
-                is_active: true;
             };
         };
         CouponListResponse: {
@@ -10929,11 +10894,28 @@ export interface components {
         };
         ClaimResponse: {
             data: {
+                /** @enum {string} */
+                sector: "subject";
+                /** Format: uuid */
+                turn_id: string;
                 /** Format: uuid */
                 subject_id: string;
-                /** Format: uuid */
-                crown_holder_id: string;
-                match_completed: boolean;
+                subject_name: string;
+                subject_color: string | null;
+                subject_asset_url: string | null;
+                questions: {
+                    /** Format: uuid */
+                    id: string;
+                    text: string;
+                    options: {
+                        id: string;
+                        text: string;
+                    }[];
+                    /** @enum {string} */
+                    difficulty: "easy" | "medium" | "hard";
+                    question_number: number;
+                    total_questions: number;
+                }[];
             };
         };
         SubmitDuelAnswerDto: {
@@ -11197,6 +11179,127 @@ export interface components {
                 deep_link: string;
             };
         };
+        ExplainDto: {
+            /** Format: uuid */
+            question_id: string;
+            follow_up_text?: string;
+        };
+        ExplainResponse: {
+            data: {
+                explanation: string;
+                follow_up_count: number;
+                daily_uses_remaining: number;
+                daily_uses_used: number;
+                daily_uses_max: number;
+            };
+        };
+        ExplainQuotaResponse: {
+            data: {
+                used: number;
+                max: number;
+            };
+        };
+        WeeklySummaryResponse: {
+            data: {
+                analysis_text: string;
+                week_start: string;
+                generated_at: string;
+                dismissed_at: string | null;
+            } | null;
+        };
+        SessionDebriefResponse: {
+            data: {
+                ai_debrief: string | null;
+            };
+        };
+        DailyPlanResponse: {
+            data: {
+                /** Format: uuid */
+                topic_id: string | null;
+                recommendation: string;
+                reasoning_text: string;
+                estimated_impact: number | null;
+                generated_at: string;
+            };
+        };
+        SimulacroAnalysisResponse: {
+            data: {
+                analysis_text: string | null;
+                generated_at: string | null;
+            };
+        };
+        DiagnosticResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                summary: string;
+                detail: string | null;
+                created_at: string;
+                dismissed_at: string | null;
+            };
+        };
+        UserExamListResponse: {
+            data: {
+                exam_key: string;
+                exam_name: string;
+                /** Format: uuid */
+                module_id: string;
+                exam_date: string | null;
+                is_active: boolean;
+                /** @enum {string|null} */
+                plan_status: "pending" | "ready" | "failed" | null;
+                week_current: number | null;
+                week_total: number | null;
+                stages: {
+                    week_from: number;
+                    week_to: number;
+                    focus: string;
+                    /** @enum {string|null} */
+                    tag: "critico" | null;
+                    reason: string;
+                    topic_ids: string[];
+                    topic_names: string[];
+                }[] | null;
+                plan_generated_at: string | null;
+            }[];
+            meta: {
+                page: number;
+                limit: number;
+                total: number;
+            };
+        };
+        UpsertUserExamDto: {
+            /** Format: uuid */
+            module_id: string;
+            exam_date?: string | null;
+        };
+        UserExamUpsertResponse: {
+            data: {
+                exam_key: string;
+                plan_queued: boolean;
+            };
+        };
+        ModuleIdBodyDto: {
+            /** Format: uuid */
+            module_id: string;
+        };
+        UserExamActiveResponse: {
+            data: {
+                exam_key: string;
+                /** @enum {boolean} */
+                is_active: true;
+            };
+        };
+        SessionDiagnosticResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                summary: string;
+                detail: string | null;
+                created_at: string;
+                dismissed_at: string | null;
+            } | null;
+        };
         RegisterPushTokenDto: {
             token: string;
             /** @enum {string} */
@@ -11373,6 +11476,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 name: string;
+                short_name: string | null;
                 area: string | null;
                 riasec_code: string | null;
                 description: string | null;
@@ -11392,6 +11496,21 @@ export interface components {
                     canton: string | null;
                     cutoff_score: number;
                     year: number;
+                }[];
+                sites: {
+                    university: string;
+                    campus: string | null;
+                    province: string | null;
+                    canton: string | null;
+                    year: number;
+                    min_cutoff: number | null;
+                    variants: {
+                        official_name: string;
+                        degrees: string[];
+                        emphases: string[];
+                        modality: string | null;
+                        cutoff_score: number | null;
+                    }[];
                 }[];
             };
         };
@@ -12787,6 +12906,7 @@ export interface components {
                 reviewedAt: string | null;
                 rejectionReason: string | null;
                 rowsToInsert: unknown;
+                matches: unknown;
                 diffSummary: unknown;
                 createdAt: string;
             };
@@ -12808,6 +12928,7 @@ export interface components {
                 reviewedAt: string | null;
                 rejectionReason: string | null;
                 rowsToInsert: unknown;
+                matches: unknown;
                 diffSummary: unknown;
                 createdAt: string;
                 module: {
@@ -12832,6 +12953,7 @@ export interface components {
                 reviewedAt: string | null;
                 rejectionReason: string | null;
                 rowsToInsert: unknown;
+                matches: unknown;
                 diffSummary: unknown;
                 createdAt: string;
                 currentCutoffs: {
@@ -12843,6 +12965,62 @@ export interface components {
                     cutoffScore: number;
                 }[];
             };
+        };
+        CutoffMatchesResponse: {
+            data: {
+                matches: {
+                    university: string;
+                    officialName: string;
+                    sourceCode: string | null;
+                    career: string;
+                    degrees: ("diplomado" | "bachillerato" | "licenciatura")[];
+                    emphases: string[];
+                    /** @enum {string|null} */
+                    modality: "diurna" | "nocturna" | "virtual" | null;
+                    /** Format: uuid */
+                    careerProfileId: string | null;
+                    /** @enum {string} */
+                    status: "alias" | "auto" | "suggested" | "unmatched";
+                    confidence: number;
+                    candidates: {
+                        /** Format: uuid */
+                        id: string;
+                        name: string;
+                        score: number;
+                    }[];
+                    rowCount: number;
+                    decided: boolean;
+                }[];
+                pending: number;
+                catalog: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    shortName: string | null;
+                }[];
+            };
+        };
+        SaveCutoffMatchesDto: {
+            items: {
+                university: string;
+                officialName: string;
+                /** Format: uuid */
+                careerProfileId?: string;
+                createCareer?: {
+                    name: string;
+                    area?: string;
+                };
+                career: string;
+                /** @default [] */
+                degrees: ("diplomado" | "bachillerato" | "licenciatura")[];
+                /** @default [] */
+                emphases: string[];
+                /**
+                 * @default null
+                 * @enum {string|null}
+                 */
+                modality: "diurna" | "nocturna" | "virtual" | null;
+            }[];
         };
         RejectDto: {
             reason: string;
@@ -12965,6 +13143,7 @@ export interface components {
                     moduleId: string;
                     country: string;
                     name: string;
+                    shortName: string | null;
                     area: string | null;
                     riasecCode: string;
                     description: string | null;
@@ -12981,6 +13160,7 @@ export interface components {
                     /** Format: uuid */
                     updatedBy: string | null;
                     updatedAt: string;
+                    hasCompleteProfile: boolean;
                 }[];
                 total: number;
                 page: number;
@@ -12995,6 +13175,7 @@ export interface components {
                 moduleId: string;
                 country: string;
                 name: string;
+                shortName: string | null;
                 area: string | null;
                 riasecCode: string;
                 description: string | null;
@@ -13019,6 +13200,7 @@ export interface components {
             /** @enum {string} */
             country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
             name: string;
+            shortName?: string | null;
             area?: string | null;
             riasecCode: string;
             description?: string | null;
@@ -13039,6 +13221,7 @@ export interface components {
             /** @enum {string} */
             country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
             name?: string;
+            shortName?: string | null;
             area?: string | null;
             riasecCode?: string;
             description?: string | null;
@@ -14299,18 +14482,19 @@ export interface components {
                 /** @enum {string} */
                 type: "counter_gte";
                 /** @enum {string} */
-                field: "streak_days" | "goal_streak_days";
+                field: "streak_days" | "goal_met_streak_days";
                 value: number;
             } | {
                 /** @enum {string} */
                 type: "count_gte";
                 /** @enum {string} */
-                entity: "correct_answers" | "simulacros_completed" | "practice_sessions_completed" | "quick_sessions_completed" | "duels_won" | "arenas_won" | "videos_watched";
+                entity: "correct_answers" | "simulacros_completed" | "practice_sessions_completed" | "quick_sessions_completed" | "duels_won" | "arenas_won";
                 value: number;
             } | {
                 /** @enum {string} */
                 type: "event_once";
-                event: string;
+                /** @enum {string} */
+                event: "question_answered_correct" | "practice_session_completed" | "simulacro_completed" | "game_mode_completed" | "duel_won" | "arena_won" | "streak_updated" | "league_promoted" | "ai_explain_used" | "founder_offer_claimed" | "manual";
             } | {
                 /** @enum {string} */
                 type: "combo_reached";
@@ -14363,18 +14547,19 @@ export interface components {
                 /** @enum {string} */
                 type: "counter_gte";
                 /** @enum {string} */
-                field: "streak_days" | "goal_streak_days";
+                field: "streak_days" | "goal_met_streak_days";
                 value: number;
             } | {
                 /** @enum {string} */
                 type: "count_gte";
                 /** @enum {string} */
-                entity: "correct_answers" | "simulacros_completed" | "practice_sessions_completed" | "quick_sessions_completed" | "duels_won" | "arenas_won" | "videos_watched";
+                entity: "correct_answers" | "simulacros_completed" | "practice_sessions_completed" | "quick_sessions_completed" | "duels_won" | "arenas_won";
                 value: number;
             } | {
                 /** @enum {string} */
                 type: "event_once";
-                event: string;
+                /** @enum {string} */
+                event: "question_answered_correct" | "practice_session_completed" | "simulacro_completed" | "game_mode_completed" | "duel_won" | "arena_won" | "streak_updated" | "league_promoted" | "ai_explain_used" | "founder_offer_claimed" | "manual";
             } | {
                 /** @enum {string} */
                 type: "combo_reached";
@@ -17815,6 +18000,41 @@ export interface operations {
             };
         };
     };
+    QuestionsController_demoAvailability: {
+        parameters: {
+            query: {
+                module_ids: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoAvailabilityResponse"];
+                };
+            };
+            /** @description VALIDATION_ERROR — module_ids ausente, con un id que no es uuid, o con más de 10 ids */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description RATE_LIMIT_EXCEEDED — tope de lecturas públicas por IP */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     QuestionsController_answerDemo: {
         parameters: {
             query?: never;
@@ -18129,7 +18349,10 @@ export interface operations {
     EnergyController_rechargeEnergy: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18247,7 +18470,10 @@ export interface operations {
     KokosPacksController_purchase: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 packId: string;
             };
@@ -18594,7 +18820,10 @@ export interface operations {
     StoreController_purchase: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -19190,7 +19419,10 @@ export interface operations {
     SubscriptionsController_restore: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19213,7 +19445,10 @@ export interface operations {
     SubscriptionsController_activateTrial: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19503,7 +19738,10 @@ export interface operations {
     PracticeController_submitAnswer: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -19577,267 +19815,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PracticeSessionResponse"];
-                };
-            };
-        };
-    };
-    AIController_explain: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExplainDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExplainResponse"];
-                };
-            };
-        };
-    };
-    AIController_getExplainQuota: {
-        parameters: {
-            query?: {
-                module_id?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExplainQuotaResponse"];
-                };
-            };
-        };
-    };
-    AIController_getWeeklySummary: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                moduleId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WeeklySummaryResponse"];
-                };
-            };
-        };
-    };
-    AIController_getSessionDebrief: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                sessionId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SessionDebriefResponse"];
-                };
-            };
-        };
-    };
-    AIController_getDailyPlan: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                moduleId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DailyPlanResponse"];
-                };
-            };
-        };
-    };
-    AIController_getSimulacroAnalysis: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                simulacroId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SimulacroAnalysisResponse"];
-                };
-            };
-        };
-    };
-    AIController_getDiagnostic: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                diagnosticId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DiagnosticResponse"];
-                };
-            };
-        };
-    };
-    AIController_dismissDiagnostic: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                diagnosticId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    UserExamsController_list: {
-        parameters: {
-            query: {
-                module_id: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserExamListResponse"];
-                };
-            };
-        };
-    };
-    UserExamsController_upsert: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examKey: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpsertUserExamDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserExamUpsertResponse"];
-                };
-            };
-        };
-    };
-    UserExamsController_remove: {
-        parameters: {
-            query: {
-                module_id: string;
-            };
-            header?: never;
-            path: {
-                examKey: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Examen deseleccionado */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    UserExamsController_setActive: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                examKey: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ModuleIdBodyDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserExamActiveResponse"];
                 };
             };
         };
@@ -19934,7 +19911,10 @@ export interface operations {
     CouponsController_redeem: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve el mismo cupón, no uno nuevo */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -19982,7 +19962,10 @@ export interface operations {
     CouponsController_consume: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20024,7 +20007,10 @@ export interface operations {
     QuickSessionsController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20054,7 +20040,10 @@ export interface operations {
     QuickSessionsController_submitAnswer: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -20100,7 +20089,10 @@ export interface operations {
     QuickSessionsController_revive: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -20232,7 +20224,10 @@ export interface operations {
     SimulacroController_submitAnswer: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -20718,7 +20713,10 @@ export interface operations {
     SurpriseExamController_submitAnswer: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -20787,7 +20785,10 @@ export interface operations {
     DuelsController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20922,7 +20923,10 @@ export interface operations {
     DuelsController_claim: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve el MISMO turno de corona. Sin ella, un segundo tap encuentra la elección ya consumida (409) y expulsa al jugador de su turno. */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -20947,7 +20951,10 @@ export interface operations {
     DuelsController_submitAnswer: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
                 turnId: string;
@@ -21039,7 +21046,10 @@ export interface operations {
     ArenaController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21069,7 +21079,10 @@ export interface operations {
     ArenaController_quickMatch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21099,7 +21112,10 @@ export interface operations {
     ArenaController_joinEspecial: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21310,7 +21326,10 @@ export interface operations {
     ArenaController_submitAnswer: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -21375,6 +21394,291 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SharePreviewResponse"];
+                };
+            };
+        };
+    };
+    AIController_explain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExplainDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplainResponse"];
+                };
+            };
+        };
+    };
+    AIController_getExplainQuota: {
+        parameters: {
+            query?: {
+                module_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExplainQuotaResponse"];
+                };
+            };
+        };
+    };
+    AIController_getWeeklySummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                moduleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeeklySummaryResponse"];
+                };
+            };
+        };
+    };
+    AIController_getSessionDebrief: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sessionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionDebriefResponse"];
+                };
+            };
+        };
+    };
+    AIController_getDailyPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                moduleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyPlanResponse"];
+                };
+            };
+        };
+    };
+    AIController_getSimulacroAnalysis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                simulacroId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulacroAnalysisResponse"];
+                };
+            };
+        };
+    };
+    AIController_getDiagnostic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                diagnosticId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosticResponse"];
+                };
+            };
+        };
+    };
+    AIController_dismissDiagnostic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                diagnosticId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UserExamsController_list: {
+        parameters: {
+            query: {
+                module_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserExamListResponse"];
+                };
+            };
+        };
+    };
+    UserExamsController_upsert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertUserExamDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserExamUpsertResponse"];
+                };
+            };
+        };
+    };
+    UserExamsController_remove: {
+        parameters: {
+            query: {
+                module_id: string;
+            };
+            header?: never;
+            path: {
+                examKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Examen deseleccionado */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    UserExamsController_setActive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                examKey: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModuleIdBodyDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserExamActiveResponse"];
+                };
+            };
+        };
+    };
+    PracticeDiagnosticController_getSessionDiagnostic: {
+        parameters: {
+            query?: {
+                /** @description Acota a esa materia. Sin él devuelve el más reciente sin descartar de la sesión. */
+                subject_id?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionDiagnosticResponse"];
                 };
             };
         };
@@ -24141,6 +24445,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CutoffUploadDeletedResponse"];
+                };
+            };
+        };
+    };
+    AdmissionCutoffsAdminController_matches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CutoffMatchesResponse"];
+                };
+            };
+        };
+    };
+    AdmissionCutoffsAdminController_saveMatches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveCutoffMatchesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CutoffMatchesResponse"];
                 };
             };
         };

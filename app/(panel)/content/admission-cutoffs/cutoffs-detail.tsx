@@ -6,16 +6,19 @@ import { toast } from 'sonner';
 import { CheckIcon, Trash2Icon, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { can } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
-import { useCutoff, useCutoffMutations } from '@/hooks/use-cutoffs';
+import { useCutoff, useCutoffMatches, useCutoffMutations } from '@/hooks/use-cutoffs';
 import { CutoffStatusBadge } from '@/lib/cutoff-status';
 import { CutoffsDiff } from './cutoffs-diff';
+import { CutoffsMatchesTable } from './cutoffs-matches-table';
 
 export function CutoffsDetail({ id, role }: { id: string; role: AdminRole }) {
   const router = useRouter();
   const { data, isLoading } = useCutoff(id);
+  const matches = useCutoffMatches(id);
   const m = useCutoffMutations();
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -26,6 +29,16 @@ export function CutoffsDetail({ id, role }: { id: string; role: AdminRole }) {
 
   const canApprove = can(role, 'content:cutoffs:approve');
   const pending = data.status === 'pending_review';
+  // D10: ningún corte se aplica sin carrera; el gate real está en el backend (422 MATCHES_PENDING).
+  const pendingMatches = matches.data?.pending ?? 0;
+  const approveBlocked = pendingMatches > 0;
+
+  const approveButton = (
+    <Button size="sm" disabled={approveBlocked} onClick={() => setApproveOpen(true)}>
+      <CheckIcon className="size-4" />
+      Aprobar
+    </Button>
+  );
 
   return (
     <div className="space-y-6">
@@ -40,10 +53,21 @@ export function CutoffsDetail({ id, role }: { id: string; role: AdminRole }) {
         )}
         {pending && canApprove && (
           <div className="ml-auto flex gap-2">
-            <Button size="sm" onClick={() => setApproveOpen(true)}>
-              <CheckIcon className="size-4" />
-              Aprobar
-            </Button>
+            {approveBlocked ? (
+              <Tooltip>
+                {/* El botón deshabilitado no emite eventos: el span le da al tooltip un trigger. */}
+                <TooltipTrigger asChild>
+                  <span>{approveButton}</span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {pendingMatches === 1
+                    ? 'Falta 1 carrera por emparejar'
+                    : `Faltan ${pendingMatches} carreras por emparejar`}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              approveButton
+            )}
             <Button
               size="sm"
               variant="outline"
@@ -69,6 +93,10 @@ export function CutoffsDetail({ id, role }: { id: string; role: AdminRole }) {
           </div>
         )}
       </div>
+
+      {pending && (
+        <CutoffsMatchesTable id={data.id} canEdit={can(role, 'content:cutoffs:upload')} />
+      )}
 
       <CutoffsDiff upload={data} />
 

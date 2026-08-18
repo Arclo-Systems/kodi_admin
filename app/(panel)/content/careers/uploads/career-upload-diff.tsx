@@ -17,13 +17,18 @@ const MAX_INVALID = 100;
 const demand = (d: string | null) => (d ? (DEMAND_LABELS[d as DemandLevel] ?? d) : '—');
 const rate = (r: number | null) => (r == null ? '—' : `${Math.round(r * 100)}%`);
 
+// La columna "Nombre corto" solo se dibuja si el CSV la traía: sin ella el approve
+// deja intacto el valor guardado, así que mostrarla vacía sería engañoso.
 function RowsTable({ rows }: { rows: CareerRow[] }) {
+  const withShortName = rows.some((r) => r.shortName !== undefined);
+  const colSpan = withShortName ? 6 : 5;
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Carrera</TableHead>
+            {withShortName && <TableHead>Nombre corto</TableHead>}
             <TableHead>Área</TableHead>
             <TableHead>RIASEC</TableHead>
             <TableHead>Demanda</TableHead>
@@ -33,7 +38,7 @@ function RowsTable({ rows }: { rows: CareerRow[] }) {
         <TableBody>
           {rows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-muted-foreground py-6 text-center">
+              <TableCell colSpan={colSpan} className="text-muted-foreground py-6 text-center">
                 Sin filas
               </TableCell>
             </TableRow>
@@ -41,6 +46,7 @@ function RowsTable({ rows }: { rows: CareerRow[] }) {
             rows.map((r, i) => (
               <TableRow key={`${r.name}-${i}`}>
                 <TableCell className="font-medium">{r.name}</TableCell>
+                {withShortName && <TableCell>{r.shortName ?? '—'}</TableCell>}
                 <TableCell>{r.area ?? '—'}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{r.riasecCode}</Badge>

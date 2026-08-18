@@ -17,6 +17,7 @@ export type Career = {
   moduleId: string;
   country: string;
   name: string;
+  shortName: string | null;
   area: string | null;
   riasecCode: string;
   description: string | null;
@@ -29,12 +30,15 @@ export type Career = {
   olapYear: number | null;
   isActive: boolean;
   updatedAt: string;
+  /** Solo lo calcula el listado: riasecCode vacío = carrera creada desde un corte, sin ficha. */
+  hasCompleteProfile?: boolean;
 };
 
 export type CareerInput = {
   moduleId: string;
   country: string;
   name: string;
+  shortName: string | null;
   area: string | null;
   riasecCode: string;
   description: string | null;

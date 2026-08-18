@@ -9,6 +9,8 @@ export type CareerUploadStatus = CutoffStatus;
 
 export type CareerRow = {
   name: string;
+  /** Ausente = el CSV no traía la columna → aprobar no toca el nombre corto actual. */
+  shortName?: string | null;
   area: string | null;
   riasecCode: string;
   description: string | null;

@@ -27,7 +27,7 @@ import { useModulesTree } from '@/hooks/use-modules-tree';
 import { useCareerUploadMutations } from '@/hooks/use-career-uploads';
 
 const COLUMNS =
-  'name,area,riasecCode,description,fieldOfWork,durationYears,employmentRate,avgSalaryMonthly,demandLevel,marketNote,olapYear';
+  'name,shortName,area,riasecCode,description,fieldOfWork,durationYears,employmentRate,avgSalaryMonthly,demandLevel,marketNote,olapYear';
 
 export function CareerUploadDialog() {
   const router = useRouter();
@@ -52,10 +52,13 @@ export function CareerUploadDialog() {
     // Cada celda entre comillas (descripcion/campo pueden llevar comas) con escape de comillas.
     const cell = (s: string) => `"${s.replace(/"/g, '""')}"`;
     const example1 = [
-      'Medicina', 'Salud', 'IRS', 'Estudia y trata la salud humana', 'Hospitales, clínicas, investigación',
+      'Medicina', '', 'Salud', 'IRS', 'Estudia y trata la salud humana', 'Hospitales, clínicas, investigación',
       '6', '0.72', '1500000', 'alta', 'Alta demanda y empleabilidad', '2024',
     ];
-    const example2 = ['Derecho', 'Ciencias Sociales', 'ESA', '', '', '5', '', '', 'media', '', '2024'];
+    const example2 = [
+      'Ingeniería en Sistemas de Información', 'Ing. en Sistemas', 'Ingeniería', 'IRE',
+      '', '', '5', '', '', 'media', '', '2024',
+    ];
     // BOM para que Excel en español detecte UTF-8 (acentos/ñ).
     const content =
       `﻿${COLUMNS}\n` +
@@ -180,6 +183,10 @@ export function CareerUploadDialog() {
                 <code className="text-xs">riasecCode</code> (1-3 de R/I/A/S/E/C).{' '}
                 <code className="text-xs">demandLevel</code>: alta/media/baja/saturada.{' '}
                 <code className="text-xs">employmentRate</code> entre 0 y 1.
+              </span>
+              <span className="block">
+                <code className="text-xs">shortName</code> es opcional (máx 40): si omitís la
+                columna, se conserva el nombre corto que ya tenga cada carrera.
               </span>
             </FieldDescription>
           </Field>

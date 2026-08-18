@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { throwApiError, unwrapData } from '@/lib/bff';
 
 export type CutoffStatus = 'pending_review' | 'applied' | 'rejected';
 export type InvalidRow = {
@@ -46,6 +46,49 @@ export type CutoffRow = {
 };
 export type CutoffDetail = CutoffUpload & { rowsToInsert: CutoffRow[]; currentCutoffs?: CutoffRow[] };
 
+export const CUTOFF_DEGREES = ['diplomado', 'bachillerato', 'licenciatura'] as const;
+export type CutoffDegree = (typeof CUTOFF_DEGREES)[number];
+export const CUTOFF_MODALITIES = ['diurna', 'nocturna', 'virtual'] as const;
+export type CutoffModality = (typeof CUTOFF_MODALITIES)[number];
+export type CutoffMatchStatus = 'alias' | 'auto' | 'suggested' | 'unmatched';
+
+export type CutoffMatchCandidate = { id: string; name: string; score: number };
+
+export type CutoffMatch = {
+  university: string;
+  officialName: string;
+  sourceCode: string | null;
+  career: string;
+  degrees: CutoffDegree[];
+  emphases: string[];
+  modality: CutoffModality | null;
+  careerProfileId: string | null;
+  status: CutoffMatchStatus;
+  confidence: number;
+  candidates: CutoffMatchCandidate[];
+  rowCount: number;
+  decided: boolean;
+};
+
+export type CutoffCatalogCareer = { id: string; name: string; shortName: string | null };
+
+export type CutoffMatchesData = {
+  matches: CutoffMatch[];
+  pending: number;
+  catalog: CutoffCatalogCareer[];
+};
+
+export type SaveCutoffMatchItem = {
+  university: string;
+  officialName: string;
+  career: string;
+  degrees: CutoffDegree[];
+  emphases: string[];
+  modality: CutoffModality | null;
+  careerProfileId?: string;
+  createCareer?: { name: string; area?: string };
+};
+
 export function useCutoffs(status?: CutoffStatus) {
   return useQuery({
     queryKey: ['cutoffs', status ?? null],
@@ -70,16 +113,54 @@ export function useCutoff(id: string) {
   });
 }
 
+const matchesKey = (id: string) => ['cutoff-matches', id] as const;
+
+export function useCutoffMatches(id: string) {
+  return useQuery({
+    queryKey: matchesKey(id),
+    enabled: !!id,
+    queryFn: async (): Promise<CutoffMatchesData> => {
+      const res = await fetch(`/api/admin/content/admission-cutoffs/${id}/matches`, {
+        credentials: 'include',
+      });
+      if (!res.ok) await throwApiError(res, 'No se pudieron cargar los emparejamientos');
+      return (
+        unwrapData<CutoffMatchesData>(await res.json()) ?? { matches: [], pending: 0, catalog: [] }
+      );
+    },
+  });
+}
+
+export function useSaveCutoffMatches(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: SaveCutoffMatchItem[]): Promise<CutoffMatchesData> => {
+      const res = await fetch(`/api/admin/content/admission-cutoffs/${id}/matches`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+      if (!res.ok) await throwApiError(res, 'No se pudieron guardar los emparejamientos');
+      return (
+        unwrapData<CutoffMatchesData>(await res.json()) ?? { matches: [], pending: 0, catalog: [] }
+      );
+    },
+    // El PATCH devuelve la foto completa (incluye las carreras recién creadas): se siembra
+    // en vez de refetchear para que la tabla no parpadee con datos viejos.
+    onSuccess: (data) => {
+      qc.setQueryData(matchesKey(id), data);
+      qc.invalidateQueries({ queryKey: ['careers'] });
+    },
+  });
+}
+
 async function send(url: string, body: unknown): Promise<void> {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    const b = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(b.message ?? 'Error');
-  }
+  if (!res.ok) await throwApiError(res, 'Error');
 }
 
 export function useCutoffMutations() {
@@ -87,6 +168,7 @@ export function useCutoffMutations() {
   const inval = () => {
     qc.invalidateQueries({ queryKey: ['cutoffs'] });
     qc.invalidateQueries({ queryKey: ['cutoff'] });
+    qc.invalidateQueries({ queryKey: ['cutoff-matches'] });
   };
   return {
     upload: useMutation({
@@ -96,10 +178,7 @@ export function useCutoffMutations() {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(v),
         });
-        if (!res.ok) {
-          const b = (await res.json().catch(() => ({}))) as { message?: string };
-          throw new Error(b.message ?? 'Error subiendo');
-        }
+        if (!res.ok) await throwApiError(res, 'Error subiendo');
         return unwrapData<CutoffUpload>(await res.json());
       },
       onSuccess: inval,
@@ -116,10 +195,7 @@ export function useCutoffMutations() {
     remove: useMutation({
       mutationFn: async (id: string) => {
         const res = await fetch(`/api/admin/content/admission-cutoffs/${id}`, { method: 'DELETE' });
-        if (!res.ok) {
-          const b = (await res.json().catch(() => ({}))) as { message?: string };
-          throw new Error(b.message ?? 'Error');
-        }
+        if (!res.ok) await throwApiError(res, 'Error');
       },
       onSuccess: inval,
     }),

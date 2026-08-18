@@ -35,6 +35,7 @@ type FormValues = {
   moduleId: string;
   country: string;
   name: string;
+  shortName: string;
   area: string;
   riasecCode: string;
   description: string;
@@ -55,6 +56,7 @@ function toValues(c: Career): FormValues {
     moduleId: c.moduleId,
     country: c.country,
     name: c.name,
+    shortName: c.shortName ?? '',
     area: c.area ?? '',
     riasecCode: c.riasecCode,
     description: c.description ?? '',
@@ -76,6 +78,7 @@ function toInput(v: FormValues): CareerInput {
     moduleId: v.moduleId.trim(),
     country: v.country,
     name: v.name.trim(),
+    shortName: v.shortName.trim() || null,
     area: v.area.trim() || null,
     riasecCode: v.riasecCode.trim().toUpperCase(),
     description: v.description.trim() || null,
@@ -109,6 +112,7 @@ function CareerFormInner({ careerId, initial }: { careerId?: string; initial?: F
         moduleId: '',
         country: 'CR',
         name: '',
+        shortName: '',
         area: '',
         riasecCode: '',
         description: '',
@@ -231,8 +235,13 @@ function CareerFormInner({ careerId, initial }: { careerId?: string; initial?: F
               <FileTextIcon className="text-primary size-4" />
               Información
             </legend>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {text('name', 'Nombre de la carrera', 'Debe coincidir con el nombre en los cortes.')}
+              {text(
+                'shortName',
+                'Nombre corto',
+                'Se muestra en filas y tarjetas de la app; vacío = nombre completo.',
+              )}
               {text('area', 'Área', 'Ej. Salud, Ingeniería.')}
             </div>
             <Controller
