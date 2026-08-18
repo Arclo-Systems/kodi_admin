@@ -40,6 +40,26 @@ describe('SvgFigure', () => {
     expect(screen.getByText('Figura inválida o insegura.')).toBeInTheDocument();
   });
 
+  // Paridad con `frontend/src/components/questions/rich/isSafeSvg.ts`: si la app rechaza la
+  // figura, el panel no puede aprobarla — el preview mentiría sobre lo que ve el estudiante.
+  it.each([
+    ['image remota', '<svg xmlns="http://www.w3.org/2000/svg"><image href="https://evil.test/p.png"/></svg>'],
+    ['image con xlink', '<svg xmlns="http://www.w3.org/2000/svg"><image xlink:href="https://evil.test/p.png"/></svg>'],
+    ['image sin fuente', '<svg xmlns="http://www.w3.org/2000/svg"><image width="10" height="10"/></svg>'],
+    ['feImage', '<svg xmlns="http://www.w3.org/2000/svg"><filter><feImage href="https://evil.test/p.png"/></filter></svg>'],
+    ['href protocolo-relativo', '<svg xmlns="http://www.w3.org/2000/svg"><use href="//evil.test/s.svg#i"/></svg>'],
+    ['href data embebido', '<svg xmlns="http://www.w3.org/2000/svg"><use href="data:image/svg+xml,%3Csvg%3E"/></svg>'],
+  ])('fallback con %s', (_caso, src) => {
+    render(<SvgFigure source={src} />);
+    expect(screen.getByText('Figura inválida o insegura.')).toBeInTheDocument();
+  });
+
+  it('acepta una referencia interna (#id)', () => {
+    const src = '<svg xmlns="http://www.w3.org/2000/svg"><title>Interna</title><defs><rect id="r" width="4" height="4"/></defs><use href="#r"/></svg>';
+    render(<SvgFigure source={src} />);
+    expect(screen.getByRole('img', { name: 'Interna' })).toBeInTheDocument();
+  });
+
   it('fallback si supera 100 KB', () => {
     const huge = `<svg xmlns="http://www.w3.org/2000/svg">${'<rect width="1" height="1"/>'.repeat(4000)}</svg>`;
     render(<SvgFigure source={huge} />);

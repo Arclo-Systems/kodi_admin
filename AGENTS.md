@@ -66,7 +66,9 @@ dependencias, **`npx knip`** limpio + **`npm audit`** sin críticas/altas. Cero 
   refetch en bucle.
 - **recharts es pesado** (~300 KB): cargarlo con `next/dynamic` si está below-the-fold (ver dashboard).
 - **Markdown**: `rich-content`/`markdown-view` van con `rehype-sanitize` (sin `rehype-raw`); no introducir
-  HTML crudo de input de usuario.
+  HTML crudo de input de usuario. El preview sanitiza pero la app imprime literal, así que el guardado
+  de preguntas y el import CSV **rechazan** HTML crudo (`lib/raw-html.ts`) y SVG con recursos externos
+  (`lib/svg-safety.ts`, en paridad con `frontend/src/components/questions/rich/isSafeSvg.ts`).
 
 ## Auditoría técnica
 

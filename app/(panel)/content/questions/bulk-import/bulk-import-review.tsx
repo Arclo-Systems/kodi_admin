@@ -33,6 +33,7 @@ import type { Difficulty } from '@/hooks/use-questions';
 import { QuestionDifficulty } from '@/lib/question-status';
 import { QuestionPreview } from '../question-preview';
 import { QUESTIONS_IMPORT_KEY } from '../questions-import-dialog';
+import { rejectInvalidContent } from './content-guard';
 import { augmentRowsWithSvg, buildQuestionsCsv, rowHasSvg, type CsvRow } from './svg-augment';
 
 const TABLE_PAGE_SIZE = 50;
@@ -78,7 +79,7 @@ export function BulkImportReview() {
         if (res.ok) {
           const result = unwrapData<PreviewResult>(await res.json());
           if (result) {
-            const rows = await augmentRowsWithSvg(result.rows);
+            const rows = rejectInvalidContent(await augmentRowsWithSvg(result.rows));
             const augmented: PreviewResult = {
               ...result,
               rows,

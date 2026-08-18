@@ -21,7 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useModulesTree } from '@/hooks/use-modules-tree';
+import { hasRawHtmlOutsideSvg, RAW_HTML_MESSAGE } from '@/lib/raw-html';
 import { hasHeavySvg } from '@/lib/svg-optimize';
+import { hasSvgWithExternalResources, UNSAFE_SVG_MESSAGE } from '@/lib/svg-safety';
 import type { Difficulty, QuestionDetail } from '@/hooks/use-questions';
 import { QuestionPreview } from './question-preview';
 
@@ -32,6 +34,18 @@ const OptionSchema = z.object({
   id: z.string().min(1),
   text: z.string().trim().min(1, 'Requerido').max(2000, 'Máximo 2000 caracteres'),
 });
+
+// El preview del panel sanitiza y la app imprime literal: lo que acá se deja pasar, allá se ve
+// distinto. Se corta en el guardado, campo por campo, para que el autor sepa cuál corregir.
+function checkRichSyntax(value: string, path: (string | number)[], ctx: z.RefinementCtx): void {
+  const message = hasRawHtmlOutsideSvg(value)
+    ? RAW_HTML_MESSAGE
+    : hasSvgWithExternalResources(value)
+      ? UNSAFE_SVG_MESSAGE
+      : null;
+  if (message) ctx.addIssue({ code: 'custom', message, path });
+}
+
 const FormSchema = z
   .object({
     moduleId: z.string().optional(),
@@ -47,6 +61,11 @@ const FormSchema = z
   .refine((q) => q.options.some((o) => o.id === q.correctOptionId), {
     message: 'La correcta debe ser una de las opciones',
     path: ['correctOptionId'],
+  })
+  .superRefine((q, ctx) => {
+    checkRichSyntax(q.text, ['text'], ctx);
+    q.options.forEach((o, i) => checkRichSyntax(o.text, ['options', i, 'text'], ctx));
+    if (q.explanation) checkRichSyntax(q.explanation, ['explanation'], ctx);
   });
 type FormValues = z.infer<typeof FormSchema>;
 
