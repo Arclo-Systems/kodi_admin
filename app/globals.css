@@ -24,6 +24,12 @@
   --success: #4f7a2e; /* lima legible (AA) — éxito */
   --warning: #946a00; /* dorado legible (AA) — alerta no crítica */
   --info: #1e6fa8; /* cielo legible (AA) — info / hints */
+  /* Rareza de logros: la medalla ya trae el color grabado (común verde, poco
+     común celeste, raro morado, épico dorado, limitada café de selva). Verde/
+     celeste/dorado reusan success/info/warning; morado y café son de la paleta
+     de marca (frontend/src/theme/colors.ts) y no tenían token en el panel. */
+  --morado: #5e3f99; /* moradoDark — legible (AA 7.8) como texto sobre claro */
+  --cafe: #422622; /* café de marca — contornos de mascota, acentos oscuros */
   --border: #e5e5e5;
   --input: #d4d4d4;
   --ring: #408d99;
@@ -63,6 +69,8 @@
   --success: #9bcb6c; /* lima — legible sobre superficie oscura */
   --warning: #e3b23c; /* dorado — legible sobre superficie oscura */
   --info: #5db7e8; /* cielo — legible sobre superficie oscura */
+  --morado: #b79ae8; /* morado — legible sobre superficie oscura */
+  --cafe: #d7975d; /* bronceDeep — el café puro se pierde sobre #141F25 */
   --border: #324551;
   --input: #324551;
   --ring: #5db0be;
@@ -122,6 +130,8 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-morado: var(--morado);
+  --color-cafe: var(--cafe);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);

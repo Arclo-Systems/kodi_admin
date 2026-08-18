@@ -4,16 +4,18 @@ import type { AchievementTier } from '@/hooks/use-achievements';
 
 // Rareza de logro: fuente única (tabla, form, detalle, filtros y ficha de usuario) —
 // antes los strings vivían repetidos en los cuatro.
-// La escalera va de menos a más excepcional por PESO visual, no por arcoíris: neutro →
-// neutro sólido → cielo → teal → dorado. Se evitan lima y coral, que en el panel leen
-// como éxito/error (DESIGN.md §Vida y movimiento).
+// Los colores NO son una escalera inventada: son los que ya trae grabada la medalla
+// en la app (`frontend/assets/logros/<rareza>/*.webp`) — verde, celeste, morado,
+// dorado. El panel los repite para que la ficha y la medalla no se contradigan;
+// por eso acá el verde NO significa "éxito" ni el dorado "alerta".
 const TIER_META: Record<AchievementTier, { label: string; badge: string }> = {
-  common: { label: 'Común', badge: 'text-muted-foreground' },
-  uncommon: { label: 'Poco común', badge: 'border-transparent bg-muted text-foreground' },
-  rare: { label: 'Raro', badge: 'border-info/40 bg-info/15 text-info' },
-  epic: { label: 'Épico', badge: 'border-primary/40 bg-primary/15 text-primary' },
-  // Dorado = honor / logros / premium en la marca; la cima de la escalera.
-  limited: { label: 'Edición limitada', badge: 'border-warning/40 bg-warning/15 text-warning' },
+  common: { label: 'Común', badge: 'border-success/40 bg-success/15 text-success' },
+  uncommon: { label: 'Poco común', badge: 'border-info/40 bg-info/15 text-info' },
+  rare: { label: 'Raro', badge: 'border-morado/40 bg-morado/15 text-morado' },
+  epic: { label: 'Épico', badge: 'border-warning/40 bg-warning/15 text-warning' },
+  // La medalla Fundador no es de las cuatro rarezas: es madera y verde de selva.
+  // `cafe` es el token de marca más cercano y además la saca del arcoíris de arriba.
+  limited: { label: 'Edición limitada', badge: 'border-cafe/40 bg-cafe/15 text-cafe' },
 };
 
 export const ACHIEVEMENT_TIERS = (
@@ -24,12 +26,16 @@ export function achievementTierLabel(tier: string): string {
   return TIER_META[tier as AchievementTier]?.label ?? tier;
 }
 
+/** Clases del badge; una rareza desconocida cae en el gris neutro. */
+export function achievementTierBadgeClass(tier: string): string {
+  return TIER_META[tier as AchievementTier]?.badge ?? 'text-muted-foreground';
+}
+
 // `tier` llega como string suelto desde la ficha de usuario (el detalle de usuario no
 // tipa el enum): una rareza desconocida se muestra cruda en vez de romper.
 export function AchievementTierBadge({ tier }: { tier: string }) {
-  const meta = TIER_META[tier as AchievementTier];
   return (
-    <Badge variant="outline" className={cn(meta?.badge ?? 'text-muted-foreground')}>
+    <Badge variant="outline" className={cn(achievementTierBadgeClass(tier))}>
       {achievementTierLabel(tier)}
     </Badge>
   );

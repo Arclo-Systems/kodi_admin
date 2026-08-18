@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ACHIEVEMENT_TIERS, achievementTierLabel } from './achievement-tier';
+import {
+  ACHIEVEMENT_TIERS,
+  achievementTierBadgeClass,
+  achievementTierLabel,
+} from './achievement-tier';
 
 describe('achievementTierLabel', () => {
   it('traduce las cinco rarezas al español', () => {
@@ -12,6 +16,30 @@ describe('achievementTierLabel', () => {
 
   it('un tier desconocido se muestra crudo en vez de romper', () => {
     expect(achievementTierLabel('mythic')).toBe('mythic');
+  });
+});
+
+describe('achievementTierBadgeClass', () => {
+  // El color lo manda la medalla de la app, no una escalera del panel.
+  it.each([
+    ['common', 'success'],
+    ['uncommon', 'info'],
+    ['rare', 'morado'],
+    ['epic', 'warning'],
+    ['limited', 'cafe'],
+  ])('%s usa el token %s de la medalla', (tier, token) => {
+    expect(achievementTierBadgeClass(tier)).toBe(
+      `border-${token}/40 bg-${token}/15 text-${token}`,
+    );
+  });
+
+  it('cada rareza tiene un color propio', () => {
+    const classes = ACHIEVEMENT_TIERS.map((t) => achievementTierBadgeClass(t.value));
+    expect(new Set(classes).size).toBe(ACHIEVEMENT_TIERS.length);
+  });
+
+  it('un tier desconocido cae en el gris neutro', () => {
+    expect(achievementTierBadgeClass('mythic')).toBe('text-muted-foreground');
   });
 });
 

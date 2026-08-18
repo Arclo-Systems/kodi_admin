@@ -130,6 +130,7 @@ El panel tiene que verse **diseñado por un equipo de producto real con criterio
 - `dorado #E3B23C` → rachas / logros / XP / premium.
 - `cielo #5DB7E8` → info / hints / Tutor IA.
 - `durazno #F6B38E` → CTA secundario suave. `warning #F4A261` → alerta no crítica.
+- `morado #B79AE8` (texto: `moradoDark #5E3F99`) y `cafe #422622` (sobre oscuro: `bronceDeep #D7975D`) → **solo rareza de logros**. El color de una rareza no lo elige el panel: ya viene grabado en la medalla de la app (`frontend/assets/logros/`) — común verde, poco común celeste, raro morado, épico dorado, edición limitada madera. Ahí el verde NO significa "éxito" ni el dorado "alerta".
 
 **Superficies / texto / bordes** por modo (light + dark) — ver front matter. Dark es **teal-tinted** (`#141F25`), no negro puro, para coherencia con el teal.
 
