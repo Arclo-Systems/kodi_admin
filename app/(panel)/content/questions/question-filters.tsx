@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,11 @@ import {
 } from '@/lib/question-list-query-url';
 
 const ALL = '__all__';
+
+// El texto del buscador viaja a la URL y de ahí al fetch: serializar en cada
+// tecla navegaba y pedía una página por letra. El input responde al toque y la
+// consulta espera a que la mano pare.
+const SEARCH_DEBOUNCE_MS = 300;
 
 const STATUSES: { value: QuestionStatus; label: string }[] = [
   { value: 'draft', label: 'Borrador' },
@@ -46,12 +52,34 @@ export function QuestionFilters({
 
   const set = (patch: Partial<QuestionListQuery>) => onChange({ ...value, page: 1, ...patch });
 
+  const applied = value.search ?? '';
+  const [search, setSearch] = useState(applied);
+  const [syncedFrom, setSyncedFrom] = useState(applied);
+
+  // Lo que filtra manda sobre lo tecleado: restaurar filtros guardados o
+  // limpiarlos tiene que verse en el input, no solo en la tabla. El ajuste va
+  // en el render (React: "You Might Not Need an Effect"), no en un efecto, para
+  // no pintar una vez con el texto viejo.
+  if (applied !== syncedFrom) {
+    setSyncedFrom(applied);
+    setSearch(applied);
+  }
+
+  useEffect(() => {
+    if (search === applied) return;
+    const timer = setTimeout(
+      () => onChange({ ...value, page: 1, search: search || undefined }),
+      SEARCH_DEBOUNCE_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [search, applied, value, onChange]);
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Input
         placeholder="Buscar texto…"
-        value={value.search ?? ''}
-        onChange={(e) => set({ search: e.target.value || undefined })}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
         className="w-56"
         aria-label="Buscar preguntas por texto"
       />
