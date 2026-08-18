@@ -81,10 +81,12 @@ const FILTERS_STORAGE_KEY = 'kodi-admin:questions:filters';
 
 // La URL es la fuente de verdad (atrás y recargar conservan todo), pero varias
 // pantallas vuelven con `router.push('/content/questions')` pelado; el espejo en
-// sessionStorage es lo que hace que esos regresos no pierdan el filtro.
+// localStorage es lo que hace que esos regresos no pierdan el filtro. Va en
+// localStorage y no en sessionStorage porque el filtro solo se pierde al
+// limpiarlo: sobrevive a cerrar la pestaña y al navegador.
 function readStoredFilters(): string | null {
   try {
-    return sessionStorage.getItem(FILTERS_STORAGE_KEY);
+    return localStorage.getItem(FILTERS_STORAGE_KEY);
   } catch {
     // Storage bloqueado (modo privado / cookies off): se pierde la memoria, no el panel.
     return null;
@@ -93,8 +95,8 @@ function readStoredFilters(): string | null {
 
 function writeStoredFilters(qs: string): void {
   try {
-    if (qs) sessionStorage.setItem(FILTERS_STORAGE_KEY, qs);
-    else sessionStorage.removeItem(FILTERS_STORAGE_KEY);
+    if (qs) localStorage.setItem(FILTERS_STORAGE_KEY, qs);
+    else localStorage.removeItem(FILTERS_STORAGE_KEY);
   } catch {
     // Ídem: no poder recordar el filtro nunca debe romper el filtrado.
   }
