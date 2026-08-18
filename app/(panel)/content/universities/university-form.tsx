@@ -4,9 +4,10 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import { LayersIcon, PercentIcon, SaveIcon } from 'lucide-react';
+import { LayersIcon, MegaphoneIcon, PercentIcon, SaveIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -18,56 +19,23 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { COUNTRIES } from '@/lib/countries';
+import { UNIVERSITY_TYPE_LABEL, type UniversityType } from '@/lib/sponsorship';
 import {
   useUniversity,
   useUniversityMutations,
-  type University,
   type UniversityInput,
 } from '@/hooks/use-universities';
 import { useModulesTree } from '@/hooks/use-modules-tree';
+import {
+  EMPTY_UNIVERSITY_FORM,
+  NO_EXAM,
+  toUniversityFormValues,
+  toUniversityInput,
+  validateUniversityForm,
+  type UniversityFormValues,
+} from './university-form-model';
 
-// Radix Select no admite value vacío — sentinel del repo para "sin asignar".
-const NO_EXAM = 'NONE';
-
-type FormValues = {
-  country: string;
-  code: string;
-  name: string;
-  examWeight: string;
-  presentationWeight: string;
-  scaleMin: string;
-  scaleMax: string;
-  examSubjectId: string;
-  isActive: boolean;
-};
-
-function toValues(u: University): FormValues {
-  return {
-    country: u.country,
-    code: u.code,
-    name: u.name,
-    examWeight: u.examWeight,
-    presentationWeight: u.presentationWeight,
-    scaleMin: String(u.scaleMin),
-    scaleMax: String(u.scaleMax),
-    examSubjectId: u.examSubjectId ?? NO_EXAM,
-    isActive: u.isActive,
-  };
-}
-
-function toInput(v: FormValues): UniversityInput {
-  return {
-    country: v.country,
-    code: v.code.trim().toUpperCase(),
-    name: v.name.trim(),
-    examWeight: Number(v.examWeight),
-    presentationWeight: Number(v.presentationWeight),
-    scaleMin: Number(v.scaleMin),
-    scaleMax: Number(v.scaleMax),
-    examSubjectId: v.examSubjectId === NO_EXAM ? null : v.examSubjectId,
-    isActive: v.isActive,
-  };
-}
+const TYPES: UniversityType[] = ['public', 'private'];
 
 export function UniversityForm({ universityId }: { universityId?: string }) {
   const { data: detail, isLoading } = useUniversity(universityId ?? '');
@@ -76,7 +44,9 @@ export function UniversityForm({ universityId }: { universityId?: string }) {
     if (!detail) {
       return <p className="text-muted-foreground text-sm">Universidad no encontrada.</p>;
     }
-    return <UniversityFormInner universityId={universityId} initial={toValues(detail)} />;
+    return (
+      <UniversityFormInner universityId={universityId} initial={toUniversityFormValues(detail)} />
+    );
   }
   return <UniversityFormInner />;
 }
@@ -86,23 +56,12 @@ function UniversityFormInner({
   initial,
 }: {
   universityId?: string;
-  initial?: FormValues;
+  initial?: UniversityFormValues;
 }) {
   const router = useRouter();
   const { create, update } = useUniversityMutations();
-  const form = useForm<FormValues>({
-    defaultValues:
-      initial ?? {
-        country: 'CR',
-        code: '',
-        name: '',
-        examWeight: '',
-        presentationWeight: '',
-        scaleMin: '',
-        scaleMax: '',
-        examSubjectId: NO_EXAM,
-        isActive: true,
-      },
+  const form = useForm<UniversityFormValues>({
+    defaultValues: initial ?? EMPTY_UNIVERSITY_FORM,
   });
 
   // Opciones del examen: materias de módulos de ADMISIÓN del país elegido —
@@ -133,49 +92,24 @@ function UniversityFormInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [country, treeQ.isLoading]);
 
-  async function submit(v: FormValues): Promise<void> {
-    const code = v.code.trim().toUpperCase();
-    if (code.length < 2 || code.length > 20) {
-      toast.error('El código debe tener entre 2 y 20 caracteres');
-      return;
-    }
-    if (!v.name.trim()) {
-      toast.error('El nombre es obligatorio');
-      return;
-    }
-    const exam = Number(v.examWeight);
-    const presentation = Number(v.presentationWeight);
-    if (Number.isNaN(exam) || exam < 0 || exam > 1) {
-      toast.error('El peso del examen debe estar entre 0 y 1');
-      return;
-    }
-    if (Number.isNaN(presentation) || presentation < 0 || presentation > 1) {
-      toast.error('El peso de la presentación debe estar entre 0 y 1');
-      return;
-    }
-    if (Math.abs(exam + presentation - 1) > 1e-6) {
-      toast.error('Los pesos deben sumar 1 (ej. 0.6 examen + 0.4 presentación)');
-      return;
-    }
-    const scaleMin = Number(v.scaleMin);
-    const scaleMax = Number(v.scaleMax);
-    if (!Number.isInteger(scaleMin) || !Number.isInteger(scaleMax)) {
-      toast.error('La escala debe ser de números enteros');
-      return;
-    }
-    if (scaleMin >= scaleMax) {
-      toast.error('El mínimo de la escala debe ser menor que el máximo');
+  const isPublic = form.watch('type') === 'public';
+  const isSponsored = form.watch('isSponsored');
+
+  async function submit(v: UniversityFormValues): Promise<void> {
+    const error = validateUniversityForm(v);
+    if (error) {
+      toast.error(error);
       return;
     }
     try {
       if (universityId) {
-        const patch: Partial<UniversityInput> = toInput(v);
+        const patch: Partial<UniversityInput> = toUniversityInput(v);
         delete patch.code;
         delete patch.country;
         await update.mutateAsync({ id: universityId, input: patch });
         toast.success('Universidad actualizada');
       } else {
-        await create.mutateAsync(toInput(v));
+        await create.mutateAsync(toUniversityInput(v));
         toast.success('Universidad creada');
       }
       router.push('/content/universities');
@@ -186,7 +120,12 @@ function UniversityFormInner({
 
   const isEdit = Boolean(universityId);
 
-  const text = (name: keyof FormValues, label: string, desc?: string, disabled = false) => (
+  const text = (
+    name: keyof UniversityFormValues,
+    label: string,
+    desc?: string,
+    disabled = false,
+  ) => (
     <Controller
       name={name}
       control={form.control}
@@ -244,55 +183,156 @@ function UniversityFormInner({
                   : 'Ej. UCR — 2 a 20 caracteres, se guarda en mayúsculas. Debe coincidir con la columna «university» del CSV de cortes.',
                 isEdit,
               )}
-              {text('name', 'Nombre', 'Solo para mostrar; el cruce con los cortes se hace por código.')}
-            </div>
-          </fieldset>
-
-          <fieldset className="min-w-0 space-y-4">
-            <legend className="flex items-center gap-2 text-sm font-medium">
-              <PercentIcon className="text-primary size-4" />
-              Nota de admisión
-            </legend>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {text('examWeight', 'Peso del examen (0–1)', 'Ej. 0.6.')}
               {text(
-                'presentationWeight',
-                'Peso de la presentación (0–1)',
-                'Ambos pesos deben sumar 1.',
+                'name',
+                'Nombre',
+                'Solo para mostrar; el cruce con los cortes se hace por código.',
               )}
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {text('scaleMin', 'Escala mínima', 'Entero, ej. 200.')}
-              {text('scaleMax', 'Escala máxima', 'Entero mayor que la mínima, ej. 800.')}
+              <Controller
+                name="type"
+                control={form.control}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Tipo</FieldLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger aria-label="Tipo">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TYPES.map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {UNIVERSITY_TYPE_LABEL[t]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      Las privadas no tienen corte ni nota de admisión: aparecen como oferta
+                      promocional en el detalle de la carrera.
+                    </FieldDescription>
+                  </Field>
+                )}
+              />
+              {text(
+                'websiteUrl',
+                'Sitio web',
+                'Opcional. Debe empezar con https:// — la app lo abre tal cual.',
+              )}
             </div>
+          </fieldset>
+
+          <fieldset className="min-w-0 space-y-3">
+            <legend className="flex items-center gap-2 text-sm font-medium">
+              <MegaphoneIcon className="text-primary size-4" />
+              Patrocinio
+            </legend>
             <Controller
-              name="examSubjectId"
+              name="isSponsored"
               control={form.control}
               render={({ field }) => (
                 <Field>
-                  <FieldLabel>Examen que usa</FieldLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NO_EXAM}>Sin asignar</SelectItem>
-                      {examOptions.map((o) => (
-                        <SelectItem key={o.id} value={o.id}>
-                          {o.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FieldLabel htmlFor="u-sponsored">Patrocinada</FieldLabel>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="u-sponsored"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                    <span className="text-sm">{field.value ? 'Sí' : 'No'}</span>
+                  </div>
                   <FieldDescription>
-                    La proyección de nota de esta universidad se calcula con el
-                    desempeño de ESTE examen. Sin asignar = estimado global del
-                    módulo (mezcla exámenes).
+                    Mientras la ventana esté vigente la app rotula «Patrocinado» en la fila y no se
+                    puede ocultar (transparencia publicitaria).
                   </FieldDescription>
                 </Field>
               )}
             />
+            {isSponsored && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Controller
+                  name="sponsoredFrom"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field>
+                      <FieldLabel htmlFor="u-sponsoredFrom">Desde</FieldLabel>
+                      <DatePicker
+                        id="u-sponsoredFrom"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Sin fecha de inicio"
+                      />
+                      <FieldDescription>Vacío = vigente desde ya.</FieldDescription>
+                    </Field>
+                  )}
+                />
+                <Controller
+                  name="sponsoredUntil"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field>
+                      <FieldLabel htmlFor="u-sponsoredUntil">Hasta</FieldLabel>
+                      <DatePicker
+                        id="u-sponsoredUntil"
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Sin fecha de fin"
+                      />
+                      <FieldDescription>Vacío = sin vencimiento.</FieldDescription>
+                    </Field>
+                  )}
+                />
+              </div>
+            )}
           </fieldset>
+
+          {isPublic && (
+            <fieldset className="min-w-0 space-y-4">
+              <legend className="flex items-center gap-2 text-sm font-medium">
+                <PercentIcon className="text-primary size-4" />
+                Nota de admisión
+              </legend>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {text('examWeight', 'Peso del examen (0–1)', 'Ej. 0.6.')}
+                {text(
+                  'presentationWeight',
+                  'Peso de la presentación (0–1)',
+                  'Ambos pesos deben sumar 1.',
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {text('scaleMin', 'Escala mínima', 'Entero, ej. 200.')}
+                {text('scaleMax', 'Escala máxima', 'Entero mayor que la mínima, ej. 800.')}
+              </div>
+              <Controller
+                name="examSubjectId"
+                control={form.control}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Examen que usa</FieldLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_EXAM}>Sin asignar</SelectItem>
+                        {examOptions.map((o) => (
+                          <SelectItem key={o.id} value={o.id}>
+                            {o.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>
+                      La proyección de nota de esta universidad se calcula con el desempeño de ESTE
+                      examen. Sin asignar = estimado global del módulo (mezcla exámenes).
+                    </FieldDescription>
+                  </Field>
+                )}
+              />
+            </fieldset>
+          )}
 
           <Controller
             name="isActive"

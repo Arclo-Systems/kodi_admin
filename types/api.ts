@@ -3458,6 +3458,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/vocational/careers/{id}/offers/{offerId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Registra apertura del sheet o clic al sitio de una privada */
+        post: operations["VocationalController_recordOfferEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/vocational/careers/{id}/fit": {
         parameters: {
             query?: never;
@@ -5307,6 +5324,86 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["CareerAdminController_update"];
+        trace?: never;
+    };
+    "/v1/admin/content/career-offers/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CareerOffersAdminController_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/careers/offers/upload-csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["CareerOffersAdminController_uploadCsv"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/careers/{careerId}/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CareerOffersAdminController_list"];
+        put?: never;
+        post: operations["CareerOffersAdminController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/careers/{careerId}/offers/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["CareerOffersAdminController_reorder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/content/careers/{careerId}/offers/{offerId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["CareerOffersAdminController_remove"];
+        options?: never;
+        head?: never;
+        patch: operations["CareerOffersAdminController_update"];
         trace?: never;
     };
     "/v1/admin/content/career-uploads/upload": {
@@ -11387,6 +11484,7 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     name: string;
+                    short_name: string | null;
                     area: string | null;
                     fit_score: number;
                     duration_years: number | null;
@@ -11411,6 +11509,7 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     name: string;
+                    short_name: string | null;
                     area: string | null;
                     fit_score: number;
                     duration_years: number | null;
@@ -11426,6 +11525,7 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     name: string;
+                    short_name: string | null;
                     area: string | null;
                     riasec_code: string | null;
                     demand_level: string | null;
@@ -11455,6 +11555,7 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     name: string;
+                    short_name: string | null;
                     area: string | null;
                     riasec_code: string | null;
                     duration_years: number | null;
@@ -11512,7 +11613,27 @@ export interface components {
                         cutoff_score: number | null;
                     }[];
                 }[];
+                private_offers: {
+                    /** Format: uuid */
+                    id: string;
+                    university: {
+                        code: string;
+                        name: string;
+                    };
+                    campuses: string[];
+                    modality: string | null;
+                    duration_text: string | null;
+                    schedule_text: string | null;
+                    cost_text: string | null;
+                    note: string | null;
+                    url: string;
+                    is_sponsored: boolean;
+                }[];
             };
+        };
+        CareerOfferEventDto: {
+            /** @enum {string} */
+            kind: "sheet_open" | "link_click";
         };
         CareerFitResponse: {
             data: {
@@ -13236,6 +13357,133 @@ export interface components {
             /** @default true */
             isActive: boolean;
         };
+        CareerOffersReportResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    universityId: string;
+                    universityCode: string;
+                    universityName: string;
+                    sheetOpens: number;
+                    linkClicks: number;
+                }[];
+                from: string;
+                to: string;
+            };
+        };
+        UploadCareerOffersDto: {
+            /** @enum {string} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            csv: string;
+        };
+        CareerOfferUploadResponse: {
+            data: {
+                created: number;
+                updated: number;
+                invalidRows: {
+                    careerName: string;
+                    universityCode: string;
+                    reason: string;
+                }[];
+            };
+        };
+        CareerOfferAdminListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    careerProfileId: string;
+                    campuses: string[];
+                    modality: string | null;
+                    durationText: string | null;
+                    scheduleText: string | null;
+                    costText: string | null;
+                    note: string | null;
+                    url: string;
+                    sortOrder: number;
+                    isActive: boolean;
+                    updatedAt: string;
+                    university: {
+                        /** Format: uuid */
+                        id: string;
+                        code: string;
+                        name: string;
+                        /** @enum {string} */
+                        type: "public" | "private";
+                        isSponsored: boolean;
+                        sponsoredFrom: string | null;
+                        sponsoredUntil: string | null;
+                    };
+                }[];
+                total: number;
+            };
+        };
+        CreateCareerOfferDto: {
+            /** @default [] */
+            campuses: string[];
+            /** @enum {string|null} */
+            modality?: "presencial" | "virtual" | "mixta" | null;
+            durationText?: string | null;
+            scheduleText?: string | null;
+            costText?: string | null;
+            note?: string | null;
+            /** Format: uri */
+            url: string;
+            /** @default true */
+            isActive: boolean;
+            /** Format: uuid */
+            universityId: string;
+        };
+        CareerOfferAdminResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                careerProfileId: string;
+                campuses: string[];
+                modality: string | null;
+                durationText: string | null;
+                scheduleText: string | null;
+                costText: string | null;
+                note: string | null;
+                url: string;
+                sortOrder: number;
+                isActive: boolean;
+                updatedAt: string;
+                university: {
+                    /** Format: uuid */
+                    id: string;
+                    code: string;
+                    name: string;
+                    /** @enum {string} */
+                    type: "public" | "private";
+                    isSponsored: boolean;
+                    sponsoredFrom: string | null;
+                    sponsoredUntil: string | null;
+                };
+            };
+        };
+        ReorderCareerOffersDto: {
+            ids: string[];
+        };
+        CareerOfferReorderResponse: {
+            data: {
+                reordered: number;
+            };
+        };
+        UpdateCareerOfferDto: {
+            campuses?: string[];
+            /** @enum {string|null} */
+            modality?: "presencial" | "virtual" | "mixta" | null;
+            durationText?: string | null;
+            scheduleText?: string | null;
+            costText?: string | null;
+            note?: string | null;
+            /** Format: uri */
+            url?: string;
+            isActive?: boolean;
+        };
         UploadCareersDto: {
             /** Format: uuid */
             moduleId: string;
@@ -13415,10 +13663,16 @@ export interface components {
                     country: string;
                     code: string;
                     name: string;
-                    examWeight: string;
-                    presentationWeight: string;
-                    scaleMin: number;
-                    scaleMax: number;
+                    /** @enum {string} */
+                    type: "public" | "private";
+                    websiteUrl: string | null;
+                    isSponsored: boolean;
+                    sponsoredFrom: string | null;
+                    sponsoredUntil: string | null;
+                    examWeight: string | null;
+                    presentationWeight: string | null;
+                    scaleMin: number | null;
+                    scaleMax: number | null;
                     /** Format: uuid */
                     examSubjectId: string | null;
                     isActive: boolean;
@@ -13440,10 +13694,16 @@ export interface components {
                 country: string;
                 code: string;
                 name: string;
-                examWeight: string;
-                presentationWeight: string;
-                scaleMin: number;
-                scaleMax: number;
+                /** @enum {string} */
+                type: "public" | "private";
+                websiteUrl: string | null;
+                isSponsored: boolean;
+                sponsoredFrom: string | null;
+                sponsoredUntil: string | null;
+                examWeight: string | null;
+                presentationWeight: string | null;
+                scaleMin: number | null;
+                scaleMax: number | null;
                 /** Format: uuid */
                 examSubjectId: string | null;
                 isActive: boolean;
@@ -13459,10 +13719,23 @@ export interface components {
             country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
             code: string;
             name: string;
-            examWeight: number;
-            presentationWeight: number;
-            scaleMin: number;
-            scaleMax: number;
+            /**
+             * @default public
+             * @enum {string}
+             */
+            type: "public" | "private";
+            /** Format: uri */
+            websiteUrl?: string | null;
+            /** @default false */
+            isSponsored: boolean;
+            /** Format: date-time */
+            sponsoredFrom?: string | null;
+            /** Format: date-time */
+            sponsoredUntil?: string | null;
+            examWeight?: number;
+            presentationWeight?: number;
+            scaleMin?: number;
+            scaleMax?: number;
             /** Format: uuid */
             examSubjectId?: string | null;
             /** @default true */
@@ -13470,6 +13743,15 @@ export interface components {
         };
         UpdateUniversityDto: {
             name?: string;
+            /** @enum {string} */
+            type?: "public" | "private";
+            /** Format: uri */
+            websiteUrl?: string | null;
+            isSponsored?: boolean;
+            /** Format: date-time */
+            sponsoredFrom?: string | null;
+            /** Format: date-time */
+            sponsoredUntil?: string | null;
             examWeight?: number;
             presentationWeight?: number;
             scaleMin?: number;
@@ -21960,6 +22242,30 @@ export interface operations {
             };
         };
     };
+    VocationalController_recordOfferEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                offerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CareerOfferEventDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     VocationalController_getFit: {
         parameters: {
             query?: never;
@@ -24772,6 +25078,169 @@ export interface operations {
             };
         };
     };
+    CareerOffersAdminController_report: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareerOffersReportResponse"];
+                };
+            };
+        };
+    };
+    CareerOffersAdminController_uploadCsv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadCareerOffersDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareerOfferUploadResponse"];
+                };
+            };
+        };
+    };
+    CareerOffersAdminController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                careerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareerOfferAdminListResponse"];
+                };
+            };
+        };
+    };
+    CareerOffersAdminController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                careerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCareerOfferDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareerOfferAdminResponse"];
+                };
+            };
+        };
+    };
+    CareerOffersAdminController_reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                careerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderCareerOffersDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareerOfferReorderResponse"];
+                };
+            };
+        };
+    };
+    CareerOffersAdminController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                careerId: string;
+                offerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CareerOffersAdminController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                careerId: string;
+                offerId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCareerOfferDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CareerOfferAdminResponse"];
+                };
+            };
+        };
+    };
     CareerUploadsController_upload: {
         parameters: {
             query?: never;
@@ -25045,6 +25514,7 @@ export interface operations {
         parameters: {
             query?: {
                 country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+                type?: "public" | "private";
                 isActive?: boolean;
                 page?: number;
                 pageSize?: number;

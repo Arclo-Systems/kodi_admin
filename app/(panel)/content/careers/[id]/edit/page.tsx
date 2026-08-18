@@ -1,5 +1,6 @@
 import { requireAction } from '@/lib/guard';
 import { CareerForm } from '../../career-form';
+import { CareerDetailNav } from '../career-detail-nav';
 
 export const metadata = { title: 'Editar carrera' };
 
@@ -13,6 +14,7 @@ export default async function EditCareerPage({ params }: { params: Promise<{ id:
         <h1 className="text-2xl font-semibold">Editar carrera</h1>
         <p className="text-muted-foreground">Modificá datos de interés, mercado y estado.</p>
       </div>
+      <CareerDetailNav careerId={id} />
       <CareerForm careerId={id} />
     </div>
   );

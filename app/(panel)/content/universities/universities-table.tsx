@@ -32,10 +32,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { COUNTRIES } from '@/lib/countries';
+import {
+  SponsorshipBadge,
+  UNIVERSITY_TYPE_LABEL,
+  UniversityTypeBadge,
+  type UniversityType,
+} from '@/lib/sponsorship';
 
 const ALL = '__all__';
+const TYPES: UniversityType[] = ['public', 'private'];
 
 const pct = (w: string): string => `${Math.round(Number(w) * 100)}%`;
+// Las privadas no tienen nota de admisión (§10.1): la celda dice "—", no 0%.
+const DASH = <span className="text-muted-foreground">—</span>;
 
 const columns: ColumnDef<University, unknown>[] = [
   { accessorKey: 'country', header: 'País', meta: { label: 'País' } },
@@ -52,24 +61,44 @@ const columns: ColumnDef<University, unknown>[] = [
     cell: ({ row }) => <span className="font-medium">{row.original.name}</span>,
   },
   {
+    accessorKey: 'type',
+    header: 'Tipo',
+    meta: { label: 'Tipo' },
+    cell: ({ row }) => <UniversityTypeBadge type={row.original.type} />,
+  },
+  {
+    id: 'sponsorship',
+    header: 'Patrocinio',
+    meta: { label: 'Patrocinio' },
+    cell: ({ row }) => <SponsorshipBadge sponsorship={row.original} />,
+  },
+  {
     id: 'weights',
     header: 'Pesos',
     meta: { label: 'Pesos' },
-    cell: ({ row }) => (
-      <span>
-        {pct(row.original.examWeight)} / {pct(row.original.presentationWeight)}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const { examWeight, presentationWeight } = row.original;
+      if (examWeight === null || presentationWeight === null) return DASH;
+      return (
+        <span>
+          {pct(examWeight)} / {pct(presentationWeight)}
+        </span>
+      );
+    },
   },
   {
     id: 'scale',
     header: 'Escala',
     meta: { label: 'Escala' },
-    cell: ({ row }) => (
-      <span>
-        {row.original.scaleMin}–{row.original.scaleMax}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const { scaleMin, scaleMax } = row.original;
+      if (scaleMin === null || scaleMax === null) return DASH;
+      return (
+        <span>
+          {scaleMin}–{scaleMax}
+        </span>
+      );
+    },
   },
   {
     accessorKey: 'isActive',
@@ -120,6 +149,22 @@ export function UniversitiesTable() {
               {COUNTRIES.map((c) => (
                 <SelectItem key={c.code} value={c.code}>
                   {c.code} · {c.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={query.type ?? ALL}
+            onValueChange={(v) => set({ type: v === ALL ? undefined : (v as UniversityType) })}
+          >
+            <SelectTrigger className="w-36" aria-label="Filtrar por tipo">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Todos los tipos</SelectItem>
+              {TYPES.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {UNIVERSITY_TYPE_LABEL[t]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -201,9 +246,13 @@ function UniversityRowActions({ university }: { university: University }) {
         onOpenChange={setConfirmOpen}
         title={university.isActive ? 'Desactivar universidad' : 'Activar universidad'}
         description={
-          university.isActive
-            ? 'La universidad dejará de usarse en el cálculo de nota de admisión.'
-            : 'La universidad volverá a usarse en el cálculo de nota de admisión.'
+          university.type === 'private'
+            ? university.isActive
+              ? 'Sus ofertas dejarán de aparecer en el detalle de las carreras.'
+              : 'Sus ofertas volverán a aparecer en el detalle de las carreras.'
+            : university.isActive
+              ? 'La universidad dejará de usarse en el cálculo de nota de admisión.'
+              : 'La universidad volverá a usarse en el cálculo de nota de admisión.'
         }
         destructive={university.isActive}
         confirmLabel={university.isActive ? 'Desactivar' : 'Activar'}

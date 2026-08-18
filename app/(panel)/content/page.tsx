@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import {
+  BarChart3Icon,
   BotIcon,
   CompassIcon,
   FileQuestionIcon,
@@ -85,6 +86,14 @@ const AREAS: AreaCard[] = [
     label: 'Universidades',
     description: 'Pesos de admisión y escalas por universidad.',
     icon: GraduationCapIcon,
+    action: 'content:university:write',
+  },
+  {
+    href: '/content/career-offers-report',
+    label: 'Reporte de privadas',
+    description:
+      'Aperturas de ficha y clics al sitio por universidad privada, para reportarle al anunciante.',
+    icon: BarChart3Icon,
     action: 'content:university:write',
   },
   {

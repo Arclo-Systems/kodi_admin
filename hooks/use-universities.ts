@@ -1,18 +1,26 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { throwApiError, unwrapData } from '@/lib/bff';
+import type { UniversityType } from '@/lib/sponsorship';
 
 // examWeight/presentationWeight son Decimal de Prisma → el backend los serializa como string ("0.5").
+// Todo el bloque de admisión (pesos + escala) es null en las privadas (§10.1): no examinan.
 export type University = {
   id: string;
   country: string;
   code: string;
   name: string;
-  examWeight: string;
-  presentationWeight: string;
-  scaleMin: number;
-  scaleMax: number;
+  type: UniversityType;
+  websiteUrl: string | null;
+  /** D12: mientras la ventana esté vigente la app rotula "Patrocinado" y el panel no puede apagarlo. */
+  isSponsored: boolean;
+  sponsoredFrom: string | null;
+  sponsoredUntil: string | null;
+  examWeight: string | null;
+  presentationWeight: string | null;
+  scaleMin: number | null;
+  scaleMax: number | null;
   /** Examen (materia de admisión) que la universidad usa; null = sin asignar. */
   examSubjectId: string | null;
   isActive: boolean;
@@ -23,16 +31,23 @@ export type UniversityInput = {
   country: string;
   code: string;
   name: string;
-  examWeight: number;
-  presentationWeight: number;
-  scaleMin: number;
-  scaleMax: number;
+  type: UniversityType;
+  websiteUrl: string | null;
+  isSponsored: boolean;
+  sponsoredFrom: string | null;
+  sponsoredUntil: string | null;
+  /** Los cuatro van juntos y SOLO en las públicas: el backend rechaza una pública sin ellos. */
+  examWeight?: number;
+  presentationWeight?: number;
+  scaleMin?: number;
+  scaleMax?: number;
   examSubjectId: string | null;
   isActive: boolean;
 };
 
 export type UniversityListQuery = {
   country?: string;
+  type?: UniversityType;
   isActive?: boolean;
   page: number;
   pageSize: number;
@@ -47,10 +62,7 @@ async function sendJson(url: string, method: 'POST' | 'PATCH', body: unknown): P
     credentials: 'include',
     body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    const b = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(b.message ?? 'Error');
-  }
+  if (!res.ok) await throwApiError(res, 'No se pudo guardar la universidad');
   return res.json().catch(() => ({}));
 }
 
