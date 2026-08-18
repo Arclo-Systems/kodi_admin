@@ -52,18 +52,21 @@ const LEVEL_LABELS: Record<LeagueLevel, string> = {
   genio: 'Genio',
 };
 
+// Conjugadas en tercera persona porque se leen dentro de la frase que arma
+// `describeCondition`: "La primera vez que responde bien una pregunta". En
+// infinitivo la condición quedaba escrita como un telegrama.
 const EVENT_LABELS: Record<AchievementEvent, string> = {
-  question_answered_correct: 'responder bien una pregunta',
-  practice_session_completed: 'completar una sesión de práctica',
-  simulacro_completed: 'completar un simulacro',
-  game_mode_completed: 'completar un modo de juego',
-  duel_won: 'ganar una Partida Kodi',
-  arena_won: 'ganar una Arena',
-  streak_updated: 'actualizar la racha',
-  league_promoted: 'ascender de liga',
-  ai_explain_used: 'usar el tutor Pixel',
-  founder_offer_claimed: 'confirmar la compra fundador',
-  manual: 'otorgamiento manual',
+  question_answered_correct: 'responde bien una pregunta',
+  practice_session_completed: 'completa una sesión de práctica',
+  simulacro_completed: 'completa un simulacro',
+  game_mode_completed: 'completa un modo de juego',
+  duel_won: 'gana una Partida Kodi',
+  arena_won: 'gana una Arena',
+  streak_updated: 'actualiza la racha',
+  league_promoted: 'asciende de liga',
+  ai_explain_used: 'usa el tutor Pixel',
+  founder_offer_claimed: 'confirma la compra fundador',
+  manual: 'se lo otorga un administrador',
 };
 
 // Una métrica sin etiqueta se muestra cruda, nunca como "undefined": el catálogo

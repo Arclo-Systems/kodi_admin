@@ -79,6 +79,26 @@ describe('describeCondition — toda métrica seleccionable tiene etiqueta', () 
   );
 });
 
+describe('describeCondition — event_once se lee como frase', () => {
+  const PREFIJO = 'La primera vez que ';
+
+  it('la condición se lee de corrido', () => {
+    expect(describeCondition({ type: 'event_once', event: 'question_answered_correct' })).toBe(
+      'La primera vez que responde bien una pregunta',
+    );
+    expect(describeCondition({ type: 'event_once', event: 'manual' })).toBe(
+      'La primera vez que se lo otorga un administrador',
+    );
+  });
+
+  it.each(ACHIEVEMENT_EVENTS)('"%s" no queda en infinitivo', (event) => {
+    const text = describeCondition({ type: 'event_once', event });
+
+    expect(text.startsWith(PREFIJO)).toBe(true);
+    expect(text.slice(PREFIJO.length)).not.toMatch(/^\S+(ar|er|ir)\b/);
+  });
+});
+
 describe('describeCondition — filas viejas', () => {
   // El catálogo lo edita el founder y la BD puede traer una métrica retirada
   // (`videos_watched` salió del enum del backend): se muestra cruda, nunca rota.
