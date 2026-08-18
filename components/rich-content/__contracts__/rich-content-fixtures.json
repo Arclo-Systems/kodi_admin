@@ -1,0 +1,332 @@
+[
+  {
+    "id": "row-01-texto-plano",
+    "tool": "markdown",
+    "markdown": "El examen de admisión evalúa razonamiento verbal y matemático.",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-02-negrita-cursiva",
+    "tool": "markdown",
+    "markdown": "La respuesta **correcta** es la *segunda* opción.",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-03-codigo-inline",
+    "tool": "markdown",
+    "markdown": "La variable `x` vale 2.",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-04-fence-de-codigo",
+    "tool": "markdown",
+    "markdown": "```python\nprint(1 + 2)\n```",
+    "expects": {
+      "blocks": ["markdown"],
+      "rawHtml": false,
+      "notes": "Solo los fences svg y mermaid salen del markdown; el resto se dibuja como código."
+    }
+  },
+  {
+    "id": "row-05-mermaid-en-enunciado",
+    "tool": "mermaid",
+    "markdown": "```mermaid\ngraph TD\n  A[Inicio] --> B[Fin]\n```",
+    "expects": {
+      "blocks": ["mermaid"],
+      "rawHtml": false,
+      "notes": "Las flechas --> no son HTML crudo: el fence queda fuera del chequeo."
+    }
+  },
+  {
+    "id": "row-06-svg-en-enunciado",
+    "tool": "svg",
+    "markdown": "Observá la figura:\n\n```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 60\"><title>Triángulo</title><path d=\"M10 50 L50 10 L90 50 Z\" fill=\"none\" stroke=\"#333\"/></svg>\n```",
+    "expects": { "blocks": ["markdown", "svg"], "rawHtml": false, "safeSvg": true }
+  },
+  {
+    "id": "row-07-math-inline-en-enunciado",
+    "tool": "formula",
+    "markdown": "¿Cuánto vale $x$ si $2x + 4 = 10$?",
+    "expects": {
+      "blocks": ["math"],
+      "rawHtml": false,
+      "notes": "El párrafo entero se promueve a isla KaTeX; partirlo rompería el flujo del texto."
+    }
+  },
+  {
+    "id": "row-08-math-en-bloque",
+    "tool": "formula",
+    "markdown": "$$\\frac{a}{b} = c$$",
+    "expects": { "blocks": ["math"], "rawHtml": false }
+  },
+  {
+    "id": "row-09-math-inline-en-opcion",
+    "tool": "formula",
+    "markdown": "$x^2$",
+    "expects": {
+      "blocks": ["math"],
+      "rawHtml": false,
+      "notes": "161 drafts traen $…$ en opciones: sin isla la opción queda irrespondible."
+    }
+  },
+  {
+    "id": "row-10-mermaid-en-opcion",
+    "tool": "mermaid",
+    "markdown": "```mermaid\ngraph LR\n  A --> B\n```",
+    "expects": { "blocks": ["mermaid"], "rawHtml": false }
+  },
+  {
+    "id": "row-11-imagen-en-opcion",
+    "tool": "image",
+    "markdown": "![Figura A](https://cdn.holakodi.com/opcion-a.png)",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-12-markdown-en-opcion",
+    "tool": "markdown",
+    "markdown": "**Todas** las anteriores",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-13-explicacion-rica",
+    "tool": "formula",
+    "markdown": "La respuesta es **B**.\n\nPorque $2x = 8$ implica $x = 4$.",
+    "expects": {
+      "blocks": ["markdown", "math"],
+      "rawHtml": false,
+      "notes": "El 100 % de las preguntas tiene explicación; mezcla markdown y math en párrafos separados."
+    }
+  },
+  {
+    "id": "row-14-imagen-en-enunciado",
+    "tool": "image",
+    "markdown": "![Diagrama del circuito](https://cdn.holakodi.com/figura.png)",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-15-tabla-gfm",
+    "tool": "table",
+    "markdown": "| Materia | Puntaje | Peso | Total |\n|---|---|---|---|\n| Español | 80 | 0.5 | 40 |\n| Mate | 90 | 0.5 | 45 |",
+    "expects": {
+      "blocks": ["markdown"],
+      "rawHtml": false,
+      "notes": "34 preguntas activas ya la usan: en la app viaja dentro del scroll horizontal."
+    }
+  },
+  {
+    "id": "row-16-headings-1-a-3",
+    "tool": "markdown",
+    "markdown": "# Título\n\n## Subtítulo\n\n### Sección",
+    "expects": {
+      "blocks": ["markdown"],
+      "rawHtml": false,
+      "notes": "Párrafos consecutivos sin math se agrupan en un solo bloque markdown."
+    }
+  },
+  {
+    "id": "row-17-headings-4-a-6",
+    "tool": "markdown",
+    "markdown": "#### Cuarto\n\n##### Quinto\n\n###### Sexto",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-18-listas",
+    "tool": "markdown",
+    "markdown": "- uno\n- dos\n\n1. primero\n2. segundo",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-19-blockquote",
+    "tool": "markdown",
+    "markdown": "> Nota: el puntaje se redondea al entero más cercano.",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-20-regla-horizontal",
+    "tool": "markdown",
+    "markdown": "Antes\n\n---\n\nDespués",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-21-tachado",
+    "tool": "markdown",
+    "markdown": "Esto ~~no va~~ sí va.",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-22-link",
+    "tool": "markdown",
+    "markdown": "Consultá [la guía oficial](https://holakodi.com/guia).",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-23-url-pelada",
+    "tool": "markdown",
+    "markdown": "Más información en https://holakodi.com/guia",
+    "expects": { "blocks": ["markdown"], "rawHtml": false }
+  },
+  {
+    "id": "row-24-html-crudo",
+    "tool": "html",
+    "markdown": "Primera línea<br>Segunda con <u>subrayado</u>.",
+    "expects": {
+      "blocks": ["markdown"],
+      "rawHtml": true,
+      "notes": "Divergencia: el preview del panel lo borra y la app lo imprime literal, por eso el guardado lo rechaza."
+    }
+  },
+  {
+    "id": "row-25-math-mas-estructura",
+    "tool": "edge",
+    "markdown": "Con $x^2$ pasa esto:\n- uno\n- dos",
+    "expects": {
+      "blocks": ["math"],
+      "rawHtml": false,
+      "notes": "Degradación conocida: el párrafo entero va a la isla y la lista pierde su estructura."
+    }
+  },
+  {
+    "id": "row-26-dolar-de-moneda",
+    "tool": "edge",
+    "markdown": "El curso cuesta $5 y el libro $8.",
+    "expects": {
+      "blocks": ["markdown"],
+      "rawHtml": false,
+      "notes": "Los dos delimitadores abren un número completo: es plata, no fórmula."
+    }
+  },
+  {
+    "id": "edge-svg-y-dolar-en-el-mismo-campo",
+    "tool": "edge",
+    "markdown": "El área sombreada mide $\\pi r^2$.\n\n```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 40 40\"><title>Círculo</title><circle cx=\"20\" cy=\"20\" r=\"18\" fill=\"none\" stroke=\"#333\"/></svg>\n```",
+    "expects": {
+      "blocks": ["math", "svg"],
+      "rawHtml": false,
+      "safeSvg": true,
+      "notes": "8 drafts en producción combinan fórmula y figura en el mismo campo."
+    }
+  },
+  {
+    "id": "edge-dolar-sin-cerrar",
+    "tool": "edge",
+    "markdown": "Calculá el valor de $x + 1 sin cerrar la fórmula.",
+    "expects": {
+      "blocks": ["markdown"],
+      "rawHtml": false,
+      "notes": "Un solo delimitador no abre isla: el $ se muestra como texto en vez de comerse el resto."
+    }
+  },
+  {
+    "id": "edge-moneda-y-formula-juntas",
+    "tool": "edge",
+    "markdown": "El libro cuesta $5 y mide $x^2$ centímetros.",
+    "expects": {
+      "blocks": ["math"],
+      "rawHtml": false,
+      "notes": "Degradación conocida: splitRichContent aísla la fórmula, pero adentro de la isla KaTeX abre en el $ del precio y matchea '$5 y mide $', dejando un $ suelto. Deuda de mathHtml.ts (B5)."
+    }
+  },
+  {
+    "id": "edge-desigualdad-no-es-html",
+    "tool": "edge",
+    "markdown": "Si $a < b$ y b > c, entonces a < c.",
+    "expects": {
+      "blocks": ["math"],
+      "rawHtml": false,
+      "notes": "Una desigualdad no es una etiqueta: el gate de HTML crudo exige nombre de tag conocido."
+    }
+  },
+  {
+    "id": "edge-tabla-mas-math",
+    "tool": "edge",
+    "markdown": "Según la tabla, $x = 3$.\n\n| a | b |\n|---|---|\n| 1 | 2 |",
+    "expects": {
+      "blocks": ["math", "markdown"],
+      "rawHtml": false,
+      "notes": "5 preguntas activas mezclan tabla y fórmula: cada párrafo se resuelve por separado."
+    }
+  },
+  {
+    "id": "svg-seguro-con-texto-y-path",
+    "tool": "svg",
+    "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 120 40\"><title>Recta</title><path d=\"M0 20 L120 20\" stroke=\"#333\"/><text x=\"60\" y=\"16\">AB</text></svg>\n```",
+    "expects": { "blocks": ["svg"], "rawHtml": false, "safeSvg": true }
+  },
+  {
+    "id": "svg-rechazado-por-peso",
+    "tool": "svg",
+    "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 200\"><title>Trazo largo</title><path d=\"{{PAD}}\"/></svg>\n```",
+    "generateBytes": 103424,
+    "expects": {
+      "blocks": ["svg"],
+      "rawHtml": false,
+      "safeSvg": false,
+      "notes": "101 KB: el test expande {{PAD}} para no meter 100 KB en el JSON. En la app el tope vive en isSafeSvg; en el panel, en el render (svg-figure.tsx) — el regex solo no lo rechaza."
+    }
+  },
+  {
+    "id": "svg-aceptado-cerca-del-tope",
+    "tool": "svg",
+    "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 200\"><title>Trazo largo</title><path d=\"{{PAD}}\"/></svg>\n```",
+    "generateBytes": 92160,
+    "expects": {
+      "blocks": ["svg"],
+      "rawHtml": false,
+      "safeSvg": true,
+      "notes": "90 KB: debajo del tope de 100 KB, las dos puntas la aceptan."
+    }
+  },
+  {
+    "id": "svg-rechazado-script",
+    "tool": "svg",
+    "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><script>alert(1)</script><rect width=\"10\" height=\"10\"/></svg>\n```",
+    "expects": { "blocks": ["svg"], "rawHtml": false, "safeSvg": false }
+  },
+  {
+    "id": "svg-rechazado-foreignobject",
+    "tool": "svg",
+    "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><foreignObject width=\"10\" height=\"10\"><div>hola</div></foreignObject></svg>\n```",
+    "expects": { "blocks": ["svg"], "rawHtml": false, "safeSvg": false }
+  },
+  {
+    "id": "svg-rechazado-handler-inline",
+    "tool": "svg",
+    "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\" onload=\"alert(1)\"><rect width=\"10\" height=\"10\"/></svg>\n```",
+    "expects": { "blocks": ["svg"], "rawHtml": false, "safeSvg": false }
+  },
+  {
+    "id": "svg-rechazado-javascript-uri",
+    "tool": "svg",
+    "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><a href=\"javascript:alert(1)\"><rect width=\"10\" height=\"10\"/></a></svg>\n```",
+    "expects": { "blocks": ["svg"], "rawHtml": false, "safeSvg": false }
+  },
+  {
+    "id": "svg-rechazado-image",
+    "tool": "svg",
+    "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><image href=\"https://evil.cr/pixel.png\" width=\"10\" height=\"10\"/></svg>\n```",
+    "expects": {
+      "blocks": ["svg"],
+      "rawHtml": false,
+      "safeSvg": false,
+      "notes": "En la app el XML instancia primitivas reales: un <image> saca una petición desde el dispositivo."
+    }
+  },
+  {
+    "id": "svg-rechazado-feimage",
+    "tool": "svg",
+    "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><filter id=\"f\"><feImage href=\"https://evil.cr/x.png\"/></filter><rect width=\"10\" height=\"10\" filter=\"url(#f)\"/></svg>\n```",
+    "expects": { "blocks": ["svg"], "rawHtml": false, "safeSvg": false }
+  },
+  {
+    "id": "svg-rechazado-href-externo",
+    "tool": "svg",
+    "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><use xlink:href=\"https://evil.cr/sprite.svg#a\"/></svg>\n```",
+    "expects": { "blocks": ["svg"], "rawHtml": false, "safeSvg": false }
+  },
+  {
+    "id": "svg-rechazado-href-data",
+    "tool": "svg",
+    "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><use href=\"data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=\"/></svg>\n```",
+    "expects": { "blocks": ["svg"], "rawHtml": false, "safeSvg": false }
+  }
+]

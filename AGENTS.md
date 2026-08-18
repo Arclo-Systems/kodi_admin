@@ -70,8 +70,11 @@ dependencias, **`npx knip`** limpio + **`npm audit`** sin críticas/altas. Cero 
   de preguntas y el import CSV **rechazan** HTML crudo (`lib/raw-html.ts`) y SVG con recursos externos
   (`lib/svg-safety.ts`, en paridad con `frontend/src/components/questions/rich/isSafeSvg.ts`).
 - **Contrato de contenido rico**: la sintaxis que el editor deja cargar y la que la app sabe dibujar
-  viven en `../docs/contracts/rich-content-fixtures.json` (+ `rich-tools.json`), consumido por los dos
-  repos. **Agregar una `RichTool` obliga a agregar su fixture**: falla el test de cobertura del panel
+  viven en `../docs/contracts/rich-content-fixtures.json` (+ `rich-tools.json`), canónico para los dos
+  repos; `components/rich-content/__contracts__/` es la copia vendorizada y commiteada que usan los
+  tests (CI no clona `docs/`). Se edita el canónico y se corre **`npm run contracts:sync`**;
+  `contracts:check` (dentro de `npm run ci`) falla si la copia quedó vieja.
+  **Agregar una `RichTool` obliga a agregar su fixture**: falla el test de cobertura del panel
   (`components/rich-content/fixtures.test.tsx`) y el de la app sigue fallando hasta que el renderer
   móvil la soporte.
 
