@@ -283,6 +283,17 @@
     "expects": { "blocks": ["svg"], "rawHtml": false, "safeSvg": false }
   },
   {
+    "id": "svg-rechazado-script-fence-en-mayusculas",
+    "tool": "svg",
+    "markdown": "```SVG\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><script>alert(1)</script><rect width=\"10\" height=\"10\"/></svg>\n```",
+    "expects": {
+      "blocks": ["svg"],
+      "rawHtml": false,
+      "safeSvg": false,
+      "notes": "El fence no distingue mayúsculas: la app lo dibuja igual, así que el guardarraíl y el gate de peso del panel tienen que verlo."
+    }
+  },
+  {
     "id": "svg-rechazado-foreignobject",
     "tool": "svg",
     "markdown": "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 10 10\"><foreignObject width=\"10\" height=\"10\"><div>hola</div></foreignObject></svg>\n```",

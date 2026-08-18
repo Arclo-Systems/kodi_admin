@@ -43,6 +43,12 @@ describe('extractSvgBlocks / maxSvgWeight', () => {
   it('extrae el SVG del fence', () => {
     expect(extractSvgBlocks(md(SMALL))).toEqual([SMALL]);
   });
+  it('el fence en mayúsculas también se extrae (la app lo dibuja igual)', () => {
+    expect(extractSvgBlocks(md(SMALL).replace('```svg', '```SVG'))).toEqual([SMALL]);
+  });
+  it('no muerde ```svgx, que no es un fence nuestro', () => {
+    expect(extractSvgBlocks(`\`\`\`svgx\n${SMALL}\n\`\`\``)).toEqual([]);
+  });
   it('maxSvgWeight null sin SVG', () => {
     expect(maxSvgWeight('sin figura')).toBeNull();
   });

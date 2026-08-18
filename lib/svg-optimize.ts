@@ -3,7 +3,12 @@ export const SVG_WEIGHT_MAX = 30_720; // 30 KB
 
 export type SvgWeightLevel = 'ok' | 'warn' | 'heavy';
 
-const SVG_FENCE = /```svg\s*\n([\s\S]*?)```/g;
+// Case-insensitive y con `\r?\n` en paridad con `raw-html.ts` y con el
+// `splitRichContent` de la app: un ```SVG en mayúsculas se dibuja igual en el
+// dispositivo, así que tiene que pasar por el guardarraíl (`svg-safety`) y por
+// el gate de peso. El cierre de la apertura es estricto (solo espacios y salto)
+// para no morder ```svgx, que no es un fence nuestro.
+const SVG_FENCE = /```svg[ \t]*\r?\n([\s\S]*?)```/gi;
 
 export function svgByteLength(svg: string): number {
   return new TextEncoder().encode(svg).length;

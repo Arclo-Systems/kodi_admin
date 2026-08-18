@@ -62,10 +62,12 @@ export function RichContent({
         rehypePlugins={[[rehypeSanitize, schema], rehypeKatex]}
         components={{
           code({ className: cls, children }) {
-            if (allowMermaid && /\blanguage-mermaid\b/.test(cls ?? '')) {
+            // Case-insensitive: la app dibuja ```SVG y ```MERMAID igual que en
+            // minúsculas, y un preview que los muestra como código mentiría.
+            if (allowMermaid && /\blanguage-mermaid\b/i.test(cls ?? '')) {
               return <Mermaid chart={String(children).trim()} />;
             }
-            if (allowSvg && /\blanguage-svg\b/.test(cls ?? '')) {
+            if (allowSvg && /\blanguage-svg\b/i.test(cls ?? '')) {
               return <SvgFigure source={String(children).trim()} />;
             }
             return <code className={cls}>{children}</code>;
