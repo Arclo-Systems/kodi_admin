@@ -23,7 +23,7 @@ import {
 import { useModulesTree } from '@/hooks/use-modules-tree';
 import { hasRawHtmlOutsideSvg, RAW_HTML_MESSAGE } from '@/lib/raw-html';
 import { hasHeavySvg } from '@/lib/svg-optimize';
-import { hasSvgWithExternalResources, UNSAFE_SVG_MESSAGE } from '@/lib/svg-safety';
+import { svgRejectionMessage } from '@/lib/svg-safety';
 import type { Difficulty, QuestionDetail } from '@/hooks/use-questions';
 import { QuestionPreview } from './question-preview';
 
@@ -38,11 +38,7 @@ const OptionSchema = z.object({
 // El preview del panel sanitiza y la app imprime literal: lo que acá se deja pasar, allá se ve
 // distinto. Se corta en el guardado, campo por campo, para que el autor sepa cuál corregir.
 function checkRichSyntax(value: string, path: (string | number)[], ctx: z.RefinementCtx): void {
-  const message = hasRawHtmlOutsideSvg(value)
-    ? RAW_HTML_MESSAGE
-    : hasSvgWithExternalResources(value)
-      ? UNSAFE_SVG_MESSAGE
-      : null;
+  const message = hasRawHtmlOutsideSvg(value) ? RAW_HTML_MESSAGE : svgRejectionMessage(value);
   if (message) ctx.addIssue({ code: 'custom', message, path });
 }
 

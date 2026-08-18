@@ -1,12 +1,11 @@
 import { hasRawHtmlOutsideSvg, RAW_HTML_MESSAGE } from '@/lib/raw-html';
-import { hasSvgWithExternalResources, UNSAFE_SVG_MESSAGE } from '@/lib/svg-safety';
+import { svgRejectionMessage } from '@/lib/svg-safety';
 import type { CsvRow } from './svg-augment';
 
 function contentError(r: CsvRow): string | null {
   const fields = [r.text, r.explanation, ...r.options.map((o) => o.text)];
   if (fields.some((f) => hasRawHtmlOutsideSvg(f))) return RAW_HTML_MESSAGE;
-  if (hasSvgWithExternalResources(...fields)) return UNSAFE_SVG_MESSAGE;
-  return null;
+  return svgRejectionMessage(...fields);
 }
 
 // Mismo corte que el formulario, aplicado a la previsualización del CSV: la fila queda listada

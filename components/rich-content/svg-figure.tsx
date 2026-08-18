@@ -1,18 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
-import { svgByteLength } from '@/lib/svg-optimize';
 // Filtro de UX / defensa en profundidad — NO es la frontera de seguridad acá. La inercia la da el
 // render por `<img src="data:...">` (abajo). Vive en `lib/` porque el mismo filtro gatea el
-// guardado del formulario y el import CSV, donde no hay `<img>` que salve.
+// guardado del formulario y el import CSV, donde no hay `<img>` que salve; ahí sí es la barrera.
 import { isSafeSvg } from '@/lib/svg-safety';
-
-const MAX_BYTES = 100 * 1024;
 
 type Parsed = { ok: true; alt: string } | { ok: false };
 
 function parseSvg(src: string): Parsed {
-  if (src.length === 0 || svgByteLength(src) > MAX_BYTES) return { ok: false };
   if (!isSafeSvg(src)) return { ok: false };
   const doc = new DOMParser().parseFromString(src, 'image/svg+xml');
   if (doc.querySelector('parsererror')) return { ok: false };

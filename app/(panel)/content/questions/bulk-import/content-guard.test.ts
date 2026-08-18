@@ -47,6 +47,23 @@ describe('rejectInvalidContent', () => {
     expect(out?.error).toMatch(/imágenes externas/);
   });
 
+  it('marca inválida la fila cuyo SVG trae un script', () => {
+    const svg =
+      '```svg\n<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>\n```';
+    const [out] = rejectInvalidContent([baseRow({ text: `Figura:\n${svg}` })]);
+    expect(out?.valid).toBe(false);
+    expect(out?.error).toBe(
+      'El SVG contiene contenido no permitido (scripts, eventos o elementos externos)',
+    );
+  });
+
+  it('marca inválida la fila cuyo SVG trae un handler on*', () => {
+    const svg = '```svg\n<svg xmlns="http://www.w3.org/2000/svg" onload="x()"><rect/></svg>\n```';
+    const [out] = rejectInvalidContent([baseRow({ explanation: svg })]);
+    expect(out?.valid).toBe(false);
+    expect(out?.error).toMatch(/contenido no permitido/);
+  });
+
   it('no pisa el motivo de una fila que ya venía inválida', () => {
     const row = baseRow({ text: '<br>', valid: false, error: 'Figura supera 30 KB tras optimizar' });
     const [out] = rejectInvalidContent([row]);

@@ -83,6 +83,25 @@ describe('QuestionForm — contenido que la app no puede dibujar', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('no guarda con un SVG que trae un script', async () => {
+    renderForm(
+      baseQuestion({
+        explanation:
+          'Mirá:\n```svg\n<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>\n```',
+      }),
+    );
+    save();
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          'El SVG contiene contenido no permitido (scripts, eventos o elementos externos)',
+        ),
+      ).toBeInTheDocument(),
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('guarda el Markdown válido con una figura sin recursos externos', async () => {
     fetchMock.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ data: {} }) });
     renderForm(
