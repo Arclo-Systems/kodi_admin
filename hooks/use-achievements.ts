@@ -6,7 +6,11 @@ import { unwrapData } from '@/lib/bff';
 export type AchievementTier = 'common' | 'uncommon' | 'rare' | 'epic' | 'limited';
 
 // Condition union — espejo de backend achievement-condition.schema.ts (NO inventar tipos).
-export const COUNTER_FIELDS = ['streak_days', 'goal_streak_days'] as const;
+// `goal_met_streak_days` (derivado de daily_progresses.goal_met), NO `goal_streak_days`:
+// ese campo de User es la META que el usuario elige. `videos_watched` salió del enum del
+// backend (nunca tuvo contador real). Estar desalineado acá no da error: el panel dibujaba
+// "undefined ≥ 28" para los logros de meta diaria.
+export const COUNTER_FIELDS = ['streak_days', 'goal_met_streak_days'] as const;
 export const COUNT_ENTITIES = [
   'correct_answers',
   'simulacros_completed',
@@ -14,13 +18,28 @@ export const COUNT_ENTITIES = [
   'quick_sessions_completed',
   'duels_won',
   'arenas_won',
-  'videos_watched',
 ] as const;
 export const LEAGUE_LEVELS = ['aprendiz', 'avanzado', 'experto', 'genio'] as const;
+// Eventos que el motor emite de verdad (backend trigger-scope.ts): el backend
+// rechaza un `event_once` con cualquier otro nombre.
+export const ACHIEVEMENT_EVENTS = [
+  'question_answered_correct',
+  'practice_session_completed',
+  'simulacro_completed',
+  'game_mode_completed',
+  'duel_won',
+  'arena_won',
+  'streak_updated',
+  'league_promoted',
+  'ai_explain_used',
+  'founder_offer_claimed',
+  'manual',
+] as const;
 
 export type CounterField = (typeof COUNTER_FIELDS)[number];
 export type CountEntity = (typeof COUNT_ENTITIES)[number];
 export type LeagueLevel = (typeof LEAGUE_LEVELS)[number];
+export type AchievementEvent = (typeof ACHIEVEMENT_EVENTS)[number];
 
 export type AchievementCondition =
   | { type: 'counter_gte'; field: CounterField; value: number }

@@ -1,10 +1,12 @@
 'use client';
 
 import {
+  ACHIEVEMENT_EVENTS,
   COUNTER_FIELDS,
   COUNT_ENTITIES,
   LEAGUE_LEVELS,
   type AchievementCondition,
+  type AchievementEvent,
   type ConditionType,
   type CounterField,
   type CountEntity,
@@ -31,7 +33,7 @@ const TYPE_LABELS: Record<ConditionType, string> = {
 
 const COUNTER_LABELS: Record<CounterField, string> = {
   streak_days: 'Días de racha',
-  goal_streak_days: 'Días de meta cumplida',
+  goal_met_streak_days: 'Días seguidos cumpliendo la meta',
 };
 
 const ENTITY_LABELS: Record<CountEntity, string> = {
@@ -39,9 +41,8 @@ const ENTITY_LABELS: Record<CountEntity, string> = {
   simulacros_completed: 'Simulacros completados',
   practice_sessions_completed: 'Sesiones de práctica',
   quick_sessions_completed: 'Sesiones rápidas',
-  duels_won: 'Duelos ganados',
+  duels_won: 'Partidas Kodi ganadas',
   arenas_won: 'Arenas ganadas',
-  videos_watched: 'Videos vistos',
 };
 
 const LEVEL_LABELS: Record<LeagueLevel, string> = {
@@ -51,6 +52,29 @@ const LEVEL_LABELS: Record<LeagueLevel, string> = {
   genio: 'Genio',
 };
 
+const EVENT_LABELS: Record<AchievementEvent, string> = {
+  question_answered_correct: 'responder bien una pregunta',
+  practice_session_completed: 'completar una sesión de práctica',
+  simulacro_completed: 'completar un simulacro',
+  game_mode_completed: 'completar un modo de juego',
+  duel_won: 'ganar una Partida Kodi',
+  arena_won: 'ganar una Arena',
+  streak_updated: 'actualizar la racha',
+  league_promoted: 'ascender de liga',
+  ai_explain_used: 'usar el tutor Pixel',
+  founder_offer_claimed: 'confirmar la compra fundador',
+  manual: 'otorgamiento manual',
+};
+
+// Una métrica sin etiqueta se muestra cruda, nunca como "undefined": el catálogo
+// lo edita el founder desde el panel y una fila vieja no puede romper la lista.
+function labelled<K extends string>(
+  labels: Record<K, string>,
+  key: string,
+): string {
+  return labels[key as K] ?? key;
+}
+
 export function defaultCondition(type: ConditionType): AchievementCondition {
   switch (type) {
     case 'counter_gte':
@@ -58,7 +82,7 @@ export function defaultCondition(type: ConditionType): AchievementCondition {
     case 'count_gte':
       return { type, entity: 'correct_answers', value: 1 };
     case 'event_once':
-      return { type, event: '' };
+      return { type, event: 'question_answered_correct' };
     case 'combo_reached':
       return { type, value: 1 };
     case 'league_reached':
@@ -162,14 +186,25 @@ export function ConditionBuilder({
 
       {value.type === 'event_once' && (
         <Field>
-          <FieldLabel htmlFor="cond-event">Nombre del evento</FieldLabel>
-          <Input
-            id="cond-event"
-            maxLength={80}
+          <FieldLabel>Evento</FieldLabel>
+          <Select
             value={value.event}
-            onChange={(e) => onChange({ ...value, event: e.target.value })}
-            placeholder="ej. first_simulacro_passed"
-          />
+            onValueChange={(ev) => onChange({ ...value, event: ev })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ACHIEVEMENT_EVENTS.map((ev) => (
+                <SelectItem key={ev} value={ev}>
+                  {EVENT_LABELS[ev]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* Antes era texto libre: un nombre inventado pasaba el form y el backend
+              lo rechazaba con 422 al guardar. */}
+          <FieldDescription>Solo eventos que el motor emite de verdad.</FieldDescription>
         </Field>
       )}
 
@@ -210,15 +245,15 @@ export function ConditionBuilder({
 export function describeCondition(c: AchievementCondition): string {
   switch (c.type) {
     case 'counter_gte':
-      return `${COUNTER_LABELS[c.field]} ≥ ${c.value}`;
+      return `${labelled(COUNTER_LABELS, c.field)} ≥ ${c.value}`;
     case 'count_gte':
-      return `${ENTITY_LABELS[c.entity]} ≥ ${c.value}`;
+      return `${labelled(ENTITY_LABELS, c.entity)} ≥ ${c.value}`;
     case 'event_once':
-      return `Evento «${c.event}» (una vez)`;
+      return `La primera vez que ${labelled(EVENT_LABELS, c.event)}`;
     case 'combo_reached':
       return `Combo ≥ ${c.value}`;
     case 'league_reached':
-      return `Llega a liga ${LEVEL_LABELS[c.level]}`;
+      return `Llega a liga ${labelled(LEVEL_LABELS, c.level)}`;
     case 'manual':
       return 'Manual';
   }
