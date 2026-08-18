@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,25 +20,41 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { EmptyState } from '@/components/admin/empty-state';
+import { PeriodSelector, type PeriodValue } from '@/components/admin/period-selector';
 import { COUNTRIES } from '@/lib/countries';
-import { toYMD } from '@/components/ui/date-picker';
 import { useCareerOffersReport } from '@/hooks/use-career-offers';
 import { ctrLabel, lastDays } from './career-offers-report-model';
 
 const ALL = '__all__';
+const PRESET_DAYS: Record<Exclude<PeriodValue, 'custom'>, number> = {
+  today: 1,
+  '7d': 7,
+  '30d': 30,
+  '90d': 90,
+};
+
+// Día calendario completo: el reporte cuenta eventos por día, no por hora.
+const startIso = (ymd: string): string => (ymd ? new Date(`${ymd}T00:00:00`).toISOString() : '');
+const endIso = (ymd: string): string => (ymd ? new Date(`${ymd}T23:59:59.999`).toISOString() : '');
 
 export function CareerOffersReportView() {
-  const [range, setRange] = useState(() => lastDays(30, new Date()));
+  const [period, setPeriod] = useState<PeriodValue>('30d');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
   const [country, setCountry] = useState<string>(ALL);
 
-  const query = useMemo(
-    () => ({
-      from: new Date(`${range.from}T00:00:00`).toISOString(),
-      to: new Date(`${range.to}T23:59:59.999`).toISOString(),
-      ...(country === ALL ? {} : { country }),
-    }),
-    [range, country],
-  );
+  // Los presets se recalculan en cada render a propósito: son strings 'YYYY-MM-DD' estables dentro
+  // del día (la queryKey no cambia) pero el rango avanza si la pestaña queda abierta hasta mañana.
+  const range =
+    period === 'custom'
+      ? { from: customFrom, to: customTo }
+      : lastDays(PRESET_DAYS[period], new Date());
+
+  const query = {
+    from: startIso(range.from),
+    to: endIso(range.to),
+    ...(country === ALL ? {} : { country }),
+  };
   const { data, isLoading, isError } = useCareerOffersReport(query);
 
   const totals = (data?.items ?? []).reduce(
@@ -52,17 +68,20 @@ export function CareerOffersReportView() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <DateRangePicker
-          from={range.from}
-          to={range.to}
-          aria-label="Período del reporte"
-          className="w-64"
-          onChange={(from, to) => {
-            // El rango a medio elegir (solo `from`) dejaría la query sin `to`: se
-            // aplica cuando están las dos puntas.
-            if (from && to) setRange({ from, to });
-          }}
-        />
+        <PeriodSelector value={period} onChange={setPeriod} />
+        {period === 'custom' && (
+          <DateRangePicker
+            from={customFrom}
+            to={customTo}
+            onChange={(from, to) => {
+              setCustomFrom(from);
+              setCustomTo(to);
+            }}
+            placeholder="Elegí el rango"
+            aria-label="Rango personalizado"
+            className="w-auto"
+          />
+        )}
         <Select value={country} onValueChange={setCountry}>
           <SelectTrigger className="w-44" aria-label="Filtrar por país">
             <SelectValue placeholder="País" />
@@ -124,10 +143,6 @@ export function CareerOffersReportView() {
           </Table>
         </div>
       )}
-
-      <p className="text-muted-foreground text-xs">
-        Período: {range.from} → {range.to} (hoy: {toYMD(new Date())}).
-      </p>
     </div>
   );
 }
