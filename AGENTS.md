@@ -69,6 +69,11 @@ dependencias, **`npx knip`** limpio + **`npm audit`** sin críticas/altas. Cero 
   HTML crudo de input de usuario. El preview sanitiza pero la app imprime literal, así que el guardado
   de preguntas y el import CSV **rechazan** HTML crudo (`lib/raw-html.ts`) y SVG con recursos externos
   (`lib/svg-safety.ts`, en paridad con `frontend/src/components/questions/rich/isSafeSvg.ts`).
+- **Contrato de contenido rico**: la sintaxis que el editor deja cargar y la que la app sabe dibujar
+  viven en `../docs/contracts/rich-content-fixtures.json` (+ `rich-tools.json`), consumido por los dos
+  repos. **Agregar una `RichTool` obliga a agregar su fixture**: falla el test de cobertura del panel
+  (`components/rich-content/fixtures.test.tsx`) y el de la app sigue fallando hasta que el renderer
+  móvil la soporte.
 
 ## Auditoría técnica
 
