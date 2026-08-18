@@ -1,5 +1,7 @@
 'use client';
 
+import { XIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -10,6 +12,10 @@ import {
 } from '@/components/ui/select';
 import { useModulesTree } from '@/hooks/use-modules-tree';
 import type { Difficulty, QuestionListQuery, QuestionStatus } from '@/hooks/use-questions';
+import {
+  DEFAULT_QUESTION_LIST_QUERY,
+  hasActiveQuestionFilters,
+} from '@/lib/question-list-query-url';
 
 const ALL = '__all__';
 
@@ -154,6 +160,18 @@ export function QuestionFilters({
           <SelectItem value="false">Solo del banco</SelectItem>
         </SelectContent>
       </Select>
+
+      {hasActiveQuestionFilters(value) && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onChange(DEFAULT_QUESTION_LIST_QUERY)}
+        >
+          <XIcon className="size-4" />
+          Limpiar filtros
+        </Button>
+      )}
     </div>
   );
 }

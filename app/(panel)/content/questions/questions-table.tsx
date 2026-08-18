@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { EyeIcon, LockIcon, PlusIcon } from 'lucide-react';
@@ -15,6 +15,10 @@ import { DataTable } from '@/components/admin/data-table';
 import { Button } from '@/components/ui/button';
 import { can } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
+import {
+  parseQuestionListQuery,
+  serializeQuestionListQuery,
+} from '@/lib/question-list-query-url';
 import { QuestionDifficulty, QuestionStatusBadge } from '@/lib/question-status';
 import { StatusBadge } from '@/lib/status-badge';
 import { QuestionFilters } from './question-filters';
@@ -72,12 +76,53 @@ const columns: ColumnDef<QuestionListItem, unknown>[] = [
   },
 ];
 
+const LIST_PATH = '/content/questions';
+const FILTERS_STORAGE_KEY = 'kodi-admin:questions:filters';
+
+// La URL es la fuente de verdad (atrás y recargar conservan todo), pero varias
+// pantallas vuelven con `router.push('/content/questions')` pelado; el espejo en
+// sessionStorage es lo que hace que esos regresos no pierdan el filtro.
+function readStoredFilters(): string | null {
+  try {
+    return sessionStorage.getItem(FILTERS_STORAGE_KEY);
+  } catch {
+    // Storage bloqueado (modo privado / cookies off): se pierde la memoria, no el panel.
+    return null;
+  }
+}
+
+function writeStoredFilters(qs: string): void {
+  try {
+    if (qs) sessionStorage.setItem(FILTERS_STORAGE_KEY, qs);
+    else sessionStorage.removeItem(FILTERS_STORAGE_KEY);
+  } catch {
+    // Ídem: no poder recordar el filtro nunca debe romper el filtrado.
+  }
+}
+
 export function QuestionsTable({ role }: { role: AdminRole }) {
   const router = useRouter();
-  const [query, setQuery] = useState<QuestionListQuery>({ page: 1, pageSize: 20 });
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const query = useMemo(() => parseQuestionListQuery(new URLSearchParams(search)), [search]);
   const [selected, setSelected] = useState<QuestionListItem[]>([]);
   const [tableKey, setTableKey] = useState(0);
   const { data, isLoading } = useQuestions(query);
+
+  const setQuery = useCallback(
+    (next: QuestionListQuery) => {
+      const qs = serializeQuestionListQuery(next);
+      writeStoredFilters(qs);
+      router.replace(qs ? `${LIST_PATH}?${qs}` : LIST_PATH, { scroll: false });
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    if (search) return;
+    const stored = readStoredFilters();
+    if (stored) router.replace(`${LIST_PATH}?${stored}`, { scroll: false });
+  }, [search, router]);
   // Las acciones en lote (bulk-status / bulk-delete) son admin-only en el backend;
   // sin esa capacidad no tiene sentido ofrecer selección.
   const canManage = can(role, 'content:question:activate');
