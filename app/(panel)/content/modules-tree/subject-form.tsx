@@ -20,6 +20,12 @@ type SubjectValues = {
   region: string;
   assetUrl: string | null;
   wheelAssetUrl: string | null;
+  // null = "sin definir, usá las cifras del módulo". Números, no strings: el
+  // backend valida enteros y mandar "60" sería un 422 evitable. Los rangos
+  // (1..500 / 1..600) los impone el backend (`subject.dto.ts`, los MISMOS que
+  // `module.dto.ts`) y el min/max del input.
+  examQuestionCount: number | null;
+  examDurationMin: number | null;
 };
 
 export function SubjectForm({
@@ -42,6 +48,19 @@ export function SubjectForm({
   const usaMaterias =
     tree.find((x) => x.id === view.moduleId)?.duelCategorySource === 'subjects';
 
+  // Adenda §10 (ajuste 2026-08-19): donde la materia ES el examen —admisión
+  // (UCR / UNA / TEC) y per_subject (PEN)— el conteo y la duración oficiales se
+  // cargan acá. En `simple` el examen es el módulo y estos campos no tienen
+  // dueño: ni se muestran ni se mandan (mandarlos en null borraría datos que no
+  // son de esta pantalla).
+  //
+  // Es un criterio DISTINTO de `usaMaterias`, que mira `duelCategorySource`:
+  // no se reutiliza ninguno para el otro. El guard sobre `undefined` importa:
+  // con el árbol sin cargar, `undefined !== 'simple'` mostraría los campos de más.
+  const moduloPadre = tree.find((x) => x.id === view.moduleId);
+  const materiaEsExamen =
+    moduloPadre !== undefined && moduloPadre.examMode !== 'simple';
+
   const form = useForm<SubjectValues>({
     defaultValues: {
       name: existing?.name ?? '',
@@ -50,6 +69,8 @@ export function SubjectForm({
       region: '',
       assetUrl: existing?.assetUrl ?? null,
       wheelAssetUrl: existing?.wheelAssetUrl ?? null,
+      examQuestionCount: existing?.examQuestionCount ?? null,
+      examDurationMin: existing?.examDurationMin ?? null,
     },
   });
 
@@ -61,6 +82,8 @@ export function SubjectForm({
         colorHex: existing.colorHex,
         assetUrl: existing.assetUrl,
         wheelAssetUrl: existing.wheelAssetUrl,
+        examQuestionCount: existing.examQuestionCount,
+        examDurationMin: existing.examDurationMin,
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existing?.id]);
@@ -69,6 +92,12 @@ export function SubjectForm({
     // Si el tablero se arma con temas, el campo ni se muestra; mandarlo
     // guardaría arte que la ruleta nunca va a usar.
     const ruleta = usaMaterias ? { wheelAssetUrl: v.wheelAssetUrl } : {};
+    const examen = materiaEsExamen
+      ? {
+          examQuestionCount: v.examQuestionCount,
+          examDurationMin: v.examDurationMin,
+        }
+      : {};
     try {
       if (view.kind === 'new-subject') {
         await m.createSubject.mutateAsync({
@@ -79,6 +108,7 @@ export function SubjectForm({
           region: v.region || null,
           assetUrl: v.assetUrl,
           ...ruleta,
+          ...examen,
         });
         toast.success('Materia creada');
       } else {
@@ -90,6 +120,7 @@ export function SubjectForm({
           colorHex: v.colorHex,
           assetUrl: v.assetUrl,
           ...ruleta,
+          ...examen,
         });
         toast.success('Materia actualizada');
       }
@@ -120,7 +151,9 @@ export function SubjectForm({
           render={({ field }) => (
             <Field>
               <FieldLabel>Nombre</FieldLabel>
-              <Input {...field} />
+              {/* `FieldLabel` no asocia con el input (no emite `htmlFor`/`id`):
+                  sin `aria-label` el campo queda sin nombre accesible. */}
+              <Input aria-label="Nombre" {...field} />
             </Field>
           )}
         />
@@ -132,7 +165,7 @@ export function SubjectForm({
               render={({ field }) => (
                 <Field>
                   <FieldLabel>Nombre corto</FieldLabel>
-                  <Input {...field} />
+                  <Input aria-label="Nombre corto" {...field} />
                 </Field>
               )}
             />
@@ -142,10 +175,80 @@ export function SubjectForm({
               render={({ field }) => (
                 <Field>
                   <FieldLabel>Región (opcional)</FieldLabel>
-                  <Input {...field} />
+                  <Input aria-label="Región (opcional)" {...field} />
                 </Field>
               )}
             />
+          </div>
+        )}
+
+        {materiaEsExamen && (
+          <div className="space-y-4 border-t pt-4">
+            <p className="text-sm font-medium">Examen</p>
+            <p className="text-muted-foreground text-xs">
+              En este módulo cada materia es un examen. Si lo dejás vacío, el
+              simulacro usa la duración y la cantidad de preguntas del módulo.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <Controller
+                name="examQuestionCount"
+                control={form.control}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Preguntas</FieldLabel>
+                    {/* No se puede usar `{...field}`: el valor es `number | null`
+                        y pasar `null` vuelve el input no-controlado. */}
+                    <Input
+                      type="number"
+                      min={1}
+                      max={500}
+                      placeholder="Sin definir"
+                      aria-label="Cantidad de preguntas del examen"
+                      value={field.value ?? ''}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === '' ? null : Number(e.target.value),
+                        )
+                      }
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Cuántas trae este examen.
+                    </p>
+                  </Field>
+                )}
+              />
+              <Controller
+                name="examDurationMin"
+                control={form.control}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Duración</FieldLabel>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={600}
+                      placeholder="Sin definir"
+                      aria-label="Duración del examen en minutos"
+                      value={field.value ?? ''}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === '' ? null : Number(e.target.value),
+                        )
+                      }
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
+                    <p className="text-muted-foreground text-xs">
+                      Minutos de este examen.
+                    </p>
+                  </Field>
+                )}
+              />
+            </div>
           </div>
         )}
 
