@@ -29,6 +29,11 @@ export type CreateModuleInput = ModuleVisuals & {
   fullName: string;
   version: string;
   hasAdmissionCutoffs: boolean;
+  /** Simulacro: duración y cantidad de preguntas. null = sin definir. */
+  examDurationMin?: number | null;
+  examQuestionCount?: number | null;
+  /** Preguntas del examen sorpresa diario. */
+  surpriseQuestionCount?: number;
 };
 export type UpdateModuleInput = ModuleVisuals & {
   shortName?: string;

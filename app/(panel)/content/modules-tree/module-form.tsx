@@ -134,7 +134,19 @@ export function ModuleForm({
   async function submit(v: ModuleValues): Promise<void> {
     try {
       if (view.kind === 'new-module') {
-        await m.createModule.mutateAsync({ ...v });
+        await m.createModule.mutateAsync({
+          ...v,
+          // Mismo criterio que el update: vacío = sin definir (el backend lo
+          // acepta nullish). Se recorta antes: Number(' ') da 0 y el backend
+          // exige mínimo 1.
+          examDurationMin: v.examDurationMin.trim() === '' ? null : Number(v.examDurationMin),
+          examQuestionCount:
+            v.examQuestionCount.trim() === '' ? null : Number(v.examQuestionCount),
+          surpriseQuestionCount:
+            v.surpriseQuestionCount.trim() === ''
+              ? undefined
+              : Number(v.surpriseQuestionCount),
+        });
         toast.success('Módulo creado (inactivo)');
       } else {
         await m.updateModule.mutateAsync({
@@ -258,7 +270,9 @@ export function ModuleForm({
           render={({ field }) => (
             <Field>
               <FieldLabel>Nombre corto</FieldLabel>
-              <Input {...field} />
+              {/* `FieldLabel` no asocia con el input (no emite `htmlFor`/`id`):
+                  sin `aria-label` el campo queda sin nombre accesible. */}
+              <Input aria-label="Nombre corto" {...field} />
             </Field>
           )}
         />
@@ -268,7 +282,7 @@ export function ModuleForm({
           render={({ field }) => (
             <Field>
               <FieldLabel>Nombre completo</FieldLabel>
-              <Input {...field} />
+              <Input aria-label="Nombre completo" {...field} />
             </Field>
           )}
         />
@@ -294,8 +308,7 @@ export function ModuleForm({
         />
 
         </div>
-        {!isNew && (
-          <div className="space-y-4 border-t pt-4">
+        <div className="space-y-4 border-t pt-4">
             <p className="text-sm font-medium">Configuración del examen</p>
             {isAdmission && (
               <p className="text-muted-foreground text-xs">
@@ -309,11 +322,16 @@ export function ModuleForm({
                 alineados y el texto de ayuda no abre huecos. Apoyar el input
                 abajo no alcanzaba acá porque hay ayuda debajo del campo. */}
             <div className="grid grid-cols-2 grid-rows-[auto_auto_auto] gap-x-3 gap-y-2 [&>*]:row-span-3 [&>*]:grid [&>*]:grid-rows-subgrid [&>*]:gap-y-2">
+              {/* B2: duración y preguntas se piden DESDE EL ALTA. Un módulo que
+                  nacía en null hacía que el simulacro de la app cayera a 180/100
+                  —la configuración de otro examen— sin que nadie lo notara. El
+                  resto de los campos tienen default sano en el backend y siguen
+                  siendo solo-edición para no alargar el alta. */}
               {/* Los exámenes de admisión (PAA, TEC) no se aprueban ni se
                   reprueban: se compite contra la cohorte. El backend ya los
                   trata así —predictor y estadísticas devuelven la nota en
                   nulo—, así que mostrar el campo solo confundía. */}
-              {!isAdmission && (
+              {!isNew && !isAdmission && (
                 <Controller
                   name="approvalThreshold"
                   control={form.control}
@@ -337,25 +355,27 @@ export function ModuleForm({
                   )}
                 />
               )}
-              <Controller
-                name="noRepeatWindowQuestions"
-                control={form.control}
-                render={({ field }) => (
-                  <Field>
-                    <FieldLabel>No repetir</FieldLabel>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={500}
-                      value={field.value}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                    />
-                    <p className="text-muted-foreground text-xs">
-                      Últimas N respondidas. 0 = sin margen.
-                    </p>
-                  </Field>
-                )}
-              />
+              {!isNew && (
+                <Controller
+                  name="noRepeatWindowQuestions"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field>
+                      <FieldLabel>No repetir</FieldLabel>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={500}
+                        value={field.value}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                      <p className="text-muted-foreground text-xs">
+                        Últimas N respondidas. 0 = sin margen.
+                      </p>
+                    </Field>
+                  )}
+                />
+              )}
               {/* `justify-between` apoya el input abajo de la celda: si una
                   etiqueta ocupa dos líneas y la de al lado una, los campos
                   siguen alineados en vez de quedar escalonados. */}
@@ -365,7 +385,14 @@ export function ModuleForm({
                 render={({ field }) => (
                   <Field>
                     <FieldLabel>Duración</FieldLabel>
-                    <Input type="number" min={1} max={600} placeholder="Sin definir" {...field} />
+                    <Input
+                      type="number"
+                      min={1}
+                      max={600}
+                      placeholder="Sin definir"
+                      aria-label="Duración del examen en minutos"
+                      {...field}
+                    />
                     <p className="text-muted-foreground text-xs">
                       Minutos del examen real.
                     </p>
@@ -378,29 +405,36 @@ export function ModuleForm({
                 render={({ field }) => (
                   <Field>
                     <FieldLabel>Preguntas</FieldLabel>
-                    <Input type="number" min={1} placeholder="Sin definir" {...field} />
+                    <Input
+                      type="number"
+                      min={1}
+                      placeholder="Sin definir"
+                      aria-label="Cantidad de preguntas del examen"
+                      {...field}
+                    />
                     <p className="text-muted-foreground text-xs">
                       Cuántas trae el examen real.
                     </p>
                   </Field>
                 )}
               />
-              <Controller
-                name="surpriseQuestionCount"
-                control={form.control}
-                render={({ field }) => (
-                  <Field>
-                    <FieldLabel>Examen sorpresa</FieldLabel>
-                    <Input type="number" min={1} max={50} placeholder="5" {...field} />
-                    <p className="text-muted-foreground text-xs">
-                      Preguntas del examen sorpresa diario.
-                    </p>
-                  </Field>
-                )}
-              />
+              {!isNew && (
+                <Controller
+                  name="surpriseQuestionCount"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field>
+                      <FieldLabel>Examen sorpresa</FieldLabel>
+                      <Input type="number" min={1} max={50} placeholder="5" {...field} />
+                      <p className="text-muted-foreground text-xs">
+                        Preguntas del examen sorpresa diario.
+                      </p>
+                    </Field>
+                  )}
+                />
+              )}
             </div>
           </div>
-        )}
 
         {!isNew && (
           <div className="space-y-4 border-t pt-4">
