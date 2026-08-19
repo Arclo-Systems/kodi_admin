@@ -47,7 +47,16 @@ export type UserDetail = {
   userModules: {
     module: { shortName: string; fullName: string; examType: string; icon: string };
   }[];
-  examDates: { moduleId: string; examDate: string; module: { shortName: string } }[];
+  // B2: el examen activo es lo que decide qué contenido ve el usuario. Sin esto
+  // soporte no podía diagnosticar "me salen preguntas de otro examen".
+  examDates: {
+    moduleId: string;
+    examKey: string;
+    examName: string;
+    examDate: string | null;
+    isActive: boolean;
+    module: { shortName: string };
+  }[];
   _count?: {
     userAchievements: number;
     subscriptions: number;

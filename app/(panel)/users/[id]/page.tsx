@@ -17,6 +17,7 @@ import { KpiCard } from '@/components/admin/kpi-card';
 import { getUserDetail, type UserDetail } from '@/lib/user-detail';
 import { ProfileEditForm } from './profile-edit-form';
 import { NotificationsCard } from './notifications-card';
+import { UserExams } from './user-exams';
 
 type UserStats = {
   accuracyPct: number;
@@ -160,6 +161,13 @@ function AccountCard({ user }: { user: UserDetail }) {
 
         <Subsection title="Módulos registrados">
           <ModuleChips user={user} />
+        </Subsection>
+
+        <Subsection
+          title="Exámenes"
+          hint="Solo lectura: el examen activo lo cambia el usuario desde Mis exámenes."
+        >
+          <UserExams examDates={user.examDates} />
         </Subsection>
       </CardContent>
     </Card>
