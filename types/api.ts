@@ -1005,7 +1005,7 @@ export interface paths {
         put?: never;
         /**
          * Activar congelamiento de racha (1/semana)
-         * @description Consume el slot semanal y protege la racha del próximo día sin práctica.
+         * @description Arma la protección del próximo día sin práctica. Usa primero el cupo semanal gratis (mode free_quota). Si el cupo ya se gastó y hay un Protector de Racha en el inventario responde mode protector_pending SIN consumirlo: lo consume el corte nocturno solo si de verdad hizo falta. Sin cupo y sin Protector responde 409 STREAK_FREEZE_USED.
          */
         post: operations["StreakController_freeze"];
         delete?: never;
@@ -9284,9 +9284,12 @@ export interface components {
                 streak_days: number;
                 streak_last_date: string | null;
                 streak_freeze_used_this_week: boolean;
+                today: string;
                 week: {
                     date: string;
                     done: boolean;
+                    /** @enum {string} */
+                    status: "completed" | "frozen" | "missed" | "today-done" | "today-pending" | "future";
                 }[];
             };
         };
@@ -9294,6 +9297,9 @@ export interface components {
             data: {
                 streak_days: number;
                 freeze_applied: boolean;
+                /** @enum {string} */
+                mode: "free_quota" | "protector_pending";
+                message: string;
             };
         };
         StoreItemListResponse: {
@@ -14947,6 +14953,7 @@ export interface components {
                     kokosReward: number;
                     kolonesReward: number;
                     country: string | null;
+                    plans: ("free" | "basico" | "plus" | "pro")[];
                     isActive: boolean;
                     /** Format: uuid */
                     createdBy: string | null;
@@ -14976,6 +14983,7 @@ export interface components {
                 kokosReward: number;
                 kolonesReward: number;
                 country: string | null;
+                plans: ("free" | "basico" | "plus" | "pro")[];
                 isActive: boolean;
                 /** Format: uuid */
                 createdBy: string | null;
@@ -15004,6 +15012,15 @@ export interface components {
             kolonesReward: number;
             /** @enum {string|null} */
             country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            /**
+             * @default [
+             *       "free",
+             *       "basico",
+             *       "plus",
+             *       "pro"
+             *     ]
+             */
+            plans: ("free" | "basico" | "plus" | "pro")[];
             /** @default true */
             isActive: boolean;
         };
@@ -15016,6 +15033,7 @@ export interface components {
             kolonesReward?: number;
             /** @enum {string|null} */
             country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            plans?: ("free" | "basico" | "plus" | "pro")[];
             isActive?: boolean;
         };
         MissionRefreshConfigResponse: {
