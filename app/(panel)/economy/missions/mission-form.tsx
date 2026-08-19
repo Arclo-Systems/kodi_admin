@@ -17,7 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { COUNTRIES } from '@/lib/countries';
+import { PLAN_KEYS, PlanBadge, type PlanKey } from '@/lib/plans';
 import {
   MISSION_TYPES,
   MISSION_TYPE_LABELS,
@@ -43,6 +45,7 @@ type FormValues = {
   xpReward: number;
   kokosReward: number;
   kolonesReward: number;
+  plans: PlanKey[];
   isActive: boolean;
 };
 
@@ -57,6 +60,7 @@ function toValues(t: MissionTemplate): FormValues {
     xpReward: t.xpReward,
     kokosReward: t.kokosReward,
     kolonesReward: t.kolonesReward,
+    plans: t.plans,
     isActive: t.isActive,
   };
 }
@@ -70,6 +74,7 @@ function toUpdateInput(v: FormValues): Omit<MissionTemplateInput, 'type' | 'cade
     xpReward: v.xpReward,
     kokosReward: v.kokosReward,
     kolonesReward: v.kolonesReward,
+    plans: v.plans,
     isActive: v.isActive,
   };
 }
@@ -98,6 +103,9 @@ function MissionFormInner({ templateId, initial }: { templateId?: string; initia
       xpReward: 0,
       kokosReward: 0,
       kolonesReward: 0,
+      // Sin elección explícita la misión llega a todo el mundo: restringir por
+      // plan es la excepción, no el default.
+      plans: [...PLAN_KEYS],
       isActive: true,
     },
   });
@@ -202,6 +210,45 @@ function MissionFormInner({ templateId, initial }: { templateId?: string; initia
                 )}
               />
             </div>
+
+            <Controller
+              name="plans"
+              control={form.control}
+              rules={{ validate: (v) => v.length > 0 || 'Elegí al menos un plan' }}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel>Planes</FieldLabel>
+                  <div className="flex flex-wrap gap-2">
+                    {PLAN_KEYS.map((p) => (
+                      <label
+                        key={p}
+                        htmlFor={`m-plan-${p}`}
+                        className="flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm"
+                      >
+                        <Checkbox
+                          id={`m-plan-${p}`}
+                          checked={field.value.includes(p)}
+                          // Se rearma desde PLAN_KEYS para que el orden guardado sea
+                          // siempre el canónico y no el de los clics del admin.
+                          onCheckedChange={(c) =>
+                            field.onChange(
+                              PLAN_KEYS.filter((k) =>
+                                k === p ? c === true : field.value.includes(k),
+                              ),
+                            )
+                          }
+                        />
+                        <PlanBadge plan={p} />
+                      </label>
+                    ))}
+                  </div>
+                  <FieldDescription>
+                    Quiénes reciben la misión. Por defecto la reciben todos.
+                  </FieldDescription>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
           </fieldset>
 
           <fieldset className="min-w-0 space-y-4">

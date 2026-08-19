@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { COUNTRIES } from '@/lib/countries';
+import { PlanBadge } from '@/lib/plans';
 
 const ALL = '__all__';
 
@@ -50,6 +51,17 @@ const columns: ColumnDef<MissionTemplate, unknown>[] = [
     header: 'País',
     cell: ({ row }) =>
       row.original.country ? `${row.original.country} · ${countryLabel(row.original.country)}` : 'Global',
+  },
+  {
+    accessorKey: 'plans',
+    header: 'Planes',
+    cell: ({ row }) => (
+      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+        {row.original.plans.map((p) => (
+          <PlanBadge key={p} plan={p} />
+        ))}
+      </div>
+    ),
   },
   { accessorKey: 'target', header: 'Meta' },
   { id: 'reward', header: 'Recompensa', cell: ({ row }) => rewardLabel(row.original) },

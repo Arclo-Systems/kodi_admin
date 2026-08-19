@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import type { PlanKey } from '@/lib/plans';
 
 export const MISSION_TYPES = [
   'answer_correct_in_subject',
@@ -43,6 +44,8 @@ export type MissionTemplate = {
   kokosReward: number;
   kolonesReward: number;
   country: string | null;
+  /** Planes que reciben la misión. Nunca vacío: el backend exige al menos uno. */
+  plans: PlanKey[];
   isActive: boolean;
   createdBy: string | null;
   updatedBy: string | null;
@@ -60,6 +63,7 @@ export type MissionTemplateInput = {
   kokosReward: number;
   kolonesReward: number;
   country: string | null;
+  plans: PlanKey[];
   isActive: boolean;
 };
 

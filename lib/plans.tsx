@@ -1,6 +1,9 @@
 import { cn } from '@/lib/utils';
 
-type PlanKey = 'free' | 'basico' | 'plus' | 'pro';
+/** Orden canónico de los planes: de menor a mayor tier. */
+export const PLAN_KEYS = ['free', 'basico', 'plus', 'pro'] as const;
+
+export type PlanKey = (typeof PLAN_KEYS)[number];
 
 // Color por tier (mismo criterio que el gráfico "Suscriptores por plan" del dashboard): cielo → teal
 // → dorado. Se muestra como punto de color + label en texto normal (no chip con fondo): el color va
