@@ -8,6 +8,7 @@ import { CircleCheckIcon, CircleOffIcon, PlusIcon, WrenchIcon } from 'lucide-rea
 import {
   useMissionTemplates,
   MISSION_TYPE_LABELS,
+  templatePlans,
   type MissionTemplate,
   type MissionTemplateListQuery,
   type MissionType,
@@ -57,7 +58,7 @@ const columns: ColumnDef<MissionTemplate, unknown>[] = [
     header: 'Planes',
     cell: ({ row }) => (
       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-        {row.original.plans.map((p) => (
+        {templatePlans(row.original).map((p) => (
           <PlanBadge key={p} plan={p} />
         ))}
       </div>

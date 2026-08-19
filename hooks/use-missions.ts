@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
-import type { PlanKey } from '@/lib/plans';
+import { PLAN_KEYS, type PlanKey } from '@/lib/plans';
 
 export const MISSION_TYPES = [
   'answer_correct_in_subject',
@@ -66,6 +66,16 @@ export type MissionTemplateInput = {
   plans: PlanKey[];
   isActive: boolean;
 };
+
+/**
+ * Los planes del template, tolerando que no vengan: una entrada vieja en caché de
+ * TanStack Query (guardada antes de que el backend expusiera el campo) llegaría sin
+ * `plans` y reventaría el render. Sin dato = la misión llega a todos, que es el
+ * default del backend.
+ */
+export function templatePlans(t: { plans?: PlanKey[] }): PlanKey[] {
+  return t.plans ?? [...PLAN_KEYS];
+}
 
 export type MissionTemplateListQuery = {
   type?: MissionType;

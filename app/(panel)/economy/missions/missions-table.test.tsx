@@ -24,10 +24,19 @@ const template: MissionTemplate = {
   updatedAt: '2026-08-19T00:00:00.000Z',
 };
 
+/** Una entrada guardada en caché de TanStack antes de que el backend expusiera `plans`. */
+function sinPlanes(t: MissionTemplate): MissionTemplate {
+  const copia: Partial<MissionTemplate> = { ...t };
+  delete copia.plans;
+  return copia as MissionTemplate;
+}
+
+const legacy = sinPlanes({ ...template, id: 't2', title: 'Sin planes' });
+
 vi.mock('@/hooks/use-missions', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-missions')>()),
   useMissionTemplates: () => ({
-    data: { items: [template], total: 1, page: 1, pageSize: 20 },
+    data: { items: [template, legacy], total: 2, page: 1, pageSize: 20 },
     isLoading: false,
   }),
 }));
@@ -42,5 +51,14 @@ describe('MissionsTable', () => {
     expect(fila).toHaveTextContent('Plus');
     expect(fila).toHaveTextContent('Pro');
     expect(fila).not.toHaveTextContent('Free');
+  });
+
+  it('un template sin planes (caché vieja) se pinta como abierto a todos', () => {
+    render(<MissionsTable />);
+
+    const fila = screen.getByRole('row', { name: /sin planes/i });
+    for (const label of ['Free', 'Básico', 'Plus', 'Pro']) {
+      expect(fila).toHaveTextContent(label);
+    }
   });
 });

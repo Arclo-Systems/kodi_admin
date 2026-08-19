@@ -104,6 +104,17 @@ describe('MissionForm — planes alcanzados', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
+  it('un template sin planes (caché vieja) se edita como abierto a todos', () => {
+    const sinPlanes: Partial<MissionTemplate> = template();
+    delete sinPlanes.plans;
+    detail = sinPlanes as MissionTemplate;
+    render(<MissionForm templateId="t1" />);
+
+    for (const label of ['Free', 'Básico', 'Plus', 'Pro']) {
+      expect(screen.getByLabelText(label)).toBeChecked();
+    }
+  });
+
   it('la edición precarga los planes vigentes y los devuelve al guardar', async () => {
     detail = template({ plans: ['plus', 'pro'] });
     render(<MissionForm templateId="t1" />);

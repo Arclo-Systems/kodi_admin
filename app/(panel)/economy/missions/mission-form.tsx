@@ -25,6 +25,7 @@ import {
   MISSION_TYPE_LABELS,
   MISSION_CADENCES,
   MISSION_CADENCE_LABELS,
+  templatePlans,
   useMissionTemplate,
   useMissionTemplateMutations,
   type MissionTemplate,
@@ -60,7 +61,7 @@ function toValues(t: MissionTemplate): FormValues {
     xpReward: t.xpReward,
     kokosReward: t.kokosReward,
     kolonesReward: t.kolonesReward,
-    plans: t.plans,
+    plans: templatePlans(t),
     isActive: t.isActive,
   };
 }
