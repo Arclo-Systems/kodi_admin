@@ -379,7 +379,7 @@ export interface paths {
         };
         /**
          * Preguntas demo públicas (sin auth)
-         * @description Para landing/onboarding. Sin correct_option_id. `module_id` es obligatorio: el mazo demo se cura por módulo desde el panel.
+         * @description Para landing/onboarding. Sin correct_option_id. `module_id` es obligatorio: el mazo demo se cura por módulo desde el panel. Cada item trae `subject_name` y `subject_color` para el eyebrow del player (A107).
          */
         get: operations["QuestionsController_demo"];
         put?: never;
@@ -1467,7 +1467,7 @@ export interface paths {
         put?: never;
         /**
          * Registrar un módulo (dispara UserModuleRegisteredEvent)
-         * @description Habilita práctica + asigna a grupo de liga vía LeagueXpHandler.
+         * @description Habilita práctica + asigna a grupo de liga vía LeagueXpHandler. En módulos de `exam_mode: admission`, `exam_keys` es OBLIGATORIO (una o más materias del módulo, que ahí modelan los exámenes): el primero queda como examen activo. Con `exam_keys: []` responde 422 EXAMS_REQUIRED — "admisión sin exámenes declarados" no es un estado válido. Si la clave viene AUSENTE (cliente anterior a B2) el servidor declara la primera materia del módulo y marca `onboarding_flags.exam_auto_assigned` para que la app lo avise.
          */
         post: operations["UserModulesController_register"];
         delete?: never;
@@ -8578,6 +8578,9 @@ export interface components {
             country: "CR" | "GT" | "SV" | "HN" | "PA";
             referred_by_code?: string;
             module_ids?: string[];
+            module_exam_keys?: {
+                [key: string]: string[];
+            };
             daily_goal_target?: number;
             goal_streak_days?: number;
             /** @enum {string} */
@@ -8725,6 +8728,7 @@ export interface components {
                 exams: {
                     exam_key: string;
                     name: string;
+                    color_hex: string;
                 }[];
             }[];
             meta: {
@@ -8831,6 +8835,11 @@ export interface components {
                 }[];
                 /** @enum {string} */
                 difficulty: "easy" | "medium" | "hard";
+                /** Format: uuid */
+                topic_id: string;
+                topic_name?: string;
+                subject_name?: string;
+                subject_color?: string;
             }[];
             meta: {
                 page: number;
@@ -8990,6 +8999,7 @@ export interface components {
                 exams: {
                     exam_key: string;
                     name: string;
+                    color_hex: string;
                 }[];
             }[];
             meta: {
@@ -9547,6 +9557,25 @@ export interface components {
                 /** Format: uuid */
                 active_module_id: string | null;
                 active_exam_key: string | null;
+                active_module: {
+                    /** Format: uuid */
+                    id: string;
+                    short_name: string;
+                    full_name: string;
+                    exam_type: string;
+                    /** @enum {string} */
+                    exam_mode: "simple" | "per_subject" | "admission";
+                    color_hex: string;
+                    icon_url: string | null;
+                    character_url: string | null;
+                    exam_question_count: number | null;
+                    exam_duration_min: number | null;
+                } | null;
+                active_exam: {
+                    key: string;
+                    name: string;
+                    color_hex: string;
+                } | null;
                 daily_goal_target: number;
                 streak_days: number;
                 streak_last_date: string | null;
@@ -9785,6 +9814,7 @@ export interface components {
         RegisterModuleDto: {
             /** Format: uuid */
             module_id: string;
+            exam_keys?: string[];
         };
         UserModuleRegisteredResponse: {
             data: {
@@ -12082,7 +12112,10 @@ export interface components {
                 examDates: {
                     /** Format: uuid */
                     moduleId: string;
-                    examDate: string;
+                    examKey: string;
+                    examName: string;
+                    examDate: string | null;
+                    isActive: boolean;
                     module: {
                         shortName: string;
                     };
@@ -19655,6 +19688,13 @@ export interface operations {
                     "application/json": components["schemas"]["UserModuleRegisteredResponse"];
                 };
             };
+            /** @description EXAMS_REQUIRED (admisión con exam_keys vacío, o sin materias publicadas) · EXAM_NOT_IN_MODULE (una llave no es materia del módulo) · MODULE_LIMIT_REACHED · MODULE_NOT_AVAILABLE (módulo despublicado) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     UserModulesController_unregister: {
@@ -21909,6 +21949,13 @@ export interface operations {
         responses: {
             /** @description Examen deseleccionado */
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description LAST_EXAM_REQUIRED — en módulos de admisión no se puede quedar sin exámenes declarados: el examen declarado es el alcance del contenido que se practica. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
