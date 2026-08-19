@@ -2480,7 +2480,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Invitar a una racha compartida */
+        /**
+         * Invitar a una racha compartida
+         * @description Sobre un par sin racha crea la invitación. Sobre una racha ROTA la vuelve a abrir en pending con el nuevo invitador (una racha rota no revive sola). Sobre una racha pending o activa responde 409 ALREADY_EXISTS.
+         */
         post: operations["FriendStreakController_invite"];
         /** Terminar o cancelar la racha compartida */
         delete: operations["FriendStreakController_remove"];
@@ -8750,6 +8753,8 @@ export interface components {
                 asset_url: string | null;
                 wheel_asset_url: string | null;
                 available_questions: number;
+                exam_question_count: number | null;
+                exam_duration_min: number | null;
             }[];
             meta: {
                 page: number;
@@ -9575,6 +9580,8 @@ export interface components {
                     key: string;
                     name: string;
                     color_hex: string;
+                    exam_question_count: number | null;
+                    exam_duration_min: number | null;
                 } | null;
                 daily_goal_target: number;
                 streak_days: number;
@@ -12765,6 +12772,8 @@ export interface components {
                     colorHex: string;
                     assetUrl: string | null;
                     wheelAssetUrl: string | null;
+                    examQuestionCount: number | null;
+                    examDurationMin: number | null;
                     topics: {
                         /** Format: uuid */
                         id: string;
@@ -12880,6 +12889,8 @@ export interface components {
             /** Format: uri */
             wheelAssetUrl?: string | null;
             region?: string | null;
+            examQuestionCount?: number | null;
+            examDurationMin?: number | null;
         };
         SubjectAdminResponse: {
             data: {
@@ -12894,6 +12905,8 @@ export interface components {
                 assetUrl: string | null;
                 wheelAssetUrl: string | null;
                 region: string | null;
+                examQuestionCount: number | null;
+                examDurationMin: number | null;
             };
         };
         ReorderDto: {
@@ -12915,6 +12928,8 @@ export interface components {
             /** Format: uri */
             wheelAssetUrl?: string | null;
             region?: string | null;
+            examQuestionCount?: number | null;
+            examDurationMin?: number | null;
         };
         CreateTopicDto: {
             /** Format: uuid */

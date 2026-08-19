@@ -63,19 +63,30 @@ type NodeAssets = {
   wheelAssetUrl?: string | null;
 };
 
-export type CreateSubjectInput = NodeAssets & {
-  moduleId: string;
-  name: string;
-  shortName: string;
-  colorHex: string;
-  region?: string | null;
+/**
+ * Adenda §10: cifras del examen; solo se mandan donde la materia ES el examen
+ * (admisión y `per_subject`).
+ */
+type SubjectExamConfig = {
+  examQuestionCount?: number | null;
+  examDurationMin?: number | null;
 };
-export type UpdateSubjectInput = NodeAssets & {
-  name?: string;
-  shortName?: string;
-  colorHex?: string;
-  region?: string | null;
-};
+
+export type CreateSubjectInput = NodeAssets &
+  SubjectExamConfig & {
+    moduleId: string;
+    name: string;
+    shortName: string;
+    colorHex: string;
+    region?: string | null;
+  };
+export type UpdateSubjectInput = NodeAssets &
+  SubjectExamConfig & {
+    name?: string;
+    shortName?: string;
+    colorHex?: string;
+    region?: string | null;
+  };
 /**
  * El tema suma color propio; solo se llena en módulos de admisión. Sin arte de
  * práctica: esa ilustración es de la materia.

@@ -36,6 +36,13 @@ export type TreeSubject = {
   assetUrl: string | null;
   /** Arte del sector de la ruleta de Partida Kodi: se lee chico y en movimiento. */
   wheelAssetUrl: string | null;
+  /**
+   * Adenda B2 §10: conteo y duración del examen. Solo se cargan donde la materia
+   * ES el examen — ADMISIÓN (UCR / UNA / TEC) y `per_subject` (PEN). null = usar
+   * los del módulo.
+   */
+  examQuestionCount: number | null;
+  examDurationMin: number | null;
   topics: TreeTopic[];
 };
 export type TreeModule = {

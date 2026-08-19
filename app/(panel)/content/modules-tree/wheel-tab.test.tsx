@@ -63,6 +63,8 @@ function subject(over: Partial<TreeSubject> & { id: string; name: string }): Tre
     colorHex: '#408D99',
     assetUrl: null,
     wheelAssetUrl: null,
+    examQuestionCount: null,
+    examDurationMin: null,
     topics: [],
     ...over,
   };

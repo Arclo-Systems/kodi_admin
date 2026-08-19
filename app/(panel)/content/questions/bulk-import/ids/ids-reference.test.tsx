@@ -37,6 +37,8 @@ const tree: TreeModule[] = [
         colorHex: '#408D99',
         assetUrl: null,
         wheelAssetUrl: null,
+        examQuestionCount: null,
+        examDurationMin: null,
         topics: [
           {
             id: 't1',
