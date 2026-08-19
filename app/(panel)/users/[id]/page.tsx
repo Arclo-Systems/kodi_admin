@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { adminFetch } from '@/lib/auth';
@@ -15,6 +14,7 @@ import {
 } from 'lucide-react';
 import { KpiCard } from '@/components/admin/kpi-card';
 import { getUserDetail, type UserDetail } from '@/lib/user-detail';
+import { ModuleChips } from './module-chips';
 import { ProfileEditForm } from './profile-edit-form';
 import { NotificationsCard } from './notifications-card';
 import { UserExams } from './user-exams';
@@ -160,7 +160,10 @@ function AccountCard({ user }: { user: UserDetail }) {
         </Subsection>
 
         <Subsection title="Módulos registrados">
-          <ModuleChips user={user} />
+          <ModuleChips
+            modules={user.userModules.map((m) => m.module)}
+            activeModule={user.activeModule}
+          />
         </Subsection>
 
         <Subsection
@@ -188,75 +191,6 @@ function Subsection({
       <p className="text-muted-foreground mb-3 text-xs font-medium">{title}</p>
       {children}
       {hint && <p className="text-muted-foreground mt-3 text-xs">{hint}</p>}
-    </div>
-  );
-}
-
-// Arte de módulos disponible en /public/modules (slug = examType con guiones).
-const MODULE_ICON_SLUGS = new Set([
-  'paa',
-  'pne-bachillerato',
-  'pne-primaria',
-  'cosevi-auto',
-  'cosevi-moto',
-]);
-
-// Color de identidad de cada módulo, tomado del fondo de su propio arte.
-const MODULE_COLOR: Record<string, string> = {
-  paa: '#F47C6B', // coral
-  'pne-bachillerato': '#A78BDA', // morado
-  'pne-primaria': '#9BCB6C', // lima
-  'cosevi-auto': '#E3B23C', // dorado
-  'cosevi-moto': '#5DB7E8', // cielo
-};
-
-function ModuleChips({ user }: { user: UserDetail }) {
-  if (user.userModules.length === 0) {
-    return <p className="text-muted-foreground text-sm">Sin módulos registrados.</p>;
-  }
-  return (
-    <div className="flex flex-wrap gap-3">
-      {user.userModules.map((m) => {
-        const active = m.module.shortName === user.activeModule?.shortName;
-        const slug = m.module.examType.replace(/_/g, '-');
-        const color = MODULE_COLOR[slug] ?? '#408D99';
-        return (
-          <div
-            key={m.module.examType}
-            title={m.module.fullName}
-            className={`flex items-center gap-2.5 rounded-xl border p-2.5 pr-4 ${
-              active ? '' : 'border-border'
-            }`}
-            style={active ? { borderColor: color, backgroundColor: `${color}14` } : undefined}
-          >
-            {MODULE_ICON_SLUGS.has(slug) ? (
-              <Image
-                src={`/modules/${slug}.webp`}
-                alt=""
-                width={40}
-                height={40}
-                className="rounded-lg"
-                unoptimized
-              />
-            ) : (
-              <span
-                className="bg-muted flex size-10 items-center justify-center rounded-lg text-xl"
-                aria-hidden
-              >
-                {m.module.icon}
-              </span>
-            )}
-            <div className="min-w-0">
-              <div className="text-sm font-medium">{m.module.shortName}</div>
-              {active && (
-                <div className="text-xs font-medium" style={{ color }}>
-                  Activo
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 }

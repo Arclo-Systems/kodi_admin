@@ -12069,6 +12069,10 @@ export interface components {
                 activeModule: {
                     shortName: string;
                     fullName: string;
+                    examType: string;
+                    iconUrl: string | null;
+                    characterUrl: string | null;
+                    colorHex: string;
                 } | null;
                 dailyGoalTarget: number;
                 streakDays: number;
@@ -12107,6 +12111,9 @@ export interface components {
                         shortName: string;
                         fullName: string;
                         examType: string;
+                        iconUrl: string | null;
+                        characterUrl: string | null;
+                        colorHex: string;
                     };
                 }[];
                 examDates: {

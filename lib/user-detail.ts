@@ -4,6 +4,20 @@ import { unwrapData } from '@/lib/bff';
 
 export type UserPlan = 'free' | 'basico' | 'plus' | 'pro';
 
+/**
+ * Identidad visual del módulo tal como la carga el panel en el árbol de
+ * contenido. Se pinta de acá, nunca de un mapa local por `examType`: un examen
+ * nuevo tiene que salir con su arte sin tocar código.
+ */
+export type ModuleIdentity = {
+  shortName: string;
+  fullName: string;
+  examType: string;
+  iconUrl: string | null;
+  characterUrl: string | null;
+  colorHex: string;
+};
+
 export type UserDetail = {
   id: string;
   email: string;
@@ -17,7 +31,7 @@ export type UserDetail = {
   isBot: boolean;
   titleActive: string | null;
   activeModuleId: string | null;
-  activeModule: { shortName: string; fullName: string } | null;
+  activeModule: ModuleIdentity | null;
   streakDays: number;
   longestStreakDays: number;
   streakFreezeUsedThisWeek: boolean;
@@ -44,9 +58,7 @@ export type UserDetail = {
   banReason: string | null;
   deleteRequestedAt: string | null;
   // Relaciones
-  userModules: {
-    module: { shortName: string; fullName: string; examType: string; icon: string };
-  }[];
+  userModules: { module: ModuleIdentity }[];
   // B2: el examen activo es lo que decide qué contenido ve el usuario. Sin esto
   // soporte no podía diagnosticar "me salen preguntas de otro examen".
   examDates: {
