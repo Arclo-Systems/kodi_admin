@@ -11,8 +11,8 @@ type DataTableColumnHeaderProps<TData, TValue> = {
   className?: string;
 };
 
-// Header clickeable para columnas ordenables del DataTable. Con manualSorting, el toggle
-// dispara onSortingChange → la tabla re-consulta con sortBy/sortDir al backend.
+// Header clickeable para columnas ordenables del DataTable. El handler de TanStack cicla
+// asc → desc → sin orden; si la tabla delega en el backend, el toggle dispara onSortingChange.
 export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
@@ -26,7 +26,7 @@ export function DataTableColumnHeader<TData, TValue>({
       variant="ghost"
       size="sm"
       className={cn('-ml-3 h-8', className)}
-      onClick={() => column.toggleSorting(sorted === 'asc')}
+      onClick={column.getToggleSortingHandler()}
       aria-label={`Ordenar por ${title}`}
     >
       {title}

@@ -33,6 +33,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTablePagination } from './data-table-pagination';
+import { smartSortingFn } from './data-table-sorting';
 import { TableEmptyRow } from './empty-state';
 
 // Etiqueta legible por columna para el menú "Columnas" (en vez del id crudo).
@@ -52,6 +53,7 @@ export type DataTableProps<TData> = {
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange?: (size: number) => void;
+  // Opt-in a orden server-side: si se pasa, la tabla NO reordena localmente y delega en el padre.
   onSortingChange?: (sorting: SortingState) => void;
   onRowClick?: (row: TData) => void;
   emptyMessage?: string;
@@ -73,8 +75,15 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
+  const manualSorting = props.onSortingChange != null;
+
   const columns = useMemo<ColumnDef<TData, unknown>[]>(() => {
-    if (!props.enableSelection) return props.columns;
+    const sortingFn = smartSortingFn<TData>(sorting);
+    const withSorting = props.columns.map((column) => ({
+      ...column,
+      sortingFn: column.sortingFn ?? sortingFn,
+    }));
+    if (!props.enableSelection) return withSorting;
     const selectionColumn: ColumnDef<TData, unknown> = {
       id: 'select',
       enableSorting: false,
@@ -101,8 +110,8 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
         />
       ),
     };
-    return [selectionColumn, ...props.columns];
-  }, [props.enableSelection, props.columns]);
+    return [selectionColumn, ...withSorting];
+  }, [props.enableSelection, props.columns, sorting]);
 
   const table = useReactTable({
     data: props.data,
@@ -121,7 +130,9 @@ export function DataTable<TData>(props: DataTableProps<TData>) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualPagination: true,
-    manualSorting: true,
+    // Sin `onSortingChange` el backend no sabe ordenar: se ordena la página cargada en el cliente.
+    manualSorting,
+    sortDescFirst: false,
   });
 
   // AUD-L3-API-1: emite la selección hacia afuera; el padre NO la realimenta → sin loop.
