@@ -85,7 +85,9 @@ export function ModulesTreeClient({ canWriteModules }: { canWriteModules: boolea
           if (!open) setView(null);
         }}
       >
-        <DialogContent>
+        {/* El ancho extra es lo que baja la altura del modal; el `max-h` solo
+            actúa de red en pantallas muy bajas. */}
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <NodeChrome variant="dialog">
             <NodeDetail
               view={view}
