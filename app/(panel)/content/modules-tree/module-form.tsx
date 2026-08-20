@@ -104,8 +104,11 @@ export function ModuleForm({
   });
   // Los exámenes de admisión no se aprueban ni se reprueban, así que su nota
   // mínima no aplica. Sale del campo declarado, ya no de adivinar el nombre.
-  const isAdmission =
-    useWatch({ control: form.control, name: 'examMode' }) === 'admission';
+  const examMode = useWatch({ control: form.control, name: 'examMode' });
+  const isAdmission = examMode === 'admission';
+  // Fuera de 'simple', las cifras del examen viven en la materia y las del
+  // módulo solo actúan de respaldo (`backend/src/modules/content/exam-config.ts`).
+  const examCountsLiveInSubject = examMode !== 'simple';
 
   useEffect(() => {
     if (existing)
@@ -394,7 +397,9 @@ export function ModuleForm({
                       {...field}
                     />
                     <p className="text-muted-foreground text-xs">
-                      Minutos del examen real.
+                      {examCountsLiveInSubject
+                        ? 'Respaldo: se usa solo si la materia no define su duración.'
+                        : 'Minutos del examen real.'}
                     </p>
                   </Field>
                 )}
@@ -413,7 +418,9 @@ export function ModuleForm({
                       {...field}
                     />
                     <p className="text-muted-foreground text-xs">
-                      Cuántas trae el examen real.
+                      {examCountsLiveInSubject
+                        ? 'Respaldo: se usa solo si la materia no define sus preguntas.'
+                        : 'Cuántas trae el examen real.'}
                     </p>
                   </Field>
                 )}
