@@ -16,15 +16,19 @@ import { NodeChrome } from './node-shell';
 
 const TREE_PATH = '/content/modules-tree';
 
+type TopicView = Extract<ViewState, { kind: 'topic' | 'new-topic' }>;
+
 export function ModulesTreeClient({ canWriteModules }: { canWriteModules: boolean }) {
   const router = useRouter();
   const { data: tree, isLoading } = useModulesTree();
   const mut = useContentTreeMutations();
-  // Materia y tema siguen en modal: son formularios cortos y entran de sobra.
-  // Solo el módulo se fue a pantalla propia, donde el arte necesita el ancho.
-  const [view, setView] = useState<ViewState>(null);
+  // Solo el tema sigue en modal: son dos campos y un diálogo le sobra. Módulo y
+  // materia se fueron a pantalla propia, donde sus formularios largos respiran.
+  const [view, setView] = useState<TopicView | null>(null);
 
   const openModule = (id: string) => router.push(`${TREE_PATH}/module/${id}`);
+  const openSubject = (id: string, moduleId: string) =>
+    router.push(`${TREE_PATH}/subject/${id}?moduleId=${encodeURIComponent(moduleId)}`);
 
   return (
     <div className="space-y-4">
@@ -47,17 +51,14 @@ export function ModulesTreeClient({ canWriteModules }: { canWriteModules: boolea
           <TreeView
             tree={tree ?? []}
             selected={
-              view?.kind === 'subject'
-                ? { type: 'subject', id: view.id, moduleId: view.moduleId }
-                : view?.kind === 'topic'
-                  ? { type: 'topic', id: view.id, subjectId: view.subjectId }
-                  : null
+              view?.kind === 'topic'
+                ? { type: 'topic', id: view.id, subjectId: view.subjectId }
+                : null
             }
             onSelect={(s: Selected) => {
               if (!s) return;
               if (s.type === 'module') return openModule(s.id);
-              if (s.type === 'subject')
-                return setView({ kind: 'subject', id: s.id, moduleId: s.moduleId });
+              if (s.type === 'subject') return openSubject(s.id, s.moduleId);
               setView({ kind: 'topic', id: s.id, subjectId: s.subjectId });
             }}
             onReorderSubjects={(moduleId, orderedIds) =>
@@ -72,7 +73,7 @@ export function ModulesTreeClient({ canWriteModules }: { canWriteModules: boolea
                 { onError: (e: Error) => toast.error(e.message) },
               )
             }
-            onNewSubject={(moduleId) => setView({ kind: 'new-subject', moduleId })}
+            onNewSubject={(moduleId) => openSubject('new', moduleId)}
             onNewTopic={(subjectId) => setView({ kind: 'new-topic', subjectId })}
             canWriteModules={canWriteModules}
           />
@@ -85,9 +86,7 @@ export function ModulesTreeClient({ canWriteModules }: { canWriteModules: boolea
           if (!open) setView(null);
         }}
       >
-        {/* El ancho extra es lo que baja la altura del modal; el `max-h` solo
-            actúa de red en pantallas muy bajas. */}
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent>
           <NodeChrome variant="dialog">
             <NodeDetail
               view={view}
