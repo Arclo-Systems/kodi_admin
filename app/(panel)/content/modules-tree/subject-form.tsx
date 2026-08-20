@@ -265,37 +265,42 @@ export function SubjectForm({
               />
             )}
           />
-          <Controller
-            name="assetUrl"
-            control={form.control}
-            render={({ field }) => (
-              <AssetField
-                label="Arte de práctica"
-                hint="La ilustración de la materia donde se la muestra completa."
-                value={field.value}
-                onChange={field.onChange}
-              />
-            )}
-          />
-          {usaMaterias ? (
+          {/* Con los dos artes, apilarlos dejaba el formulario más largo que la
+              pantalla; lado a lado entran juntos. Sin ruleta queda un arte solo
+              y la nota debajo, que no gana nada en dos columnas. */}
+          <div className={usaMaterias ? 'grid grid-cols-2 gap-3' : 'space-y-4'}>
             <Controller
-              name="wheelAssetUrl"
+              name="assetUrl"
               control={form.control}
               render={({ field }) => (
                 <AssetField
-                  label="Arte de ruleta"
-                  hint="Va dentro de un sector de la ruleta de Partida Kodi: tiene que leerse chico y en movimiento."
+                  label="Arte de práctica"
+                  hint="La ilustración de la materia donde se la muestra completa."
                   value={field.value}
                   onChange={field.onChange}
                 />
               )}
             />
-          ) : (
-            <p className="text-muted-foreground text-xs">
-              El tablero de Partida Kodi de este módulo se arma con temas, así
-              que el arte de ruleta se carga en el tema y no acá.
-            </p>
-          )}
+            {usaMaterias ? (
+              <Controller
+                name="wheelAssetUrl"
+                control={form.control}
+                render={({ field }) => (
+                  <AssetField
+                    label="Arte de ruleta"
+                    hint="Va dentro de un sector de la ruleta de Partida Kodi: tiene que leerse chico y en movimiento."
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            ) : (
+              <p className="text-muted-foreground text-xs">
+                El tablero de Partida Kodi de este módulo se arma con temas, así
+                que el arte de ruleta se carga en el tema y no acá.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
