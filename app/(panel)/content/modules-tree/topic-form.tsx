@@ -137,32 +137,37 @@ export function TopicForm({
               El tablero de Partida Kodi de este módulo se arma con temas, así
               que cada tema es un sector de la ruleta.
             </p>
-            <Controller
-              name="colorHex"
-              control={form.control}
-              render={({ field }) => (
-                <ColorField
-                  label="Color del tema"
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-            {/* El tema NO lleva arte de práctica: en práctica se muestra la
-                materia (que en admisión es el examen). Su arte propio solo
-                aparece en la ruleta de Partida Kodi. */}
-            <Controller
-              name="wheelAssetUrl"
-              control={form.control}
-              render={({ field }) => (
-                <AssetField
-                  label="Arte de ruleta"
-                  hint="Va dentro de un sector de la ruleta de Partida Kodi: tiene que leerse chico y en movimiento."
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
+            {/* Mismo criterio que la materia: la identidad visual va en dos
+                columnas para no alargar el formulario. Acá el tema tiene un
+                solo arte, así que el par es color + arte. */}
+            <div className="grid grid-cols-2 gap-3">
+              <Controller
+                name="colorHex"
+                control={form.control}
+                render={({ field }) => (
+                  <ColorField
+                    label="Color del tema"
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+              {/* El tema NO lleva arte de práctica: en práctica se muestra la
+                  materia (que en admisión es el examen). Su arte propio solo
+                  aparece en la ruleta de Partida Kodi. */}
+              <Controller
+                name="wheelAssetUrl"
+                control={form.control}
+                render={({ field }) => (
+                  <AssetField
+                    label="Arte de ruleta"
+                    hint="Va dentro de un sector de la ruleta de Partida Kodi: tiene que leerse chico y en movimiento."
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                )}
+              />
+            </div>
           </div>
         )}
       </div>
