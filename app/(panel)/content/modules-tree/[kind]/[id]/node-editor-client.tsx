@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 import { useModulesTree, type TreeModule } from '@/hooks/use-modules-tree';
 import { NodeDetail, type TreeView } from '../../node-detail';
 import { NodeChrome } from '../../node-shell';
@@ -129,9 +130,11 @@ export function NodeEditorClient({
         </Link>
       </Button>
 
-      {/* Ancho completo: son tres bloques (identidad, configuración y arte) y con
-          ancho de modal el arte quedaba apilado abajo con media pantalla vacía. */}
-      <Card className="p-6">
+      {/* El módulo va a ancho completo: son tres bloques (identidad, configuración
+          y arte) y con ancho de modal el arte quedaba apilado abajo con media
+          pantalla vacía. Los demás son formularios de una columna y estirados a
+          toda la pantalla quedan ridículos. */}
+      <Card className={cn('p-6', kind !== 'module' && 'max-w-2xl')}>
         <NodeChrome variant="screen">
           {/* La ruleta es del módulo pero no se edita con sus campos: sus sectores son las
               materias o los temas. Por eso va en pestaña propia y no como otro bloque del
