@@ -48,6 +48,18 @@ const CSV_HEADERS = [
   'intent',
 ];
 
+/**
+ * Una celda que arranca con `=`, `+`, `-` o `@` la ejecuta Excel al abrir el archivo, y
+ * `userDisplayName` es texto que escribe el usuario final. El apóstrofo la vuelve literal.
+ */
+function cell(value: unknown): string {
+  const text = String(value ?? '');
+  const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
+  // Las comillas dobles se escapan duplicándolas: un nombre con comillas partiría la fila
+  // y correría todas las columnas siguientes.
+  return `"${safe.replaceAll('"', '""')}"`;
+}
+
 function toCsv(rows: Reservation[]): string {
   const body = rows.map((r) =>
     [
@@ -62,21 +74,24 @@ function toCsv(rows: Reservation[]): string {
       r.releasedAt ?? '',
       r.purchaseIntentId ?? '',
     ]
-      // Las comillas dobles se escapan duplicándolas: un displayName con comillas
-      // partiría la fila y correría todas las columnas siguientes.
-      .map((value) => `"${String(value).replaceAll('"', '""')}"`)
+      .map(cell)
       .join(','),
   );
   return [CSV_HEADERS.join(','), ...body].join('\n');
 }
 
 function downloadCsv(rows: Reservation[]): void {
-  const url = URL.createObjectURL(new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' }));
+  // El BOM es lo que hace que Excel en Windows lea el archivo como UTF-8; sin él, cada
+  // nombre con tilde o ñ sale roto.
+  const blob = new Blob(['﻿', toCsv(rows)], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = `reservas-fundador-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.append(link);
   link.click();
-  URL.revokeObjectURL(url);
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 export function ReservasPanel({ allowedCountries }: { allowedCountries: string[] }) {
@@ -142,8 +157,8 @@ export function ReservasPanel({ allowedCountries }: { allowedCountries: string[]
           disabled={rows.length === 0}
           onClick={() => downloadCsv(rows)}
         >
-          <DownloadIcon className="size-3" />
-          Exportar CSV
+          <DownloadIcon className="size-4" />
+          Exportar CSV (página actual)
         </Button>
       </div>
 
@@ -205,6 +220,9 @@ export function ReservasPanel({ allowedCountries }: { allowedCountries: string[]
                           disabled={row.status !== 'reserved'}
                           onConfirm={(reason) =>
                             releaseReservation.mutateAsync({ id: row.id, reason })
+                          }
+                          successMessage={(result) =>
+                            `Cupo devuelto al pool · quedan ${result?.slotsReserved ?? 0} apartados`
                           }
                         />
                       </TableCell>

@@ -5,7 +5,7 @@ import { ReservasPanel } from './reservas-panel';
 export const metadata = { title: 'Reservas de fundador' };
 
 export default async function ReservasPage() {
-  const user = await requireAction('economy:monetization:read');
+  const user = await requireAction('economy:store-ops:read');
   const allowedCountries = user.isGlobalScope
     ? COUNTRIES.map((c) => c.code)
     : user.assignedCountries;
