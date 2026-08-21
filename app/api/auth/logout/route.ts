@@ -11,5 +11,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const res = NextResponse.json({ ok: true });
   res.cookies.delete('admin_at');
   res.cookies.delete('admin_rt');
+  // Sin borrarla, el aviso de expiración del panel seguiría leyendo un vencimiento vivo.
+  res.cookies.delete('admin_at_exp');
   return res;
 }
