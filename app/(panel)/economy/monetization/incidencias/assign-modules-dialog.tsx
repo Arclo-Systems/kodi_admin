@@ -31,8 +31,15 @@ const schema = z.object({
     .refine(
       (value) => splitIds(value).every((id) => UUID.test(id)),
       'Cada módulo tiene que ser un UUID, separados por coma',
-    ),
-  reason: z.string().trim().min(5, 'El motivo queda en el audit log: escribí al menos 5 caracteres'),
+    )
+    // El mismo tope que el backend: sin esto, el 13º módulo vuelve como un
+    // "Los datos enviados no son válidos." genérico después del viaje.
+    .refine((value) => splitIds(value).length <= 12, 'Como máximo 12 módulos'),
+  reason: z
+    .string()
+    .trim()
+    .min(5, 'El motivo queda en el audit log: escribí al menos 5 caracteres')
+    .max(500, 'Como máximo 500 caracteres'),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -115,7 +122,12 @@ export function AssignModulesDialog({ eventId }: { eventId: string }) {
 
             <Field>
               <FieldLabel htmlFor="assign-reason">Motivo</FieldLabel>
-              <Textarea id="assign-reason" rows={2} {...form.register('reason')} />
+              <Textarea
+                id="assign-reason"
+                rows={2}
+                maxLength={500}
+                {...form.register('reason')}
+              />
               <FieldError errors={[form.formState.errors.reason]} />
             </Field>
 

@@ -4,7 +4,7 @@ import { IncidenciasView } from './incidencias-panel';
 export const metadata = { title: 'Incidencias de tienda' };
 
 export default async function IncidenciasPage() {
-  await requireAction('economy:monetization:read');
+  await requireAction('economy:store-ops:global');
 
   return (
     <div className="space-y-6">
