@@ -94,10 +94,12 @@ function unwrapError(body: unknown): ApiErrorBody | undefined {
 }
 
 /** Error de negocio con el `code` del backend, para que la UI pueda reaccionar a uno puntual. */
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(
     readonly code: string,
     message: string,
+    // El status habilita el manejo global de la sesión caída (401) sin parsear mensajes.
+    readonly status: number,
     readonly details?: Record<string, unknown>,
   ) {
     super(message);
@@ -105,10 +107,16 @@ class ApiError extends Error {
   }
 }
 
+/** true si el error viene de una sesión que el backend ya no reconoce. */
+export function isUnauthorized(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 401;
+}
+
 export async function throwApiError(res: Response, fallback: string): Promise<never> {
   const body: unknown = await res.json().catch(() => null);
   const parsed = unwrapError(body);
-  if (parsed) throw new ApiError(parsed.code, parsed.message, parsed.details);
+  if (parsed)
+    throw new ApiError(parsed.code, parsed.message, res.status, parsed.details);
   const legacy = (body as { message?: string } | null)?.message;
-  throw new ApiError('UNKNOWN', legacy ?? fallback);
+  throw new ApiError('UNKNOWN', legacy ?? fallback, res.status);
 }
