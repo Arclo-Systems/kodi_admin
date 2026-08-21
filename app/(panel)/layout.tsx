@@ -5,6 +5,7 @@ import { AppFooter } from '@/components/app-footer';
 import { AppBreadcrumb } from '@/components/app-breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SessionExpiryProvider } from '@/components/providers/session-expiry-provider';
 import { getCurrentAdmin } from '@/lib/auth';
 
 export default async function PanelLayout({ children }: { children: ReactNode }) {
@@ -15,6 +16,8 @@ export default async function PanelLayout({ children }: { children: ReactNode })
 
   return (
     <SidebarProvider>
+      {/* Solo dentro del panel: en /login no hay sesión que vigilar. */}
+      <SessionExpiryProvider />
       <a
         href="#main-content"
         className="sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:left-4 focus-visible:top-3 focus-visible:z-50 focus-visible:rounded-md focus-visible:border focus-visible:bg-background focus-visible:px-3 focus-visible:py-2 focus-visible:text-sm focus-visible:font-medium focus-visible:shadow-sm focus-visible:ring-2 focus-visible:ring-ring"
