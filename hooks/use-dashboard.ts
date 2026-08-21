@@ -1,10 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 // Tipos espejo de las interfaces del backend (DashboardAdminService). El envelope {data}
-// no está en el OpenAPI → se desenvuelve con unwrapData; los tipos se mantienen a mano.
+// no está en el OpenAPI → se desenvuelve en fetchJson; los tipos se mantienen a mano.
 export type EngagementKpis = {
   activeUsers: { dau: number; wau: number; mau: number };
   newUsers: number;
@@ -60,11 +60,9 @@ function useDashboardSection<T>(section: string, q: DashboardQuery) {
     queryKey: ['dashboard', section, q],
     queryFn: async (): Promise<T | undefined> => {
       const qs = buildParams(q);
-      const res = await fetch(`/api/admin/dashboard/${section}${qs ? `?${qs}` : ''}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error(`fetch dashboard ${section} failed`);
-      return unwrapData<T>(await res.json());
+      return fetchJson<T>(
+        `/api/admin/dashboard/${section}${qs ? `?${qs}` : ''}`,
+      );
     },
   });
 }

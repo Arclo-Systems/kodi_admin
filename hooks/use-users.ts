@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type UserListItem = {
   id: string;
@@ -43,10 +43,8 @@ export function useUsers(query: UserListQuery) {
         if (Array.isArray(v)) v.forEach((x) => params.append(k, String(x)));
         else params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/users?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch users failed');
       return (
-        unwrapData<UserListPage>(await res.json()) ?? {
+        (await fetchJson<UserListPage>(`/api/admin/users?${params}`)) ?? {
           items: [],
           total: 0,
           page: query.page,
