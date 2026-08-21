@@ -24,8 +24,8 @@ export function SkusPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-muted-foreground text-sm">
-          {rows.length} SKUs en la allowlist. Es allowlist y no parser: si el par (producto, base
-          plan) no está acá, no se concede nada.
+          {data?.total ?? 0} SKUs en la allowlist. Es allowlist y no parser: si el par (producto,
+          base plan) no está acá, no se concede nada.
         </p>
         <Button variant="outline" size="sm" className="ml-auto" disabled>
           Correr sync en dry-run

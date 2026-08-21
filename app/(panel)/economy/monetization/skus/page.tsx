@@ -4,7 +4,7 @@ import { SkusPanel } from './skus-panel';
 export const metadata = { title: 'Catálogo de SKUs' };
 
 export default async function SkusPage() {
-  await requireAction('economy:monetization:read');
+  await requireAction('economy:store-ops:global');
 
   return (
     <div className="space-y-6">

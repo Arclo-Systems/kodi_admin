@@ -15,7 +15,7 @@ import {
 import { TableEmptyRow } from '@/components/admin/empty-state';
 import { DataTablePagination } from '@/components/admin/data-table-pagination';
 import { useDlq, useStoreMutations } from '@/hooks/use-store-monetization';
-import { PayloadDialog, ReasonAction, dateTime } from '../store-shared';
+import { PayloadDialog, ReasonAction, dateTime, eventStatusLabel } from '../store-shared';
 
 export function DlqPanel() {
   const [page, setPage] = useState(1);
@@ -71,14 +71,19 @@ export function DlqPanel() {
                       <TableCell className="text-muted-foreground max-w-sm truncate text-xs">
                         {row.lastError ?? '—'}
                       </TableCell>
-                      <TableCell className="flex justify-end gap-1">
-                        <PayloadDialog payload={row.payload} />
-                        <ReasonAction
-                          label="Reintentar"
-                          title="Reintentar el mensaje descartado"
-                          description="Corre el pipeline del webhook sobre esta notificación. Necesita que la compra ya tenga filas: el recibo no se guarda."
-                          onConfirm={(reason) => retryDlq.mutateAsync({ id: row.id, reason })}
-                        />
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <PayloadDialog payload={row.payload} />
+                          <ReasonAction
+                            label="Reintentar"
+                            title="Reintentar el mensaje descartado"
+                            description="Corre el pipeline del webhook sobre esta notificación. Necesita que la compra ya tenga filas: el recibo no se guarda."
+                            onConfirm={(reason) => retryDlq.mutateAsync({ id: row.id, reason })}
+                            successMessage={(result) =>
+                              `Reintentado · ahora está en "${eventStatusLabel(result?.status ?? '')}"`
+                            }
+                          />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

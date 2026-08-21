@@ -4,7 +4,7 @@ import { DlqPanel } from './dlq-panel';
 export const metadata = { title: 'Cola de descartes' };
 
 export default async function DlqPage() {
-  await requireAction('economy:monetization:read');
+  await requireAction('economy:store-ops:global');
 
   return (
     <div className="space-y-6">

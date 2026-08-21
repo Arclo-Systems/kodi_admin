@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { BadgeCheckIcon, BookmarkIcon, CrownIcon, TicketIcon } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartContainer,
@@ -24,11 +25,14 @@ const chartConfig = {
 
 const fmt = (n: number): string => n.toLocaleString('es-CR');
 
+// El backend SIEMPRE manda `slotsAvailable`, `timeline`, `label`, `slug` e `isActive`; se
+// aflojan a opcionales para poder montar la tarjeta con los cuatro contadores en un test sin
+// inventar una serie temporal. La resta de fallback existe por eso, no porque haga falta en prod.
 export type FounderCounters = Pick<
   FounderOffer,
   'slotsTotal' | 'slotsClaimed' | 'slotsReserved' | 'activeFounders'
 > &
-  Partial<Pick<FounderOffer, 'slotsAvailable' | 'timeline' | 'label' | 'slug'>>;
+  Partial<Pick<FounderOffer, 'slotsAvailable' | 'timeline' | 'label' | 'slug' | 'isActive'>>;
 
 /**
  * Los dos contadores de fundador van SEPARADOS y rotulados (spec §7.6): un
@@ -41,6 +45,18 @@ export function FundadorPanel({ data }: { data: FounderCounters }) {
 
   return (
     <div className="space-y-6">
+      {data.label && (
+        <div className="flex items-center gap-2">
+          <h2 className="text-base font-semibold">{data.label}</h2>
+          {data.slug && (
+            <span className="text-muted-foreground font-mono text-xs">{data.slug}</span>
+          )}
+          <Badge variant={data.isActive === false ? 'outline' : 'secondary'}>
+            {data.isActive === false ? 'Inactiva' : 'Activa'}
+          </Badge>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label="Lugares entregados"
@@ -82,7 +98,8 @@ export function FundadorPanel({ data }: { data: FounderCounters }) {
           <CardHeader>
             <CardTitle className="text-base">Movimiento de cupos</CardTitle>
             <CardDescription>
-              Lugares entregados (primer cobro) y devueltos al pool (trial caído) por día.
+              Lugares entregados (primer cobro) y devueltos al pool (trial caído) por día, en los
+              últimos {data.timeline.length} días.
             </CardDescription>
           </CardHeader>
           <CardContent>

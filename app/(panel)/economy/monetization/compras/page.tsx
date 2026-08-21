@@ -4,7 +4,7 @@ import { ComprasPanel } from './compras-panel';
 export const metadata = { title: 'Compras recientes' };
 
 export default async function ComprasPage() {
-  await requireAction('economy:monetization:read');
+  await requireAction('economy:store-ops:global');
 
   return (
     <div className="space-y-6">

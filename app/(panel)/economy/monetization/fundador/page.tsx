@@ -5,7 +5,7 @@ import { FundadorView } from './fundador-panel';
 export const metadata = { title: 'Oferta fundador' };
 
 export default async function FundadorPage() {
-  const user = await requireAction('economy:monetization:read');
+  const user = await requireAction('economy:store-ops:read');
   const allowedCountries = user.isGlobalScope
     ? COUNTRIES.map((c) => c.code)
     : user.assignedCountries;

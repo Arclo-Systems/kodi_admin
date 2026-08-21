@@ -22,7 +22,14 @@ import {
 import { TableEmptyRow } from '@/components/admin/empty-state';
 import { DataTablePagination } from '@/components/admin/data-table-pagination';
 import { useStoreEvents, useStoreMutations } from '@/hooks/use-store-monetization';
-import { EventStatusBadge, PayloadDialog, ReasonAction, dateTime, latency } from '../store-shared';
+import {
+  EventStatusBadge,
+  PayloadDialog,
+  ReasonAction,
+  dateTime,
+  eventStatusLabel,
+  latency,
+} from '../store-shared';
 
 const ALL = 'ALL';
 const STATUSES = [
@@ -66,7 +73,7 @@ export function ComprasPanel() {
             <SelectItem value={ALL}>Todos los estados</SelectItem>
             {STATUSES.map((s) => (
               <SelectItem key={s} value={s}>
-                {s}
+                {eventStatusLabel(s)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -144,15 +151,22 @@ export function ComprasPanel() {
                       <TableCell className="text-muted-foreground font-mono text-xs">
                         {row.purchaseTokenSha?.slice(0, 12) ?? '—'}
                       </TableCell>
-                      <TableCell className="flex justify-end gap-1">
-                        <PayloadDialog payload={row.payload} />
-                        <ReasonAction
-                          label="Reprocesar"
-                          title="Reprocesar el evento"
-                          description="Vuelve a correr el mismo pipeline del webhook sobre esta notificación. Solo funciona si la compra ya dejó filas: el recibo no se guarda, y sin él no hay nada que consultarle a la tienda."
-                          disabled={row.status === 'received'}
-                          onConfirm={(reason) => reprocessEvent.mutateAsync({ id: row.id, reason })}
-                        />
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <PayloadDialog payload={row.payload} />
+                          <ReasonAction
+                            label="Reprocesar"
+                            title="Reprocesar el evento"
+                            description="Vuelve a correr el mismo pipeline del webhook sobre esta notificación. Solo funciona si la compra ya dejó filas: el recibo no se guarda, y sin él no hay nada que consultarle a la tienda."
+                            disabled={row.status === 'received'}
+                            onConfirm={(reason) =>
+                              reprocessEvent.mutateAsync({ id: row.id, reason })
+                            }
+                            successMessage={(result) =>
+                              `Reprocesado · ahora está en "${eventStatusLabel(result?.status ?? '')}"`
+                            }
+                          />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
