@@ -1,10 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { FundadorPanel } from '../fundador/fundador-panel';
-
-vi.mock('@/hooks/use-store-monetization', () => ({
-  useFounderOffer: () => ({ data: undefined, isLoading: false, error: null }),
-}));
 
 // §7.6: un reembolso revoca el estatus de fundador pero NO devuelve el lugar. Si el
 // panel mostrara un solo número, "lugares entregados" se leería como "suscriptores
@@ -15,6 +11,10 @@ describe('FundadorPanel — los dos contadores van separados', () => {
     slotsClaimed: 12,
     slotsReserved: 3,
     activeFounders: 11,
+    slotsAvailable: 485,
+    label: 'Fundador CR',
+    slug: 'founder-cr',
+    isActive: true,
   };
 
   it('rotula el contador como lugares entregados y aclara que incluye reembolsados', () => {
@@ -31,16 +31,29 @@ describe('FundadorPanel — los dos contadores van separados', () => {
     expect(screen.getByText('11')).toBeInTheDocument();
   });
 
-  it('calcula los disponibles descontando entregados y apartados', () => {
+  // El backend es la autoridad del cálculo: el panel pinta lo que llega, no su propia resta.
+  it('pinta los disponibles que manda el backend', () => {
+    render(<FundadorPanel data={{ ...data, slotsAvailable: 300 }} />);
+
+    expect(screen.getByText('300')).toBeInTheDocument();
+    expect(screen.queryByText('485')).not.toBeInTheDocument();
+  });
+
+  it('identifica de qué oferta son los números y si está activa', () => {
     render(<FundadorPanel data={data} />);
 
-    expect(screen.getByText('485')).toBeInTheDocument();
+    expect(screen.getByText('Fundador CR')).toBeInTheDocument();
+    expect(screen.getByText('founder-cr')).toBeInTheDocument();
+    expect(screen.getByText('Activa')).toBeInTheDocument();
   });
 
   it('nunca pinta un número negativo de disponibles', () => {
-    render(<FundadorPanel data={{ ...data, slotsTotal: 10 }} />);
+    render(
+      <FundadorPanel
+        data={{ ...data, slotsTotal: 10, slotsAvailable: undefined }}
+      />,
+    );
 
     expect(screen.getByText('0')).toBeInTheDocument();
-    expect(screen.queryByText('-5')).not.toBeInTheDocument();
   });
 });
