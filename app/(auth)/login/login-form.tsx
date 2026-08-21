@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,6 +23,7 @@ type LoginValues = z.infer<typeof LoginSchema>;
 // Layout shadcn login-04 (dos columnas: form + portada), sin login social ni registro.
 export function LoginForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [serverError, setServerError] = useState<string | null>(null);
   const [showResetHint, setShowResetHint] = useState(false);
   const form = useForm<LoginValues>({
@@ -45,6 +47,9 @@ export function LoginForm() {
       }
 
       const result = unwrapData<{ requirePasswordChange?: boolean }>(await res.json());
+      // La sesión anterior pudo dejar datos y errores cacheados: entrar de nuevo empieza
+      // de cero, sin que un 401 viejo reviva al remontar una pantalla.
+      queryClient.clear();
       router.push(result?.requirePasswordChange ? '/change-password' : '/');
       router.refresh();
     } catch {
