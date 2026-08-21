@@ -1570,26 +1570,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/subscriptions/iap-webhook": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Webhook de Apple/Google para eventos IAP
-         * @description Sin auth JWT — autenticación es por firma del store. Idempotente por store_transaction_id.
-         */
-        post: operations["SubscriptionsController_iapWebhook"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/pricing": {
         parameters: {
             query?: never;
@@ -1601,6 +1581,106 @@ export interface paths {
         get: operations["PricingController_getPricing"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/subscriptions/purchase-intents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Emitir el intent de compra antes de abrir la tienda
+         * @description Fija plan, período, pack y módulos, y devuelve el SKU junto a los dos identificadores obfuscados que la app le pasa a la tienda. El intent no concede acceso: el acceso lo concede el evento verificado de la tienda.
+         */
+        post: operations["PurchaseIntentController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/subscriptions/purchases/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar una compra recién hecha en la tienda
+         * @description Atajo para no esperar la notificación de la tienda: verifica la compra contra Google, comprueba que el dueño sea el usuario autenticado y corre el mismo pipeline que el webhook. No concede acceso por su cuenta.
+         */
+        post: operations["PurchaseConfirmController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/subscriptions/pending-modules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Elegir los módulos de una compra que quedó pendiente
+         * @description Cierra el caso de una compra hecha fuera de la app, donde la tienda no transporta qué módulos cubre. Los módulos tienen que ser del usuario y coincidir en cantidad con el pack cobrado.
+         */
+        post: operations["PurchaseConfirmController_pendingModules"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/store-identity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Identificador de tienda del usuario
+         * @description Devuelve el identificador obfuscado que la app le pasa a la tienda al comprar un consumible. Sale del token: no acepta ningún parámetro que lo elija.
+         */
+        get: operations["StoreIdentityController_storeIdentity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/subscriptions/play-rtdn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Notificación de Google Play (RTDN vía Pub/Sub)
+         * @description Recibe el push de Pub/Sub con la notificación de la tienda. Se autentica con el id token OIDC del service account del topic; el estado real de la compra se consulta contra Google, nunca se toma del cuerpo del mensaje.
+         */
+        post: operations["RtdnController_receive"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3735,6 +3815,23 @@ export interface paths {
          * @description Encola la generación del archivo. Cuando termina llega por correo con un enlace firmado de 72 h. Máximo 1 pedido por día UTC por usuario (lo sostiene un UNIQUE en la base, no una lectura previa). El archivo se borra de almacenamiento a los 7 días.
          */
         post: operations["DataExportController_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/config/flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Feature flags que la app tiene que obedecer */
+        get: operations["FlagsController_flags"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7917,6 +8014,198 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/monetization/founder-offer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StoreAdminController_founderOffer"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/monetization/reservations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StoreAdminController_reservations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/monetization/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StoreAdminController_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/monetization/incidents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StoreAdminController_incidents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/monetization/dlq": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StoreAdminController_dlq"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/monetization/skus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StoreAdminController_skus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/monetization/flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StoreAdminController_flags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/monetization/reservations/{id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StoreAdminController_release"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/monetization/events/{id}/reprocess": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StoreAdminController_reprocess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/monetization/incidents/{id}/modules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StoreAdminController_assignModules"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/monetization/incidents/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StoreAdminController_resolveIncident"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/monetization/dlq/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["StoreAdminController_retryDlq"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/jobs/counts": {
         parameters: {
             query?: never;
@@ -9084,6 +9373,7 @@ export interface components {
                 slug: string;
                 name: string;
                 amount: number;
+                store_product_id: string;
                 price_usd_cents: number;
                 offer_price_usd_cents: number | null;
             }[];
@@ -9911,33 +10201,6 @@ export interface components {
                 expires_at: string;
             };
         };
-        IapWebhookDto: {
-            /** @enum {string} */
-            provider: "apple" | "google" | "test";
-            store_transaction_id: string;
-            store_product_id: string;
-            /** Format: uuid */
-            user_id: string;
-            /** Format: uuid */
-            module_id: string;
-            /** @enum {string} */
-            plan: "basico" | "plus" | "pro";
-            /** @enum {string} */
-            period: "monthly" | "quarterly" | "yearly";
-            /** @enum {string} */
-            status: "active" | "trial" | "cancelled" | "expired" | "grace";
-            /** Format: date-time */
-            started_at: string;
-            /** Format: date-time */
-            expires_at: string;
-            /** Format: date-time */
-            grace_ends_at?: string | null;
-        };
-        WebhookReceivedResponse: {
-            data: {
-                received: boolean;
-            };
-        };
         PricingResponse: {
             data: {
                 currency: string | null;
@@ -9950,6 +10213,64 @@ export interface components {
                 }[];
             };
         };
+        PurchaseIntentDto: {
+            /** @enum {string} */
+            plan: "basico" | "plus" | "pro";
+            /** @enum {string} */
+            period: "monthly" | "quarterly" | "yearly";
+            pack_size: number;
+            module_ids: string[];
+            want_founder: boolean;
+        };
+        PurchaseIntentResponse: {
+            data: {
+                /** Format: uuid */
+                intent_id: string;
+                product_id: string;
+                base_plan_id: string;
+                offer_id: string | null;
+                obfuscated_account_id: string;
+                obfuscated_profile_id: string;
+                expires_at: string;
+                price_cents: number;
+                currency: string;
+            };
+        };
+        PurchaseConfirmDto: {
+            purchase_token: string;
+        };
+        PurchaseConfirmResponse: {
+            data: {
+                /** @enum {string} */
+                status: "granted" | "pending_module_selection" | "not_granted";
+                module_ids: string[];
+            };
+        };
+        PendingModulesDto: {
+            purchase_token: string;
+            module_ids: string[];
+        };
+        StoreIdentityResponse: {
+            data: {
+                obfuscated_account_id: string;
+            };
+        };
+        PlayRtdnPushDto: {
+            message: {
+                data: string;
+                messageId: string;
+                publishTime?: string;
+                attributes?: {
+                    [key: string]: string;
+                };
+            };
+            subscription?: string;
+        };
+        PlayRtdnResponse: {
+            data: {
+                received: boolean;
+            };
+        };
         ActiveOfferResponse: {
             data: {
                 active: {
@@ -9957,6 +10278,7 @@ export interface components {
                     label: string;
                     slots_total: number;
                     slots_remaining: number;
+                    eligible: boolean;
                     /** @enum {string} */
                     price_mode: "explicit" | "percent";
                     discount_percent: number | null;
@@ -11902,6 +12224,11 @@ export interface components {
                     requested_at: string;
                     completed_at: string | null;
                 } | null;
+            };
+        };
+        ConfigFlagsResponse: {
+            data: {
+                iap_purchases_enabled: boolean;
             };
         };
         JobTriggeredResponse: {
@@ -16799,6 +17126,184 @@ export interface components {
                 count: number;
             };
         };
+        StoreAdminFounderOfferResponse: {
+            data: {
+                /** Format: uuid */
+                offerId: string;
+                slug: string;
+                label: string;
+                country: string;
+                isActive: boolean;
+                slotsTotal: number;
+                slotsClaimed: number;
+                slotsReserved: number;
+                slotsAvailable: number;
+                activeFounders: number;
+                timeline: {
+                    date: string;
+                    claimed: number;
+                    released: number;
+                }[];
+            };
+        };
+        StoreAdminReservationListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    offerId: string;
+                    offerSlug: string;
+                    country: string;
+                    /** Format: uuid */
+                    userId: string;
+                    userEmail: string;
+                    userDisplayName: string;
+                    /** Format: uuid */
+                    purchaseIntentId: string | null;
+                    status: string;
+                    expiresAt: string;
+                    consumedAt: string | null;
+                    releasedAt: string | null;
+                    createdAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        StoreAdminEventListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    messageId: string;
+                    eventType: string;
+                    status: string;
+                    attempts: number;
+                    lastError: string | null;
+                    receivedAt: string;
+                    processedAt: string | null;
+                    latencyMs: number | null;
+                    purchaseTokenSha: string | null;
+                    payload: unknown;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        StoreAdminIncidentListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    messageId: string;
+                    eventType: string;
+                    status: string;
+                    attempts: number;
+                    lastError: string | null;
+                    receivedAt: string;
+                    processedAt: string | null;
+                    latencyMs: number | null;
+                    purchaseTokenSha: string | null;
+                    payload: unknown;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+                negativeKokos: {
+                    /** Format: uuid */
+                    id: string;
+                    email: string;
+                    displayName: string;
+                    country: string | null;
+                    kokosBalance: number;
+                }[];
+                counts: {
+                    [key: string]: number;
+                };
+            };
+        };
+        StoreAdminDlqListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    messageId: string;
+                    eventType: string;
+                    status: string;
+                    attempts: number;
+                    lastError: string | null;
+                    receivedAt: string;
+                    processedAt: string | null;
+                    latencyMs: number | null;
+                    purchaseTokenSha: string | null;
+                    payload: unknown;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        StoreAdminSkuListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    provider: string;
+                    productId: string;
+                    basePlanId: string;
+                    plan: string;
+                    period: string;
+                    packSize: number;
+                    isFounder: boolean;
+                    isActive: boolean;
+                    createdAt: string;
+                    updatedAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        StoreAdminFlagsResponse: {
+            data: {
+                flags: {
+                    key: string;
+                    enabled: boolean;
+                    effective: boolean;
+                    blockedBy: string[];
+                    scope: string;
+                }[];
+            };
+        };
+        StoreAdminReleaseResponse: {
+            data: {
+                released: boolean;
+                slotsTotal: number;
+                slotsClaimed: number;
+                slotsReserved: number;
+            };
+        };
+        StoreAdminReprocessResponse: {
+            data: {
+                status: string;
+                tokenRecovered: boolean;
+            };
+        };
+        StoreAdminAssignModulesResponse: {
+            data: {
+                status: string;
+                moduleIds: string[];
+            };
+        };
+        StoreAdminResolveIncidentResponse: {
+            data: {
+                resolved: boolean;
+                previousStatus: string;
+            };
+        };
         JobCountsResponse: {
             data: {
                 [key: string]: number;
@@ -19851,29 +20356,6 @@ export interface operations {
             };
         };
     };
-    SubscriptionsController_iapWebhook: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IapWebhookDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WebhookReceivedResponse"];
-                };
-            };
-        };
-    };
     PricingController_getPricing: {
         parameters: {
             query?: never;
@@ -19889,6 +20371,121 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PricingResponse"];
+                };
+            };
+        };
+    };
+    PurchaseIntentController_create: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+                /** @description UUID v4 por intento; repetir la clave devuelve el mismo intent en vez de crear otro */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseIntentDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseIntentResponse"];
+                };
+            };
+        };
+    };
+    PurchaseConfirmController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PurchaseConfirmDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseConfirmResponse"];
+                };
+            };
+        };
+    };
+    PurchaseConfirmController_pendingModules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PendingModulesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseConfirmResponse"];
+                };
+            };
+        };
+    };
+    StoreIdentityController_storeIdentity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreIdentityResponse"];
+                };
+            };
+        };
+    };
+    RtdnController_receive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlayRtdnPushDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayRtdnResponse"];
                 };
             };
         };
@@ -22677,6 +23274,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    FlagsController_flags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigFlagsResponse"];
+                };
             };
         };
     };
@@ -30222,6 +30838,244 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PromoOfferPricesSetResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_founderOffer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminFounderOfferResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_reservations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminReservationListResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminEventListResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_incidents: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminIncidentListResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_dlq: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminDlqListResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_skus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminSkuListResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_flags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminFlagsResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_release: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminReleaseResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_reprocess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminReprocessResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_assignModules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminAssignModulesResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_resolveIncident: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminResolveIncidentResponse"];
+                };
+            };
+        };
+    };
+    StoreAdminController_retryDlq: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreAdminReprocessResponse"];
                 };
             };
         };
