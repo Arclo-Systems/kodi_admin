@@ -77,6 +77,13 @@ export type Action =
   | 'economy:subscription:read'
   | 'economy:subscription:write'
   | 'economy:monetization:read'
+  // Operación de la tienda (mini-ola IAP): cupos fundador, eventos de Play, incidencias, DLQ,
+  // catálogo de SKUs y kill-switches. Es admin-only en el backend, a diferencia de la analítica
+  // de monetización, que también ve el rol comercial.
+  | 'economy:store-ops:read'
+  // Las vistas de tienda SIN país (eventos, incidencias, DLQ, SKUs, flags): el backend las corta
+  // con `assertGlobalScope`, así que un regional que llegue solo cosecha un 403.
+  | 'economy:store-ops:global'
   // Energía + límites free (Ola 2a) — config económica, admin
   | 'economy:energy:write'
   // Recompensas de juego/estudio/hábito (ola recompensas) — emite moneda, admin
@@ -206,6 +213,8 @@ const matrix: Record<AdminRole, Action[]> = {
     'economy:subscription:read',
     'economy:subscription:write',
     'economy:monetization:read',
+    'economy:store-ops:read',
+    'economy:store-ops:global',
     'economy:energy:write',
     'economy:rewards:write',
     'economy:kokos-pack:write',
@@ -315,6 +324,7 @@ const globalScopeRequired: Set<Action> = new Set([
   'launches:country', // cambiar estado de lanzamiento de un país (habilita registro)
   'view:finance', // contabilidad de la empresa = solo admin global (founder)
   'finance:write',
+  'economy:store-ops:global', // eventos/incidencias/DLQ/SKUs/flags de tienda: no tienen país
 ]);
 
 export function canWithScope(role: AdminRole, isGlobalScope: boolean, action: Action): boolean {
