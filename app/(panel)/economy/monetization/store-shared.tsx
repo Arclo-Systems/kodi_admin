@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,10 @@ const STATUS_META: Record<string, { label: string; variant: BadgeVariant }> = {
 };
 
 type BadgeVariant = 'default' | 'secondary' | 'outline' | 'destructive';
+
+/** El rótulo legible del estado, para los filtros. La tabla usa el badge. */
+export const eventStatusLabel = (status: string): string =>
+  STATUS_META[status]?.label ?? status;
 
 export function EventStatusBadge({ status }: { status: string }) {
   const meta = STATUS_META[status];
@@ -60,13 +64,17 @@ export const dateTime = (iso: string | null): string =>
 export const latency = (ms: number | null): string =>
   ms === null ? '—' : ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`;
 
-export type ReasonActionProps = {
+export type ReasonActionProps<T> = {
   label: string;
   title: string;
   description: string;
   destructive?: boolean;
   disabled?: boolean;
-  onConfirm: (reason: string) => Promise<unknown>;
+  onConfirm: (reason: string) => Promise<T>;
+  // El aviso de éxito sale del RESULTADO, no de la etiqueta del botón: reprocesar puede
+  // terminar sin error y dejar el evento igual de roto, y un "listo" pelado le mentiría
+  // al operador sobre lo que acaba de pasar.
+  successMessage: (result: T) => string;
 };
 
 /**
@@ -74,7 +82,7 @@ export type ReasonActionProps = {
  * interceptor de auditoría lo guarda. El diálogo lo pide antes de disparar nada,
  * así que un 400 por motivo faltante no llega nunca a pasar.
  */
-export function ReasonAction(props: ReasonActionProps) {
+export function ReasonAction<T>(props: ReasonActionProps<T>) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -97,30 +105,26 @@ export function ReasonAction(props: ReasonActionProps) {
         reasonMinLength={5}
         confirmLabel={props.label}
         onConfirm={async ({ reason }) => {
-          await props.onConfirm(reason ?? '');
-          toast.success(`${props.label}: listo`);
+          toast.success(props.successMessage(await props.onConfirm(reason ?? '')));
         }}
       />
     </>
   );
 }
 
-export function PayloadDialog({
-  payload,
-  trigger,
-}: {
-  payload: unknown;
-  trigger?: ReactNode;
-}) {
+export function PayloadDialog({ payload }: { payload: unknown }) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
       <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-        {trigger ?? 'Ver payload'}
+        Ver payload
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        {/* `sm:max-w-2xl` y no `max-w-2xl`: el primitivo trae `sm:max-w-sm` y la variante
+            responsive gana en el CSS generado, así que el JSON quedaría en una columna
+            angosta — justo la herramienta de diagnóstico de toda esta área. */}
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Notificación de Play</DialogTitle>
             <DialogDescription>
