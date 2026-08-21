@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adaptBackendCookie } from '@/lib/bff';
+import { applyBackendSession } from '@/lib/session-cookies';
 
 // BFF: proxyea el login al backend y reenvía las cookies HTTP-only (admin_at/admin_rt)
 // al browser. El browser nunca habla cross-origin con el backend.
@@ -16,9 +16,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const res = NextResponse.json(data, { status: backendRes.status });
 
   // getSetCookie() devuelve admin_at y admin_rt por separado; get('set-cookie') las colapsa.
-  for (const cookie of backendRes.headers.getSetCookie?.() ?? []) {
-    res.headers.append('set-cookie', adaptBackendCookie(cookie));
-  }
+  applyBackendSession(res.cookies, backendRes.headers.getSetCookie?.() ?? []);
 
   return res;
 }
