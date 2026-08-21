@@ -4,7 +4,7 @@ import { FlagsPanel } from './flags-panel';
 export const metadata = { title: 'Interruptores de compras' };
 
 export default async function FlagsPage() {
-  await requireAction('economy:monetization:read');
+  await requireAction('economy:store-ops:global');
 
   return (
     <div className="space-y-6">
