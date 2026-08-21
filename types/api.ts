@@ -17220,6 +17220,7 @@ export interface components {
                     country: string | null;
                     kokosBalance: number;
                 }[];
+                negativeKokosTotal: number;
                 counts: {
                     [key: string]: number;
                 };
