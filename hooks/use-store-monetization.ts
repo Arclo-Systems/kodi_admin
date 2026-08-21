@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/fetch-json';
-import { throwApiError } from '@/lib/bff';
 
 // Tipos espejo de `StoreAdminService` (backend). El envelope `{ data }` lo desenvuelve
 // `fetchJson`; el OpenAPI no lo declara, así que estos se mantienen a mano.
@@ -72,6 +71,8 @@ export type IncidentStatus = (typeof INCIDENT_STATUSES)[number];
 
 export type Incidents = Paged<StoreEvent> & {
   negativeKokos: NegativeKokos[];
+  // El listado se corta en 100; este es el total real, y es el que va en el contador.
+  negativeKokosTotal: number;
   counts: Record<string, number>;
 };
 
@@ -150,6 +151,7 @@ export function useIncidents(query: { status?: IncidentStatus; page?: number }) 
       (await fetchJson<Incidents>(`${BASE}/incidents${qs({ ...query })}`)) ?? {
         ...EMPTY,
         negativeKokos: [],
+        negativeKokosTotal: 0,
         counts: {},
       },
   });
@@ -178,15 +180,25 @@ export function useKillSwitches() {
   });
 }
 
-async function post(url: string, body: unknown): Promise<unknown> {
-  const res = await fetch(url, {
+export type ReleaseResult = {
+  released: boolean;
+  slotsTotal: number;
+  slotsClaimed: number;
+  slotsReserved: number;
+};
+export type ReprocessResult = { status: string; tokenRecovered: boolean };
+export type AssignResult = { status: string; moduleIds: string[] };
+export type ResolveResult = { resolved: boolean; previousStatus: string };
+
+// Pasa por `fetchJson` para desenvolver el envelope `{ data }`: sin eso el resultado de
+// la mutación llega envuelto y el llamador no puede decir QUÉ pasó — que es justo el dato
+// que hace la diferencia entre "reprocesado y quedó procesado" y "reprocesado y sigue roto".
+async function post<T>(url: string, body: unknown): Promise<T | undefined> {
+  return fetchJson<T>(url, {
     method: 'POST',
-    credentials: 'same-origin',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) await throwApiError(res, 'No pudimos completar la acción');
-  return res.json().catch(() => ({}));
 }
 
 /**
@@ -201,17 +213,17 @@ export function useStoreMutations() {
   return {
     releaseReservation: useMutation({
       mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-        post(`${BASE}/reservations/${id}/release`, { reason }),
+        post<ReleaseResult>(`${BASE}/reservations/${id}/release`, { reason }),
       onSuccess: invalidate,
     }),
     reprocessEvent: useMutation({
       mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-        post(`${BASE}/events/${id}/reprocess`, { reason }),
+        post<ReprocessResult>(`${BASE}/events/${id}/reprocess`, { reason }),
       onSuccess: invalidate,
     }),
     resolveIncident: useMutation({
       mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-        post(`${BASE}/incidents/${id}/resolve`, { reason }),
+        post<ResolveResult>(`${BASE}/incidents/${id}/resolve`, { reason }),
       onSuccess: invalidate,
     }),
     assignModules: useMutation({
@@ -221,7 +233,7 @@ export function useStoreMutations() {
         moduleIds: string[];
         reason: string;
       }) =>
-        post(`${BASE}/incidents/${input.id}/modules`, {
+        post<AssignResult>(`${BASE}/incidents/${input.id}/modules`, {
           userId: input.userId,
           moduleIds: input.moduleIds,
           reason: input.reason,
@@ -230,7 +242,7 @@ export function useStoreMutations() {
     }),
     retryDlq: useMutation({
       mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-        post(`${BASE}/dlq/${id}/retry`, { reason }),
+        post<ReprocessResult>(`${BASE}/dlq/${id}/retry`, { reason }),
       onSuccess: invalidate,
     }),
   };
