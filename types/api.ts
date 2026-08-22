@@ -10271,6 +10271,7 @@ export interface components {
                     slots_total: number;
                     slots_remaining: number;
                     eligible: boolean;
+                    keeps_founder_pricing: boolean;
                     /** @enum {string|null} */
                     reservation_status: "reserved" | "consumed" | "released" | null;
                     /** @enum {string} */
