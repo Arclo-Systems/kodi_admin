@@ -98,7 +98,10 @@ export function AssignModulesDialog({ eventId }: { eventId: string }) {
             <DialogTitle>Asignar módulos a mano</DialogTitle>
             <DialogDescription>
               La cantidad tiene que coincidir con el pack cobrado y los módulos tienen que estar
-              registrados por el usuario.
+              registrados por el usuario. Límite estructural: el recibo de Play no se guarda
+              (solo su huella), así que esto únicamente funciona si la compra ya escribió
+              suscripciones de las que recuperarlo. Si falla con &quot;recibo irrecuperable&quot;,
+              la única salida es que el usuario elija sus módulos desde la app.
             </DialogDescription>
           </DialogHeader>
 
