@@ -10279,6 +10279,8 @@ export interface components {
                     slots_total: number;
                     slots_remaining: number;
                     eligible: boolean;
+                    /** @enum {string|null} */
+                    reservation_status: "reserved" | "consumed" | "released" | null;
                     /** @enum {string} */
                     price_mode: "explicit" | "percent";
                     discount_percent: number | null;
