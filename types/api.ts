@@ -1530,26 +1530,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/subscriptions/activate-trial": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Activar trial gratuito de Plus o Pro
-         * @description Solo si el usuario nunca ha tenido subscription activa de ese módulo.
-         */
-        post: operations["SubscriptionsController_activateTrial"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/subscriptions/{id}/cancel": {
         parameters: {
             query?: never;
@@ -1579,6 +1559,26 @@ export interface paths {
         };
         /** Grid de precios de suscripción del país del usuario */
         get: operations["PricingController_getPricing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/subscriptions/trial-eligibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Elegibilidad del trial de Plus por módulo
+         * @description Un módulo queda inelegible si el usuario ya tuvo cualquier suscripción en él ("una vez por módulo"). El trial cubre el pack entero, así que solo hay prueba gratis si TODOS los módulos consultados están libres.
+         */
+        get: operations["PurchaseIntentController_trialEligibility"];
         put?: never;
         post?: never;
         delete?: never;
@@ -10175,23 +10175,6 @@ export interface components {
                 }[];
             };
         };
-        ActivateTrialDto: {
-            /** Format: uuid */
-            module_id: string;
-            /** @enum {string} */
-            plan: "basico" | "plus" | "pro";
-        };
-        TrialActivatedResponse: {
-            data: {
-                /** Format: uuid */
-                id: string;
-                /** @enum {string} */
-                plan: "free" | "basico" | "plus" | "pro";
-                /** @enum {string} */
-                status: "trial" | "active" | "cancelled" | "expired" | "grace";
-                expires_at: string;
-            };
-        };
         SubscriptionCancelledResponse: {
             data: {
                 /** Format: uuid */
@@ -10213,6 +10196,13 @@ export interface components {
                 }[];
             };
         };
+        TrialEligibilityResponse: {
+            data: {
+                eligible_module_ids: string[];
+                ineligible_module_ids: string[];
+                trial_available: boolean;
+            };
+        };
         PurchaseIntentDto: {
             /** @enum {string} */
             plan: "basico" | "plus" | "pro";
@@ -10221,6 +10211,8 @@ export interface components {
             pack_size: number;
             module_ids: string[];
             want_founder: boolean;
+            /** @default true */
+            want_trial: boolean;
         };
         PurchaseIntentResponse: {
             data: {
@@ -20312,32 +20304,6 @@ export interface operations {
             };
         };
     };
-    SubscriptionsController_activateTrial: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
-                "Idempotency-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ActivateTrialDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TrialActivatedResponse"];
-                };
-            };
-        };
-    };
     SubscriptionsController_cancel: {
         parameters: {
             query?: never;
@@ -20374,6 +20340,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PricingResponse"];
+                };
+            };
+        };
+    };
+    PurchaseIntentController_trialEligibility: {
+        parameters: {
+            query?: {
+                module_ids?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrialEligibilityResponse"];
                 };
             };
         };
