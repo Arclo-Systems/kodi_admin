@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { throwApiError } from '@/lib/bff';
 import { fetchJson } from '@/lib/fetch-json';
 
 export type TxTemplate = {
@@ -49,13 +50,13 @@ export async function fetchTxTemplatePreview(
     body: JSON.stringify(input),
     signal,
   });
-  // El backend envuelve el error en { error: { code, message } }; el mensaje literal
-  // (p. ej. UNKNOWN_TEMPLATE_VAR) es justo lo que hay que mostrarle al admin.
+  // `throwApiError` ya extrae el mensaje literal del envelope { error: { code, message } }
+  // —p. ej. UNKNOWN_TEMPLATE_VAR, que es justo lo que hay que mostrarle al admin— y le
+  // suma el status, así un 401 acá también llega al manejo global de sesión caída.
+  if (!res.ok) await throwApiError(res, 'No se pudo generar la vista previa.');
   const body = (await res.json().catch(() => ({}))) as {
     data?: { html?: string };
-    error?: { message?: string };
   };
-  if (!res.ok) throw new Error(body.error?.message ?? 'No se pudo generar la vista previa.');
   return body.data?.html ?? '';
 }
 

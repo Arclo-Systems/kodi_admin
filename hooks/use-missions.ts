@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 import { PLAN_KEYS, type PlanKey } from '@/lib/plans';
 
 export const MISSION_TYPES = [
@@ -149,12 +150,10 @@ export function useMissionTemplates(query: MissionTemplateListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/economy/missions/templates?${params}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch mission templates failed');
       return (
-        unwrapData<TemplateListPage>(await res.json()) ?? {
+        (await fetchJson<TemplateListPage>(
+          `/api/admin/economy/missions/templates?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -170,11 +169,9 @@ export function useMissionTemplate(id: string) {
     queryKey: ['mission-template', id],
     enabled: !!id,
     queryFn: async (): Promise<MissionTemplate | undefined> => {
-      const res = await fetch(`/api/admin/economy/missions/templates/${id}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch mission template failed');
-      return unwrapData<MissionTemplate>(await res.json());
+      return fetchJson<MissionTemplate>(
+        `/api/admin/economy/missions/templates/${id}`,
+      );
     },
   });
 }
@@ -207,11 +204,11 @@ export function useRefreshConfig(country: string | null) {
     queryKey: ['mission-refresh-config', country],
     queryFn: async (): Promise<RefreshConfig | null> => {
       const qs = country ? `?country=${country}` : '';
-      const res = await fetch(`/api/admin/economy/missions/refresh-config${qs}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch refresh config failed');
-      return unwrapData<RefreshConfig | null>(await res.json()) ?? null;
+      return (
+        (await fetchJson<RefreshConfig | null>(
+          `/api/admin/economy/missions/refresh-config${qs}`,
+        )) ?? null
+      );
     },
   });
 }
@@ -232,12 +229,11 @@ export function useUserMissions(friendCode: string, enabled: boolean) {
     queryKey: ['user-missions', friendCode],
     enabled: enabled && !!friendCode,
     queryFn: async (): Promise<UserMission[]> => {
-      const res = await fetch(
-        `/api/admin/economy/missions/user/${encodeURIComponent(friendCode)}`,
-        { credentials: 'include' },
+      return (
+        (await fetchJson<UserMission[]>(
+          `/api/admin/economy/missions/user/${encodeURIComponent(friendCode)}`,
+        )) ?? []
       );
-      if (!res.ok) throw new Error('fetch user missions failed');
-      return unwrapData<UserMission[]>(await res.json()) ?? [];
     },
   });
 }
