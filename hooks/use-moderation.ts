@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type ReportSeverity = 'low' | 'medium' | 'high' | 'critical';
 export type ReportStatus = 'open' | 'in_review' | 'dismissed' | 'actioned' | 'escalated';
@@ -79,10 +79,10 @@ export function useReports(query: ReportsQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/moderation/reports?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch reports failed');
       return (
-        unwrapData<ReportsPage>(await res.json()) ?? {
+        (await fetchJson<ReportsPage>(
+          `/api/admin/moderation/reports?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -98,9 +98,7 @@ export function useReport(id: string | null) {
     queryKey: ['moderation', 'report', id],
     enabled: !!id,
     queryFn: async (): Promise<Report | undefined> => {
-      const res = await fetch(`/api/admin/moderation/reports/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch report failed');
-      return unwrapData<Report>(await res.json());
+      return fetchJson<Report>(`/api/admin/moderation/reports/${id}`);
     },
   });
 }
@@ -109,9 +107,12 @@ export function useModerationStats() {
   return useQuery({
     queryKey: ['moderation', 'stats'],
     queryFn: async (): Promise<ModerationStats> => {
-      const res = await fetch('/api/admin/moderation/stats', { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch moderation stats failed');
-      return unwrapData<ModerationStats>(await res.json()) ?? { open: 0, bySeverity: {} };
+      return (
+        (await fetchJson<ModerationStats>('/api/admin/moderation/stats')) ?? {
+          open: 0,
+          bySeverity: {},
+        }
+      );
     },
   });
 }

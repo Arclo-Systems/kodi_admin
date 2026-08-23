@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type FinanceKind = 'expense' | 'income';
 export const KIND_LABELS: Record<FinanceKind, string> = { expense: 'Gasto', income: 'Ingreso' };
@@ -89,9 +90,7 @@ export function useFinanceCategories(kind?: FinanceKind) {
     queryKey: ['finance-categories', kind ?? null],
     queryFn: async (): Promise<FinanceCategory[]> => {
       const qs = kind ? `?kind=${kind}` : '';
-      const res = await fetch(`${BASE}/categories${qs}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch finance categories failed');
-      return unwrapData<FinanceCategory[]>(await res.json()) ?? [];
+      return (await fetchJson<FinanceCategory[]>(`${BASE}/categories${qs}`)) ?? [];
     },
   });
 }
@@ -126,10 +125,8 @@ export function useFinanceEntries(query: FinanceEntryListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`${BASE}/entries?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch finance entries failed');
       return (
-        unwrapData<EntryListPage>(await res.json()) ?? {
+        (await fetchJson<EntryListPage>(`${BASE}/entries?${params}`)) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -145,9 +142,7 @@ export function useFinanceEntry(id: string | undefined) {
     queryKey: ['finance-entry', id],
     enabled: !!id,
     queryFn: async (): Promise<FinanceEntry | undefined> => {
-      const res = await fetch(`${BASE}/entries/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch finance entry failed');
-      return unwrapData<FinanceEntry>(await res.json());
+      return fetchJson<FinanceEntry>(`${BASE}/entries/${id}`);
     },
   });
 }
@@ -185,9 +180,7 @@ export function useFinancePnl(from?: string, to?: string) {
       if (from) params.set('from', from);
       if (to) params.set('to', to);
       const qs = params.toString();
-      const res = await fetch(`${BASE}/pnl${qs ? `?${qs}` : ''}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch pnl failed');
-      return unwrapData<Pnl>(await res.json());
+      return fetchJson<Pnl>(`${BASE}/pnl${qs ? `?${qs}` : ''}`);
     },
   });
 }

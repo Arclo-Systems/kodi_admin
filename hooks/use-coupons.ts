@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type CouponTier = 'basico' | 'estandar' | 'premium';
 
@@ -173,12 +174,10 @@ export function useCoupons(query: CouponListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/economy/coupons?${params}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch coupons failed');
       return (
-        unwrapData<CouponListPage>(await res.json()) ?? {
+        (await fetchJson<CouponListPage>(
+          `/api/admin/economy/coupons?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -194,9 +193,7 @@ export function useCoupon(id: string) {
     queryKey: ['coupon', id],
     enabled: !!id,
     queryFn: async (): Promise<CouponDetail | undefined> => {
-      const res = await fetch(`/api/admin/economy/coupons/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch coupon failed');
-      return unwrapData<CouponDetail>(await res.json());
+      return fetchJson<CouponDetail>(`/api/admin/economy/coupons/${id}`);
     },
   });
 }
@@ -206,11 +203,7 @@ export function useCouponStats(id: string) {
     queryKey: ['coupon-stats', id],
     enabled: !!id,
     queryFn: async (): Promise<CouponStats | undefined> => {
-      const res = await fetch(`/api/admin/economy/coupons/${id}/stats`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch coupon stats failed');
-      return unwrapData<CouponStats>(await res.json());
+      return fetchJson<CouponStats>(`/api/admin/economy/coupons/${id}/stats`);
     },
   });
 }
@@ -225,12 +218,10 @@ export function useCouponRedemptions(id: string, query: UserCouponQuery) {
         if (v === undefined) continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/economy/coupons/${id}/user-coupons?${params}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch redemptions failed');
       return (
-        unwrapData<UserCouponPage>(await res.json()) ?? {
+        (await fetchJson<UserCouponPage>(
+          `/api/admin/economy/coupons/${id}/user-coupons?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,

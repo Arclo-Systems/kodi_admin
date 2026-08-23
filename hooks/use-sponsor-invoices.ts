@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type InvoiceStatus = 'draft' | 'issued' | 'paid' | 'overdue' | 'void';
 
@@ -106,11 +107,11 @@ export function useSponsorInvoices(params: { sponsorId?: string; status?: Invoic
       const qs = new URLSearchParams({ page: '1', pageSize: '100' });
       if (params.sponsorId) qs.set('sponsorId', params.sponsorId);
       if (params.status) qs.set('status', params.status);
-      const res = await fetch(`/api/admin/economy/sponsor-invoices?${qs}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch invoices failed');
-      return unwrapData<InvoiceListPage>(await res.json())?.items ?? [];
+      return (
+        (await fetchJson<InvoiceListPage>(
+          `/api/admin/economy/sponsor-invoices?${qs}`,
+        ))?.items ?? []
+      );
     },
   });
 }
@@ -120,11 +121,9 @@ export function useInvoice(id: string) {
     queryKey: ['sponsor-invoice', id],
     enabled: !!id,
     queryFn: async (): Promise<InvoiceDetail | undefined> => {
-      const res = await fetch(`/api/admin/economy/sponsor-invoices/${id}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch invoice failed');
-      return unwrapData<InvoiceDetail>(await res.json());
+      return fetchJson<InvoiceDetail>(
+        `/api/admin/economy/sponsor-invoices/${id}`,
+      );
     },
   });
 }
