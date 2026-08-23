@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type PriceMode = 'explicit' | 'percent';
 
@@ -83,9 +83,7 @@ export function usePromoOffers() {
   return useQuery({
     queryKey: ['promo-offers'],
     queryFn: async (): Promise<PromoOffer[]> => {
-      const res = await fetch(BASE, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch promo-offers failed');
-      return unwrapData<PromoOffer[]>(await res.json()) ?? [];
+      return (await fetchJson<PromoOffer[]>(BASE)) ?? [];
     },
   });
 }
@@ -95,9 +93,7 @@ export function usePromoOffer(id: string | null) {
     queryKey: ['promo-offer', id],
     enabled: !!id,
     queryFn: async (): Promise<PromoOfferDetail | null> => {
-      const res = await fetch(`${BASE}/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch promo-offer failed');
-      return unwrapData<PromoOfferDetail>(await res.json()) ?? null;
+      return (await fetchJson<PromoOfferDetail>(`${BASE}/${id}`)) ?? null;
     },
   });
 }

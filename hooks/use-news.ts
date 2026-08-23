@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type NewsStatus = 'draft' | 'scheduled' | 'published';
 
@@ -38,10 +38,8 @@ export function useNews(query: NewsListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/content/news?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch news failed');
       return (
-        unwrapData<NewsListPage>(await res.json()) ?? {
+        (await fetchJson<NewsListPage>(`/api/admin/content/news?${params}`)) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -63,9 +61,7 @@ export function useNewsArticle(id: string) {
     queryKey: ['news-article', id],
     enabled: !!id,
     queryFn: async (): Promise<NewsDetail | undefined> => {
-      const res = await fetch(`/api/admin/content/news/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch news article failed');
-      return unwrapData<NewsDetail>(await res.json());
+      return fetchJson<NewsDetail>(`/api/admin/content/news/${id}`);
     },
   });
 }

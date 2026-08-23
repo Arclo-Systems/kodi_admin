@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type RaffleStatus =
   | 'scheduled'
@@ -158,10 +158,10 @@ export function useRaffles(query: RaffleListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/economy/raffles?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch raffles failed');
       return (
-        unwrapData<RaffleListPage>(await res.json()) ?? {
+        (await fetchJson<RaffleListPage>(
+          `/api/admin/economy/raffles?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -177,9 +177,7 @@ export function useRaffle(id: string) {
     queryKey: ['raffle', id],
     enabled: !!id,
     queryFn: async (): Promise<RaffleDetail | undefined> => {
-      const res = await fetch(`/api/admin/economy/raffles/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch raffle failed');
-      return unwrapData<RaffleDetail>(await res.json());
+      return fetchJson<RaffleDetail>(`/api/admin/economy/raffles/${id}`);
     },
   });
 }

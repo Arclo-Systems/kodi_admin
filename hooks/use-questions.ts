@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type QuestionStatus = 'draft' | 'review' | 'active' | 'inactive';
 export type Difficulty = 'easy' | 'medium' | 'hard';
@@ -43,10 +43,10 @@ export function useQuestions(query: QuestionListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/content/questions?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch questions failed');
       return (
-        unwrapData<QuestionListPage>(await res.json()) ?? {
+        (await fetchJson<QuestionListPage>(
+          `/api/admin/content/questions?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -84,9 +84,7 @@ export function useQuestion(id: string) {
     queryKey: ['question', id],
     enabled: !!id,
     queryFn: async (): Promise<QuestionDetail | undefined> => {
-      const res = await fetch(`/api/admin/content/questions/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch question failed');
-      return unwrapData<QuestionDetail>(await res.json());
+      return fetchJson<QuestionDetail>(`/api/admin/content/questions/${id}`);
     },
   });
 }

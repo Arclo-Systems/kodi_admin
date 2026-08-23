@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type AppPlatform = 'ios' | 'android';
 
@@ -65,9 +65,9 @@ export function useAppVersions(platform?: AppPlatform) {
     queryKey: ['launches', 'versions', platform ?? 'all'],
     queryFn: async (): Promise<AppVersion[]> => {
       const qs = platform ? `?platform=${platform}` : '';
-      const res = await fetch(`/api/admin/launches/versions${qs}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch versions failed');
-      return unwrapData<AppVersion[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<AppVersion[]>(`/api/admin/launches/versions${qs}`)) ?? []
+      );
     },
   });
 }
@@ -96,9 +96,9 @@ export function useCountryRollouts() {
   return useQuery({
     queryKey: ['launches', 'countries'],
     queryFn: async (): Promise<CountryRollout[]> => {
-      const res = await fetch('/api/admin/launches/countries', { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch countries failed');
-      return unwrapData<CountryRollout[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<CountryRollout[]>('/api/admin/launches/countries')) ?? []
+      );
     },
   });
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type NormalizedReward =
   | { type: 'kokos'; amount: number }
@@ -47,11 +47,11 @@ export function useReferralMilestones() {
   return useQuery({
     queryKey: ['referral-milestones'],
     queryFn: async (): Promise<ReferralMilestone[]> => {
-      const res = await fetch('/api/admin/economy/referrals/milestones', {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch milestones failed');
-      return unwrapData<ReferralMilestone[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<ReferralMilestone[]>(
+          '/api/admin/economy/referrals/milestones',
+        )) ?? []
+      );
     },
   });
 }
@@ -60,11 +60,7 @@ export function useReferralStats() {
   return useQuery({
     queryKey: ['referral-stats'],
     queryFn: async (): Promise<ReferralStats | undefined> => {
-      const res = await fetch('/api/admin/economy/referrals/stats', {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch referral stats failed');
-      return unwrapData<ReferralStats>(await res.json());
+      return fetchJson<ReferralStats>('/api/admin/economy/referrals/stats');
     },
   });
 }

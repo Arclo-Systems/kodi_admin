@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 // Estados de BullMQ expuestos por el backend (JobsAdminService). Espejo de JOB_STATES.
 export const JOB_STATES = ['waiting', 'active', 'completed', 'failed', 'delayed'] as const;
@@ -37,9 +37,7 @@ export function useJobCounts() {
   return useQuery({
     queryKey: ['jobs', 'counts'],
     queryFn: async (): Promise<JobCounts> => {
-      const res = await fetch('/api/admin/jobs/counts', { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch job counts failed');
-      return unwrapData<JobCounts>(await res.json()) ?? {};
+      return (await fetchJson<JobCounts>('/api/admin/jobs/counts')) ?? {};
     },
   });
 }
@@ -58,11 +56,7 @@ export function useJobSchedules() {
   return useQuery({
     queryKey: ['jobs', 'schedules'],
     queryFn: async (): Promise<JobSchedule[]> => {
-      const res = await fetch('/api/admin/jobs/schedules', {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('No se pudo cargar lo programado');
-      return unwrapData<JobSchedule[]>(await res.json()) ?? [];
+      return (await fetchJson<JobSchedule[]>('/api/admin/jobs/schedules')) ?? [];
     },
     // El calendario cambia con un deploy, no solo: no hace falta refetch agresivo.
     staleTime: 5 * 60 * 1000,
@@ -74,10 +68,13 @@ export function useJobs(state: JobState, page: number) {
     queryKey: ['jobs', 'list', state, page],
     queryFn: async (): Promise<JobsPage> => {
       const params = new URLSearchParams({ state, page: String(page), pageSize: String(JOBS_PAGE_SIZE) });
-      const res = await fetch(`/api/admin/jobs?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch jobs failed');
       return (
-        unwrapData<JobsPage>(await res.json()) ?? { items: [], state, page, pageSize: JOBS_PAGE_SIZE }
+        (await fetchJson<JobsPage>(`/api/admin/jobs?${params}`)) ?? {
+          items: [],
+          state,
+          page,
+          pageSize: JOBS_PAGE_SIZE,
+        }
       );
     },
   });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type SegmentFilters = {
   country?: string[];
@@ -44,9 +44,9 @@ export function useSegments() {
   return useQuery({
     queryKey: ['messaging', 'segments'],
     queryFn: async (): Promise<UserSegment[]> => {
-      const res = await fetch('/api/admin/messaging/segments', { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch segments failed');
-      return unwrapData<UserSegment[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<UserSegment[]>('/api/admin/messaging/segments')) ?? []
+      );
     },
   });
 }
@@ -73,12 +73,16 @@ export function useSegmentMutations() {
 
 // Preview de conteo en vivo para unos filtros (no persiste).
 export async function previewSegmentCount(filters: SegmentFilters): Promise<number> {
-  const res = await fetch('/api/admin/messaging/segments/preview-count', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ filters }),
-  });
-  if (!res.ok) throw new Error('preview-count failed');
-  return unwrapData<{ count: number }>(await res.json())?.count ?? 0;
+  return (
+    (
+      await fetchJson<{ count: number }>(
+        '/api/admin/messaging/segments/preview-count',
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ filters }),
+        },
+      )
+    )?.count ?? 0
+  );
 }
