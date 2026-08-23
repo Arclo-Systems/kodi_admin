@@ -9,7 +9,7 @@ import { useKillSwitches, type KillSwitch } from '@/hooks/use-store-monetization
 
 const DESCRIPTION: Record<string, string> = {
   IAP_PURCHASES_ENABLED:
-    'Apaga el botón de comprar en la app. NO corta el cobro: si Play ya cobró, el backend tiene que acreditar igual. Para cortar el cobro de verdad hay que despublicar en Play Console.',
+    'Apaga el botón de comprar en la app y el backend rechaza abrir una compra nueva. NO corta el cobro: si Play ya cobró, el backend tiene que acreditar igual. Para cortar el cobro de verdad hay que despublicar en Play Console.',
   IAP_RESTORE_ENABLED:
     'Habilita restaurar compras. Necesita además las credenciales de la tienda: sin ellas, el restore se rechaza aunque la variable esté prendida.',
 };
