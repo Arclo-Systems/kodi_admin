@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type StoreCategory = 'cosmetic' | 'functional';
 export type StoreItemType =
@@ -139,10 +140,10 @@ export function useStoreItems(query: StoreListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/economy/store?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch store items failed');
       return (
-        unwrapData<StoreListPage>(await res.json()) ?? {
+        (await fetchJson<StoreListPage>(
+          `/api/admin/economy/store?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -158,9 +159,7 @@ export function useStoreItem(id: string) {
     queryKey: ['store-item', id],
     enabled: !!id,
     queryFn: async (): Promise<StoreItem | undefined> => {
-      const res = await fetch(`/api/admin/economy/store/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch store item failed');
-      return unwrapData<StoreItem>(await res.json());
+      return fetchJson<StoreItem>(`/api/admin/economy/store/${id}`);
     },
   });
 }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { ApiError } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 import type { MessageChannel } from '@/hooks/use-message-templates';
 
 export type CampaignStatus =
@@ -101,10 +102,10 @@ export function useCampaigns(query: CampaignsQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/messaging/campaigns?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch campaigns failed');
       return (
-        unwrapData<CampaignsPage>(await res.json()) ?? {
+        (await fetchJson<CampaignsPage>(
+          `/api/admin/messaging/campaigns?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -120,10 +121,16 @@ export function useCampaign(id: string) {
     queryKey: ['messaging', 'campaigns', 'detail', id],
     retry: false,
     queryFn: async (): Promise<Campaign> => {
-      const res = await fetch(`/api/admin/messaging/campaigns/${id}`, { credentials: 'include' });
-      if (res.status === 404) throw new Error('NOT_FOUND');
-      if (!res.ok) throw new Error('fetch campaign failed');
-      const data = unwrapData<Campaign>(await res.json());
+      // El 404 tiene copy propio en la pantalla; cualquier otro error (incluido el 401
+      // de sesión caída) se re-lanza tal cual para que lo tome el manejo global.
+      const data = await fetchJson<Campaign>(
+        `/api/admin/messaging/campaigns/${id}`,
+      ).catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 404) {
+          throw new Error('NOT_FOUND');
+        }
+        throw err;
+      });
       if (!data) throw new Error('NOT_FOUND');
       return data;
     },

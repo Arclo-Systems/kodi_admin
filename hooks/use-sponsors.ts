@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 /** El logo viaja para poder previsualizar lo que verá el usuario sin volver a la ficha. */
 export type SponsorOption = { id: string; name: string; logoUrl: string | null };
@@ -91,11 +92,9 @@ export function useSponsorOptions() {
     queryKey: ['sponsor-options'],
     staleTime: 60_000,
     queryFn: async (): Promise<SponsorOption[]> => {
-      const res = await fetch('/api/admin/economy/sponsors?pageSize=100&isActive=true', {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch sponsors failed');
-      const page = unwrapData<SponsorListPage>(await res.json());
+      const page = await fetchJson<SponsorListPage>(
+        '/api/admin/economy/sponsors?pageSize=100&isActive=true',
+      );
       return (page?.items ?? []).map((s) => ({ id: s.id, name: s.name, logoUrl: s.logoUrl }));
     },
   });
@@ -110,10 +109,10 @@ export function useSponsors(query: SponsorListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/economy/sponsors?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch sponsors failed');
       return (
-        unwrapData<SponsorListPage>(await res.json()) ?? {
+        (await fetchJson<SponsorListPage>(
+          `/api/admin/economy/sponsors?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -129,9 +128,7 @@ export function useSponsor(id: string) {
     queryKey: ['sponsor', id],
     enabled: !!id,
     queryFn: async (): Promise<Sponsor | undefined> => {
-      const res = await fetch(`/api/admin/economy/sponsors/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch sponsor failed');
-      return unwrapData<Sponsor>(await res.json());
+      return fetchJson<Sponsor>(`/api/admin/economy/sponsors/${id}`);
     },
   });
 }
@@ -250,9 +247,7 @@ export type SponsorDocument = {
 type Paged<T> = { items: T[]; total: number; page: number; pageSize: number };
 
 async function fetchItems<T>(url: string): Promise<T[]> {
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) throw new Error('fetch failed');
-  return unwrapData<Paged<T>>(await res.json())?.items ?? [];
+  return (await fetchJson<Paged<T>>(url))?.items ?? [];
 }
 
 async function sendDelete(url: string): Promise<void> {
@@ -366,11 +361,11 @@ export function useSponsorBranches(id: string) {
     queryKey: ['sponsor-branches', id],
     enabled: !!id,
     queryFn: async (): Promise<SponsorBranch[]> => {
-      const res = await fetch(`/api/admin/economy/sponsors/${id}/branches`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch branches failed');
-      return unwrapData<SponsorBranch[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<SponsorBranch[]>(
+          `/api/admin/economy/sponsors/${id}/branches`,
+        )) ?? []
+      );
     },
   });
 }

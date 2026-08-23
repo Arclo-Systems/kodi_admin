@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type GameEntity = 'matches' | 'arenas' | 'simulacros' | 'quick-modes';
 
@@ -137,12 +137,10 @@ export function useGameList<T>(entity: GameEntity, filters: GameListFilters) {
       if (filters.moduleId) qs.set('moduleId', filters.moduleId);
       if (filters.type) qs.set('type', filters.type);
       if (filters.page) qs.set('page', String(filters.page));
-      const res = await fetch(`/api/admin/game/${entity}?${qs.toString()}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch game list failed');
       return (
-        unwrapData<ListResponse<T>>(await res.json()) ?? {
+        (await fetchJson<ListResponse<T>>(
+          `/api/admin/game/${entity}?${qs.toString()}`,
+        )) ?? {
           items: [],
           total: 0,
           page: 1,
@@ -157,11 +155,9 @@ export function useGameDetail(entity: GameEntity, id: string) {
   return useQuery({
     queryKey: ['game', entity, 'detail', id],
     queryFn: async (): Promise<GameDetail> => {
-      const res = await fetch(`/api/admin/game/${entity}/${id}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch game detail failed');
-      const data = unwrapData<GameDetail>(await res.json());
+      const data = await fetchJson<GameDetail>(
+        `/api/admin/game/${entity}/${id}`,
+      );
       if (!data) throw new Error('not found');
       return data;
     },
