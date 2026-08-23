@@ -8,7 +8,6 @@ import {
   ArrowDownToLineIcon,
   ArrowUpDownIcon,
   ArrowUpToLineIcon,
-  AwardIcon,
   GiftIcon,
   SaveIcon,
   XIcon,
@@ -51,9 +50,8 @@ type TierValues = {
   t410Kolones: number;
   restKokos: number;
   restKolones: number;
-  insigniaItemId: string;
 };
-type NumKey = Exclude<keyof TierValues, 'insigniaItemId'>;
+type NumKey = keyof TierValues;
 
 const itemsOf = (reward: RewardSpec | undefined): string[] =>
   reward?.items?.map((i) => i.itemId) ?? [];
@@ -69,13 +67,11 @@ function TierCard({
   tier,
   country,
   config,
-  insignias,
   cosmetics,
 }: {
   tier: LeagueTier;
   country: string | null;
   config?: LeagueConfig;
-  insignias: StoreItem[];
   cosmetics: StoreItem[];
 }) {
   const meta = leagueMeta(tier);
@@ -95,7 +91,6 @@ function TierCard({
       t410Kolones: config?.rewardTop4to10?.kolones ?? 0,
       restKokos: config?.rewardRest?.kokos ?? 0,
       restKolones: config?.rewardRest?.kolones ?? 0,
-      insigniaItemId: config?.insigniaItemId ?? '',
     },
   });
 
@@ -122,7 +117,6 @@ function TierCard({
         rewardTop3: reward(v.top3Kokos, v.top3Kolones, top3Items),
         rewardTop4to10: reward(v.t410Kokos, v.t410Kolones, t410Items),
         rewardRest: reward(v.restKokos, v.restKolones, restItems),
-        insigniaItemId: v.insigniaItemId || null,
       });
       toast.success(`${meta.label} guardado`);
     } catch (e) {
@@ -261,37 +255,6 @@ function TierCard({
               </FieldDescription>
             </fieldset>
 
-            <Field>
-              <FieldLabel className="flex items-center gap-2">
-                <AwardIcon className="text-muted-foreground size-4" />
-                Insignia de la liga
-              </FieldLabel>
-              <Controller
-                name="insigniaItemId"
-                control={form.control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value || NONE}
-                    onValueChange={(val) => field.onChange(val === NONE ? '' : val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={NONE}>— ninguna —</SelectItem>
-                      {insignias.map((i) => (
-                        <SelectItem key={i.id} value={i.id}>
-                          {i.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              <FieldDescription>
-                Se otorga al ASCENDER a esta liga (Aprendiz: a la 1ª práctica/partida). De temporada.
-              </FieldDescription>
-            </Field>
 
             <fieldset className="min-w-0 space-y-3">
               <legend className="flex items-center gap-2 text-sm font-medium">
@@ -324,10 +287,9 @@ function TierCard({
 export function LeagueConfigForm() {
   const [country, setCountry] = useState('');
   const { data: configs, isLoading } = useLeagueConfigs(country || null);
-  const { data: insigniaPage } = useStoreItems({ itemType: 'insignia', page: 1, pageSize: 50 });
   const { data: cosmeticPage } = useStoreItems({ category: 'cosmetic', page: 1, pageSize: 100 });
-  const insignias = insigniaPage?.items ?? [];
-  // Cosméticos para los tramos: cualquier cosmético MENOS las insignias (esas van por ascenso).
+  // Cosméticos para los tramos: cualquier cosmético MENOS las insignias (esas
+  // las otorgan los logros al ascender, no la config de la liga).
   const cosmetics = (cosmeticPage?.items ?? []).filter((c) => c.itemType !== 'insignia');
   const byTier = new Map((configs ?? []).map((c) => [c.leagueLevel, c]));
 
@@ -367,7 +329,6 @@ export function LeagueConfigForm() {
                 tier={tier}
                 country={country || null}
                 config={config}
-                insignias={insignias}
                 cosmetics={cosmetics}
               />
             );

@@ -23,7 +23,6 @@ export type LeagueConfig = {
   rewardTop3: RewardSpec;
   rewardTop4to10: RewardSpec;
   rewardRest: RewardSpec;
-  insigniaItemId: string | null;
   updatedAt: string;
 };
 

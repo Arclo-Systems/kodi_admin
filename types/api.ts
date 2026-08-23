@@ -9746,8 +9746,6 @@ export interface components {
                     total: number;
                     promote_count: number;
                     demote_count: number;
-                    /** Format: uuid */
-                    insignia_item_id: string | null;
                     brackets: {
                         positions_label: string;
                         first_position: number;
@@ -18243,8 +18241,6 @@ export interface components {
                     rewardTop4to10: unknown;
                     rewardRest: unknown;
                     /** Format: uuid */
-                    insigniaItemId: string | null;
-                    /** Format: uuid */
                     updatedBy: string | null;
                     updatedAt: string;
                 }[];
@@ -18307,8 +18303,6 @@ export interface components {
                 rewardTop3: unknown;
                 rewardTop4to10: unknown;
                 rewardRest: unknown;
-                /** Format: uuid */
-                insigniaItemId: string | null;
                 /** Format: uuid */
                 updatedBy: string | null;
                 updatedAt: string;
