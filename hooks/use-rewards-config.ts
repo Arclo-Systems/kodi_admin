@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 // Matriz completa (decisión founder 2026-06-10): cada modo tiene XP + Kolones + Kokos,
 // y todo XP acredita a la liga. Campo en 0 = ese premio no aplica.
@@ -101,11 +101,11 @@ export function useRewardsConfig(country: string | null) {
   return useQuery({
     queryKey: ['rewards-config', country],
     queryFn: async (): Promise<RewardConfig | null> => {
-      const res = await fetch(`/api/admin/economy/rewards/config${countryQs(country)}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch rewards config failed');
-      return unwrapData<RewardConfig>(await res.json()) ?? null;
+      return (
+        (await fetchJson<RewardConfig>(
+          `/api/admin/economy/rewards/config${countryQs(country)}`,
+        )) ?? null
+      );
     },
   });
 }

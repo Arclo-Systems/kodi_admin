@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type Subscription = {
   id: string;
@@ -58,12 +58,10 @@ export function useSubscriptions(query: SubsQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/monetization/subscriptions?${params}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch subscriptions failed');
       return (
-        unwrapData<SubsPage>(await res.json()) ?? {
+        (await fetchJson<SubsPage>(
+          `/api/admin/monetization/subscriptions?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,

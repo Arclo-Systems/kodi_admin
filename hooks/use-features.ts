@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type FeatureStatus = 'idea' | 'construccion' | 'lanzado' | 'descartado';
 export type FeaturePriority = 'low' | 'medium' | 'high';
@@ -66,9 +67,9 @@ export function useFeatures(search?: string) {
     queryKey: ['features', search ?? ''],
     queryFn: async (): Promise<FeatureList> => {
       const qs = search ? `?search=${encodeURIComponent(search)}` : '';
-      const res = await fetch(`/api/admin/features${qs}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch features failed');
-      return unwrapData<FeatureList>(await res.json()) ?? { items: [] };
+      return (
+        (await fetchJson<FeatureList>(`/api/admin/features${qs}`)) ?? { items: [] }
+      );
     },
   });
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type SubscriptionPrice = {
   id: string;
@@ -43,9 +43,7 @@ export function useSubscriptionPrices() {
   return useQuery({
     queryKey: ['subscription-prices'],
     queryFn: async (): Promise<SubscriptionPrice[]> => {
-      const res = await fetch(BASE, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch subscription-prices failed');
-      return unwrapData<SubscriptionPrice[]>(await res.json()) ?? [];
+      return (await fetchJson<SubscriptionPrice[]>(BASE)) ?? [];
     },
   });
 }

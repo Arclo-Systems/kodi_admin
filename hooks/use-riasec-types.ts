@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export const RIASEC_DIMENSIONS = ['R', 'I', 'A', 'S', 'E', 'C'] as const;
 export type RiasecDimension = (typeof RIASEC_DIMENSIONS)[number];
@@ -38,9 +38,9 @@ export function useRiasecTypes() {
   return useQuery({
     queryKey: ['riasec-types'],
     queryFn: async (): Promise<RiasecType[]> => {
-      const res = await fetch('/api/admin/content/riasec-types', { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch riasec types failed');
-      return unwrapData<RiasecType[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<RiasecType[]>('/api/admin/content/riasec-types')) ?? []
+      );
     },
   });
 }

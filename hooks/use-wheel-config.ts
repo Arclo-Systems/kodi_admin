@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 // La corona se sube a su propio endpoint (no al del árbol de contenido): no cuelga de ningún
 // módulo, es config de juego. El backend solo acepta png/jpeg/webp/avif — SVG no, por la regla
@@ -34,9 +34,7 @@ export function useWheelConfig(enabled = true) {
     enabled,
     staleTime: STALE_MS,
     queryFn: async (): Promise<WheelConfig | null> => {
-      const res = await fetch('/api/admin/game/wheel-config', { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch wheel-config failed');
-      return unwrapData<WheelConfig>(await res.json()) ?? null;
+      return (await fetchJson<WheelConfig>('/api/admin/game/wheel-config')) ?? null;
     },
   });
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 import type { AdminRole } from '@/lib/auth';
 
 export type AdminListItem = {
@@ -35,9 +35,12 @@ export function useAdmins(query: AdminListQuery) {
       for (const [k, v] of Object.entries(query)) {
         if (v !== undefined && v !== '') params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/admins?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch admins failed');
-      return unwrapData<AdminListPage>(await res.json()) ?? { items: [], total: 0 };
+      return (
+        (await fetchJson<AdminListPage>(`/api/admin/admins?${params}`)) ?? {
+          items: [],
+          total: 0,
+        }
+      );
     },
   });
 }

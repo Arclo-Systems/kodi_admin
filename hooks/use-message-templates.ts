@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type MessageChannel = 'email' | 'push';
 
@@ -41,9 +41,9 @@ export function useMessageTemplates() {
   return useQuery({
     queryKey: ['messaging', 'templates'],
     queryFn: async (): Promise<MessageTemplate[]> => {
-      const res = await fetch('/api/admin/messaging/templates', { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch templates failed');
-      return unwrapData<MessageTemplate[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<MessageTemplate[]>('/api/admin/messaging/templates')) ?? []
+      );
     },
   });
 }

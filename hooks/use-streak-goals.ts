@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 /**
  * Escala de METAS de racha (A21): las opciones que el usuario elige en el
@@ -38,12 +38,11 @@ export function useStreakGoals(country: string | null) {
   return useQuery({
     queryKey: ['streak-goals', country],
     queryFn: async (): Promise<StreakGoalTier[]> => {
-      const res = await fetch(
-        `/api/admin/economy/streak-goals${countryQs(country)}`,
-        { credentials: 'include' },
+      return (
+        (await fetchJson<StreakGoalTier[]>(
+          `/api/admin/economy/streak-goals${countryQs(country)}`,
+        )) ?? []
       );
-      if (!res.ok) throw new Error('fetch streak goals failed');
-      return unwrapData<StreakGoalTier[]>(await res.json()) ?? [];
     },
   });
 }

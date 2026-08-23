@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export const LEAGUE_TIERS = ['aprendiz', 'avanzado', 'experto', 'genio'] as const;
 export type LeagueTier = (typeof LEAGUE_TIERS)[number];
@@ -33,9 +33,11 @@ export function useLeagueConfigs(country: string | null) {
     queryKey: ['league-configs', country],
     queryFn: async (): Promise<LeagueConfig[]> => {
       const qs = country ? `?country=${country}` : '';
-      const res = await fetch(`/api/admin/leagues/config${qs}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch league configs failed');
-      return unwrapData<{ items: LeagueConfig[] }>(await res.json())?.items ?? [];
+      return (
+        (await fetchJson<{ items: LeagueConfig[] }>(
+          `/api/admin/leagues/config${qs}`,
+        ))?.items ?? []
+      );
     },
   });
 }

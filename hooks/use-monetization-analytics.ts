@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type MrrByCountry = { country: string; currency: string; mrrCents: number };
 
@@ -28,11 +28,9 @@ export function useMonetizationAnalytics(q: AnalyticsQuery) {
       if (q.to) params.set('to', q.to);
       for (const c of q.country ?? []) params.append('country', c);
       const qs = params.toString();
-      const res = await fetch(`/api/admin/monetization/analytics${qs ? `?${qs}` : ''}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch monetization analytics failed');
-      return unwrapData<MonetizationAnalytics>(await res.json());
+      return fetchJson<MonetizationAnalytics>(
+        `/api/admin/monetization/analytics${qs ? `?${qs}` : ''}`,
+      );
     },
   });
 }

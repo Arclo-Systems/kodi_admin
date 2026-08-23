@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 import type { ReportSeverity } from '@/hooks/use-moderation';
 
 export type ProhibitedWord = {
@@ -36,9 +36,11 @@ export function useProhibitedWords() {
   return useQuery({
     queryKey: ['moderation', 'prohibited-words'],
     queryFn: async (): Promise<ProhibitedWord[]> => {
-      const res = await fetch('/api/admin/moderation/prohibited-words', { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch prohibited words failed');
-      return unwrapData<ProhibitedWord[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<ProhibitedWord[]>(
+          '/api/admin/moderation/prohibited-words',
+        )) ?? []
+      );
     },
   });
 }

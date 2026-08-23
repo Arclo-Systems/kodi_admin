@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export const RIASEC_DIMENSIONS = ['R', 'I', 'A', 'S', 'E', 'C'] as const;
 export type VocDimension = (typeof RIASEC_DIMENSIONS)[number];
@@ -63,12 +63,10 @@ export function useVocItems(query: VocItemListQuery) {
         if (v === undefined) continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/content/vocational-items?${params}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch vocational items failed');
       return (
-        unwrapData<VocItemListPage>(await res.json()) ?? {
+        (await fetchJson<VocItemListPage>(
+          `/api/admin/content/vocational-items?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
