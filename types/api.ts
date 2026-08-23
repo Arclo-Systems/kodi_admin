@@ -1031,6 +1031,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/store/app-icons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Íconos de app disponibles, con el desbloqueo ya resuelto
+         * @description El gate lo decide el servidor (`locked`): la app no reimplementa la regla de desbloqueo. `icon_slug` es el alias nativo con el que el build registra la variante.
+         */
+        get: operations["StoreController_listAppIcons"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/store/items/{id}/purchase": {
         parameters: {
             query?: never;
@@ -9326,6 +9346,16 @@ export interface components {
                 ad_bonus: number | null;
                 ad_videos_used: number | null;
                 ad_videos_max: number | null;
+                costs: {
+                    duelo: number;
+                    arena_rapida: number;
+                    arena_amigos: number;
+                    contrarreloj: number;
+                    supervivencia: number;
+                } | null;
+                regen_minutes: number | null;
+                /** Format: date-time */
+                next_recharge_at: string | null;
             };
         };
         PracticeQuotaResponse: {
@@ -9612,6 +9642,24 @@ export interface components {
                 limit: number;
                 total: number;
             };
+        };
+        AppIconListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+                description: string;
+                preview_url: string;
+                asset_url: string | null;
+                icon_slug: string | null;
+                /** @enum {string} */
+                unlock: "free" | "kokos" | "plan";
+                kokos_price: number;
+                /** @enum {string|null} */
+                requires_plan: "free" | "basico" | "plus" | "pro" | null;
+                owned: boolean;
+                locked: boolean;
+            }[];
         };
         PurchaseResponse: {
             data: {
@@ -15450,6 +15498,7 @@ export interface components {
                     country: string | null;
                     previewUrl: string;
                     assetUrl: string | null;
+                    iconSlug: string | null;
                     releaseAt: string | null;
                     expiresAt: string | null;
                     isActive: boolean;
@@ -15518,6 +15567,7 @@ export interface components {
                 country: string | null;
                 previewUrl: string;
                 assetUrl: string | null;
+                iconSlug: string | null;
                 releaseAt: string | null;
                 expiresAt: string | null;
                 isActive: boolean;
@@ -15546,6 +15596,7 @@ export interface components {
             country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
             previewUrl: string;
             assetUrl?: string | null;
+            iconSlug?: string | null;
             /** Format: date-time */
             releaseAt?: string | null;
             /** Format: date-time */
@@ -15569,6 +15620,7 @@ export interface components {
             country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
             previewUrl?: string;
             assetUrl?: string | null;
+            iconSlug?: string | null;
             /** Format: date-time */
             releaseAt?: string | null;
             /** Format: date-time */
@@ -19669,6 +19721,25 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StoreItemListResponse"];
+                };
+            };
+        };
+    };
+    StoreController_listAppIcons: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppIconListResponse"];
                 };
             };
         };

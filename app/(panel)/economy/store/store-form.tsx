@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { CalendarIcon, ImageIcon, LayersIcon, PackageIcon, SaveIcon } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -54,6 +54,7 @@ type FormValues = {
   country: string;
   previewUrl: string;
   assetUrl: string | null;
+  iconSlug: string;
   releaseAt: string;
   expiresAt: string;
   isActive: boolean;
@@ -72,6 +73,7 @@ function toValues(i: StoreItem): FormValues {
     country: i.country ?? '',
     previewUrl: i.previewUrl,
     assetUrl: i.assetUrl,
+    iconSlug: i.iconSlug ?? '',
     releaseAt: i.releaseAt ? i.releaseAt.slice(0, 16) : '',
     expiresAt: i.expiresAt ? i.expiresAt.slice(0, 16) : '',
     isActive: i.isActive,
@@ -90,6 +92,9 @@ function toUpdateInput(v: FormValues): Omit<StoreItemInput, 'category'> {
     country: v.country || null,
     previewUrl: v.previewUrl.trim(),
     assetUrl: v.assetUrl || null,
+    // El alias nativo solo aplica al ícono de app; mandarlo en otro tipo
+    // reservaría un nombre que nada va a usar.
+    iconSlug: v.itemType === 'app_icon' ? v.iconSlug.trim() || null : null,
     releaseAt: v.releaseAt ? new Date(v.releaseAt).toISOString() : null,
     expiresAt: v.expiresAt ? new Date(v.expiresAt).toISOString() : null,
     isActive: v.isActive,
@@ -134,12 +139,17 @@ function StoreFormInner({
       country: '',
       previewUrl: '',
       assetUrl: null,
+      iconSlug: '',
       releaseAt: '',
       expiresAt: '',
       isActive: true,
       purchasable: true,
     },
   });
+
+  // El alias nativo solo tiene sentido en el ícono de app: en el resto de los
+  // tipos el campo confundiría sin aportar nada.
+  const itemTypeActual = useWatch({ control: form.control, name: 'itemType' });
 
   async function submit(v: FormValues): Promise<void> {
     if (!v.previewUrl) {
@@ -266,6 +276,27 @@ function StoreFormInner({
                   </Field>
                 )}
               />
+              {itemTypeActual === 'app_icon' && (
+                <Controller
+                  name="iconSlug"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Field>
+                      <FieldLabel>Alias nativo</FieldLabel>
+                      <Input
+                        {...field}
+                        placeholder="koko-oro"
+                        aria-label="Alias nativo del ícono"
+                      />
+                      <FieldDescription>
+                        Nombre con el que el build registra esta variante.
+                        Minúsculas, números y guiones. Sin este dato el ícono se
+                        muestra pero no se puede aplicar.
+                      </FieldDescription>
+                    </Field>
+                  )}
+                />
+              )}
               <Controller
                 name="tier"
                 control={form.control}

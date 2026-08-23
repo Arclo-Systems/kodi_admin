@@ -69,6 +69,8 @@ export type StoreItem = {
   country: string | null;
   previewUrl: string;
   assetUrl: string | null;
+  /** Solo app_icon: alias nativo con el que el build registra la variante. */
+  iconSlug: string | null;
   releaseAt: string | null;
   expiresAt: string | null;
   isActive: boolean;
@@ -90,6 +92,8 @@ export type StoreItemInput = {
   country: string | null;
   previewUrl: string;
   assetUrl: string | null;
+  /** Solo app_icon: alias nativo con el que el build registra la variante. */
+  iconSlug: string | null;
   releaseAt: string | null;
   expiresAt: string | null;
   isActive: boolean;
