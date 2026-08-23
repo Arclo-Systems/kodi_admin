@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export const BRAND_SIZES = ['sm', 'md', 'lg'] as const;
 export type BrandSize = (typeof BRAND_SIZES)[number];
@@ -44,9 +44,7 @@ export function useEmailBrand() {
     queryKey: ['email-brand'],
     staleTime: STALE_MS,
     queryFn: async (): Promise<EmailBrand | undefined> => {
-      const res = await fetch('/api/admin/messaging/brand', { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch email-brand failed');
-      return unwrapData<EmailBrand>(await res.json());
+      return fetchJson<EmailBrand>('/api/admin/messaging/brand');
     },
   });
 }

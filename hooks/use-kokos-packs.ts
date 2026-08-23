@@ -1,7 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { throwApiError } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type KokosPack = {
   id: string;
@@ -64,10 +65,7 @@ async function send(url: string, method: 'POST' | 'PATCH', body: unknown): Promi
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) {
-    const b = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(b.message ?? 'Error');
-  }
+  if (!res.ok) await throwApiError(res, 'Error');
   return res.json().catch(() => ({}));
 }
 
@@ -75,9 +73,9 @@ export function useKokosPacks() {
   return useQuery({
     queryKey: ['kokos-packs'],
     queryFn: async (): Promise<KokosPack[]> => {
-      const res = await fetch('/api/admin/monetization/kokos-packs', { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch kokos-packs failed');
-      return unwrapData<KokosPack[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<KokosPack[]>('/api/admin/monetization/kokos-packs')) ?? []
+      );
     },
   });
 }

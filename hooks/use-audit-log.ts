@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type AuditLogEntry = {
   id: string;
@@ -36,9 +36,12 @@ export function useAuditLog(query: AuditLogQuery) {
       for (const [k, v] of Object.entries(query)) {
         if (v !== undefined && v !== '') params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/audit-log?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch audit-log failed');
-      return unwrapData<AuditLogPage>(await res.json()) ?? { items: [], total: 0 };
+      return (
+        (await fetchJson<AuditLogPage>(`/api/admin/audit-log?${params}`)) ?? {
+          items: [],
+          total: 0,
+        }
+      );
     },
   });
 }

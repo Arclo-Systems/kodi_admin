@@ -1,7 +1,8 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { throwApiError } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type BotTemplate = {
   id: string;
@@ -41,9 +42,7 @@ export type BotMetric = {
 };
 
 async function get<T>(url: string): Promise<T> {
-  const res = await fetch(url, { credentials: 'include' });
-  if (!res.ok) throw new Error('fetch failed');
-  return unwrapData<T>(await res.json()) as T;
+  return (await fetchJson<T>(url)) as T;
 }
 
 async function send(
@@ -57,10 +56,7 @@ async function send(
     headers: body ? { 'content-type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) {
-    const b = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(b.message ?? 'Error');
-  }
+  if (!res.ok) await throwApiError(res, 'Error');
   return res.json().catch(() => ({}));
 }
 

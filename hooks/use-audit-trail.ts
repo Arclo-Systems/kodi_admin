@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type AuditTrailEntry = {
   id: string;
@@ -24,10 +24,10 @@ export function useAuditTrail(resourceType: string, resourceId: string) {
       const url = new URL('/api/admin/audit-log/by-resource', window.location.origin);
       url.searchParams.set('type', resourceType);
       url.searchParams.set('id', resourceId);
-      const res = await fetch(url, { credentials: 'include' });
-      if (!res.ok) throw new Error('audit fetch failed');
-      // El backend envuelve en { data: { items, total } }.
-      return unwrapData<AuditTrailPage>(await res.json()) ?? { items: [], total: 0 };
+      // El backend envuelve en { data: { items, total } }; fetchJson lo desenvuelve.
+      return (
+        (await fetchJson<AuditTrailPage>(url.toString())) ?? { items: [], total: 0 }
+      );
     },
   });
 }

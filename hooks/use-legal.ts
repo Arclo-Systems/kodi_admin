@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FileTextIcon, ShieldCheckIcon, TrophyIcon, type LucideIcon } from 'lucide-react';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export const LEGAL_DOCS = ['terms', 'privacy', 'raffle_rules'] as const;
 export type LegalDoc = (typeof LEGAL_DOCS)[number];
@@ -39,9 +39,7 @@ export function useLegalDocument(doc: LegalDoc) {
   return useQuery({
     queryKey: ['legal', doc],
     queryFn: async (): Promise<LegalDocument | undefined> => {
-      const res = await fetch(`/api/admin/legal/${doc}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch legal failed');
-      return unwrapData<LegalDocument>(await res.json());
+      return fetchJson<LegalDocument>(`/api/admin/legal/${doc}`);
     },
   });
 }
