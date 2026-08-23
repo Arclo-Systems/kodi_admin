@@ -79,6 +79,7 @@ export function templatePlans(t: { plans?: PlanKey[] }): PlanKey[] {
 
 export type MissionTemplateListQuery = {
   type?: MissionType;
+  cadence?: MissionCadence;
   country?: string;
   isActive?: boolean;
   page: number;

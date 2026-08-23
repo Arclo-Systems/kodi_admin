@@ -8,11 +8,15 @@ import { CircleCheckIcon, CircleOffIcon, PlusIcon, WrenchIcon } from 'lucide-rea
 import {
   useMissionTemplates,
   MISSION_TYPE_LABELS,
+  MISSION_CADENCES,
+  MISSION_CADENCE_LABELS,
   templatePlans,
   type MissionTemplate,
   type MissionTemplateListQuery,
   type MissionType,
+  type MissionCadence,
 } from '@/hooks/use-missions';
+import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/admin/data-table';
 import { rewardLabel } from '@/lib/reward-label';
 import { StatusBadge } from '@/lib/status-badge';
@@ -45,6 +49,15 @@ const columns: ColumnDef<MissionTemplate, unknown>[] = [
           {MISSION_TYPE_LABELS[row.original.type]}
         </span>
       </div>
+    ),
+  },
+  {
+    accessorKey: 'cadence',
+    header: 'Cadencia',
+    cell: ({ row }) => (
+      <Badge variant={row.original.cadence === 'weekly' ? 'default' : 'secondary'}>
+        {MISSION_CADENCE_LABELS[row.original.cadence]}
+      </Badge>
     ),
   },
   {
@@ -102,6 +115,24 @@ export function MissionsTable() {
               {(Object.keys(MISSION_TYPE_LABELS) as MissionType[]).map((t) => (
                 <SelectItem key={t} value={t}>
                   {MISSION_TYPE_LABELS[t]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={query.cadence ?? ALL}
+            onValueChange={(v) =>
+              set({ cadence: v === ALL ? undefined : (v as MissionCadence) })
+            }
+          >
+            <SelectTrigger className="w-40" size="sm" aria-label="Filtrar por cadencia">
+              <SelectValue placeholder="Cadencia" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Toda cadencia</SelectItem>
+              {MISSION_CADENCES.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {MISSION_CADENCE_LABELS[c]}
                 </SelectItem>
               ))}
             </SelectContent>
