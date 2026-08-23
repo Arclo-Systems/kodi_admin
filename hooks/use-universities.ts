@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { throwApiError, unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 import type { UniversityType } from '@/lib/sponsorship';
 
 // examWeight/presentationWeight son Decimal de Prisma → el backend los serializa como string ("0.5").
@@ -75,12 +76,10 @@ export function useUniversities(query: UniversityListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/content/universities?${params}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch universities failed');
       return (
-        unwrapData<UniversityListPage>(await res.json()) ?? {
+        (await fetchJson<UniversityListPage>(
+          `/api/admin/content/universities?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -96,11 +95,7 @@ export function useUniversity(id: string) {
     queryKey: ['university', id],
     enabled: !!id,
     queryFn: async (): Promise<University | undefined> => {
-      const res = await fetch(`/api/admin/content/universities/${id}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch university failed');
-      return unwrapData<University>(await res.json());
+      return fetchJson<University>(`/api/admin/content/universities/${id}`);
     },
   });
 }

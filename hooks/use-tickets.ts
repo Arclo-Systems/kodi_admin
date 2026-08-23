@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type TicketType = 'question_report' | 'suggestion' | 'bug_report';
 export type TicketStatus = 'open' | 'triaging' | 'resolved' | 'dismissed';
@@ -81,12 +81,8 @@ export function useTickets(query: TicketsQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/tickets?${params}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch tickets failed');
       return (
-        unwrapData<TicketsPage>(await res.json()) ?? {
+        (await fetchJson<TicketsPage>(`/api/admin/tickets?${params}`)) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -102,11 +98,7 @@ export function useTicket(id: string | null) {
     queryKey: ['tickets', 'detail', id],
     enabled: !!id,
     queryFn: async (): Promise<Ticket | undefined> => {
-      const res = await fetch(`/api/admin/tickets/${id}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch ticket failed');
-      return unwrapData<Ticket>(await res.json());
+      return fetchJson<Ticket>(`/api/admin/tickets/${id}`);
     },
   });
 }

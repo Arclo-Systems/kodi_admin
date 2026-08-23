@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type AchievementTier = 'common' | 'uncommon' | 'rare' | 'epic' | 'limited';
 
@@ -125,12 +126,10 @@ export function useAchievements(query: AchievementListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/economy/achievements?${params}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch achievements failed');
       return (
-        unwrapData<AchievementListPage>(await res.json()) ?? {
+        (await fetchJson<AchievementListPage>(
+          `/api/admin/economy/achievements?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -146,11 +145,7 @@ export function useAchievement(id: string) {
     queryKey: ['achievement', id],
     enabled: !!id,
     queryFn: async (): Promise<Achievement | undefined> => {
-      const res = await fetch(`/api/admin/economy/achievements/${id}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch achievement failed');
-      return unwrapData<Achievement>(await res.json());
+      return fetchJson<Achievement>(`/api/admin/economy/achievements/${id}`);
     },
   });
 }
@@ -195,11 +190,9 @@ export function useRegrant(id: string, enabled: boolean) {
     queryKey: ['achievement-regrant-preview', id],
     enabled: enabled && !!id,
     queryFn: async (): Promise<RegrantPreview | undefined> => {
-      const res = await fetch(`/api/admin/economy/achievements/${id}/regrant-preview`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch regrant preview failed');
-      return unwrapData<RegrantPreview>(await res.json());
+      return fetchJson<RegrantPreview>(
+        `/api/admin/economy/achievements/${id}/regrant-preview`,
+      );
     },
   });
   const run = useMutation({

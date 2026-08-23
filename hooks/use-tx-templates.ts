@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type TxTemplate = {
   key: string;
@@ -25,11 +25,11 @@ export function useTxTemplates() {
   return useQuery({
     queryKey: ['tx-templates'],
     queryFn: async (): Promise<TxTemplate[]> => {
-      const res = await fetch('/api/admin/messaging/transactional-templates', {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch tx-templates failed');
-      return unwrapData<TxTemplate[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<TxTemplate[]>(
+          '/api/admin/messaging/transactional-templates',
+        )) ?? []
+      );
     },
   });
 }

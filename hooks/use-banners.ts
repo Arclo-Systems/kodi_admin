@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type BannerPlacement =
   | 'practice_home'
@@ -104,10 +105,10 @@ export function useBanners(query: BannerListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/economy/banners?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch banners failed');
       return (
-        unwrapData<BannerListPage>(await res.json()) ?? {
+        (await fetchJson<BannerListPage>(
+          `/api/admin/economy/banners?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -123,9 +124,7 @@ export function useBanner(id: string) {
     queryKey: ['banner', id],
     enabled: !!id,
     queryFn: async (): Promise<Banner | undefined> => {
-      const res = await fetch(`/api/admin/economy/banners/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch banner failed');
-      return unwrapData<Banner>(await res.json());
+      return fetchJson<Banner>(`/api/admin/economy/banners/${id}`);
     },
   });
 }
@@ -135,9 +134,7 @@ export function useBannerStats(id: string) {
     queryKey: ['banner-stats', id],
     enabled: !!id,
     queryFn: async (): Promise<BannerStats | undefined> => {
-      const res = await fetch(`/api/admin/economy/banners/${id}/stats`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch banner stats failed');
-      return unwrapData<BannerStats>(await res.json());
+      return fetchJson<BannerStats>(`/api/admin/economy/banners/${id}/stats`);
     },
   });
 }
