@@ -6695,6 +6695,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/economy/missions/templates/upload-icon": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MissionsAdminController_uploadIcon"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/economy/missions/templates": {
         parameters: {
             query?: never;
@@ -8934,6 +8950,7 @@ export interface components {
             password?: unknown & unknown;
             social_ticket?: string;
             display_name: string;
+            username?: string;
             birth_date: string;
             /** @enum {string} */
             country: "CR" | "GT" | "SV" | "HN" | "PA";
@@ -9590,7 +9607,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 /** @enum {string} */
-                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
                 /** @enum {string} */
                 cadence: "daily" | "weekly";
                 title: string;
@@ -9604,6 +9621,7 @@ export interface components {
                 /** Format: uuid */
                 target_subject_id: string | null;
                 target_subject_name: string | null;
+                icon_url: string | null;
             }[];
             meta: {
                 page: number;
@@ -9630,7 +9648,7 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     /** @enum {string} */
-                    type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                    type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
                     /** @enum {string} */
                     cadence: "daily" | "weekly";
                     title: string;
@@ -10197,6 +10215,7 @@ export interface components {
                 module: {
                     short_name: string;
                     full_name: string;
+                    icon_url: string | null;
                 };
                 registered_at: string;
                 has_subscription: boolean;
@@ -15363,13 +15382,18 @@ export interface components {
                 actorId: string;
             };
         };
+        MissionUploadIconResponse: {
+            data: {
+                url: string;
+            };
+        };
         MissionTemplateListResponse: {
             data: {
                 items: {
                     /** Format: uuid */
                     id: string;
                     /** @enum {string} */
-                    type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                    type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
                     /** @enum {string} */
                     cadence: "daily" | "weekly";
                     title: string;
@@ -15379,6 +15403,7 @@ export interface components {
                     kokosReward: number;
                     kolonesReward: number;
                     country: string | null;
+                    iconUrl: string | null;
                     plans: ("free" | "basico" | "plus" | "pro")[];
                     isActive: boolean;
                     /** Format: uuid */
@@ -15399,7 +15424,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 /** @enum {string} */
-                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
                 /** @enum {string} */
                 cadence: "daily" | "weekly";
                 title: string;
@@ -15409,6 +15434,7 @@ export interface components {
                 kokosReward: number;
                 kolonesReward: number;
                 country: string | null;
+                iconUrl: string | null;
                 plans: ("free" | "basico" | "plus" | "pro")[];
                 isActive: boolean;
                 /** Format: uuid */
@@ -15421,7 +15447,7 @@ export interface components {
         };
         CreateMissionTemplateDto: {
             /** @enum {string} */
-            type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+            type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
             /**
              * @default daily
              * @enum {string}
@@ -15438,6 +15464,8 @@ export interface components {
             kolonesReward: number;
             /** @enum {string|null} */
             country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            /** Format: uri */
+            iconUrl?: string | null;
             /**
              * @default [
              *       "free",
@@ -15459,6 +15487,8 @@ export interface components {
             kolonesReward?: number;
             /** @enum {string|null} */
             country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            /** Format: uri */
+            iconUrl?: string | null;
             plans?: ("free" | "basico" | "plus" | "pro")[];
             isActive?: boolean;
         };
@@ -15490,7 +15520,7 @@ export interface components {
                 moduleId: string;
                 date: string;
                 /** @enum {string} */
-                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
                 /** @enum {string} */
                 cadence: "daily" | "weekly";
                 /** Format: uuid */
@@ -15521,7 +15551,7 @@ export interface components {
                 moduleId: string;
                 date: string;
                 /** @enum {string} */
-                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend";
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
                 /** @enum {string} */
                 cadence: "daily" | "weekly";
                 /** Format: uuid */
@@ -28393,10 +28423,34 @@ export interface operations {
             };
         };
     };
+    MissionsAdminController_uploadIcon: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UploadAssetDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionUploadIconResponse"];
+                };
+            };
+        };
+    };
     MissionsAdminController_searchTemplates: {
         parameters: {
             query?: {
-                type?: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro";
+                type?: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
+                cadence?: "daily" | "weekly";
                 country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
                 isActive?: boolean;
                 page?: number;
