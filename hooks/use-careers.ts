@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type DemandLevel = 'alta' | 'media' | 'baja' | 'saturada';
 
@@ -86,10 +87,10 @@ export function useCareers(query: CareerListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`/api/admin/content/careers?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch careers failed');
       return (
-        unwrapData<CareerListPage>(await res.json()) ?? {
+        (await fetchJson<CareerListPage>(
+          `/api/admin/content/careers?${params}`,
+        )) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -105,9 +106,7 @@ export function useCareer(id: string) {
     queryKey: ['career', id],
     enabled: !!id,
     queryFn: async (): Promise<Career | undefined> => {
-      const res = await fetch(`/api/admin/content/careers/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch career failed');
-      return unwrapData<Career>(await res.json());
+      return fetchJson<Career>(`/api/admin/content/careers/${id}`);
     },
   });
 }

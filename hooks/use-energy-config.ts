@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type EnergyConfig = {
   id: string;
@@ -68,11 +68,11 @@ export function useEnergyConfig(country: string | null) {
   return useQuery({
     queryKey: ['energy-config', country],
     queryFn: async (): Promise<EnergyConfig | null> => {
-      const res = await fetch(`/api/admin/economy/energy/config${countryQs(country)}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch energy config failed');
-      return unwrapData<EnergyConfig>(await res.json()) ?? null;
+      return (
+        (await fetchJson<EnergyConfig>(
+          `/api/admin/economy/energy/config${countryQs(country)}`,
+        )) ?? null
+      );
     },
   });
 }
@@ -81,11 +81,11 @@ export function useFreeLimitConfig(country: string | null) {
   return useQuery({
     queryKey: ['free-limit-config', country],
     queryFn: async (): Promise<FreeLimitConfig | null> => {
-      const res = await fetch(`/api/admin/economy/energy/free-limit${countryQs(country)}`, {
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('fetch free-limit config failed');
-      return unwrapData<FreeLimitConfig>(await res.json()) ?? null;
+      return (
+        (await fetchJson<FreeLimitConfig>(
+          `/api/admin/economy/energy/free-limit${countryQs(country)}`,
+        )) ?? null
+      );
     },
   });
 }

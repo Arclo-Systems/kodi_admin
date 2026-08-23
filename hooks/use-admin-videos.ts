@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type VideoContext = 'practice' | 'game' | 'kokos' | 'any';
 
@@ -90,10 +91,8 @@ export function useAdminVideos(query: VideoListQuery) {
         if (v === undefined || v === '') continue;
         params.set(k, String(v));
       }
-      const res = await fetch(`${BASE}?${params}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch videos failed');
       return (
-        unwrapData<VideoListPage>(await res.json()) ?? {
+        (await fetchJson<VideoListPage>(`${BASE}?${params}`)) ?? {
           items: [],
           total: 0,
           page: query.page,
@@ -109,9 +108,7 @@ export function useAdminVideo(id: string) {
     queryKey: ['admin-video', id],
     enabled: !!id,
     queryFn: async (): Promise<AdminVideo | undefined> => {
-      const res = await fetch(`${BASE}/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch video failed');
-      return unwrapData<AdminVideo>(await res.json());
+      return fetchJson<AdminVideo>(`${BASE}/${id}`);
     },
   });
 }

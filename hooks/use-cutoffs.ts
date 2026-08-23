@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { throwApiError, unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type CutoffStatus = 'pending_review' | 'applied' | 'rejected';
 export type InvalidRow = {
@@ -94,9 +95,11 @@ export function useCutoffs(status?: CutoffStatus) {
     queryKey: ['cutoffs', status ?? null],
     queryFn: async (): Promise<CutoffUpload[]> => {
       const qs = status ? `?status=${status}` : '';
-      const res = await fetch(`/api/admin/content/admission-cutoffs${qs}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch cutoffs failed');
-      return unwrapData<CutoffUpload[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<CutoffUpload[]>(
+          `/api/admin/content/admission-cutoffs${qs}`,
+        )) ?? []
+      );
     },
   });
 }
@@ -106,9 +109,9 @@ export function useCutoff(id: string) {
     queryKey: ['cutoff', id],
     enabled: !!id,
     queryFn: async (): Promise<CutoffDetail | undefined> => {
-      const res = await fetch(`/api/admin/content/admission-cutoffs/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch cutoff failed');
-      return unwrapData<CutoffDetail>(await res.json());
+      return fetchJson<CutoffDetail>(
+        `/api/admin/content/admission-cutoffs/${id}`,
+      );
     },
   });
 }

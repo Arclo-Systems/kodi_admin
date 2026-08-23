@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 import type { CutoffStatus } from '@/hooks/use-cutoffs';
 
 // La subida de carreras usa los mismos estados que cortes (pending_review/applied/rejected).
@@ -56,9 +57,11 @@ export function useCareerUploads(status?: CareerUploadStatus) {
     queryKey: ['career-uploads', status ?? null],
     queryFn: async (): Promise<CareerUpload[]> => {
       const qs = status ? `?status=${status}` : '';
-      const res = await fetch(`/api/admin/content/career-uploads${qs}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch career-uploads failed');
-      return unwrapData<CareerUpload[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<CareerUpload[]>(
+          `/api/admin/content/career-uploads${qs}`,
+        )) ?? []
+      );
     },
   });
 }
@@ -68,9 +71,9 @@ export function useCareerUpload(id: string) {
     queryKey: ['career-upload', id],
     enabled: !!id,
     queryFn: async (): Promise<CareerUploadDetail | undefined> => {
-      const res = await fetch(`/api/admin/content/career-uploads/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch career-upload failed');
-      return unwrapData<CareerUploadDetail>(await res.json());
+      return fetchJson<CareerUploadDetail>(
+        `/api/admin/content/career-uploads/${id}`,
+      );
     },
   });
 }

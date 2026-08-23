@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { unwrapData } from '@/lib/bff';
+import { fetchJson } from '@/lib/fetch-json';
 
 export type AiPromptListItem = {
   id: string;
@@ -40,9 +41,9 @@ export function useAiPrompts() {
   return useQuery({
     queryKey: ['ai-prompts'],
     queryFn: async (): Promise<AiPromptListItem[]> => {
-      const res = await fetch('/api/admin/content/ai-prompts', { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch prompts failed');
-      return unwrapData<AiPromptListItem[]>(await res.json()) ?? [];
+      return (
+        (await fetchJson<AiPromptListItem[]>('/api/admin/content/ai-prompts')) ?? []
+      );
     },
   });
 }
@@ -52,9 +53,7 @@ export function useAiPrompt(id: string) {
     queryKey: ['ai-prompt', id],
     enabled: !!id,
     queryFn: async (): Promise<AiPromptDetail | undefined> => {
-      const res = await fetch(`/api/admin/content/ai-prompts/${id}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('fetch prompt failed');
-      return unwrapData<AiPromptDetail>(await res.json());
+      return fetchJson<AiPromptDetail>(`/api/admin/content/ai-prompts/${id}`);
     },
   });
 }
