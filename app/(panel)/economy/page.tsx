@@ -9,6 +9,7 @@ import {
   ImageIcon,
   RocketIcon,
   ShoppingBagIcon,
+  FlameIcon,
   SparklesIcon,
   Share2Icon,
   TargetIcon,
@@ -141,6 +142,14 @@ const AREAS: AreaCard[] = [
     label: 'Recompensas',
     description: 'Cuánto paga cada modo (práctica, duelos, arena, simulacro, racha…) en XP, Kolones y Kokos.',
     icon: SparklesIcon,
+    action: 'economy:rewards:write',
+  },
+  {
+    href: '/economy/streak-goals',
+    label: 'Metas de racha',
+    description:
+      'Las metas que el usuario elige (7/14/30/50 días) y los Kolones que gana al alcanzarlas.',
+    icon: FlameIcon,
     action: 'economy:rewards:write',
   },
   {

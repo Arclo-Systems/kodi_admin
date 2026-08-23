@@ -3858,6 +3858,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/config/streak-goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Escala de metas de racha que la app ofrece */
+        get: operations["StreakGoalsController_goals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/_internal/jobs/{name}/run": {
         parameters: {
             query?: never;
@@ -7627,6 +7644,22 @@ export interface paths {
         };
         get: operations["RewardsAdminController_getConfig"];
         put: operations["RewardsAdminController_upsertConfig"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/economy/streak-goals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["StreakGoalsAdminController_list"];
+        put: operations["StreakGoalsAdminController_replace"];
         post?: never;
         delete?: never;
         options?: never;
@@ -12288,6 +12321,15 @@ export interface components {
                 iap_purchases_enabled: boolean;
             };
         };
+        ConfigStreakGoalsResponse: {
+            data: {
+                goals: {
+                    days: number;
+                    kolones: number;
+                    multiplier: number;
+                }[];
+            };
+        };
         JobTriggeredResponse: {
             data: {
                 jobId: string;
@@ -16730,6 +16772,17 @@ export interface components {
             kolonesPerVideo: number;
             videoXp: number;
             flashcardSessionXp: number;
+        };
+        AdminStreakGoalsResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                days: number;
+                kolones: number;
+                multiplier: number;
+                isActive: boolean;
+                updatedAt: string;
+            }[];
         };
         PresignVideoDto: {
             filename: string;
@@ -23388,6 +23441,27 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConfigFlagsResponse"];
+                };
+            };
+        };
+    };
+    StreakGoalsController_goals: {
+        parameters: {
+            query?: {
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigStreakGoalsResponse"];
                 };
             };
         };
@@ -30206,6 +30280,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RewardConfigResponse"];
+                };
+            };
+        };
+    };
+    StreakGoalsAdminController_list: {
+        parameters: {
+            query: {
+                country: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminStreakGoalsResponse"];
+                };
+            };
+        };
+    };
+    StreakGoalsAdminController_replace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminStreakGoalsResponse"];
                 };
             };
         };
