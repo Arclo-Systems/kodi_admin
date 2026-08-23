@@ -325,6 +325,17 @@ const globalScopeRequired: Set<Action> = new Set([
   'view:finance', // contabilidad de la empresa = solo admin global (founder)
   'finance:write',
   'economy:store-ops:global', // eventos/incidencias/DLQ/SKUs/flags de tienda: no tienen país
+  // Configurar la economía acuña moneda que se vende por dinero real, y ninguna de estas
+  // configuraciones tiene país: el backend las cerró con @RequireGlobalScope y la UI tiene
+  // que cortar igual, o le ofrece a un admin regional botones que el servidor le rechaza.
+  'economy:rewards:write', // recompensas + metas de racha (rewards-admin, streak-goals-admin)
+  'economy:energy:write', // energy-admin: config y free-limit
+  'economy:mission:write', // templates de misión y refresh-config
+  'economy:store:write', // alta/edición/baja de ítems de tienda
+  'economy:referral:write', // hitos de referido
+  'economy:achievement:regrant', // re-otorgar un logro = acuñar su premio de nuevo
+  'economy:kokos-pack:write', // el paquete define cuántos Kokos da una compra real
+  'economy:subscription-price:write', // la grilla que el catálogo de Play lee al publicar
 ]);
 
 export function canWithScope(role: AdminRole, isGlobalScope: boolean, action: Action): boolean {

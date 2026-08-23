@@ -69,4 +69,27 @@ describe('permissions', () => {
     expect(can('admin', 'economy:raffle:manage')).toBe(true);
   });
 
+  // Configurar la economía acuña moneda que se vende por dinero real: el backend lo
+  // exige con @RequireGlobalScope y la UI tiene que reflejar el mismo corte, o le
+  // ofrece a un admin regional botones que el servidor le va a rechazar.
+  it.each([
+    ['economy:rewards:write'],
+    ['economy:energy:write'],
+    ['economy:mission:write'],
+    ['economy:store:write'],
+    ['economy:referral:write'],
+    ['economy:achievement:regrant'],
+    ['economy:kokos-pack:write'],
+    ['economy:subscription-price:write'],
+  ] as const)('economía global: %s exige scope global', (action) => {
+    expect(canWithScope('admin', true, action)).toBe(true);
+    expect(canWithScope('admin', false, action)).toBe(false);
+  });
+
+  // El backend corta ADENTRO del handler y solo sobre los campos económicos, para no
+  // bloquear al editor regional en lo cosmético (achievements-admin.controller.ts).
+  it('economía: editar un logro NO exige scope global (el corte es por campo)', () => {
+    expect(canWithScope('admin', false, 'economy:achievement:write')).toBe(true);
+  });
+
 });
