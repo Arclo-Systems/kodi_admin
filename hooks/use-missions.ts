@@ -44,6 +44,8 @@ export type MissionTemplate = {
   kokosReward: number;
   kolonesReward: number;
   country: string | null;
+  /** Arte de la misión. `null` = la app cae a su ícono por tipo. */
+  iconUrl: string | null;
   /** Planes que reciben la misión. Nunca vacío: el backend exige al menos uno. */
   plans: PlanKey[];
   isActive: boolean;
@@ -63,6 +65,7 @@ export type MissionTemplateInput = {
   kokosReward: number;
   kolonesReward: number;
   country: string | null;
+  iconUrl: string | null;
   plans: PlanKey[];
   isActive: boolean;
 };

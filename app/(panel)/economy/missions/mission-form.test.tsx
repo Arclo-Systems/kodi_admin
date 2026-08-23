@@ -34,6 +34,7 @@ function template(over: Partial<MissionTemplate> = {}): MissionTemplate {
     kokosReward: 0,
     kolonesReward: 0,
     country: null,
+    iconUrl: null,
     plans: [...ALL_PLANS],
     isActive: true,
     createdBy: null,

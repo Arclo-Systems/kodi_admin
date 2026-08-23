@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { CoinsIcon, FileTextIcon, LayersIcon, SaveIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { AssetUpload } from '@/components/admin/asset-upload';
 import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -46,6 +47,7 @@ type FormValues = {
   xpReward: number;
   kokosReward: number;
   kolonesReward: number;
+  iconUrl: string;
   plans: PlanKey[];
   isActive: boolean;
 };
@@ -61,6 +63,7 @@ function toValues(t: MissionTemplate): FormValues {
     xpReward: t.xpReward,
     kokosReward: t.kokosReward,
     kolonesReward: t.kolonesReward,
+    iconUrl: t.iconUrl ?? '',
     plans: templatePlans(t),
     isActive: t.isActive,
   };
@@ -75,6 +78,8 @@ function toUpdateInput(v: FormValues): Omit<MissionTemplateInput, 'type' | 'cade
     xpReward: v.xpReward,
     kokosReward: v.kokosReward,
     kolonesReward: v.kolonesReward,
+    // Vacío = sin arte: la app cae a su ícono por tipo.
+    iconUrl: v.iconUrl || null,
     plans: v.plans,
     isActive: v.isActive,
   };
@@ -104,6 +109,7 @@ function MissionFormInner({ templateId, initial }: { templateId?: string; initia
       xpReward: 0,
       kokosReward: 0,
       kolonesReward: 0,
+      iconUrl: '',
       // Sin elección explícita la misión llega a todo el mundo: restringir por
       // plan es la excepción, no el default.
       plans: [...PLAN_KEYS],
@@ -367,6 +373,25 @@ function MissionFormInner({ templateId, initial }: { templateId?: string; initia
               />
             </div>
             <FieldDescription>La misión debe otorgar al menos un reward.</FieldDescription>
+
+            <Controller
+              name="iconUrl"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel>Arte de la misión</FieldLabel>
+                  <AssetUpload
+                    value={field.value || null}
+                    onChange={(url) => field.onChange(url ?? '')}
+                    endpoint="/api/admin/economy/missions/templates/upload-icon"
+                    label="Subir arte de la misión"
+                  />
+                  <FieldDescription>
+                    Opcional. Sin arte, la app usa el ícono que corresponde al tipo de misión.
+                  </FieldDescription>
+                </Field>
+              )}
+            />
 
             <Controller
               name="isActive"
