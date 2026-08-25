@@ -14,6 +14,7 @@ export type StoreItemType =
   | 'response_animation' // deprecado (Ola D)
   | 'streak_protector'
   | 'second_chance'
+  | 'extra_time'
   | 'insignia';
 export type StoreTier = 'basico' | 'estandar' | 'premium';
 export type StorePlan = 'basico' | 'plus' | 'pro';
@@ -26,6 +27,7 @@ export const STORE_ITEM_TYPES: StoreItemType[] = [
   'app_icon',
   'streak_protector',
   'second_chance',
+  'extra_time',
   'insignia',
 ];
 
@@ -37,7 +39,8 @@ export const ITEM_TYPE_LABELS: Record<StoreItemType, string> = {
   app_theme: 'Tema de app (deprecado)',
   response_animation: 'Animación (deprecado)',
   streak_protector: 'Protector de racha',
-  second_chance: 'Segunda oportunidad',
+  second_chance: 'Vida extra',
+  extra_time: 'Tiempo extra',
   insignia: 'Insignia',
 };
 

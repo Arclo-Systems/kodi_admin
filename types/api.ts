@@ -1418,6 +1418,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/users/me/avatar-photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Subir o reemplazar la foto de perfil
+         * @description Reemplaza la foto anterior y limpia el avatar del catálogo: son excluyentes. El tamaño (2 MB) y el formato se validan en el servidor.
+         */
+        put: operations["UsersController_setAvatarPhoto"];
+        post?: never;
+        /** Quitar la foto de perfil */
+        delete: operations["UsersController_removeAvatarPhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/users/me/active-module": {
         parameters: {
             query?: never;
@@ -2151,6 +2172,26 @@ export interface paths {
          * @description Debita Kokos (precio del panel) y restaura 1 vida; una sola vez por sesión.
          */
         post: operations["QuickSessionsController_revive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/quick-sessions/{id}/extra-time": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Tiempo extra del contrarreloj
+         * @description Gasta un Tiempo Extra del inventario o debita Kokos (precio de la ficha); suma 30 s al deadline server-side, una sola vez por sesión.
+         */
+        post: operations["QuickSessionsController_extraTime"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3551,7 +3592,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Detalle de carrera: universidades + corte + mercado + datos (Básico) */
+        /** Detalle de carrera: universidades + corte + mercado + datos */
         get: operations["VocationalController_getCareer"];
         put?: never;
         post?: never;
@@ -9698,7 +9739,7 @@ export interface components {
                 /** @enum {string} */
                 category: "cosmetic" | "functional";
                 /** @enum {string} */
-                item_type: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                item_type: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
                 /** @enum {string} */
                 tier: "basico" | "estandar" | "premium";
                 kokos_price: number;
@@ -9749,7 +9790,7 @@ export interface components {
                     /** @enum {string} */
                     category: "cosmetic" | "functional";
                     /** @enum {string} */
-                    item_type: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                    item_type: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
                     preview_url: string;
                 };
                 /** @enum {string} */
@@ -9911,7 +9952,7 @@ export interface components {
         };
         AdRewardDto: {
             /** @enum {string} */
-            context?: "game" | "mission" | "practice";
+            context?: "game" | "mission" | "practice" | "kokos" | "energy";
         };
         VideoCompletedResponse: {
             data: {
@@ -10000,6 +10041,7 @@ export interface components {
                 title_active: string | null;
                 /** Format: uuid */
                 avatar_item_id: string | null;
+                avatar_photo_url: string | null;
                 /** Format: uuid */
                 frame_item_id: string | null;
                 sounds_enabled: boolean;
@@ -10125,6 +10167,17 @@ export interface components {
                 onboarding_flags: unknown;
                 goal_streak_days: number;
                 discovery_source: string | null;
+            };
+        };
+        /** @description Foto de perfil en base64 */
+        SetAvatarPhotoDto: {
+            /** @enum {string} */
+            content_type: "image/jpeg" | "image/png";
+            data_base64: string;
+        };
+        AvatarPhotoResponse: {
+            data: {
+                avatar_photo_url: string;
             };
         };
         DeleteAccountDto: {
@@ -10824,6 +10877,7 @@ export interface components {
                 started_at: string;
                 lives_remaining: number | null;
                 revive_price: number | null;
+                extra_time_price: number | null;
                 first_questions: {
                     /** Format: uuid */
                     id: string;
@@ -10881,6 +10935,12 @@ export interface components {
         QuickReviveResponse: {
             data: {
                 lives_remaining: number;
+                kokos_spent: number;
+            };
+        };
+        QuickExtraTimeResponse: {
+            data: {
+                seconds_added: number;
                 kokos_spent: number;
             };
         };
@@ -11328,6 +11388,7 @@ export interface components {
                     display_name: string;
                     /** Format: uuid */
                     avatar_item_id: string | null;
+                    bot_avatar_url: string | null;
                 } | null;
             }[];
             meta: {
@@ -11650,6 +11711,7 @@ export interface components {
                     display_name: string;
                     /** Format: uuid */
                     avatar_item_id: string | null;
+                    bot_avatar_url: string | null;
                     eliminated: boolean;
                     final_rank: number | null;
                 }[];
@@ -15672,7 +15734,7 @@ export interface components {
             /** @enum {string} */
             category: "cosmetic" | "functional";
             /** @enum {string} */
-            itemType: "frame" | "avatar" | "title" | "app_icon" | "streak_protector" | "second_chance" | "insignia";
+            itemType: "frame" | "avatar" | "title" | "app_icon" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
             /** @enum {string} */
             tier: "basico" | "estandar" | "premium";
             kokosPrice: number;
@@ -15696,7 +15758,7 @@ export interface components {
             name?: string;
             description?: string;
             /** @enum {string} */
-            itemType?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+            itemType?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
             /** @enum {string} */
             tier?: "basico" | "estandar" | "premium";
             kokosPrice?: number;
@@ -19822,7 +19884,7 @@ export interface operations {
         parameters: {
             query?: {
                 category?: "cosmetic" | "functional";
-                item_type?: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                item_type?: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
                 page?: number;
                 limit?: number;
             };
@@ -19889,7 +19951,7 @@ export interface operations {
         parameters: {
             query?: {
                 category?: "cosmetic" | "functional";
-                item_type?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                item_type?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
                 page?: number;
                 limit?: number;
             };
@@ -20108,7 +20170,7 @@ export interface operations {
     VideosController_gameCredit: {
         parameters: {
             query?: {
-                context?: "game" | "mission" | "practice";
+                context?: "game" | "mission" | "practice" | "kokos" | "energy";
             };
             header?: never;
             path?: never;
@@ -20309,6 +20371,46 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AdvancedStatsResponse"];
                 };
+            };
+        };
+    };
+    UsersController_setAvatarPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAvatarPhotoDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvatarPhotoResponse"];
+                };
+            };
+        };
+    };
+    UsersController_removeAvatarPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -21244,6 +21346,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuickReviveResponse"];
+                };
+            };
+        };
+    };
+    QuickSessionsController_extraTime: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuickExtraTimeResponse"];
                 };
             };
         };
@@ -28673,7 +28799,7 @@ export interface operations {
         parameters: {
             query?: {
                 category?: "cosmetic" | "functional";
-                itemType?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "insignia";
+                itemType?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
                 country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
                 isActive?: boolean;
                 page?: number;
