@@ -389,6 +389,7 @@ function MissionFormInner({ templateId, initial }: { templateId?: string; initia
                           key={name}
                           type="button"
                           title={name}
+                          aria-label={`Ícono ${name}`}
                           aria-pressed={selected}
                           onClick={() => field.onChange(selected ? '' : name)}
                           className={`flex h-9 items-center justify-center rounded-md border transition-colors ${

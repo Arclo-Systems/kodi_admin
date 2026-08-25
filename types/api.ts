@@ -9704,6 +9704,8 @@ export interface components {
                     /** Format: uuid */
                     target_subject_id: string | null;
                     target_subject_name: string | null;
+                    icon_url: string | null;
+                    icon: string | null;
                 };
                 kokos_spent: number;
             };
