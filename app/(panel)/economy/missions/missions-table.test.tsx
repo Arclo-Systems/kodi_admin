@@ -18,6 +18,7 @@ const template: MissionTemplate = {
   kolonesReward: 0,
   country: null,
   iconUrl: null,
+  icon: null,
   plans: ['plus', 'pro'],
   isActive: true,
   createdBy: null,

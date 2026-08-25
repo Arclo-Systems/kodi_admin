@@ -9663,6 +9663,7 @@ export interface components {
                 target_subject_id: string | null;
                 target_subject_name: string | null;
                 icon_url: string | null;
+                icon: string | null;
             }[];
             meta: {
                 page: number;
@@ -15478,6 +15479,7 @@ export interface components {
                     kolonesReward: number;
                     country: string | null;
                     iconUrl: string | null;
+                    icon: string | null;
                     plans: ("free" | "basico" | "plus" | "pro")[];
                     isActive: boolean;
                     /** Format: uuid */
@@ -15509,6 +15511,7 @@ export interface components {
                 kolonesReward: number;
                 country: string | null;
                 iconUrl: string | null;
+                icon: string | null;
                 plans: ("free" | "basico" | "plus" | "pro")[];
                 isActive: boolean;
                 /** Format: uuid */
@@ -15540,6 +15543,7 @@ export interface components {
             country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
             /** Format: uri */
             iconUrl?: string | null;
+            icon?: string | null;
             /**
              * @default [
              *       "free",
@@ -15563,6 +15567,7 @@ export interface components {
             country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
             /** Format: uri */
             iconUrl?: string | null;
+            icon?: string | null;
             plans?: ("free" | "basico" | "plus" | "pro")[];
             isActive?: boolean;
         };
