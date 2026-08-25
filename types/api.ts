@@ -10932,6 +10932,18 @@ export interface components {
                 }[];
             };
         };
+        /**
+         * @default {
+         *       "pay_with": "kokos"
+         *     }
+         */
+        PayWithDto: {
+            /**
+             * @default kokos
+             * @enum {string}
+             */
+            pay_with: "item" | "kokos";
+        };
         QuickReviveResponse: {
             data: {
                 lives_remaining: number;
@@ -21338,7 +21350,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayWithDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -21362,7 +21378,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayWithDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
