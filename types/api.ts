@@ -204,7 +204,7 @@ export interface paths {
         };
         /**
          * Verificar correo (link en email de bienvenida)
-         * @description Redirect 302 a kodi://email-verified (válido) o kodi://email-verification-expired (inválido/expirado/usado).
+         * @description HTML server-rendered, sin JS: confirma la verificación (o avisa que el enlace venció) y ofrece el deep link kodi://email-verified — kodi://email-verification-expired si no era válido.
          */
         get: operations["AuthController_verifyEmail"];
         put?: never;
@@ -1103,7 +1103,7 @@ export interface paths {
         head?: never;
         /**
          * Equipar/desequipar item del inventario
-         * @description Para avatares y marcos: actualiza User.avatarItemId/frameItemId.
+         * @description Para avatares y marcos: actualiza User.avatarItemId/frameItemId. Idempotente: equipar un ítem ya equipado devuelve 200 con el estado actual, no 409.
          */
         patch: operations["InventoryController_equip"];
         trace?: never;
@@ -13010,7 +13010,7 @@ export interface components {
         IntegrationCheckResponse: {
             data: {
                 ok: boolean;
-                latencyMs: number;
+                latencyMs: number | null;
                 message?: string;
             };
         };
@@ -18863,12 +18863,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Redirect a deep link kodi:// */
-            302: {
+            /** @description Página de correo verificado o de enlace vencido */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "text/html": string;
+                };
             };
         };
     };
@@ -19763,7 +19765,10 @@ export interface operations {
     DailyGoalController_claim: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -19839,7 +19844,10 @@ export interface operations {
     MissionsController_refresh: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -19883,7 +19891,10 @@ export interface operations {
     StreakController_freeze: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20124,7 +20135,10 @@ export interface operations {
     LeaguesController_claim: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20231,7 +20245,10 @@ export interface operations {
     VideosController_complete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 impressionId: string;
             };
@@ -21607,7 +21624,10 @@ export interface operations {
     FriendsController_nudge: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 friendId: string;
             };
@@ -21628,7 +21648,10 @@ export interface operations {
     FriendsController_sendRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21761,7 +21784,10 @@ export interface operations {
     FriendsController_acceptRequest: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -21905,7 +21931,10 @@ export interface operations {
     FriendStreakController_invite: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 friendId: string;
             };
@@ -21945,7 +21974,10 @@ export interface operations {
     FriendStreakController_accept: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 friendId: string;
             };
@@ -22531,7 +22563,10 @@ export interface operations {
     ArenaController_joinByCode: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22575,7 +22610,10 @@ export interface operations {
     ArenaController_start: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -23131,7 +23169,10 @@ export interface operations {
     VocationalController_submit: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -23469,7 +23510,10 @@ export interface operations {
     ReportsController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -23492,7 +23536,10 @@ export interface operations {
     TicketsController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
