@@ -1329,8 +1329,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Disponibilidad de un username (formato + unicidad) */
-        get: operations["UsersController_usernameAvailable"];
+        /**
+         * Disponibilidad de un username (formato + unicidad)
+         * @description Público: lo consulta el registro, donde todavía no hay sesión. Un handle mal formado responde 200 con available:false y reason:invalid — nunca 4xx —, para que la pantalla pueda mostrar el motivo en vez de un error genérico.
+         */
+        get: operations["UsernameController_usernameAvailable"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3475,6 +3478,26 @@ export interface paths {
          * @description Apaga el punto de la campana. `seen_up_to` (opcional) es el `created_at` del aviso más nuevo que la app mostró: lo que entró después de ese instante sigue contando como no leído. Sin el campo, el corte es `now`. El servidor lo acota a `now`. Idempotente — solo toca lo que está sin leer. Mismo criterio que `POST /v1/news/seen`.
          */
         post: operations["NotificationsController_markInboxRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marcar UN aviso como leído
+         * @description Para el tap de un push: el `notification_id` viaja en el `data` del mensaje, así que la app apaga ese punto sin pedir la bandeja entera y sin marcar como leído lo que el usuario no vio. Idempotente. Un id que no es del usuario no hace nada (204 igual): responder 404 confirmaría que existe.
+         */
+        post: operations["NotificationsController_markOneRead"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8534,7 +8557,7 @@ export interface paths {
         };
         get: operations["CountryRolloutsController_list"];
         put?: never;
-        post?: never;
+        post: operations["CountryRolloutsController_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8551,7 +8574,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        delete: operations["CountryRolloutsController_remove"];
         options?: never;
         head?: never;
         patch: operations["CountryRolloutsController_update"];
@@ -12415,6 +12438,7 @@ export interface components {
         ConfigFlagsResponse: {
             data: {
                 iap_purchases_enabled: boolean;
+                push_enabled: boolean;
             };
         };
         ConfigStreakGoalsResponse: {
@@ -15093,7 +15117,7 @@ export interface components {
         };
         UploadEmailBrandAssetDto: {
             /** @enum {string} */
-            contentType: "image/png" | "image/webp";
+            contentType: "image/png" | "image/webp" | "image/jpeg";
             dataBase64: string;
         };
         EmailBrandAssetUploadResponse: {
@@ -15777,7 +15801,7 @@ export interface components {
             name?: string;
             description?: string;
             /** @enum {string} */
-            itemType?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
+            itemType?: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
             /** @enum {string} */
             tier?: "basico" | "estandar" | "premium";
             kokosPrice?: number;
@@ -17800,33 +17824,58 @@ export interface components {
         CountryRolloutListResponse: {
             data: {
                 country: string;
+                name: string;
                 /** @enum {string} */
                 status: "planned" | "in_preparation" | "live" | "paused";
                 targetDate: string | null;
                 launchedAt: string | null;
                 notes: string | null;
                 userGoal: number | null;
+                publicoAnual: number | null;
+                rank: number | null;
                 registeredUsers: number | null;
             }[];
         };
-        UpdateCountryRolloutDto: {
+        CreateCountryRolloutDto: {
+            country: string;
+            name: string;
             /** @enum {string} */
             status?: "planned" | "in_preparation" | "live" | "paused";
             targetDate?: string | null;
             launchedAt?: string | null;
             notes?: string | null;
             userGoal?: number | null;
+            publicoAnual?: number | null;
         };
         CountryRolloutResponse: {
             data: {
                 country: string;
+                name: string;
                 /** @enum {string} */
                 status: "planned" | "in_preparation" | "live" | "paused";
                 targetDate: string | null;
                 launchedAt: string | null;
                 notes: string | null;
                 userGoal: number | null;
+                publicoAnual: number | null;
+                rank: number | null;
                 registeredUsers: number | null;
+            };
+        };
+        UpdateCountryRolloutDto: {
+            name?: string;
+            /** @enum {string} */
+            status?: "planned" | "in_preparation" | "live" | "paused";
+            targetDate?: string | null;
+            launchedAt?: string | null;
+            notes?: string | null;
+            userGoal?: number | null;
+            publicoAnual?: number | null;
+        };
+        CountryRolloutDeletedResponse: {
+            data: {
+                country: string;
+                deleted: boolean;
             };
         };
         AdminLegalDocumentResponse: {
@@ -19981,7 +20030,7 @@ export interface operations {
         parameters: {
             query?: {
                 category?: "cosmetic" | "functional";
-                item_type?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
+                item_type?: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
                 page?: number;
                 limit?: number;
             };
@@ -20270,7 +20319,7 @@ export interface operations {
             };
         };
     };
-    UsersController_usernameAvailable: {
+    UsernameController_usernameAvailable: {
         parameters: {
             query: {
                 u: string;
@@ -23097,6 +23146,26 @@ export interface operations {
         };
         responses: {
             /** @description Bandeja marcada como leída */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    NotificationsController_markOneRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aviso marcado como leído */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -28873,7 +28942,7 @@ export interface operations {
         parameters: {
             query?: {
                 category?: "cosmetic" | "functional";
-                itemType?: "frame" | "avatar" | "title" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
+                itemType?: "frame" | "avatar" | "title" | "app_icon" | "app_theme" | "response_animation" | "streak_protector" | "second_chance" | "extra_time" | "insignia";
                 country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
                 isActive?: boolean;
                 page?: number;
@@ -31973,6 +32042,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CountryRolloutListResponse"];
+                };
+            };
+        };
+    };
+    CountryRolloutsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCountryRolloutDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountryRolloutResponse"];
+                };
+            };
+        };
+    };
+    CountryRolloutsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                country: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CountryRolloutDeletedResponse"];
                 };
             };
         };

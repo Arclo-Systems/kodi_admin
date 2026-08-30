@@ -27,11 +27,16 @@ export type CountryLaunchStatus = 'planned' | 'in_preparation' | 'live' | 'pause
 
 export type CountryRollout = {
   country: string;
+  name: string;
   status: CountryLaunchStatus;
   targetDate: string | null;
   launchedAt: string | null;
   notes: string | null;
   userGoal: number | null;
+  // Público anual total del mercado (personas/año). null = sin dato.
+  publicoAnual: number | null;
+  // Posición en el ranking por público, ya calculada por el backend. null = sin público.
+  rank: number | null;
   // null = país fuera del scope del admin (conteo no calculado).
   registeredUsers: number | null;
   activeUsers: number | null;
@@ -39,11 +44,18 @@ export type CountryRollout = {
 };
 
 export type CountryRolloutInput = {
+  name?: string;
   status?: CountryLaunchStatus;
   targetDate?: string | null;
   launchedAt?: string | null;
   notes?: string | null;
   userGoal?: number | null;
+  publicoAnual?: number | null;
+};
+
+export type CountryRolloutCreateInput = CountryRolloutInput & {
+  country: string;
+  name: string;
 };
 
 async function send(url: string, method: 'POST' | 'PATCH' | 'DELETE', body?: unknown): Promise<unknown> {
@@ -110,4 +122,21 @@ export function useCountryRolloutMutation() {
       send(`/api/admin/launches/countries/${country}`, 'PATCH', input),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['launches', 'countries'] }),
   });
+}
+
+export function useCountryRolloutActions() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['launches', 'countries'] });
+  return {
+    create: useMutation({
+      mutationFn: (input: CountryRolloutCreateInput) =>
+        send('/api/admin/launches/countries', 'POST', input),
+      onSuccess: invalidate,
+    }),
+    remove: useMutation({
+      mutationFn: (country: string) =>
+        send(`/api/admin/launches/countries/${country}`, 'DELETE'),
+      onSuccess: invalidate,
+    }),
+  };
 }
