@@ -15,6 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PlanBadge } from '@/lib/plans';
+import { currencySymbol } from '@/lib/money';
 import { usePromoOfferMutations, type OfferPrice, type PriceRow } from '@/hooks/use-promo-offers';
 import { fromPriceCents, toPriceCents } from './offer-price-units';
 
@@ -36,7 +37,16 @@ const key = (plan: string, period: string, pack: number) => `${plan}|${period}|$
 // igual que la pantalla de Precios de suscripción. Antes se guardaba el número
 // crudo: la oferta founder-cr terminó con "3190" queriendo decir ₡3.190 y la
 // app mostró $31.90 contra $4.99 del precio normal (incidente 2026-07-30).
-export function OfferPricesEditor({ offerId, prices }: { offerId: string; prices: OfferPrice[] }) {
+export function OfferPricesEditor({
+  offerId,
+  currency,
+  prices,
+}: {
+  offerId: string;
+  currency: string;
+  prices: OfferPrice[];
+}) {
+  const symbol = currencySymbol(currency);
   const { setPrices } = usePromoOfferMutations();
   const [error, setError] = useState<string | null>(null);
   const [grid, setGrid] = useState<Record<string, string>>(() => {
@@ -81,7 +91,12 @@ export function OfferPricesEditor({ offerId, prices }: { offerId: string; prices
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium">Grilla de precios de oferta</p>
+      <div>
+        <p className="text-sm font-medium">Grilla de precios de oferta</p>
+        <p className="text-muted-foreground text-xs">
+          Precios en {symbol.trim()} ({currency}) — la moneda de esta oferta.
+        </p>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -102,15 +117,20 @@ export function OfferPricesEditor({ offerId, prices }: { offerId: string; prices
                 <TableCell className="text-muted-foreground">{packLabel(pack)}</TableCell>
                 {PLANS.map((plan) => (
                   <TableCell key={plan}>
-                    <Input
-                      type="number"
-                      min={0}
-                      step={1}
-                      aria-label={`${plan} ${PERIOD_LABELS[period]} ${packLabel(pack)}`}
-                      value={grid[key(plan, period, pack)] ?? ''}
-                      onChange={(e) => set(plan, period, pack, e.target.value)}
-                      className="w-24"
-                    />
+                    <div className="flex items-center gap-1">
+                      <span className="text-muted-foreground text-xs" aria-hidden>
+                        {symbol.trim()}
+                      </span>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1}
+                        aria-label={`${plan} ${PERIOD_LABELS[period]} ${packLabel(pack)} en ${currency}`}
+                        value={grid[key(plan, period, pack)] ?? ''}
+                        onChange={(e) => set(plan, period, pack, e.target.value)}
+                        className="w-24"
+                      />
+                    </div>
                   </TableCell>
                 ))}
               </TableRow>

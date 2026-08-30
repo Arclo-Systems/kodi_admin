@@ -24,6 +24,7 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Switch } from '@/components/ui/switch';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge, type StatusTone } from '@/lib/status-badge';
+import { formatMoney } from '@/lib/money';
 import {
   useKokosPacks,
   useKokosPackMutations,
@@ -68,7 +69,9 @@ const DEFAULTS: FormValues = {
   sortOrder: 0,
 };
 
-const usd = (cents: number) => `$${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+// Los packs se cobran por la store y el modelo solo guarda `priceUsdCents`: acá
+// no hay grid por país, así que la moneda es USD por definición del dato.
+const usd = (cents: number) => formatMoney(cents, 'USD');
 
 // Faro del estado de la oferta (display admin; 'none' no se muestra como badge).
 const OFFER_FARO: Record<Exclude<OfferStatus, 'none'>, { tone: StatusTone; icon: LucideIcon; label: string }> = {

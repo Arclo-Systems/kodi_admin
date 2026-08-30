@@ -461,7 +461,11 @@ export function PromoOffersManager() {
               {detail.isLoading ? (
                 <Skeleton className="h-40 w-full" />
               ) : detail.data ? (
-                <OfferPricesEditor offerId={editing.id} prices={detail.data.prices} />
+                <OfferPricesEditor
+                  offerId={editing.id}
+                  currency={detail.data.currency}
+                  prices={detail.data.prices}
+                />
               ) : null}
             </div>
           )}

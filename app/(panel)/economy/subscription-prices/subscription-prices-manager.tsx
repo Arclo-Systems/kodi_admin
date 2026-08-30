@@ -22,6 +22,7 @@ import { DataTable } from '@/components/admin/data-table';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { PlanBadge, planLabel } from '@/lib/plans';
 import { COUNTRIES } from '@/lib/countries';
+import { formatMoney } from '@/lib/money';
 import {
   useSubscriptionPrices,
   useSubscriptionPriceMutations,
@@ -60,8 +61,6 @@ const DEFAULTS = {
 } as FormValues;
 
 const countryLabel = (code: string) => COUNTRIES.find((c) => c.code === code)?.label ?? code;
-const money = (cents: number, currency: string) =>
-  `${(cents / 100).toLocaleString('es-CR', { minimumFractionDigits: 2 })} ${currency}`;
 
 export function SubscriptionPricesManager() {
   const { data: prices, isLoading, isError } = useSubscriptionPrices();
@@ -156,7 +155,12 @@ export function SubscriptionPricesManager() {
         meta: { label: 'Precio' },
         enableSorting: false,
         cell: ({ row }) => (
-          <span className="font-medium">{money(row.original.priceCents, row.original.currency)}</span>
+          <span className="flex items-baseline gap-1.5 tabular-nums">
+            <span className="font-medium">
+              {formatMoney(row.original.priceCents, row.original.currency)}
+            </span>
+            <span className="text-muted-foreground text-xs">{row.original.currency}</span>
+          </span>
         ),
       },
       {
