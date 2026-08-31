@@ -3274,26 +3274,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/ai/daily-plan/{moduleId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * ① Plan Diario con Razonamiento (PRD §7.9.1)
-         * @description Retorna el tema recomendado del día con texto IA explicando el por qué. Idempotente por día/módulo.
-         */
-        get: operations["AIController_getDailyPlan"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/ai/simulacro-analysis/{simulacroId}": {
         parameters: {
             query?: never;
@@ -11874,6 +11854,9 @@ export interface components {
             data: {
                 analysis_text: string;
                 week_start: string;
+                /** Format: uuid */
+                focus_topic_id: string | null;
+                focus_topic_name: string | null;
                 generated_at: string;
                 dismissed_at: string | null;
             } | null;
@@ -11881,16 +11864,6 @@ export interface components {
         SessionDebriefResponse: {
             data: {
                 ai_debrief: string | null;
-            };
-        };
-        DailyPlanResponse: {
-            data: {
-                /** Format: uuid */
-                topic_id: string | null;
-                recommendation: string;
-                reasoning_text: string;
-                estimated_impact: number | null;
-                generated_at: string;
             };
         };
         SimulacroAnalysisResponse: {
@@ -12854,9 +12827,6 @@ export interface components {
         UserAiResponse: {
             data: {
                 latestPrediction: {
-                    [key: string]: unknown;
-                } | null;
-                latestDailyPlan: {
                     [key: string]: unknown;
                 } | null;
                 recentDiagnostics: {
@@ -22858,27 +22828,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SessionDebriefResponse"];
-                };
-            };
-        };
-    };
-    AIController_getDailyPlan: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                moduleId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DailyPlanResponse"];
                 };
             };
         };
