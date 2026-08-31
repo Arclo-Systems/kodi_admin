@@ -120,21 +120,155 @@ export function CountryFormDialog({
           <DialogTitle>{esAlta ? 'Agregar país al roadmap' : rollout.name}</DialogTitle>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-[6rem_1fr] gap-3">
+          {/* Dos columnas desde `sm`; en móvil colapsa a una. Lo que no se empareja —los avisos
+              y las notas— ocupa la fila entera con `sm:col-span-2`. */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Código y nombre llevan proporción propia: el código son 2 caracteres. */}
+            <div className="grid grid-cols-[6rem_1fr] gap-3 sm:col-span-2">
+              <Controller
+                name="country"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field>
+                    <FieldLabel htmlFor="c-code">Código</FieldLabel>
+                    <Input
+                      {...field}
+                      id="c-code"
+                      maxLength={2}
+                      autoCapitalize="characters"
+                      placeholder="CO"
+                      disabled={!esAlta}
+                      className="uppercase"
+                    />
+                    {fieldState.error && (
+                      <p className="text-destructive text-xs">{fieldState.error.message}</p>
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="name"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field>
+                    <FieldLabel htmlFor="c-name">Nombre</FieldLabel>
+                    <Input {...field} id="c-name" placeholder="Colombia" />
+                    {fieldState.error && (
+                      <p className="text-destructive text-xs">{fieldState.error.message}</p>
+                    )}
+                  </Field>
+                )}
+              />
+            </div>
+
+            {esAlta && (
+              <Alert className="sm:col-span-2">
+                <AlertDescription>
+                  Agregar un país al roadmap es planeación: <strong>no</strong> lo habilita en la
+                  app. Para que se pueda usar ahí hace falta una versión nueva.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <Controller
-              name="country"
+              name="status"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel htmlFor="c-status">Estado</FieldLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="c-status" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              )}
+            />
+            <Controller
+              name="targetDate"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel htmlFor="c-target">Fecha objetivo (opcional)</FieldLabel>
+                  <DatePicker
+                    id="c-target"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Sin fecha"
+                  />
+                </Field>
+              )}
+            />
+            {/* Va después del par para no partir la fila Estado | Fecha objetivo. */}
+            {goingLive && (
+              <Alert className="sm:col-span-2">
+                <AlertDescription>
+                  ⚠️ Marcar como <strong>Live</strong> habilita el registro de usuarios en este
+                  país.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Controller
+              name="launchedAt"
+              control={form.control}
+              render={({ field }) => (
+                <Field>
+                  <FieldLabel htmlFor="c-launched">Fecha de lanzamiento (opcional)</FieldLabel>
+                  <DatePicker
+                    id="c-launched"
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Sin fecha"
+                  />
+                </Field>
+              )}
+            />
+            <Controller
+              name="publicoAnual"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field>
-                  <FieldLabel htmlFor="c-code">Código</FieldLabel>
+                  <FieldLabel htmlFor="c-publico">Público anual (opcional)</FieldLabel>
                   <Input
                     {...field}
-                    id="c-code"
-                    maxLength={2}
-                    autoCapitalize="characters"
-                    placeholder="CO"
-                    disabled={!esAlta}
-                    className="uppercase"
+                    id="c-publico"
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    placeholder="Ej. 243000"
+                  />
+                  {/* El hint cuelga del campo, así que crece hacia abajo sin descuadrar la fila. */}
+                  <p className="text-muted-foreground text-xs">
+                    Personas por año que podrían usar Kodi en ese país. Ordena el ranking.
+                  </p>
+                  {fieldState.error && (
+                    <p className="text-destructive text-xs">{fieldState.error.message}</p>
+                  )}
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="userGoal"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field>
+                  <FieldLabel htmlFor="c-goal">Meta de usuarios (opcional)</FieldLabel>
+                  <Input
+                    {...field}
+                    id="c-goal"
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    placeholder="Ej. 10000"
                   />
                   {fieldState.error && (
                     <p className="text-destructive text-xs">{fieldState.error.message}</p>
@@ -142,131 +276,19 @@ export function CountryFormDialog({
                 </Field>
               )}
             />
+
             <Controller
-              name="name"
+              name="notes"
               control={form.control}
-              render={({ field, fieldState }) => (
-                <Field>
-                  <FieldLabel htmlFor="c-name">Nombre</FieldLabel>
-                  <Input {...field} id="c-name" placeholder="Colombia" />
-                  {fieldState.error && (
-                    <p className="text-destructive text-xs">{fieldState.error.message}</p>
-                  )}
+              render={({ field }) => (
+                <Field className="sm:col-span-2">
+                  <FieldLabel htmlFor="c-notes">Notas (opcional)</FieldLabel>
+                  <Textarea {...field} id="c-notes" rows={3} />
                 </Field>
               )}
             />
           </div>
 
-          {esAlta && (
-            <Alert>
-              <AlertDescription>
-                Agregar un país al roadmap es planeación: <strong>no</strong> lo habilita en la app.
-                Para que se pueda usar ahí hace falta una versión nueva.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <Controller
-            name="status"
-            control={form.control}
-            render={({ field }) => (
-              <Field>
-                <FieldLabel htmlFor="c-status">Estado</FieldLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger id="c-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            )}
-          />
-          {goingLive && (
-            <Alert>
-              <AlertDescription>
-                ⚠️ Marcar como <strong>Live</strong> habilita el registro de usuarios en este país.
-              </AlertDescription>
-            </Alert>
-          )}
-          <Controller
-            name="targetDate"
-            control={form.control}
-            render={({ field }) => (
-              <Field>
-                <FieldLabel htmlFor="c-target">Fecha objetivo (opcional)</FieldLabel>
-                <DatePicker id="c-target" value={field.value} onChange={field.onChange} placeholder="Sin fecha" />
-              </Field>
-            )}
-          />
-          <Controller
-            name="launchedAt"
-            control={form.control}
-            render={({ field }) => (
-              <Field>
-                <FieldLabel htmlFor="c-launched">Fecha de lanzamiento (opcional)</FieldLabel>
-                <DatePicker id="c-launched" value={field.value} onChange={field.onChange} placeholder="Sin fecha" />
-              </Field>
-            )}
-          />
-          <Controller
-            name="publicoAnual"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field>
-                <FieldLabel htmlFor="c-publico">Público anual (opcional)</FieldLabel>
-                <Input
-                  {...field}
-                  id="c-publico"
-                  type="number"
-                  min={1}
-                  inputMode="numeric"
-                  placeholder="Ej. 243000"
-                />
-                <p className="text-muted-foreground text-xs">
-                  Personas por año que podrían usar Kodi en ese país. Ordena el ranking.
-                </p>
-                {fieldState.error && (
-                  <p className="text-destructive text-xs">{fieldState.error.message}</p>
-                )}
-              </Field>
-            )}
-          />
-          <Controller
-            name="userGoal"
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field>
-                <FieldLabel htmlFor="c-goal">Meta de usuarios (opcional)</FieldLabel>
-                <Input
-                  {...field}
-                  id="c-goal"
-                  type="number"
-                  min={1}
-                  inputMode="numeric"
-                  placeholder="Ej. 10000"
-                />
-                {fieldState.error && (
-                  <p className="text-destructive text-xs">{fieldState.error.message}</p>
-                )}
-              </Field>
-            )}
-          />
-          <Controller
-            name="notes"
-            control={form.control}
-            render={({ field }) => (
-              <Field>
-                <FieldLabel htmlFor="c-notes">Notas (opcional)</FieldLabel>
-                <Textarea {...field} id="c-notes" rows={3} />
-              </Field>
-            )}
-          />
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
