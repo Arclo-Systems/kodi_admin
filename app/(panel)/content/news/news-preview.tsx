@@ -47,7 +47,9 @@ export function NewsPreview({
           )}
         </div>
         <div className="space-y-2 p-4">
-          <div className="text-lg font-semibold leading-tight">
+          {/* La app corta el titular a 3 líneas como máximo (detalle); el mock
+              refleja ese truncado en vez de estirarse. */}
+          <div className="line-clamp-3 text-lg font-semibold leading-tight">
             {title || <span className="text-muted-foreground">Sin título</span>}
           </div>
           <p className="text-muted-foreground text-sm">{summary || 'El resumen aparecerá acá.'}</p>

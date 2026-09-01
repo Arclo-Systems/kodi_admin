@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { EyeIcon, LayersIcon, NewspaperIcon, PlusIcon, SaveIcon } from 'lucide-react';
@@ -18,26 +19,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { COUNTRIES } from '@/lib/countries';
+import { cn } from '@/lib/utils';
 import { useModulesTree } from '@/hooks/use-modules-tree';
 import type { NewsDetail } from '@/hooks/use-news';
 import { MarkdownEditor } from './markdown-editor';
+import {
+  NEWS_TITLE_MAX,
+  NewsFormSchema,
+  type NewsFormValues,
+} from './news-form-model';
 import { NewsPreview } from './news-preview';
 import { NewsImageUpload } from './news-image-upload';
-
-type FormValues = {
-  country: string;
-  moduleId: string;
-  title: string;
-  summary: string;
-  body: string;
-  imageUrl: string | null;
-};
 
 export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?: NewsDetail }) {
   const router = useRouter();
   const qc = useQueryClient();
 
-  const form = useForm<FormValues>({
+  const form = useForm<NewsFormValues>({
+    resolver: zodResolver(NewsFormSchema),
     defaultValues: initial
       ? {
           country: initial.country,
@@ -60,12 +59,9 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
   const { data: tree } = useModulesTree(values.country);
   const modules = tree ?? [];
 
-  async function submit(v: FormValues): Promise<void> {
-    // Toda noticia va a un módulo, también al editar: sin él no se puede publicar.
-    if (!v.moduleId) {
-      form.setError('moduleId', { message: 'Elegí a qué módulo va' });
-      return;
-    }
+  // El schema ya exige módulo (toda noticia va a uno, también al editar) y
+  // acota el título a lo que la app pinta sin cortar.
+  async function submit(v: NewsFormValues): Promise<void> {
     const url = mode === 'create' ? '/api/admin/content/news' : `/api/admin/content/news/${initial?.id}`;
     const payload =
       mode === 'create'
@@ -184,20 +180,40 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
         <Controller
           name="title"
           control={form.control}
-          rules={{ required: 'Requerido' }}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="n-title">Título</FieldLabel>
-              <Input {...field} id="n-title" aria-invalid={fieldState.invalid} />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
+          render={({ field, fieldState }) => {
+            const used = field.value.trim().length;
+            return (
+              <Field data-invalid={fieldState.invalid}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <FieldLabel htmlFor="n-title">Título</FieldLabel>
+                  <span
+                    className={cn(
+                      'text-xs tabular-nums',
+                      used > NEWS_TITLE_MAX
+                        ? 'text-destructive'
+                        : 'text-muted-foreground',
+                    )}
+                    aria-live="polite"
+                  >
+                    {used}/{NEWS_TITLE_MAX}
+                  </span>
+                </div>
+                <Input {...field} id="n-title" aria-invalid={fieldState.invalid} />
+                {fieldState.invalid ? (
+                  <FieldError errors={[fieldState.error]} />
+                ) : (
+                  <p className="text-muted-foreground text-xs">
+                    Corto y directo: más largo se cortaría con “…” en la app.
+                  </p>
+                )}
+              </Field>
+            );
+          }}
         />
 
         <Controller
           name="summary"
           control={form.control}
-          rules={{ required: 'Requerido' }}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor="n-summary">Resumen</FieldLabel>
