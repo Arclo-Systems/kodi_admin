@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/chart';
 import { KpiCard } from '@/components/admin/kpi-card';
 import { useFinancePnl } from '@/hooks/use-finance';
+import { civilDayEndIso, civilDayStartIso } from '@/lib/civil-date';
 
 const chartConfig = {
   income: { label: 'Ingresos', color: 'var(--chart-2)' },
@@ -40,7 +41,14 @@ export function PnlDashboard() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [selected, setSelected] = useState('');
-  const { data: pnl, isLoading, isError } = useFinancePnl(from || undefined, to || undefined);
+  const {
+    data: pnl,
+    isLoading,
+    isError,
+  } = useFinancePnl(
+    from ? civilDayStartIso(from) : undefined,
+    to ? civilDayEndIso(to) : undefined,
+  );
 
   const currencies = pnl?.byCurrency.map((c) => c.currency) ?? [];
   const currency = currencies.includes(selected) ? selected : (currencies[0] ?? '');

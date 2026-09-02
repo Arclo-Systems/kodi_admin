@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DatePicker, toYMD } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { civilDayToIso, isoToCivilDay } from '@/lib/civil-date';
 import { FinanceReceiptUpload } from './finance-receipt-upload';
 import {
   useFinanceCategories,
@@ -50,9 +51,9 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
   const [categoryId, setCategoryId] = useState(entry?.categoryId ?? '');
   const [amount, setAmount] = useState(entry ? String(entry.amount) : '');
   const [currency, setCurrency] = useState(entry?.currency ?? 'USD');
-  const [date, setDate] = useState(
-    entry ? entry.date.slice(0, 10) : new Date().toISOString().slice(0, 10),
-  );
+  // El día por defecto es el de hoy en la pared del admin, no el de hoy en UTC: después de las
+  // 18:00 en CR el ISO ya está en el día siguiente y el formulario abría con la fecha de mañana.
+  const [date, setDate] = useState(entry ? isoToCivilDay(entry.date) : toYMD(new Date()));
   const [vendor, setVendor] = useState(entry?.vendor ?? '');
   const [note, setNote] = useState(entry?.note ?? '');
   // KEEP = mantener el existente (edición), null = sin/quitar, string = nueva key.
@@ -73,7 +74,7 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
       categoryId: effectiveCategory,
       amount: amountNum,
       currency,
-      date: new Date(date).toISOString(),
+      date: civilDayToIso(date),
       vendor: vendor.trim() || null,
       note: note.trim() || null,
     };
