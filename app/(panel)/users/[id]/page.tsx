@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { adminFetch } from '@/lib/auth';
 import { unwrapData } from '@/lib/bff';
 import {
-  BarChart3Icon,
   FlameIcon,
   GraduationCapIcon,
   ListChecksIcon,
@@ -14,6 +13,7 @@ import {
 } from 'lucide-react';
 import { KpiCard } from '@/components/admin/kpi-card';
 import { getUserDetail, type UserDetail } from '@/lib/user-detail';
+import { AdvancedStatsCard, type UserAdvancedStats } from './advanced-stats-card';
 import { ModuleChips } from './module-chips';
 import { ProfileEditForm } from './profile-edit-form';
 import { NotificationsCard } from './notifications-card';
@@ -35,14 +35,6 @@ async function getUserStats(id: string): Promise<UserStats | null> {
   return unwrapData<UserStats>(await res.json()) ?? null;
 }
 
-type UserAdvancedStats = {
-  masteryBySubject: { subject: string; accuracyPct: number; topics: number }[];
-  simulacroAvgScore: number | null;
-  simulacrosCompleted: number;
-  weakestTopics: { topic: string; accuracyPct: number }[];
-  weeklyAccuracy: { week: string; accuracyPct: number; total: number }[];
-};
-
 async function getUserAdvancedStats(id: string): Promise<UserAdvancedStats | null> {
   const res = await adminFetch(`/v1/admin/users/${id}/advanced-stats`);
   if (!res.ok) return null;
@@ -63,13 +55,6 @@ const DISCOVERY_LABEL: Record<string, string> = {
 
 function fmtDate(value: string | null): string {
   return value ? new Date(value).toLocaleDateString('es') : '—';
-}
-
-// Verde/ámbar/coral según desempeño — el color comunica (DESIGN §Vida), no es decorativo.
-function accuracyTone(pct: number): string {
-  if (pct >= 70) return 'bg-success';
-  if (pct >= 40) return 'bg-warning';
-  return 'bg-destructive';
 }
 
 export default async function UserProfileTab({ params }: { params: Promise<{ id: string }> }) {
@@ -235,113 +220,6 @@ function PerformanceCard({ stats }: { stats: UserStats }) {
         />
       </div>
     </section>
-  );
-}
-
-function AdvancedStatsCard({ advanced }: { advanced: UserAdvancedStats | null }) {
-  const hasData =
-    !!advanced &&
-    (advanced.masteryBySubject.length > 0 ||
-      advanced.weeklyAccuracy.length > 0 ||
-      advanced.weakestTopics.length > 0 ||
-      advanced.simulacrosCompleted > 0);
-
-  // Sin datos no se renderiza (nada de card ancha con una sola línea adentro).
-  if (!advanced || !hasData) return null;
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3Icon className="text-info size-4" />
-          Estadísticas avanzadas
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
-          <Field label="Promedio de simulacros">
-            {advanced.simulacroAvgScore !== null ? (
-              <span className="tabular-nums">{advanced.simulacroAvgScore} / 100</span>
-            ) : (
-              '—'
-            )}
-          </Field>
-          <Field label="Simulacros completados">
-            <span className="tabular-nums">{advanced.simulacrosCompleted}</span>
-          </Field>
-        </dl>
-
-        <div>
-          <p className="text-muted-foreground mb-2 text-xs font-medium">Aciertos por materia</p>
-          {advanced.masteryBySubject.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Sin datos de práctica todavía.</p>
-          ) : (
-            <ul className="space-y-2">
-              {advanced.masteryBySubject.map((m) => (
-                <li key={m.subject} className="flex items-center gap-3">
-                  <span className="w-36 truncate text-sm">{m.subject}</span>
-                  <div
-                    className="bg-muted relative h-2 flex-1 overflow-hidden rounded-full"
-                    aria-hidden
-                  >
-                    <div
-                      className={`absolute inset-y-0 left-0 rounded-full ${accuracyTone(m.accuracyPct)}`}
-                      style={{ width: `${m.accuracyPct}%` }}
-                    />
-                  </div>
-                  <span className="text-muted-foreground w-20 text-right text-xs tabular-nums">
-                    {m.accuracyPct}% · {m.topics}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {advanced.weeklyAccuracy.length > 0 && (
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-medium">
-              Evolución — aciertos por semana (últimas 8)
-            </p>
-            <div className="flex h-20 items-end gap-1.5">
-              {advanced.weeklyAccuracy.map((w) => (
-                <div
-                  key={w.week}
-                  role="img"
-                  aria-label={`Semana del ${w.week}: ${w.accuracyPct}% de aciertos (${w.total} preguntas)`}
-                  className="flex flex-1 flex-col items-center justify-end gap-1"
-                >
-                  <div
-                    className="bg-primary w-full rounded-t"
-                    style={{ height: `${Math.max(w.accuracyPct, 2)}%` }}
-                    aria-hidden
-                  />
-                  <span className="text-muted-foreground text-[10px] tabular-nums" aria-hidden>
-                    {w.accuracyPct}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {advanced.weakestTopics.length > 0 && (
-          <div>
-            <p className="text-muted-foreground mb-2 text-xs font-medium">
-              Temas a mejorar (menor acierto)
-            </p>
-            <ul className="space-y-1">
-              {advanced.weakestTopics.map((t) => (
-                <li key={t.topic} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="truncate">{t.topic}</span>
-                  <span className="text-destructive tabular-nums">{t.accuracyPct}%</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 
