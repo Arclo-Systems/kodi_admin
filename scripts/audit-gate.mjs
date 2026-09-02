@@ -8,22 +8,10 @@
 // no se despliega. La corrida completa queda como paso informativo en CI.
 import { execSync } from 'node:child_process';
 
-const EXCEPTIONS = {
-  postcss: {
-    reason:
-      'Va clavado dentro de next (8.4.31, pin exacto que ignora overrides). La falla ' +
-      'lee archivos .map al procesar CSS en build-time, sobre CSS propio: sin entrada ' +
-      'de usuario y sin alcance desde una petición en producción.',
-    review: '2026-09-01',
-  },
-  'brace-expansion': {
-    reason:
-      'Entra por glob, que trae el plugin de Sentry para subir source maps (build-time). ' +
-      'El aviso marca vulnerable todo <=5.0.7 y la 5.x cambia la forma del export, así ' +
-      'que forzarla rompe a minimatch y glob.',
-    review: '2026-09-01',
-  },
-};
+// Vacío a propósito: hoy no hay aviso high/critical sin parche alcanzable.
+// postcss (override a 8.5.25) y brace-expansion (5.0.9 por el árbol de glob)
+// dejaron de estar en el aviso, así que sus excepciones se pagaron y salieron.
+const EXCEPTIONS = {};
 
 const BLOCKING = new Set(['high', 'critical']);
 
