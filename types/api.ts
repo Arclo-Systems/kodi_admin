@@ -2737,7 +2737,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Listar partidas del usuario con filtros */
+        /**
+         * Listar partidas del usuario con filtros
+         * @description Filtros opcionales por `status` y por `module_id`. Sin `module_id` vienen las de todos los módulos del usuario.
+         */
         get: operations["DuelsController_list"];
         put?: never;
         /**
@@ -2798,7 +2801,10 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Declinar reto vs_friend (solo el invitado) */
+        /**
+         * Cancelar un reto pendiente
+         * @description El invitado lo rechaza, o el retador cancela el suyo mientras nadie lo contestó. Solo mientras la partida siga `pending`.
+         */
         patch: operations["DuelsController_decline"];
         trace?: never;
     };
@@ -9971,8 +9977,11 @@ export interface components {
                 user_id: string;
                 display_name: string;
                 username: string | null;
+                avatar_photo_url: string | null;
                 /** Format: uuid */
                 avatar_item_id: string | null;
+                /** Format: uuid */
+                frame_item_id: string | null;
                 xp_this_cycle: number;
                 is_me: boolean;
             }[];
@@ -9982,8 +9991,11 @@ export interface components {
                 user_id: string;
                 display_name: string;
                 username: string | null;
+                avatar_photo_url: string | null;
                 /** Format: uuid */
                 avatar_item_id: string | null;
+                /** Format: uuid */
+                frame_item_id: string | null;
                 xp_this_cycle: number;
                 is_me: boolean;
             }[];
@@ -10000,8 +10012,11 @@ export interface components {
                 user_id: string;
                 display_name: string;
                 username: string | null;
+                avatar_photo_url: string | null;
                 /** Format: uuid */
                 avatar_item_id: string | null;
+                /** Format: uuid */
+                frame_item_id: string | null;
                 xp_this_cycle: number;
                 is_me: boolean;
                 /** @enum {string} */
@@ -10287,8 +10302,11 @@ export interface components {
                 id: string;
                 display_name: string;
                 username: string | null;
+                avatar_photo_url: string | null;
                 /** Format: uuid */
                 avatar_item_id: string | null;
+                /** Format: uuid */
+                frame_item_id: string | null;
                 friend_code: string;
             };
         };
@@ -10298,13 +10316,14 @@ export interface components {
                 id: string;
                 display_name: string;
                 username: string | null;
-                friend_code: string | null;
-                streak_days: number | null;
-                title_active: string | null;
+                avatar_photo_url: string | null;
                 /** Format: uuid */
                 avatar_item_id: string | null;
                 /** Format: uuid */
                 frame_item_id: string | null;
+                friend_code: string | null;
+                streak_days: number | null;
+                title_active: string | null;
                 created_at: string | null;
                 is_friend: boolean;
                 is_blocked: boolean;
@@ -10944,6 +10963,19 @@ export interface components {
                     reward: unknown;
                     reached: boolean;
                     claimed: boolean;
+                    item_preview_url: string | null;
+                }[];
+                qualified_referrals: {
+                    /** Format: uuid */
+                    id: string;
+                    display_name: string;
+                    username: string | null;
+                    avatar_photo_url: string | null;
+                    /** Format: uuid */
+                    avatar_item_id: string | null;
+                    /** Format: uuid */
+                    frame_item_id: string | null;
+                    qualified_at: string;
                 }[];
             };
         };
@@ -11061,8 +11093,12 @@ export interface components {
                     /** Format: uuid */
                     user_id: string;
                     display_name: string;
+                    username: string | null;
+                    avatar_photo_url: string | null;
                     /** Format: uuid */
                     avatar_item_id: string | null;
+                    /** Format: uuid */
+                    frame_item_id: string | null;
                     best_score: number;
                     best_combo: number;
                     is_me: boolean;
@@ -11186,9 +11222,12 @@ export interface components {
                     id: string;
                     display_name: string;
                     username: string | null;
-                    friend_code: string;
+                    avatar_photo_url: string | null;
                     /** Format: uuid */
                     avatar_item_id: string | null;
+                    /** Format: uuid */
+                    frame_item_id: string | null;
+                    friend_code: string;
                     streak_days: number;
                     last_active_at: string;
                     /** @enum {string|null} */
@@ -11263,9 +11302,12 @@ export interface components {
                     id: string;
                     display_name: string;
                     username: string | null;
-                    friend_code: string;
+                    avatar_photo_url: string | null;
                     /** Format: uuid */
                     avatar_item_id: string | null;
+                    /** Format: uuid */
+                    frame_item_id: string | null;
+                    friend_code: string;
                     mutual_friends: number;
                 };
                 created_at: string;
@@ -11285,9 +11327,12 @@ export interface components {
                     id: string;
                     display_name: string;
                     username: string | null;
-                    friend_code: string;
+                    avatar_photo_url: string | null;
                     /** Format: uuid */
                     avatar_item_id: string | null;
+                    /** Format: uuid */
+                    frame_item_id: string | null;
+                    friend_code: string;
                     mutual_friends: number;
                 };
                 created_at: string;
@@ -11323,7 +11368,11 @@ export interface components {
                 blocked_user_id: string;
                 display_name: string;
                 username: string | null;
+                avatar_photo_url: string | null;
+                /** Format: uuid */
                 avatar_item_id: string | null;
+                /** Format: uuid */
+                frame_item_id: string | null;
                 created_at: string;
             }[];
             meta: {
@@ -11350,8 +11399,12 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     display_name: string;
+                    username: string | null;
+                    avatar_photo_url: string | null;
                     /** Format: uuid */
                     avatar_item_id: string | null;
+                    /** Format: uuid */
+                    frame_item_id: string | null;
                 };
                 /** @enum {string} */
                 event_type: "league_promotion" | "streak_milestone" | "achievement" | "simulacro_completed" | "shared_streak";
@@ -11485,8 +11538,12 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     display_name: string;
+                    username: string | null;
+                    avatar_photo_url: string | null;
                     /** Format: uuid */
                     avatar_item_id: string | null;
+                    /** Format: uuid */
+                    frame_item_id: string | null;
                     bot_avatar_url: string | null;
                 } | null;
             }[];
@@ -11521,6 +11578,18 @@ export interface components {
                 turn_started_at: string | null;
                 started_at: string;
                 exam_name: string | null;
+                opponent: {
+                    /** Format: uuid */
+                    id: string;
+                    display_name: string;
+                    username: string | null;
+                    avatar_photo_url: string | null;
+                    /** Format: uuid */
+                    avatar_item_id: string | null;
+                    /** Format: uuid */
+                    frame_item_id: string | null;
+                    bot_avatar_url: string | null;
+                } | null;
                 subjects: {
                     /** Format: uuid */
                     subject_id: string;
@@ -11808,8 +11877,12 @@ export interface components {
                     /** Format: uuid */
                     user_id: string;
                     display_name: string;
+                    username: string | null;
+                    avatar_photo_url: string | null;
                     /** Format: uuid */
                     avatar_item_id: string | null;
+                    /** Format: uuid */
+                    frame_item_id: string | null;
                     bot_avatar_url: string | null;
                     eliminated: boolean;
                     final_rank: number | null;
@@ -12354,9 +12427,13 @@ export interface components {
                 position: number;
                 /** Format: uuid */
                 user_id: string | null;
-                display_name: string | null;
+                display_name: string;
+                username: string | null;
+                avatar_photo_url: string | null;
                 /** Format: uuid */
                 avatar_item_id: string | null;
+                /** Format: uuid */
+                frame_item_id: string | null;
                 prize_description: string;
                 prize_image_url: string | null;
             }[];
@@ -12997,6 +13074,7 @@ export interface components {
                 simulacrosCompleted: number;
                 weakestTopics: {
                     topic: string;
+                    subject: string;
                     accuracyPct: number;
                 }[];
                 weeklyAccuracy: {
@@ -22269,6 +22347,7 @@ export interface operations {
         parameters: {
             query?: {
                 status?: "pending" | "active" | "completed" | "cancelled";
+                module_id?: string;
                 page?: number;
                 limit?: number;
             };
