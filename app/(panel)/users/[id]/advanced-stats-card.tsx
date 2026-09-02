@@ -313,7 +313,11 @@ function WeakSpotsCard({ topics }: { topics: UserAdvancedStats['weakestTopics'] 
                   </span>
                 </div>
                 <Track pct={t.accuracyPct} tone={tone} />
-                <span className="text-muted-foreground text-[10.5px]">{t.subject}</span>
+                {/* El backend que todavía no manda `subject` no deja un renglón en
+                    blanco: la línea aparece cuando el dato llega. */}
+                {t.subject && (
+                  <span className="text-muted-foreground text-[10.5px]">{t.subject}</span>
+                )}
               </li>
             );
           })}
