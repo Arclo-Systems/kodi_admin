@@ -1,6 +1,6 @@
 'use client';
 
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, LabelList, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -8,94 +8,61 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 
-export type SubjectRow = { subject: string; accuracyPct: number; topics: number };
 export type WeekRow = { week: string; accuracyPct: number; total: number };
 
-const subjectConfig = {
-  accuracyPct: { label: 'Aciertos' },
-  solid: { label: 'Sólido', color: 'var(--success)' },
-  partial: { label: 'A medias', color: 'var(--warning)' },
-  // `--destructive` en oscuro (#B34734 sobre la card #1B2932) mide 2.7:1 — por debajo
-  // del 3:1 que WCAG 1.4.11 exige a un objeto gráfico. El coral claro de la paleta
-  // (`--chart-5`) mide 5.6:1 ahí, y el oscuro 5.4:1 sobre la card blanca del tema claro.
-  weak: { label: 'Frágil', theme: { light: 'var(--destructive)', dark: 'var(--chart-5)' } },
-} satisfies ChartConfig;
-
-const weeklyConfig = {
+const config = {
   accuracyPct: { label: 'Aciertos', color: 'var(--chart-1)' },
 } satisfies ChartConfig;
 
-const tone = (pct: number): 'solid' | 'partial' | 'weak' =>
-  pct >= 70 ? 'solid' : pct >= 40 ? 'partial' : 'weak';
+const FILL_ID = 'evolucion-semanal-fill';
 
-const topicsLabel = (n: number) => `${n} ${n === 1 ? 'tema' : 'temas'}`;
 const weekTick = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
-// El % solo es legible con su respaldo al lado: "33% · 2 temas" desambigua el
-// "33% · 2" viejo, que no decía de qué era el 2.
-export const subjectBarLabel = (row: SubjectRow) =>
-  `${row.accuracyPct}% · ${topicsLabel(row.topics)}`;
+type TrendDotProps = {
+  cx?: number;
+  cy?: number;
+  index?: number;
+  payload?: WeekRow;
+};
 
-export function SubjectAccuracyChart({ data }: { data: SubjectRow[] }) {
-  const rows = data.map((d) => ({ ...d, label: subjectBarLabel(d) }));
-
-  return (
-    <ChartContainer config={subjectConfig} className="aspect-auto h-full w-full">
-      {/* El SVG va `aria-hidden` con una tabla `sr-only` al lado (la card la arma): la
-          capa de accesibilidad de recharts metería un elemento focusable dentro de un
-          contenedor oculto, que es peor que no tenerla. */}
-      <BarChart
-        accessibilityLayer={false}
-        layout="vertical"
-        data={rows}
-        // El margen derecho es el que aloja el rótulo del % + los temas: si queda corto,
-        // recharts lo parte en varias líneas.
-        margin={{ top: 4, right: 120, bottom: 4, left: 0 }}
-      >
-        <XAxis type="number" domain={[0, 100]} hide />
-        <YAxis
-          type="category"
-          dataKey="subject"
-          width={124}
-          tickLine={false}
-          axisLine={false}
-          tickMargin={4}
-        />
-        <ChartTooltip
-          cursor={false}
-          content={
-            <ChartTooltipContent
-              hideIndicator
-              formatter={(value) => (
-                <span className="tabular-nums">{Number(value)}% de aciertos</span>
-              )}
-            />
-          }
-        />
-        {/* Sin animación de entrada: recharts recién dibuja el `LabelList` cuando la
-            barra termina de crecer, y en una herramienta de trabajo el número no puede
-            tardar en aparecer. */}
-        <Bar dataKey="accuracyPct" barSize={14} radius={4} isAnimationActive={false}>
-          {rows.map((r) => (
-            <Cell key={r.subject} fill={`var(--color-${tone(r.accuracyPct)})`} />
-          ))}
-          <LabelList
-            dataKey="label"
-            position="right"
-            offset={8}
-            fontSize={11}
-            className="fill-muted-foreground"
-          />
-        </Bar>
-      </BarChart>
-    </ChartContainer>
-  );
-}
+// El único punto que se marca es el último: es "dónde está hoy" el estudiante. Marcar
+// los siete convierte la línea en un collar de puntos y ninguno destaca.
+const lastPointRenderer = (count: number) =>
+  function TrendLastPoint({ cx, cy, index, payload }: TrendDotProps) {
+    if (index !== count - 1 || cx == null || cy == null || !payload) return null;
+    return (
+      <g data-slot="trend-last-point">
+        <circle cx={cx} cy={cy} r={8} fill="var(--color-accuracyPct)" opacity={0.2} />
+        <circle cx={cx} cy={cy} r={4.5} fill="var(--color-accuracyPct)" />
+        <text
+          x={cx - 14}
+          y={cy - 10}
+          textAnchor="end"
+          className="fill-foreground text-[11px] font-semibold"
+        >
+          {payload.accuracyPct}%
+        </text>
+      </g>
+    );
+  };
 
 export function WeeklyTrendChart({ data }: { data: WeekRow[] }) {
   return (
-    <ChartContainer config={weeklyConfig} className="aspect-auto h-full w-full">
-      <AreaChart accessibilityLayer={false} data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+    <ChartContainer config={config} className="aspect-auto h-full w-full">
+      {/* El SVG va `aria-hidden` con una tabla `sr-only` al lado (la card la arma): la
+          capa de accesibilidad de recharts metería un elemento focusable dentro de un
+          contenedor oculto, que es peor que no tenerla. */}
+      <AreaChart
+        accessibilityLayer={false}
+        data={data}
+        margin={{ top: 14, right: 12, bottom: 0, left: 12 }}
+      >
+        <defs>
+          <linearGradient id={FILL_ID} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-accuracyPct)" stopOpacity={0.28} />
+            <stop offset="100%" stopColor="var(--color-accuracyPct)" stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey="week"
@@ -103,14 +70,11 @@ export function WeeklyTrendChart({ data }: { data: WeekRow[] }) {
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          tick={{ fontSize: 10.5 }}
         />
-        <YAxis
-          domain={[0, 100]}
-          width={40}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(v: number) => `${v}%`}
-        />
+        {/* Sin rótulos de eje: el 0/50/100 se lee en las tres líneas de la grilla y el
+            dato que importa (dónde está hoy) va escrito sobre el punto final. */}
+        <YAxis hide domain={[0, 100]} ticks={[0, 50, 100]} />
         <ChartTooltip
           content={
             <ChartTooltipContent
@@ -126,12 +90,16 @@ export function WeeklyTrendChart({ data }: { data: WeekRow[] }) {
         />
         <Area
           dataKey="accuracyPct"
-          type="monotone"
+          type="linear"
           stroke="var(--color-accuracyPct)"
-          fill="var(--color-accuracyPct)"
-          fillOpacity={0.18}
           strokeWidth={2}
-          dot={{ r: 2.5 }}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          fill={`url(#${FILL_ID})`}
+          fillOpacity={1}
+          dot={lastPointRenderer(data.length)}
+          activeDot={{ r: 4 }}
+          isAnimationActive={false}
         />
       </AreaChart>
     </ChartContainer>
