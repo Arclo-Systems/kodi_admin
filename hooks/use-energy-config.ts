@@ -3,7 +3,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/fetch-json';
 
-export type EnergyConfig = {
+// Costo de energía propio de cada modo de juego: `null` = ese modo cobra `costPerMatch`
+// (founder 2026-07-30). El PUT es un upsert completo, así que mandar null devuelve el modo
+// a heredar; omitir la clave hace lo mismo, pero el null explícito deja la intención escrita.
+export type ModeCostField =
+  | 'costDuelo'
+  | 'costArenaRapida'
+  | 'costArenaAmigos'
+  | 'costContrarreloj'
+  | 'costSupervivencia';
+
+type ModeCosts = Record<ModeCostField, number | null>;
+
+export type EnergyConfig = ModeCosts & {
   id: string;
   country: string | null;
   maxEnergy: number;
@@ -13,7 +25,7 @@ export type EnergyConfig = {
   refillCostKokos: number;
   updatedAt: string;
 };
-export type EnergyConfigInput = {
+export type EnergyConfigInput = ModeCosts & {
   country: string | null;
   maxEnergy: number;
   regenMinutes: number;
@@ -40,6 +52,11 @@ export const ENERGY_DEFAULTS = {
   maxEnergy: 25,
   regenMinutes: 6,
   costPerMatch: 1,
+  costDuelo: null,
+  costArenaRapida: null,
+  costArenaAmigos: null,
+  costContrarreloj: null,
+  costSupervivencia: null,
   adBonus: 3,
   refillCostKokos: 50,
 } as const;
