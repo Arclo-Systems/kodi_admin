@@ -28,6 +28,9 @@ export type BotRow = {
     isActive: boolean;
     template: { difficulty: string; name: string };
   } | null;
+  // Módulos donde el bot está inscrito: un módulo nuevo "sin bots" era
+  // invisible en el panel hasta que fallaba el matchmaking.
+  modules: { id: string; shortName: string }[];
 };
 
 export type BotAvatar = { id: string; url: string; isActive: boolean };

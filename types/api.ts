@@ -3885,6 +3885,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/waitlist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dejar un correo en la lista de espera del lanzamiento de iOS */
+        post: operations["PublicWaitlistController_signup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/config/flags": {
         parameters: {
             query?: never;
@@ -8560,6 +8577,70 @@ export interface paths {
         patch: operations["CountryRolloutsController_update"];
         trace?: never;
     };
+    "/v1/admin/launches/waitlist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WaitlistAdminController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/launches/waitlist/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WaitlistAdminController_stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/launches/waitlist/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["WaitlistAdminController_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/launches/waitlist/notify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["WaitlistAdminController_notifyLaunch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/legal/{doc}": {
         parameters: {
             query?: never;
@@ -12408,6 +12489,25 @@ export interface components {
                 } | null;
             };
         };
+        WaitlistSignupDto: {
+            /** Format: email */
+            email: string;
+            /** @default landing-ios */
+            origen: string;
+        };
+        WaitlistSignupResponse: {
+            data: {
+                /** @enum {string} */
+                status: "registered";
+            };
+        };
+        WaitlistConflictResponse: {
+            data: {
+                /** @enum {string} */
+                code: "WAITLIST_ALREADY_SIGNED_UP";
+                message: string;
+            };
+        };
         ConfigFlagsResponse: {
             data: {
                 iap_purchases_enabled: boolean;
@@ -15205,6 +15305,11 @@ export interface components {
                             name: string;
                         };
                     } | null;
+                    modules: {
+                        /** Format: uuid */
+                        id: string;
+                        shortName: string;
+                    }[];
                 }[];
                 total: number;
                 page: number;
@@ -17848,6 +17953,41 @@ export interface components {
                 deleted: boolean;
             };
         };
+        WaitlistSignupListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: email */
+                    email: string;
+                    source: string;
+                    /** Format: date-time */
+                    createdAt: string;
+                    /** Format: date-time */
+                    notifiedAt: string | null;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        WaitlistStatsResponse: {
+            data: {
+                total: number;
+                pending: number;
+                notified: number;
+                /** Format: date-time */
+                firstSignupAt: string | null;
+                /** Format: date-time */
+                lastSignupAt: string | null;
+            };
+        };
+        WaitlistNotifyResponse: {
+            data: {
+                queued: boolean;
+                pending: number;
+            };
+        };
         AdminLegalDocumentResponse: {
             data: {
                 /** @enum {string} */
@@ -18543,7 +18683,10 @@ export interface operations {
     AuthController_register: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave con el mismo body devuelve el alta original en vez de EMAIL_TAKEN */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -18805,7 +18948,10 @@ export interface operations {
     AuthController_changePassword: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave confirma el cambio original en vez de fallar contra el hash ya rotado */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20180,7 +20326,10 @@ export interface operations {
     VideosController_adReward: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -20982,7 +21131,10 @@ export interface operations {
     PracticeController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -21075,7 +21227,10 @@ export interface operations {
     PracticeController_complete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve el resumen original en vez de chocar contra la sesión ya cerrada */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -21440,7 +21595,10 @@ export interface operations {
     QuickSessionsController_end: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve el resumen original sin pagar el premio dos veces */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -21507,7 +21665,10 @@ export interface operations {
     SimulacroController_create: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve el simulacro creado en vez de SIMULACRO_ALREADY_ACTIVE */
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -22083,7 +22244,10 @@ export interface operations {
     SurpriseExamController_complete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description UUID v4 por intento; repetir la clave devuelve el resultado original en vez de chocar contra el examen ya cerrado */
+                "Idempotency-Key"?: string;
+            };
             path: {
                 id: string;
             };
@@ -23671,6 +23835,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    PublicWaitlistController_signup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WaitlistSignupDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistSignupResponse"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistConflictResponse"];
+                };
             };
         };
     };
@@ -32060,6 +32255,93 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CountryRolloutResponse"];
+                };
+            };
+        };
+    };
+    WaitlistAdminController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                search?: string;
+                status?: "pending" | "notified";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistSignupListResponse"];
+                };
+            };
+        };
+    };
+    WaitlistAdminController_stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistStatsResponse"];
+                };
+            };
+        };
+    };
+    WaitlistAdminController_export: {
+        parameters: {
+            query?: {
+                page?: number;
+                pageSize?: number;
+                search?: string;
+                status?: "pending" | "notified";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV descargable */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+        };
+    };
+    WaitlistAdminController_notifyLaunch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WaitlistNotifyResponse"];
                 };
             };
         };

@@ -3,8 +3,14 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
-import { CircleCheckIcon, CircleDashedIcon, PencilIcon } from 'lucide-react';
+import {
+  CircleCheckIcon,
+  CircleDashedIcon,
+  PencilIcon,
+  TriangleAlertIcon,
+} from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/lib/status-badge';
 import {
@@ -137,6 +143,30 @@ export function BotsTab({ canWrite }: { canWrite: boolean }) {
       },
     },
     { accessorKey: 'country', header: 'País', meta: { label: 'País' } },
+    {
+      id: 'modules',
+      header: 'Módulos',
+      meta: { label: 'Módulos' },
+      // La dimensión que el panel ocultaba: un bot fuera de un módulo no
+      // rellena sus salas. Sin módulos = alerta, no un guion silencioso.
+      cell: ({ row }) => {
+        const modules = row.original.modules ?? [];
+        if (modules.length === 0) {
+          return (
+            <StatusBadge tone="warning" icon={TriangleAlertIcon} label="Sin módulos" />
+          );
+        }
+        return (
+          <div className="flex flex-wrap gap-1">
+            {modules.map((m) => (
+              <Badge key={m.id} variant="outline" className="text-muted-foreground">
+                {m.shortName}
+              </Badge>
+            ))}
+          </div>
+        );
+      },
+    },
     {
       id: 'template',
       header: 'Plantilla',
