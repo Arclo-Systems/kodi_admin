@@ -62,7 +62,10 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
 
   const { data: categories } = useFinanceCategories(kind);
   const cats = categories ?? [];
-  const effectiveCategory = cats.some((c) => c.id === categoryId) ? categoryId : '';
+  // La categoría se descarta solo si la lista YA llegó y no la contiene (pasa al cambiar el tipo).
+  // Descartarla mientras la lista carga dejaba el Select sin valor justo cuando el movimiento ya
+  // había cargado, y Radix lo devolvía como '' por su <select> espejo: la categoría se borraba sola.
+  const effectiveCategory = !categories || cats.some((c) => c.id === categoryId) ? categoryId : '';
 
   const amountNum = Number(amount);
   const valid = !!effectiveCategory && amount !== '' && amountNum > 0 && !!date;
@@ -131,9 +134,11 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                 {entry && <FieldDescription>No editable luego de crear.</FieldDescription>}
               </Field>
               <Field>
-                <FieldLabel>Categoría</FieldLabel>
-                <Select value={effectiveCategory || undefined} onValueChange={setCategoryId}>
-                  <SelectTrigger>
+                <FieldLabel htmlFor="fe-category">Categoría</FieldLabel>
+                {/* '' (y no undefined) mantiene el Select controlado toda su vida: con undefined
+                    nace no-controlado y el cambio a controlado le borra el valor. */}
+                <Select value={effectiveCategory} onValueChange={setCategoryId}>
+                  <SelectTrigger id="fe-category">
                     <SelectValue placeholder="Elegí una categoría" />
                   </SelectTrigger>
                   <SelectContent>
