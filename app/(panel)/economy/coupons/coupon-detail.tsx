@@ -14,6 +14,7 @@ import {
   TicketIcon,
 } from 'lucide-react';
 import { useCoupon, useCouponStats } from '@/hooks/use-coupons';
+import { formatCivilDay } from '@/lib/civil-date';
 import { can } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
 import { StatusBadge } from '@/lib/status-badge';
@@ -176,9 +177,7 @@ export function CouponDetail({ id, role }: { id: string; role: AdminRole }) {
                 </Stat>
                 <Stat label="Prefijo de código">{coupon.codePrefix ?? 'KOD'}</Stat>
                 <Stat label="Válido hasta">
-                  {coupon.validUntil
-                    ? new Date(coupon.validUntil).toLocaleDateString('es-CR')
-                    : 'Sin vencimiento'}
+                  {coupon.validUntil ? formatCivilDay(coupon.validUntil) : 'Sin vencimiento'}
                 </Stat>
                 <Stat label="Vigencia tras canje">{coupon.validDaysAfterRedeem} días</Stat>
               </dl>

@@ -6,6 +6,7 @@ import { PlusIcon, ReceiptIcon } from 'lucide-react';
 import { useSponsorInvoices, INVOICE_STATUS_LABELS } from '@/hooks/use-sponsor-invoices';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatCivilDay } from '@/lib/civil-date';
 import { StatusBadge } from '@/lib/status-badge';
 import { INVOICE_STATUS_FARO } from '@/lib/invoice-status';
 
@@ -48,7 +49,7 @@ export function SponsorInvoicesTab({ sponsorId }: { sponsorId: string }) {
                   label={INVOICE_STATUS_LABELS[inv.status]}
                 />
                 <span className="text-muted-foreground ml-auto text-xs">
-                  vence {new Date(inv.dueDate).toLocaleDateString('es-CR')}
+                  vence {formatCivilDay(inv.dueDate)}
                 </span>
                 <span className="font-medium">{money(inv.total, inv.currency)}</span>
               </button>

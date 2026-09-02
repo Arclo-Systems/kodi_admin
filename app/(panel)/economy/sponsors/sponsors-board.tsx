@@ -34,6 +34,7 @@ import {
   type Sponsor,
 } from '@/hooks/use-sponsors';
 import { Badge } from '@/components/ui/badge';
+import { formatCivilDay } from '@/lib/civil-date';
 import { StatusBadge } from '@/lib/status-badge';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -106,7 +107,7 @@ function SponsorCard({ sponsor }: { sponsor: Sponsor }) {
       </div>
       {sponsor.contractEndsAt && (
         <div className="text-muted-foreground mt-2 text-xs">
-          Contrato hasta {new Date(sponsor.contractEndsAt).toLocaleDateString('es-CR')}
+          Contrato hasta {formatCivilDay(sponsor.contractEndsAt)}
         </div>
       )}
       {!sponsor.isActive && (

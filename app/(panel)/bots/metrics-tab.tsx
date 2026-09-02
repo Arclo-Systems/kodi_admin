@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/admin/data-table';
 import { useBotMetrics, type BotMetric } from '@/hooks/use-bots';
+import { formatCivilDay } from '@/lib/civil-date';
 
 const columns: ColumnDef<BotMetric, unknown>[] = [
   {
@@ -36,7 +37,7 @@ const columns: ColumnDef<BotMetric, unknown>[] = [
     accessorKey: 'date',
     header: 'Fecha',
     meta: { label: 'Fecha' },
-    cell: ({ row }) => new Date(row.original.date).toLocaleDateString('es-CR'),
+    cell: ({ row }) => formatCivilDay(row.original.date),
   },
   {
     id: 'alarm',

@@ -24,6 +24,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useSponsor, PIPELINE_LABELS, type PipelineStatus } from '@/hooks/use-sponsors';
+import { formatCivilDay } from '@/lib/civil-date';
 import { can } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
 import { StatusBadge, type StatusTone } from '@/lib/status-badge';
@@ -60,7 +61,7 @@ function DetailRow({ label, children }: { label: string; children: ReactNode }) 
 }
 
 function fmtDate(d: string | null): string {
-  return d ? new Date(d).toLocaleDateString('es-CR') : '—';
+  return d ? formatCivilDay(d) : '—';
 }
 
 export function SponsorDetail({ id, role }: { id: string; role: AdminRole }) {

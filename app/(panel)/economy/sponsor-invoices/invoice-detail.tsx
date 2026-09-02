@@ -27,6 +27,7 @@ import {
   type InvoiceDetail as TInvoiceDetail,
 } from '@/hooks/use-sponsor-invoices';
 import { KpiCard } from '@/components/admin/kpi-card';
+import { formatCivilDay } from '@/lib/civil-date';
 import { openSignedAsset } from '@/lib/signed-asset';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { StatusBadge } from '@/lib/status-badge';
@@ -80,7 +81,7 @@ export function InvoiceDetailView({ id }: { id: string }) {
           />
         </div>
         <p className="text-muted-foreground">
-          {inv.sponsor?.name ?? 'Sponsor'} · vence {new Date(inv.dueDate).toLocaleDateString('es-CR')}
+          {inv.sponsor?.name ?? 'Sponsor'} · vence {formatCivilDay(inv.dueDate)}
         </p>
       </div>
 
