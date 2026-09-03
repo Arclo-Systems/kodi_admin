@@ -42,6 +42,13 @@ export function UserHeader({ user }: { user: UserDetail }) {
   const verified = !!user.emailVerifiedAt;
   const years = age(user.birthDate);
 
+  // El plan es POR MÓDULO. `user.plan` es el MÁS ALTO de todos, así que solo
+  // con eso la cabecera decía "PRO" de alguien que es free justo en el módulo
+  // del que viene reclamando — y contradecía a la pestaña Suscripciones.
+  // Se nombran los módulos pagos en vez de apilar un badge por cada uno: quien
+  // atiende un reclamo necesita leer "PRO ¿dónde?" de un vistazo.
+  const paidModules = (user.subscriptions ?? []).map((s) => s.module.shortName);
+
   return (
     <div className="space-y-3">
       {user.bannedUntil && (
@@ -73,7 +80,14 @@ export function UserHeader({ user }: { user: UserDetail }) {
                   {user.accountStatus}
                 </Badge>
               ),
-              <PlanBadge key="plan" plan={user.plan} />,
+              <span key="plan" className="inline-flex items-center gap-1.5">
+                <PlanBadge plan={user.plan} />
+                {paidModules.length > 0 && (
+                  <span className="text-muted-foreground text-xs">
+                    en {paidModules.join(' · ')}
+                  </span>
+                )}
+              </span>,
               <Badge key="country" variant="outline">
                 {user.country}
               </Badge>,

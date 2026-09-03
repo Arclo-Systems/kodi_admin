@@ -177,6 +177,9 @@ export function ModerationTable() {
               </SelectContent>
             </Select>
             <Button variant="outline" size="sm" className="ml-auto" asChild>
+              <Link href="/moderation/avatar-reviews">Fotos de perfil</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
               <Link href="/moderation/prohibited-words">Palabras prohibidas</Link>
             </Button>
           </>

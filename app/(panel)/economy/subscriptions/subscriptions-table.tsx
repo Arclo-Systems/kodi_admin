@@ -48,14 +48,24 @@ const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 export function SubscriptionsTable() {
   const [plan, setPlan] = useState(ALL);
   const [status, setStatus] = useState(ALL);
+  const [moduleFilter, setModuleFilter] = useState(ALL);
   const [friendCode, setFriendCode] = useState('');
   const [page, setPage] = useState(1);
+
+  // Sin país: el plan es POR MÓDULO y un mismo usuario puede tener filas de
+  // módulos de cualquier país que el admin alcance. Se usa para poner nombre al
+  // `moduleId` que ya venía en la respuesta y se tiraba al dibujar.
+  const { data: allModules } = useModulesTree();
+  const moduleNameById = new Map(
+    (allModules ?? []).map((m) => [m.id, m.shortName]),
+  );
 
   const { data, isLoading } = useSubscriptions({
     page,
     pageSize: PAGE_SIZE,
     plan: plan === ALL ? undefined : plan,
     status: status === ALL ? undefined : status,
+    moduleId: moduleFilter === ALL ? undefined : moduleFilter,
     friendCode: friendCode.trim() || undefined,
   });
   const { grant, extend, cancel, changeStatus } = useSubscriptionMutations();
@@ -80,6 +90,26 @@ export function SubscriptionsTable() {
           </div>
         </div>
       ),
+    },
+    {
+      accessorKey: 'moduleId',
+      header: 'Módulo',
+      meta: { label: 'Módulo' },
+      // Sin esta columna, dos suscripciones del MISMO usuario en módulos
+      // distintos se veían como dos filas idénticas: soporte no tenía forma de
+      // saber cuál extender o cancelar.
+      cell: ({ row }) => {
+        const id = row.original.moduleId;
+        const name = id ? moduleNameById.get(id) : undefined;
+        if (name) return name;
+        // El árbol todavía no cargó, o el módulo quedó fuera del alcance del
+        // admin: se muestra el id corto en vez de un vacío que miente.
+        return (
+          <span className="text-muted-foreground">
+            {id ? id.slice(0, 8) : '—'}
+          </span>
+        );
+      },
     },
     {
       accessorKey: 'plan',
@@ -165,6 +195,17 @@ export function SubscriptionsTable() {
               <SelectContent>
                 <SelectItem value={ALL}>Todos los estados</SelectItem>
                 {STATUSES.map((s) => <SelectItem key={s} value={s}>{subscriptionStatusLabel(s)}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={moduleFilter} onValueChange={(v) => { setModuleFilter(v); resetPage(); }}>
+              <SelectTrigger className="w-48" size="sm"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos los módulos</SelectItem>
+                {(allModules ?? []).map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.shortName} · {m.country}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Input

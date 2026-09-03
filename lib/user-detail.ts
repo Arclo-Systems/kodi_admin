@@ -59,6 +59,17 @@ export type UserDetail = {
   deleteRequestedAt: string | null;
   // Relaciones
   userModules: { module: ModuleIdentity }[];
+  /**
+   * Una fila POR MÓDULO: el plan de Kodi es por módulo. El backend ya las
+   * mandaba y el panel no las declaraba, así que la cabecera pintaba solo
+   * `plan` —el más alto de todos— y decía "PRO" de alguien que es free en el
+   * módulo del que viene reclamando.
+   */
+  subscriptions: {
+    plan: UserPlan;
+    moduleId: string;
+    module: { shortName: string };
+  }[];
   // B2: el examen activo es lo que decide qué contenido ve el usuario. Sin esto
   // soporte no podía diagnosticar "me salen preguntas de otro examen".
   examDates: {

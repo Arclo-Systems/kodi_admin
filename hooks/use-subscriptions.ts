@@ -23,6 +23,7 @@ export type SubsQuery = {
   friendCode?: string;
   plan?: string;
   status?: string;
+  moduleId?: string;
   page: number;
   pageSize: number;
 };

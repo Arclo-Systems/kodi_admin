@@ -45,6 +45,7 @@ const LABELS: Record<string, string> = {
   subject: 'Materia',
   topic: 'Tema',
   'prohibited-words': 'Palabras prohibidas',
+  'avatar-reviews': 'Fotos de perfil',
   segments: 'Segmentos',
   templates: 'Plantillas',
   schedule: 'Programar',
