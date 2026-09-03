@@ -10,8 +10,16 @@ export type NewsModule = { id: string; shortName: string };
 export type NewsListItem = {
   id: string;
   country: string;
-  /** Uno o varios. Vacío solo mientras es borrador: publicar sin módulos se rechaza. */
-  modules: NewsModule[];
+  /**
+   * Uno o varios. Vacío solo mientras es borrador: publicar sin módulos se
+   * rechaza.
+   *
+   * Opcional en el tipo porque panel y backend deployan por separado: entre un
+   * deploy y el otro el backend todavía contesta el shape viejo, y sin esto la
+   * tabla y el formulario reventaban al recorrer `undefined`. Se lee siempre
+   * con `newsModules()`.
+   */
+  modules?: NewsModule[];
   title: string;
   summary: string;
   status: NewsStatus;
@@ -19,6 +27,11 @@ export type NewsListItem = {
   publishedAt: string;
   createdAt: string;
 };
+
+/** Los módulos de una noticia, tolerando la respuesta del backend viejo. */
+export function newsModules(n: Pick<NewsListItem, 'modules'>): NewsModule[] {
+  return n.modules ?? [];
+}
 
 export type NewsListQuery = {
   country?: string;

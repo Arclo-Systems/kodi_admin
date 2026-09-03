@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { PlusIcon } from 'lucide-react';
 import {
+  newsModules,
   useNews,
   type NewsListItem,
   type NewsListQuery,
@@ -40,18 +41,20 @@ const columns: ColumnDef<NewsListItem, unknown>[] = [
     meta: { label: 'Módulos' },
     // Un borrador puede no tener módulos todavía; publicada sin módulos no
     // existe. El guion marca justo las que esperan que alguien se los asigne.
-    cell: ({ row }) =>
-      row.original.modules.length === 0 ? (
+    cell: ({ row }) => {
+      const modules = newsModules(row.original);
+      return modules.length === 0 ? (
         <span className="text-muted-foreground">—</span>
       ) : (
         <div className="flex flex-wrap gap-1">
-          {row.original.modules.map((m) => (
+          {modules.map((m) => (
             <Badge key={m.id} variant="secondary">
               {m.shortName}
             </Badge>
           ))}
         </div>
-      ),
+      );
+    },
   },
   {
     accessorKey: 'status',

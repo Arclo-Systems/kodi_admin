@@ -21,7 +21,7 @@ import {
 import { COUNTRIES } from '@/lib/countries';
 import { cn } from '@/lib/utils';
 import { useModulesTree } from '@/hooks/use-modules-tree';
-import type { NewsDetail } from '@/hooks/use-news';
+import { newsModules, type NewsDetail } from '@/hooks/use-news';
 import { MarkdownEditor } from './markdown-editor';
 import { ModuleMultiSelect } from './module-multi-select';
 import {
@@ -41,7 +41,7 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
     defaultValues: initial
       ? {
           country: initial.country,
-          moduleIds: initial.modules.map((m) => m.id),
+          moduleIds: newsModules(initial).map((m) => m.id),
           title: initial.title,
           summary: initial.summary,
           body: initial.body,
