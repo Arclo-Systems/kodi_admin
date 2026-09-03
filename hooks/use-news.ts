@@ -5,12 +5,13 @@ import { fetchJson } from '@/lib/fetch-json';
 
 export type NewsStatus = 'draft' | 'scheduled' | 'published';
 
+export type NewsModule = { id: string; shortName: string };
+
 export type NewsListItem = {
   id: string;
   country: string;
-  moduleId: string | null;
-  /** Solo en el listado; `null` mientras el borrador no tenga módulo. */
-  module: { shortName: string } | null;
+  /** Uno o varios. Vacío solo mientras es borrador: publicar sin módulos se rechaza. */
+  modules: NewsModule[];
   title: string;
   summary: string;
   status: NewsStatus;
@@ -97,8 +98,8 @@ export function useNewsMutations() {
       onSuccess,
     }),
     duplicate: useMutation({
-      mutationFn: ({ id, country, moduleId }: { id: string; country: string; moduleId?: string | null }) =>
-        send(`/api/admin/content/news/${id}/duplicate`, 'POST', { country, moduleId }),
+      mutationFn: ({ id, country, moduleIds }: { id: string; country: string; moduleIds?: string[] }) =>
+        send(`/api/admin/content/news/${id}/duplicate`, 'POST', { country, moduleIds }),
       onSuccess,
     }),
   };

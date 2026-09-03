@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { MarkdownView } from './markdown-view';
+import { NewsMarkdownView } from './markdown-view';
 
 export function MarkdownEditor({
   value,
@@ -28,7 +28,7 @@ export function MarkdownEditor({
       </TabsContent>
       <TabsContent value="preview">
         {value ? (
-          <MarkdownView value={value} className="min-h-48 border p-4" />
+          <NewsMarkdownView value={value} className="min-h-48 rounded-md border p-4" />
         ) : (
           <div className="min-h-48 rounded-md border p-4 text-sm">
             <p className="text-muted-foreground">Nada para previsualizar todavía…</p>

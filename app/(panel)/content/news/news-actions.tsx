@@ -26,6 +26,7 @@ import { COUNTRIES } from '@/lib/countries';
 import { useModulesTree } from '@/hooks/use-modules-tree';
 import { useNewsMutations, type NewsDetail } from '@/hooks/use-news';
 import { NewsStatusBadge } from '@/lib/news-status';
+import { ModuleMultiSelect } from './module-multi-select';
 
 export function NewsActions({ article }: { article: NewsDetail }) {
   const m = useNewsMutations();
@@ -99,12 +100,12 @@ function DuplicateNews({ article }: { article: NewsDetail }) {
   const m = useNewsMutations();
   const [open, setOpen] = useState(false);
   const [country, setCountry] = useState(article.country);
-  const [moduleId, setModuleId] = useState('');
+  const [moduleIds, setModuleIds] = useState<string[]>([]);
   const { data: tree } = useModulesTree(country);
 
   function run(): void {
     m.duplicate.mutate(
-      { id: article.id, country, moduleId },
+      { id: article.id, country, moduleIds },
       {
         onSuccess: () => {
           toast.success('Noticia duplicada como borrador');
@@ -133,7 +134,7 @@ function DuplicateNews({ article }: { article: NewsDetail }) {
               value={country}
               onValueChange={(v) => {
                 setCountry(v);
-                setModuleId('');
+                setModuleIds([]);
               }}
             >
               <SelectTrigger>
@@ -149,26 +150,19 @@ function DuplicateNews({ article }: { article: NewsDetail }) {
             </Select>
           </Field>
           <Field>
-            <FieldLabel>Módulo destino</FieldLabel>
-            <Select value={moduleId || undefined} onValueChange={setModuleId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Elegí el módulo" />
-              </SelectTrigger>
-              <SelectContent>
-                {(tree ?? []).map((mod) => (
-                  <SelectItem key={mod.id} value={mod.id}>
-                    {mod.shortName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FieldLabel>Módulos destino</FieldLabel>
+            <ModuleMultiSelect
+              options={tree ?? []}
+              value={moduleIds}
+              onChange={setModuleIds}
+            />
           </Field>
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Cancelar
           </Button>
-          <Button onClick={run} disabled={!moduleId}>
+          <Button onClick={run} disabled={moduleIds.length === 0}>
             <CopyIcon className="size-4" /> Duplicar
           </Button>
         </DialogFooter>

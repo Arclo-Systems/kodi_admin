@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { useModulesTree } from '@/hooks/use-modules-tree';
 import type { NewsDetail } from '@/hooks/use-news';
 import { MarkdownEditor } from './markdown-editor';
+import { ModuleMultiSelect } from './module-multi-select';
 import {
   NEWS_TITLE_MAX,
   NewsFormSchema,
@@ -40,7 +41,7 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
     defaultValues: initial
       ? {
           country: initial.country,
-          moduleId: initial.moduleId ?? '',
+          moduleIds: initial.modules.map((m) => m.id),
           title: initial.title,
           summary: initial.summary,
           body: initial.body,
@@ -48,7 +49,7 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
         }
       : {
           country: COUNTRIES[0]?.code ?? 'CR',
-          moduleId: '',
+          moduleIds: [],
           title: '',
           summary: '',
           body: '',
@@ -59,15 +60,15 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
   const { data: tree } = useModulesTree(values.country);
   const modules = tree ?? [];
 
-  // El schema ya exige módulo (toda noticia va a uno, también al editar) y
-  // acota el título a lo que la app pinta sin cortar.
+  // El schema ya exige al menos un módulo (también al editar), acota el título a
+  // lo que la app pinta sin cortar y rechaza HTML crudo en el cuerpo.
   async function submit(v: NewsFormValues): Promise<void> {
     const url = mode === 'create' ? '/api/admin/content/news' : `/api/admin/content/news/${initial?.id}`;
     const payload =
       mode === 'create'
         ? {
             country: v.country,
-            moduleId: v.moduleId,
+            moduleIds: v.moduleIds,
             title: v.title,
             summary: v.summary,
             body: v.body,
@@ -75,7 +76,7 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
             status: 'draft',
           }
         : {
-            moduleId: v.moduleId,
+            moduleIds: v.moduleIds,
             title: v.title,
             summary: v.summary,
             body: v.body,
@@ -123,7 +124,9 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
                     value={field.value}
                     onValueChange={(val) => {
                       field.onChange(val);
-                      form.setValue('moduleId', '');
+                      // Los módulos son por país: los ya marcados no existen en
+                      // el árbol del país nuevo.
+                      form.setValue('moduleIds', []);
                     }}
                   >
                     <SelectTrigger>
@@ -142,28 +145,22 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
             />
                 )}
             <Controller
-              name="moduleId"
+              name="moduleIds"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel>Módulo</FieldLabel>
-                  <Select value={field.value || undefined} onValueChange={field.onChange}>
-                    <SelectTrigger aria-invalid={fieldState.invalid}>
-                      <SelectValue placeholder="Elegí el módulo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {modules.map((m) => (
-                        <SelectItem key={m.id} value={m.id}>
-                          {m.shortName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FieldLabel>Módulos</FieldLabel>
+                  <ModuleMultiSelect
+                    options={modules}
+                    value={field.value}
+                    onChange={field.onChange}
+                    invalid={fieldState.invalid}
+                  />
                   {fieldState.invalid ? (
                     <FieldError errors={[fieldState.error]} />
                   ) : (
                     <p className="text-muted-foreground text-xs">
-                      A quién le llega la noticia.
+                      A quiénes les llega la noticia. Podés elegir varios.
                     </p>
                   )}
                 </Field>
@@ -269,9 +266,6 @@ export function NewsForm({ mode, initial }: { mode: 'create' | 'edit'; initial?:
           Vista previa
         </h2>
         <NewsPreview
-          moduleName={
-            modules.find((m) => m.id === values.moduleId)?.shortName ?? null
-          }
           title={values.title}
           summary={values.summary}
           body={values.body}

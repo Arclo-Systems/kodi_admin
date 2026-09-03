@@ -3,17 +3,18 @@
 import { useMemo } from 'react';
 import Image from 'next/image';
 import { ImageIcon } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { MarkdownView } from './markdown-view';
+import { NewsMarkdownView } from './markdown-view';
+
+// Espejo de la card de la app. NO lleva insignia de módulo: la app filtra la
+// lista por el módulo activo, así que todas las noticias que el estudiante ve
+// son de su módulo y etiquetarlas repetiría el mismo dato en cada fila. Un
+// preview que muestre algo que la app no dibuja vuelve a mentir.
 export function NewsPreview({
-  moduleName,
   title,
   summary,
   body,
   imageUrl,
 }: {
-  /** Vacío mientras no se eligió módulo: ahí la insignia no se muestra. */
-  moduleName: string | null;
   title: string;
   summary: string;
   body: string;
@@ -23,7 +24,7 @@ export function NewsPreview({
   const renderedBody = useMemo(
     () =>
       body ? (
-        <MarkdownView value={body} />
+        <NewsMarkdownView value={body} />
       ) : (
         <p className="text-muted-foreground text-sm">El cuerpo aparecerá acá.</p>
       ),
@@ -41,9 +42,6 @@ export function NewsPreview({
             <div className="text-muted-foreground grid h-full place-items-center">
               <ImageIcon className="size-8" />
             </div>
-          )}
-          {moduleName && (
-            <Badge className="absolute top-2 left-2">{moduleName}</Badge>
           )}
         </div>
         <div className="space-y-2 p-4">

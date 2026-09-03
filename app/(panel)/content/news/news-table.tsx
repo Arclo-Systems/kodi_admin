@@ -12,6 +12,7 @@ import {
   type NewsStatus,
 } from '@/hooks/use-news';
 import { DataTable } from '@/components/admin/data-table';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -34,14 +35,22 @@ const columns: ColumnDef<NewsListItem, unknown>[] = [
   },
   { accessorKey: 'country', header: 'País', meta: { label: 'País' } },
   {
-    accessorKey: 'module',
-    header: 'Módulo',
-    meta: { label: 'Módulo' },
-    // Un borrador puede no tener módulo todavía; publicada sin módulo no existe.
-    // El guion marca justo las que están esperando que alguien se lo asigne.
+    accessorKey: 'modules',
+    header: 'Módulos',
+    meta: { label: 'Módulos' },
+    // Un borrador puede no tener módulos todavía; publicada sin módulos no
+    // existe. El guion marca justo las que esperan que alguien se los asigne.
     cell: ({ row }) =>
-      row.original.module?.shortName ?? (
+      row.original.modules.length === 0 ? (
         <span className="text-muted-foreground">—</span>
+      ) : (
+        <div className="flex flex-wrap gap-1">
+          {row.original.modules.map((m) => (
+            <Badge key={m.id} variant="secondary">
+              {m.shortName}
+            </Badge>
+          ))}
+        </div>
       ),
   },
   {

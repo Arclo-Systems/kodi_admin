@@ -43,23 +43,31 @@ const STYLES = cn(
 
 // Render de contenido rico: Markdown + LaTeX (KaTeX) + Mermaid + tablas + imágenes, saneado.
 // `allowMermaid=false` (ej. opciones) → los bloques mermaid se muestran como código, no como diagrama.
+// `allowMath=false` (noticias) → `$x$` se muestra literal, que es lo que la app
+// dibuja ahí: el cuerpo de una noticia va por `MarkdownBlock`, sin islas KaTeX.
 // Reusable: preview del panel hoy; base del DOM component de la app después.
 export function RichContent({
   value,
   className,
   allowMermaid = true,
   allowSvg = true,
+  allowMath = true,
 }: {
   value: string;
   className?: string;
   allowMermaid?: boolean;
   allowSvg?: boolean;
+  allowMath?: boolean;
 }) {
   return (
     <div className={cn(STYLES, className)}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[[rehypeSanitize, schema], rehypeKatex]}
+        remarkPlugins={allowMath ? [remarkGfm, remarkMath] : [remarkGfm]}
+        rehypePlugins={
+          allowMath
+            ? [[rehypeSanitize, schema], rehypeKatex]
+            : [[rehypeSanitize, schema]]
+        }
         components={{
           code({ className: cls, children }) {
             // Case-insensitive: la app dibuja ```SVG y ```MERMAID igual que en

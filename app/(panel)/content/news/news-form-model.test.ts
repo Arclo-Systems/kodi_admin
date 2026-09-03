@@ -11,7 +11,7 @@ const TITULO_QUE_SE_CORTA =
 
 const base = {
   country: 'CR',
-  moduleId: '018f0d0e-0000-7000-8000-000000000001',
+  moduleIds: ['018f0d0e-0000-7000-8000-000000000001'],
   title: 'PAA: hay nueva fecha de examen',
   summary: 'La UCR movió la convocatoria de octubre.',
   body: 'Cuerpo en **markdown**.',
@@ -64,15 +64,57 @@ describe('NewsFormSchema — tope de título para que no se corte en la app', ()
     if (!r.success) expect(r.error.issues[0]?.message).toBe('Requerido');
   });
 
-  it('sin módulo → error en moduleId (toda noticia va a un módulo)', () => {
-    const r = NewsFormSchema.safeParse({ ...base, moduleId: '' });
+  it('sin módulos → error en moduleIds (toda noticia va a por lo menos uno)', () => {
+    const r = NewsFormSchema.safeParse({ ...base, moduleIds: [] });
     expect(r.success).toBe(false);
-    if (!r.success) expect(r.error.issues[0]?.path).toEqual(['moduleId']);
+    if (!r.success) expect(r.error.issues[0]?.path).toEqual(['moduleIds']);
+  });
+
+  it('acepta varios módulos (el mismo aviso le sirve a más de un examen)', () => {
+    const r = NewsFormSchema.safeParse({
+      ...base,
+      moduleIds: [
+        '018f0d0e-0000-7000-8000-000000000001',
+        '018f0d0e-0000-7000-8000-000000000002',
+      ],
+    });
+    expect(r.success).toBe(true);
   });
 
   it('resumen vacío → Requerido', () => {
     const r = NewsFormSchema.safeParse({ ...base, summary: '' });
     expect(r.success).toBe(false);
     if (!r.success) expect(r.error.issues[0]?.path).toEqual(['summary']);
+  });
+});
+
+// La app dibuja el cuerpo con `html:false`: un tag HTML le llega LITERAL al
+// estudiante, mientras el preview del panel lo sanea y no lo muestra. Sin este
+// gate el autor guardaba creyendo que estaba bien. Mismo criterio que preguntas.
+describe('NewsFormSchema — el cuerpo rechaza HTML crudo', () => {
+  it.each([
+    ['div', 'Texto <div class="x">roto</div>'],
+    ['script', '<script src="https://x.test/a.js"></script>'],
+    ['img', 'Mirá <img src="https://x.test/a.png" />'],
+    ['a', 'Entrá <a href="https://x.test">acá</a>'],
+  ])('rechaza <%s> en el cuerpo', (_tag, body) => {
+    const r = NewsFormSchema.safeParse({ ...base, body });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.issues[0]?.path).toEqual(['body']);
+  });
+
+  it.each([
+    ['markdown normal', 'Un **cambio** importante y una [nota](https://x.test).'],
+    ['tabla GFM', '| Materia | Fecha |\n| --- | --- |\n| Mate | 3/4 |'],
+    ['lista y cita', '- uno\n- dos\n\n> Ojo con la fecha.'],
+    ['desigualdad que parece tag', 'Se aprueba si a<b y no al revés.'],
+    ['markdown sin cerrar', 'Un **título a medias y un [link sin cerrar'],
+  ])('acepta %s', (_caso, body) => {
+    expect(NewsFormSchema.safeParse({ ...base, body }).success).toBe(true);
+  });
+
+  it('acepta un cuerpo larguísimo (no hay tope de cuerpo)', () => {
+    const body = 'Párrafo con contenido real.\n\n'.repeat(2000);
+    expect(NewsFormSchema.safeParse({ ...base, body }).success).toBe(true);
   });
 });
