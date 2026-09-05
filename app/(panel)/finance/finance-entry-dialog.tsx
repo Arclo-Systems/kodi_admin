@@ -3,10 +3,10 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { PaperclipIcon, PencilIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
-import { KIND_LABELS, type FinanceEntry } from '@/hooks/use-finance';
+import { PaperclipIcon, PencilIcon } from 'lucide-react';
+import { MOVEMENT_TYPE_LABELS, type FinanceEntry } from '@/hooks/use-finance';
 import { openSignedAsset } from '@/lib/signed-asset';
-import { StatusBadge } from '@/lib/status-badge';
+import { EntryStatusBadge, MovementTypeBadge } from './finance-entry-badges';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -53,23 +53,31 @@ export function FinanceEntryDialog({
             <DialogHeader>
               <DialogTitle>{entry.vendor ?? 'Movimiento'}</DialogTitle>
               <DialogDescription>
-                {KIND_LABELS[entry.kind]} de {entry.categoryName} · {fmtDate(entry.date)}
+                {MOVEMENT_TYPE_LABELS[entry.type]} de {entry.categoryName} · {fmtDate(entry.date)}
               </DialogDescription>
             </DialogHeader>
 
             <dl className="min-w-0">
               <Dato label="Tipo">
-                {entry.kind === 'income' ? (
-                  <StatusBadge tone="success" icon={TrendingUpIcon} label={KIND_LABELS.income} />
-                ) : (
-                  <StatusBadge tone="warning" icon={TrendingDownIcon} label={KIND_LABELS.expense} />
-                )}
+                <MovementTypeBadge type={entry.type} />
+              </Dato>
+              <Dato label="Estado">
+                <EntryStatusBadge status={entry.status} />
               </Dato>
               <Dato label="Categoría">{entry.categoryName}</Dato>
               <Dato label="Monto">
                 <span className="tabular-nums">{fmtAmount(entry)}</span>
               </Dato>
               <Dato label="Fecha">{fmtDate(entry.date)}</Dato>
+              {/* Explica por qué "Anular" está deshabilitado en los movimientos
+                  cargados antes del backfill contable. */}
+              <Dato label="Asiento">
+                {entry.journalEntryId ? (
+                  'Contabilizado'
+                ) : (
+                  <span className="text-muted-foreground">Pendiente de contabilizar</span>
+                )}
+              </Dato>
               <Dato label="Proveedor / fuente">
                 {entry.vendor ?? <span className="text-muted-foreground">—</span>}
               </Dato>
@@ -100,7 +108,7 @@ export function FinanceEntryDialog({
               <Button asChild>
                 <Link href={`/finance/movimientos/${entry.id}/edit`}>
                   <PencilIcon className="size-4" />
-                  Editar
+                  {entry.status === 'VOIDED' ? 'Abrir' : 'Editar'}
                 </Link>
               </Button>
             </DialogFooter>

@@ -1,11 +1,12 @@
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import type { FinanceEntry } from '@/hooks/use-finance';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
-const remove = vi.fn();
+const voidEntry = vi.fn();
 let items: FinanceEntry[] = [];
 
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
@@ -14,7 +15,7 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => ({
     data: { items, total: items.length, page: 1, pageSize: 20 },
     isLoading: false,
   }),
-  useFinanceEntryMutations: () => ({ remove: { mutateAsync: remove } }),
+  useVoidFinanceEntry: () => ({ mutateAsync: voidEntry }),
 }));
 
 import { FinanceEntriesTable } from './finance-entries-table';
@@ -25,9 +26,14 @@ function entry(over: Partial<FinanceEntry> = {}): FinanceEntry {
     categoryId: 'cat-1',
     categoryName: 'Marketing & Publicidad',
     kind: 'expense',
-    amount: 15000,
+    type: 'EXPENSE',
+    status: 'ACTIVE',
+    amount: '15000.00',
     currency: 'CRC',
     date: '2026-07-31T12:00:00.000Z',
+    accountId: null,
+    counterAccountId: null,
+    journalEntryId: 'je-1',
     vendor: 'Paula Espinoza',
     note: 'Segundo pago a Pau',
     hasReceipt: false,
@@ -37,17 +43,25 @@ function entry(over: Partial<FinanceEntry> = {}): FinanceEntry {
   };
 }
 
+const renderTable = () =>
+  render(
+    <TooltipProvider>
+      <FinanceEntriesTable />
+    </TooltipProvider>,
+  );
+
 const fila = () => screen.getByText('Paula Espinoza').closest('tr') as HTMLTableRowElement;
 const modal = () => screen.queryByRole('dialog');
 
 beforeEach(() => {
   vi.clearAllMocks();
   items = [entry()];
+  voidEntry.mockResolvedValue(undefined);
 });
 
 describe('FinanceEntriesTable — el click en la fila abre el detalle, no la edición', () => {
   it('abre un modal con los datos del movimiento y no navega', async () => {
-    render(<FinanceEntriesTable />);
+    renderTable();
     expect(modal()).toBeNull();
 
     fireEvent.click(fila());
@@ -63,7 +77,7 @@ describe('FinanceEntriesTable — el click en la fila abre el detalle, no la edi
   });
 
   it('el modal ofrece salir a la edición, sin editar nada adentro', async () => {
-    render(<FinanceEntriesTable />);
+    renderTable();
     fireEvent.click(fila());
 
     await waitFor(() => expect(modal()).not.toBeNull());
@@ -77,7 +91,7 @@ describe('FinanceEntriesTable — el click en la fila abre el detalle, no la edi
   });
 
   it('el botón de editar de la fila lleva a la edición y no abre el modal', () => {
-    render(<FinanceEntriesTable />);
+    renderTable();
 
     const editar = within(fila()).getByRole('link', { name: /Editar/ });
     expect(editar).toHaveAttribute('href', '/finance/movimientos/e1/edit');
@@ -86,18 +100,18 @@ describe('FinanceEntriesTable — el click en la fila abre el detalle, no la edi
     expect(modal()).toBeNull();
   });
 
-  it('el botón de borrar de la fila no abre el detalle', async () => {
-    render(<FinanceEntriesTable />);
+  it('el botón de anular de la fila no abre el detalle', async () => {
+    renderTable();
 
-    fireEvent.click(within(fila()).getByRole('button', { name: /Borrar/ }));
+    fireEvent.click(within(fila()).getByRole('button', { name: /Anular/ }));
 
-    await waitFor(() => expect(screen.getByText('Borrar movimiento')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Anular movimiento')).toBeInTheDocument());
     // El detalle no se coló: su botón de cerrar no existe en ninguna otra parte.
     expect(screen.queryByRole('button', { name: 'Cerrar' })).toBeNull();
   });
 
   it('el detalle también se abre por teclado, desde el botón Ver de la fila', async () => {
-    render(<FinanceEntriesTable />);
+    renderTable();
 
     const ver = within(fila()).getByRole('button', { name: /Ver/ });
     ver.focus();
@@ -110,7 +124,7 @@ describe('FinanceEntriesTable — el click en la fila abre el detalle, no la edi
   });
 
   it('el detalle cierra con Esc', async () => {
-    render(<FinanceEntriesTable />);
+    renderTable();
     fireEvent.click(fila());
     await waitFor(() => expect(modal()).not.toBeNull());
 
@@ -121,7 +135,7 @@ describe('FinanceEntriesTable — el click en la fila abre el detalle, no la edi
 
   it('un movimiento sin proveedor ni nota no inventa datos', async () => {
     items = [entry({ vendor: null, note: null, categoryName: 'Otros' })];
-    render(<FinanceEntriesTable />);
+    renderTable();
 
     fireEvent.click(screen.getByText('Otros').closest('tr') as HTMLTableRowElement);
 
@@ -129,5 +143,61 @@ describe('FinanceEntriesTable — el click en la fila abre el detalle, no la edi
     const d = within(modal() as HTMLElement);
     expect(d.getByText('Movimiento')).toBeInTheDocument();
     expect(d.getAllByText('—').length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('FinanceEntriesTable — anular reemplaza al borrado', () => {
+  it('no ofrece borrar en ninguna fila', () => {
+    renderTable();
+    expect(within(fila()).queryByRole('button', { name: /Borrar/ })).toBeNull();
+  });
+
+  it('exige un motivo de al menos 5 caracteres antes de confirmar', async () => {
+    renderTable();
+    fireEvent.click(within(fila()).getByRole('button', { name: /Anular/ }));
+    await waitFor(() => expect(screen.getByText('Anular movimiento')).toBeInTheDocument());
+
+    const confirmar = screen.getByRole('button', { name: 'Anular' });
+    expect(confirmar).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'dup' } });
+    expect(confirmar).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Cargado dos veces' } });
+    expect(confirmar).toBeEnabled();
+
+    fireEvent.click(confirmar);
+    await waitFor(() =>
+      expect(voidEntry).toHaveBeenCalledWith({ id: 'e1', reason: 'Cargado dos veces' }),
+    );
+  });
+
+  it('un movimiento anulado no se puede volver a anular', () => {
+    items = [entry({ status: 'VOIDED' })];
+    renderTable();
+
+    expect(within(fila()).queryByRole('button', { name: /Anular/ })).toBeNull();
+    expect(within(fila()).getByText('Anulado')).toBeInTheDocument();
+  });
+
+  it('un movimiento sin asiento no se puede anular todavía', async () => {
+    items = [entry({ journalEntryId: null })];
+    renderTable();
+
+    expect(within(fila()).getByRole('button', { name: /Anular/ })).toBeDisabled();
+    fireEvent.focus(within(fila()).getByRole('button', { name: /Anular/ }).parentElement!);
+    await waitFor(() =>
+      expect(screen.getAllByText('Pendiente de contabilizar').length).toBeGreaterThan(0),
+    );
+  });
+});
+
+describe('FinanceEntriesTable — el tipo de movimiento sale del backend', () => {
+  it('pinta el tipo contable, no el signo de la categoría', () => {
+    items = [entry({ type: 'TRANSFER', kind: 'expense' })];
+    renderTable();
+
+    expect(within(fila()).getByText('Transferencia')).toBeInTheDocument();
+    expect(within(fila()).getByText('Activo')).toBeInTheDocument();
   });
 });

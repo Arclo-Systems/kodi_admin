@@ -1,12 +1,56 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { unwrapData } from '@/lib/bff';
+import { throwApiError, unwrapData } from '@/lib/bff';
 import { fetchJson } from '@/lib/fetch-json';
 
 export type FinanceKind = 'expense' | 'income';
 export const KIND_LABELS: Record<FinanceKind, string> = { expense: 'Gasto', income: 'Ingreso' };
 export const FINANCE_CURRENCIES = ['CRC', 'USD'] as const;
+
+// Naturaleza contable del hecho económico: decide contra qué cuentas se asienta
+// el movimiento. Solo INCOME y EXPENSE mueven el P&L; una transferencia, un
+// aporte o un préstamo de socio meten plata en la caja sin ser ingreso.
+export const MOVEMENT_TYPES = [
+  'INCOME',
+  'EXPENSE',
+  'TRANSFER',
+  'PARTNER_CONTRIBUTION',
+  'PARTNER_LOAN',
+  'OTHER',
+] as const;
+export type MovementType = (typeof MOVEMENT_TYPES)[number];
+export const MOVEMENT_TYPE_LABELS: Record<MovementType, string> = {
+  INCOME: 'Ingreso',
+  EXPENSE: 'Gasto',
+  TRANSFER: 'Transferencia',
+  PARTNER_CONTRIBUTION: 'Aporte de socio',
+  PARTNER_LOAN: 'Préstamo de socio',
+  OTHER: 'Otro',
+};
+
+export type FinanceEntryStatus = 'ACTIVE' | 'VOIDED';
+
+export const ACCOUNT_TYPES = [
+  'ASSET',
+  'LIABILITY',
+  'EQUITY',
+  'INCOME',
+  'COST_OF_REVENUE',
+  'OPERATING_EXPENSE',
+] as const;
+export type AccountType = (typeof ACCOUNT_TYPES)[number];
+
+export type FinanceAccount = {
+  id: string;
+  code: string;
+  name: string;
+  type: AccountType;
+  currency: string | null; // null = la cuenta acepta cualquier moneda
+  parentId: string | null;
+  isActive: boolean;
+  allowsManualEntry: boolean;
+};
 
 export type FinanceCategory = {
   id: string;
@@ -14,6 +58,7 @@ export type FinanceCategory = {
   kind: FinanceKind;
   sortOrder: number;
   isActive: boolean;
+  accountId: string | null;
 };
 
 export type FinanceEntry = {
@@ -21,9 +66,17 @@ export type FinanceEntry = {
   categoryId: string;
   categoryName: string;
   kind: FinanceKind;
-  amount: number;
+  type: MovementType;
+  status: FinanceEntryStatus;
+  // String y no number: el backend serializa el Decimal con dos decimales fijos
+  // y pasarlo por `number` reintroduce el double justo en el borde que la
+  // validación de entrada acaba de proteger.
+  amount: string;
   currency: string;
   date: string;
+  accountId: string | null;
+  counterAccountId: string | null;
+  journalEntryId: string | null; // null = histórico sin asiento (previo al backfill)
   vendor: string | null;
   note: string | null;
   hasReceipt: boolean;
@@ -50,19 +103,34 @@ export type Pnl = {
   range: { from: string; to: string };
 };
 
-export type FinanceCategoryInput = { name: string; kind: FinanceKind; sortOrder?: number };
-export type FinanceCategoryUpdate = { name?: string; sortOrder?: number; isActive?: boolean };
+export type FinanceCategoryInput = {
+  name: string;
+  kind: FinanceKind;
+  sortOrder?: number;
+  accountId?: string | null;
+};
+export type FinanceCategoryUpdate = {
+  name?: string;
+  sortOrder?: number;
+  isActive?: boolean;
+  accountId?: string | null;
+};
 
 export type FinanceEntryInput = {
   categoryId: string;
-  amount: number;
+  amount: string;
   currency: string;
   date: string;
+  type: MovementType;
+  // Cuenta de origen: solo la transferencia la exige, y solo el alta la acepta
+  // (el PATCH del backend no la lleva — ver `UpdateFinanceEntrySchema`).
+  accountId?: string | null;
+  counterAccountId: string | null; // null → "1900 Por clasificar"
   vendor: string | null;
   note: string | null;
   receiptKey: string | null;
 };
-export type FinanceEntryUpdate = Partial<FinanceEntryInput>;
+export type FinanceEntryUpdate = Partial<Omit<FinanceEntryInput, 'accountId'>>;
 
 const BASE = '/api/admin/finance';
 
@@ -77,11 +145,30 @@ async function send(
     headers: body ? { 'content-type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) {
-    const b = (await res.json().catch(() => ({}))) as { message?: string };
-    throw new Error(b.message ?? 'Error');
-  }
+  // El envelope de error del backend es `{ error: { code, message, details } }`:
+  // leer `body.message` a secas dejaba el 409 contable ("La categoría X no tiene
+  // cuenta contable asignada") como un "Error" mudo, sin decir qué arreglar.
+  if (!res.ok) await throwApiError(res, 'Error');
   return res.json().catch(() => ({}));
+}
+
+// ─── Plan de cuentas ──────────────────────────────────────────────────────────
+// El plan se siembra (`seed:accounting`) y no se edita desde el panel: se cachea
+// en vez de re-pedirlo en cada apertura del formulario.
+// `postable: true` = la cuenta se puede elegir a mano (activa y con asiento manual).
+export function useFinanceAccounts(filters: { postable?: boolean; type?: AccountType } = {}) {
+  const { postable, type } = filters;
+  return useQuery({
+    queryKey: ['finance-accounts', postable ?? null, type ?? null],
+    staleTime: 5 * 60_000,
+    queryFn: async (): Promise<FinanceAccount[]> => {
+      const params = new URLSearchParams();
+      if (postable !== undefined) params.set('postable', String(postable));
+      if (type) params.set('type', type);
+      const qs = params.toString();
+      return (await fetchJson<FinanceAccount[]>(`${BASE}/accounts${qs ? `?${qs}` : ''}`)) ?? [];
+    },
+  });
 }
 
 // ─── Categorías ───────────────────────────────────────────────────────────────
@@ -147,13 +234,20 @@ export function useFinanceEntry(id: string | undefined) {
   });
 }
 
-export function useFinanceEntryMutations() {
+// Toda mutación de un movimiento cambia la lista, el detalle y el P&L.
+function useInvalidateEntries(): () => Promise<void> {
   const qc = useQueryClient();
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['finance-entries'] });
-    qc.invalidateQueries({ queryKey: ['finance-entry'] });
-    qc.invalidateQueries({ queryKey: ['finance-pnl'] });
+  return async () => {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ['finance-entries'] }),
+      qc.invalidateQueries({ queryKey: ['finance-entry'] }),
+      qc.invalidateQueries({ queryKey: ['finance-pnl'] }),
+    ]);
   };
+}
+
+export function useFinanceEntryMutations() {
+  const invalidate = useInvalidateEntries();
   return {
     create: useMutation({
       mutationFn: (input: FinanceEntryInput) => send(`${BASE}/entries`, 'POST', input),
@@ -164,11 +258,19 @@ export function useFinanceEntryMutations() {
         send(`${BASE}/entries/${id}`, 'PATCH', input),
       onSuccess: invalidate,
     }),
-    remove: useMutation({
-      mutationFn: (id: string) => send(`${BASE}/entries/${id}`, 'DELETE'),
-      onSuccess: invalidate,
-    }),
   };
+}
+
+// Un movimiento contabilizado no se borra: se anula. El asiento original queda
+// REVERSED y nace su reverso, así que el motivo es obligatorio (5..300): es lo
+// único que explica meses después por qué el libro tiene un asiento y su espejo.
+export function useVoidFinanceEntry() {
+  const invalidate = useInvalidateEntries();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      send(`${BASE}/entries/${id}/void`, 'POST', { reason }),
+    onSuccess: invalidate,
+  });
 }
 
 // ─── P&L ──────────────────────────────────────────────────────────────────────

@@ -13,11 +13,15 @@ import {
   Trash2Icon,
   TrendingDownIcon,
   TrendingUpIcon,
+  TriangleAlertIcon,
 } from 'lucide-react';
 import {
+  useFinanceAccounts,
   useFinanceCategories,
   useFinanceCategoryMutations,
   KIND_LABELS,
+  type AccountType,
+  type FinanceAccount,
   type FinanceCategory,
   type FinanceKind,
 } from '@/hooks/use-finance';
@@ -26,7 +30,7 @@ import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { StatusBadge } from '@/lib/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -38,18 +42,45 @@ import {
 } from '@/components/ui/select';
 
 const ALL = '__all__';
+// Radix no admite '' como valor de Select: "sin cuenta" necesita el suyo.
+const NO_ACCOUNT = '__none__';
+
+// Espejo de `ACCOUNT_TYPES_BY_KIND` en `finance-categories.service.ts`: mapear una
+// categoría de gasto a una cuenta de ingresos da 409 CATEGORY_ACCOUNT_KIND_MISMATCH.
+const ACCOUNT_TYPES_BY_KIND: Record<FinanceKind, AccountType[]> = {
+  expense: ['OPERATING_EXPENSE', 'COST_OF_REVENUE'],
+  income: ['INCOME'],
+};
+
+const accountLabel = (a: FinanceAccount) => `${a.code} ${a.name}`;
 
 export function FinanceCategoriesManager() {
   const [filterKind, setFilterKind] = useState<FinanceKind | undefined>(undefined);
   const { data: categories, isLoading } = useFinanceCategories(filterKind);
   const { create, update, remove } = useFinanceCategoryMutations();
+  // El plan entero (37 cuentas, sin paginar): se filtra en cliente por tipo y por
+  // activa, que es lo que el backend exige para el mapeo de una categoría.
+  const { data: accounts } = useFinanceAccounts();
 
   const [editing, setEditing] = useState<FinanceCategory | null>(null);
   const [name, setName] = useState('');
   const [kind, setKind] = useState<FinanceKind>('expense');
   const [sortOrder, setSortOrder] = useState(0);
   const [isActive, setIsActive] = useState(true);
+  const [accountId, setAccountId] = useState<string>('');
   const [toDelete, setToDelete] = useState<FinanceCategory | null>(null);
+
+  const accountById = useMemo(
+    () => new Map((accounts ?? []).map((a) => [a.id, a])),
+    [accounts],
+  );
+  const accountOptions = useMemo(
+    () =>
+      (accounts ?? []).filter(
+        (a) => a.isActive && ACCOUNT_TYPES_BY_KIND[kind].includes(a.type),
+      ),
+    [accounts, kind],
+  );
 
   function resetForm() {
     setEditing(null);
@@ -57,6 +88,7 @@ export function FinanceCategoriesManager() {
     setKind('expense');
     setSortOrder(0);
     setIsActive(true);
+    setAccountId('');
   }
   const startEdit = useCallback((c: FinanceCategory) => {
     setEditing(c);
@@ -64,6 +96,7 @@ export function FinanceCategoriesManager() {
     setKind(c.kind);
     setSortOrder(c.sortOrder);
     setIsActive(c.isActive);
+    setAccountId(c.accountId ?? '');
   }, []);
 
   const valid = name.trim().length > 0;
@@ -72,10 +105,18 @@ export function FinanceCategoriesManager() {
     e.preventDefault();
     try {
       if (editing) {
-        await update.mutateAsync({ id: editing.id, input: { name: name.trim(), sortOrder, isActive } });
+        await update.mutateAsync({
+          id: editing.id,
+          input: { name: name.trim(), sortOrder, isActive, accountId: accountId || null },
+        });
         toast.success('Categoría actualizada');
       } else {
-        await create.mutateAsync({ name: name.trim(), kind, sortOrder });
+        await create.mutateAsync({
+          name: name.trim(),
+          kind,
+          sortOrder,
+          accountId: accountId || null,
+        });
         toast.success('Categoría creada');
       }
       resetForm();
@@ -104,6 +145,26 @@ export function FinanceCategoriesManager() {
           ) : (
             <StatusBadge tone="warning" icon={TrendingDownIcon} label={KIND_LABELS.expense} />
           ),
+      },
+      {
+        accessorKey: 'accountId',
+        header: 'Cuenta contable',
+        meta: { label: 'Cuenta contable' },
+        enableSorting: false,
+        cell: ({ row }) => {
+          const account = row.original.accountId
+            ? accountById.get(row.original.accountId)
+            : undefined;
+          if (account) return <span className="tabular-nums">{accountLabel(account)}</span>;
+          // Sin cuenta el alta de un movimiento falla con CATEGORY_WITHOUT_ACCOUNT:
+          // conviene que se vea acá y no recién al guardar el gasto.
+          return (
+            <span className="text-destructive flex items-center gap-1.5 text-sm">
+              <TriangleAlertIcon className="size-3.5" aria-hidden />
+              Sin cuenta: los movimientos de esta categoría no se pueden contabilizar
+            </span>
+          );
+        },
       },
       { accessorKey: 'sortOrder', header: 'Orden', meta: { label: 'Orden' }, enableSorting: false },
       {
@@ -142,7 +203,7 @@ export function FinanceCategoriesManager() {
         ),
       },
     ],
-    [startEdit],
+    [startEdit, accountById],
   );
 
   return (
@@ -163,9 +224,18 @@ export function FinanceCategoriesManager() {
                   <Input id="fc-name" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />
                 </Field>
                 <Field>
-                  <FieldLabel>Tipo</FieldLabel>
-                  <Select value={kind} onValueChange={(v) => setKind(v as FinanceKind)} disabled={!!editing}>
-                    <SelectTrigger>
+                  <FieldLabel htmlFor="fc-kind">Tipo</FieldLabel>
+                  <Select
+                    value={kind}
+                    onValueChange={(v) => {
+                      setKind(v as FinanceKind);
+                      // Las cuentas válidas cambian con el tipo: la elegida puede
+                      // ya no servir y el backend la rechazaría.
+                      setAccountId('');
+                    }}
+                    disabled={!!editing}
+                  >
+                    <SelectTrigger id="fc-kind">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -185,6 +255,28 @@ export function FinanceCategoriesManager() {
                   />
                 </Field>
               </div>
+              <Field>
+                <FieldLabel htmlFor="fc-account">Cuenta contable</FieldLabel>
+                <Select
+                  value={accountId || NO_ACCOUNT}
+                  onValueChange={(v) => setAccountId(v === NO_ACCOUNT ? '' : v)}
+                >
+                  <SelectTrigger id="fc-account" className="sm:w-96">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_ACCOUNT}>Sin cuenta</SelectItem>
+                    {accountOptions.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {accountLabel(a)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldDescription>
+                  Sin cuenta: los movimientos de esta categoría no se pueden contabilizar.
+                </FieldDescription>
+              </Field>
               {editing && (
                 <Field>
                   <FieldLabel htmlFor="fc-active">Estado</FieldLabel>

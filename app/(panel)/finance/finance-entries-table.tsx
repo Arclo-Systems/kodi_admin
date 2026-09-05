@@ -1,21 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
-import {
-  EyeIcon,
-  PaperclipIcon,
-  PencilIcon,
-  PlusIcon,
-  TrendingDownIcon,
-  TrendingUpIcon,
-  Trash2Icon,
-} from 'lucide-react';
+import { BanIcon, EyeIcon, PaperclipIcon, PencilIcon, PlusIcon } from 'lucide-react';
 import {
   useFinanceEntries,
-  useFinanceEntryMutations,
+  useVoidFinanceEntry,
   FINANCE_CURRENCIES,
   KIND_LABELS,
   type FinanceEntry,
@@ -25,9 +17,11 @@ import {
 import { DataTable } from '@/components/admin/data-table';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { openSignedAsset } from '@/lib/signed-asset';
-import { StatusBadge } from '@/lib/status-badge';
+import { cn } from '@/lib/utils';
+import { EntryStatusBadge, MovementTypeBadge } from './finance-entry-badges';
 import { FinanceEntryDialog } from './finance-entry-dialog';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
@@ -37,9 +31,13 @@ import {
 } from '@/components/ui/select';
 
 const ALL = '__all__';
+const VOID_REASON_MIN = 5;
+
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
+// `amount` viaja como string con dos decimales fijos; se pasa por Number solo para
+// darle el separador de miles, nunca para guardarlo ni para reenviarlo.
 const fmtAmount = (e: FinanceEntry) =>
-  `${e.amount.toLocaleString('es-CR', { minimumFractionDigits: 2 })} ${e.currency}`;
+  `${Number(e.amount).toLocaleString('es-CR', { minimumFractionDigits: 2 })} ${e.currency}`;
 
 function viewReceipt(id: string): void {
   openSignedAsset(`/api/admin/finance/entries/${id}/receipt-url`).catch((e) =>
@@ -47,11 +45,22 @@ function viewReceipt(id: string): void {
   );
 }
 
+// La fila anulada sigue en la lista (es parte del libro) pero deja de competir
+// visualmente con las vivas. `DataTable` no expone la fila, así que la atenuación
+// va celda por celda.
+function Voidable({ entry, children }: { entry: FinanceEntry; children: ReactNode }) {
+  return (
+    <span className={cn(entry.status === 'VOIDED' && 'text-muted-foreground opacity-70')}>
+      {children}
+    </span>
+  );
+}
+
 export function FinanceEntriesTable() {
   const [query, setQuery] = useState<FinanceEntryListQuery>({ page: 1, pageSize: 20 });
   const { data, isLoading } = useFinanceEntries(query);
-  const { remove } = useFinanceEntryMutations();
-  const [toDelete, setToDelete] = useState<FinanceEntry | null>(null);
+  const voidEntry = useVoidFinanceEntry();
+  const [toVoid, setToVoid] = useState<FinanceEntry | null>(null);
   const [detail, setDetail] = useState<FinanceEntry | null>(null);
   const set = (patch: Partial<FinanceEntryListQuery>) => setQuery({ ...query, page: 1, ...patch });
 
@@ -62,32 +71,44 @@ export function FinanceEntriesTable() {
         header: 'Fecha',
         meta: { label: 'Fecha' },
         enableSorting: false,
-        cell: ({ row }) => fmtDate(row.original.date),
+        cell: ({ row }) => (
+          <Voidable entry={row.original}>{fmtDate(row.original.date)}</Voidable>
+        ),
       },
       {
-        accessorKey: 'kind',
+        accessorKey: 'type',
         header: 'Tipo',
         meta: { label: 'Tipo' },
         enableSorting: false,
-        cell: ({ row }) =>
-          row.original.kind === 'income' ? (
-            <StatusBadge tone="success" icon={TrendingUpIcon} label={KIND_LABELS.income} />
-          ) : (
-            <StatusBadge tone="warning" icon={TrendingDownIcon} label={KIND_LABELS.expense} />
-          ),
+        cell: ({ row }) => <MovementTypeBadge type={row.original.type} />,
+      },
+      {
+        accessorKey: 'status',
+        header: 'Estado',
+        meta: { label: 'Estado' },
+        enableSorting: false,
+        cell: ({ row }) => <EntryStatusBadge status={row.original.status} />,
       },
       {
         accessorKey: 'categoryName',
         header: 'Categoría',
         meta: { label: 'Categoría' },
         enableSorting: false,
+        cell: ({ row }) => (
+          <Voidable entry={row.original}>{row.original.categoryName}</Voidable>
+        ),
       },
       {
         accessorKey: 'vendor',
         header: 'Proveedor / fuente',
         meta: { label: 'Proveedor / fuente' },
         enableSorting: false,
-        cell: ({ row }) => row.original.vendor ?? <span className="text-muted-foreground">—</span>,
+        cell: ({ row }) =>
+          row.original.vendor ? (
+            <Voidable entry={row.original}>{row.original.vendor}</Voidable>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
       },
       {
         accessorKey: 'amount',
@@ -95,7 +116,14 @@ export function FinanceEntriesTable() {
         meta: { label: 'Monto' },
         enableSorting: false,
         cell: ({ row }) => (
-          <span className="font-medium tabular-nums">{fmtAmount(row.original)}</span>
+          <span
+            className={cn(
+              'font-medium tabular-nums',
+              row.original.status === 'VOIDED' && 'text-muted-foreground line-through',
+            )}
+          >
+            {fmtAmount(row.original)}
+          </span>
         ),
       },
       {
@@ -145,21 +173,10 @@ export function FinanceEntriesTable() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <PencilIcon className="size-4" />
-                Editar
+                {row.original.status === 'VOIDED' ? 'Abrir' : 'Editar'}
               </Link>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                setToDelete(row.original);
-              }}
-            >
-              <Trash2Icon className="size-4" />
-              Borrar
-            </Button>
+            {row.original.status !== 'VOIDED' && <VoidButton entry={row.original} onPick={setToVoid} />}
           </div>
         ),
       },
@@ -176,8 +193,8 @@ export function FinanceEntriesTable() {
               value={query.kind ?? ALL}
               onValueChange={(v) => set({ kind: v === ALL ? undefined : (v as FinanceKind) })}
             >
-              <SelectTrigger className="w-36" size="sm" aria-label="Filtrar por tipo">
-                <SelectValue placeholder="Tipo" />
+              <SelectTrigger className="w-36" size="sm" aria-label="Filtrar por signo">
+                <SelectValue placeholder="Signo" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ALL}>Todos</SelectItem>
@@ -231,17 +248,58 @@ export function FinanceEntriesTable() {
       />
 
       <ConfirmDialog
-        open={!!toDelete}
-        onOpenChange={(o) => !o && setToDelete(null)}
-        title="Borrar movimiento"
-        description="Se elimina el movimiento y su comprobante. No se puede deshacer."
+        open={!!toVoid}
+        onOpenChange={(o) => !o && setToVoid(null)}
+        title="Anular movimiento"
+        description="El movimiento queda anulado y su asiento se revierte con uno nuevo fechado hoy. El motivo queda en el libro."
         destructive
-        confirmLabel="Borrar"
-        onConfirm={async () => {
-          if (toDelete) await remove.mutateAsync(toDelete.id);
-          setToDelete(null);
+        requireReason
+        reasonMinLength={VOID_REASON_MIN}
+        confirmLabel="Anular"
+        onConfirm={async ({ reason }) => {
+          if (!toVoid || !reason) return;
+          await voidEntry.mutateAsync({ id: toVoid.id, reason });
+          setToVoid(null);
         }}
       />
     </>
+  );
+}
+
+// Los movimientos históricos todavía no tienen asiento: anularlos dejaría al P&L y
+// al mayor contando cosas distintas, así que el backend los rechaza hasta el backfill.
+function VoidButton({
+  entry,
+  onPick,
+}: {
+  entry: FinanceEntry;
+  onPick: (entry: FinanceEntry) => void;
+}) {
+  const posted = !!entry.journalEntryId;
+  const button = (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="text-destructive"
+      disabled={!posted}
+      onClick={(e) => {
+        e.stopPropagation();
+        onPick(entry);
+      }}
+    >
+      <BanIcon className="size-4" />
+      Anular
+    </Button>
+  );
+  if (posted) return button;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0} onClick={(e) => e.stopPropagation()}>
+          {button}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>Pendiente de contabilizar</TooltipContent>
+    </Tooltip>
   );
 }

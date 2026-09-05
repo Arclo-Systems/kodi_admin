@@ -359,7 +359,7 @@ export interface paths {
         };
         /**
          * Preguntas random de un topic (sin correctOptionId)
-         * @description Aplica FreeQuotaGuard: free users limitados a 15/día.
+         * @description Free users limitados a 15/día; el plan exime por el módulo del tema.
          */
         get: operations["TopicsController_listQuestions"];
         put?: never;
@@ -439,7 +439,7 @@ export interface paths {
         };
         /**
          * Listar noticias del país del token
-         * @description El país sale del JWT y no se puede elegir por query. Toda noticia pertenece a un módulo; sin module_id devuelve las del país. `meta.unread_count` cuenta las publicadas del país posteriores a la última vez que el usuario marcó la lista como vista.
+         * @description El país sale del JWT y no se puede elegir por query. Una noticia pertenece a uno o varios módulos; con `module_id` devuelve solo las de ese módulo, sin él las del país. `meta.unread_count` cuenta las publicadas posteriores a la última vez que el usuario marcó la lista como vista, con el mismo filtro de módulo que la lista.
          */
         get: operations["NewsController_list"];
         put?: never;
@@ -639,7 +639,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Energía actual (regen aplicada) + máximo; unlimited si plan pago */
+        /** Energía actual del módulo (regen aplicada) + máximo; unlimited si ese módulo tiene plan pago */
         get: operations["EnergyController_getEnergy"];
         put?: never;
         post?: never;
@@ -659,8 +659,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Recargar energía al máximo pagando Kokos
-         * @description Solo Kokos. La recarga por anuncio ocurre vía completar un video de contexto energy, no por este endpoint (AUD-2A-1).
+         * Recargar al máximo la energía del módulo pagando Kokos
+         * @description Solo Kokos. La recarga por anuncio ocurre vía completar un video de contexto energy, no por este endpoint (AUD-2A-1). Sin `module_id` recarga el módulo activo del perfil.
          */
         post: operations["EnergyController_rechargeEnergy"];
         delete?: never;
@@ -676,7 +676,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Cuota de práctica gratuita del día (free-limits) */
+        /** Cuota de práctica gratuita del día EN EL MÓDULO (free-limits) */
         get: operations["EnergyController_practiceQuota"];
         put?: never;
         post?: never;
@@ -693,7 +693,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Videos de boost de práctica usados/máximo del día */
+        /** Videos de boost de práctica usados/máximo del día EN EL MÓDULO */
         get: operations["EnergyController_videoBoost"];
         put?: never;
         post?: never;
@@ -1355,7 +1355,7 @@ export interface paths {
         post?: never;
         /**
          * Soft-delete de la cuenta
-         * @description Marca deletedAt; hard-delete por cron tras periodo de gracia.
+         * @description Marca deletedAt; hard-delete por cron tras periodo de gracia. Se reconfirma con la contraseña, o —si la cuenta se creó con login social y no tiene— re-autenticando con el proveedor (provider + id_token). La cuenta decide cuál se exige.
          */
         delete: operations["UsersController_deleteMe"];
         options?: never;
@@ -1870,7 +1870,7 @@ export interface paths {
         put?: never;
         /**
          * Iniciar práctica (módulo, materia o tema) + primer lote de preguntas
-         * @description Ola 2 D1: topic_id/subject_id opcionales acotan la sesión. Free users limitados por cuota diaria (FreeQuotaGuard). Presets componibles: only_hard (solo preguntas de dificultad hard) y review_failed (hasta las 200 más recientes cuya ÚLTIMA respuesta del usuario fue incorrecta, en cualquier modo). timer_enabled NO filtra: es config declarada del cliente — en práctica el servidor no impone tiempo ni rechaza respuestas tardías. available_questions SIEMPRE viene y es un número: cuántas preguntas puede servir la sesión (con review_failed nunca pasa de 200). Con pocas, el lote es corto a propósito y nunca se rellena con preguntas fuera del filtro. Sin filtro, 0 crea igual la sesión con first_questions vacío — el banco está vacío y el cliente lo dice; con filtro, 0 es 422 PRACTICE_FILTER_EMPTY y no se crea nada.
+         * @description Ola 2 D1: topic_id/subject_id opcionales acotan la sesión. Free users limitados por cuota diaria del módulo. Presets componibles: only_hard (solo preguntas de dificultad hard) y review_failed (hasta las 200 más recientes cuya ÚLTIMA respuesta del usuario fue incorrecta, en cualquier modo). timer_enabled NO filtra: es config declarada del cliente — en práctica el servidor no impone tiempo ni rechaza respuestas tardías. available_questions SIEMPRE viene y es un número: cuántas preguntas puede servir la sesión (con review_failed nunca pasa de 200). Con pocas, el lote es corto a propósito y nunca se rellena con preguntas fuera del filtro. Sin filtro, 0 crea igual la sesión con first_questions vacío — el banco está vacío y el cliente lo dice; con filtro, 0 es 422 PRACTICE_FILTER_EMPTY y no se crea nada.
          */
         post: operations["PracticeController_create"];
         delete?: never;
@@ -6218,6 +6218,38 @@ export interface paths {
         patch: operations["ModerationAdminController_resolve"];
         trace?: never;
     };
+    "/v1/admin/moderation/avatar-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ModerationAdminController_listAvatarReviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/moderation/avatar-reviews/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["ModerationAdminController_decideAvatarReview"];
+        trace?: never;
+    };
     "/v1/admin/moderation/prohibited-words": {
         parameters: {
             query?: never;
@@ -8671,6 +8703,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_listAccounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/finance/categories": {
         parameters: {
             query?: never;
@@ -8761,10 +8809,26 @@ export interface paths {
         get: operations["FinanceAdminController_getEntry"];
         put?: never;
         post?: never;
-        delete: operations["FinanceAdminController_removeEntry"];
+        delete?: never;
         options?: never;
         head?: never;
         patch: operations["FinanceAdminController_updateEntry"];
+        trace?: never;
+    };
+    "/v1/admin/finance/entries/{id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinanceAdminController_voidEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/admin/finance/pnl": {
@@ -9384,8 +9448,7 @@ export interface components {
                 summary: string;
                 image_url: string | null;
                 published_at: string;
-                /** Format: uuid */
-                module_id: string | null;
+                module_ids: string[];
             }[];
             meta: {
                 page: number;
@@ -9406,8 +9469,7 @@ export interface components {
                 summary: string;
                 image_url: string | null;
                 published_at: string;
-                /** Format: uuid */
-                module_id: string | null;
+                module_ids: string[];
                 body: string;
             };
         };
@@ -10055,6 +10117,8 @@ export interface components {
         AdRewardDto: {
             /** @enum {string} */
             context?: "game" | "mission" | "practice" | "kokos" | "energy";
+            /** Format: uuid */
+            module_id?: string;
         };
         VideoCompletedResponse: {
             data: {
@@ -10092,6 +10156,8 @@ export interface components {
         CompleteVideoDto: {
             token: string;
             watch_time_ms: number;
+            /** Format: uuid */
+            module_id?: string;
         };
         UsernameAvailableResponse: {
             data: {
@@ -10161,6 +10227,8 @@ export interface components {
                 reminder_hour: number | null;
                 created_at: string;
                 must_accept_terms: boolean;
+                has_password: boolean;
+                social_providers: ("google" | "apple" | "facebook")[];
             };
         };
         ProfileStatsResponse: {
@@ -12512,6 +12580,21 @@ export interface components {
                 /** @enum {string} */
                 platform?: "ios" | "android";
             };
+        } | {
+            /** @enum {string} */
+            type: "ai_content_report";
+            /** Format: uuid */
+            question_id?: string;
+            /** @enum {string} */
+            category: "respuesta_incorrecta" | "typo" | "ambigua" | "desactualizada" | "ofensiva" | "otro";
+            message: string;
+            context?: {
+                app_version?: string;
+                screen?: string;
+                device?: string;
+                /** @enum {string} */
+                platform?: "ios" | "android";
+            };
         };
         TicketCreatedResponse: {
             data: {
@@ -13673,8 +13756,11 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     country: string;
-                    /** Format: uuid */
-                    moduleId: string | null;
+                    modules: {
+                        /** Format: uuid */
+                        id: string;
+                        shortName: string;
+                    }[];
                     title: string;
                     summary: string;
                     body: string;
@@ -13686,9 +13772,6 @@ export interface components {
                     publishedBy: string | null;
                     publishedAt: string;
                     createdAt: string;
-                    module: {
-                        shortName: string;
-                    } | null;
                 }[];
                 total: number;
                 page: number;
@@ -13700,8 +13783,11 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 country: string;
-                /** Format: uuid */
-                moduleId: string | null;
+                modules: {
+                    /** Format: uuid */
+                    id: string;
+                    shortName: string;
+                }[];
                 title: string;
                 summary: string;
                 body: string;
@@ -13728,6 +13814,7 @@ export interface components {
         CreateNewsDto: {
             /** @enum {string} */
             country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
+            moduleIds?: string[];
             /** Format: uuid */
             moduleId?: string | null;
             title: string;
@@ -13749,6 +13836,7 @@ export interface components {
             };
         };
         UpdateNewsDto: {
+            moduleIds?: string[];
             /** Format: uuid */
             moduleId?: string | null;
             title?: string;
@@ -14850,6 +14938,46 @@ export interface components {
                     id: string;
                     displayName: string;
                 } | null;
+            };
+        };
+        AvatarReviewListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    photo_url: string;
+                    /** @enum {string} */
+                    status: "pending" | "approved" | "rejected" | "superseded";
+                    reported_at: string | null;
+                    report_count: number;
+                    waiting_since: string;
+                    reviewed_at: string | null;
+                    review_note: string | null;
+                    user: {
+                        /** Format: uuid */
+                        id: string;
+                        display_name: string;
+                        username: string | null;
+                        country: string;
+                        account_status: string;
+                    };
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        DecideAvatarReviewDto: {
+            /** @enum {string} */
+            decision: "approve" | "reject";
+            note?: string;
+        };
+        AvatarReviewDecisionResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                decision: "approve" | "reject";
             };
         };
         ResolveReportDto: {
@@ -18090,6 +18218,22 @@ export interface components {
                 body: string;
             }[];
         };
+        FinanceAccountListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+                /** @enum {string} */
+                type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                /** @enum {string|null} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS" | null;
+                /** Format: uuid */
+                parentId: string | null;
+                isActive: boolean;
+                allowsManualEntry: boolean;
+            }[];
+        };
         FinanceCategoryListResponse: {
             data: {
                 /** Format: uuid */
@@ -18098,6 +18242,8 @@ export interface components {
                 kind: string;
                 sortOrder: number;
                 isActive: boolean;
+                /** Format: uuid */
+                accountId: string | null;
                 createdAt: string;
                 updatedAt: string;
             }[];
@@ -18108,6 +18254,8 @@ export interface components {
             kind: "expense" | "income";
             /** @default 0 */
             sortOrder: number;
+            /** Format: uuid */
+            accountId?: string | null;
         };
         FinanceCategoryResponse: {
             data: {
@@ -18117,6 +18265,8 @@ export interface components {
                 kind: string;
                 sortOrder: number;
                 isActive: boolean;
+                /** Format: uuid */
+                accountId: string | null;
                 createdAt: string;
                 updatedAt: string;
             };
@@ -18125,6 +18275,8 @@ export interface components {
             name?: string;
             sortOrder?: number;
             isActive?: boolean;
+            /** Format: uuid */
+            accountId?: string | null;
         };
         FinanceRemovedResponse: {
             data: {
@@ -18140,9 +18292,19 @@ export interface components {
                     categoryId: string;
                     categoryName: string;
                     kind: string;
-                    amount: number;
+                    /** @enum {string} */
+                    type: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER";
+                    /** @enum {string} */
+                    status: "ACTIVE" | "VOIDED";
+                    amount: string;
                     currency: string;
                     date: string;
+                    /** Format: uuid */
+                    accountId: string | null;
+                    /** Format: uuid */
+                    counterAccountId: string | null;
+                    /** Format: uuid */
+                    journalEntryId: string | null;
                     vendor: string | null;
                     note: string | null;
                     hasReceipt: boolean;
@@ -18173,9 +18335,19 @@ export interface components {
                 categoryId: string;
                 categoryName: string;
                 kind: string;
-                amount: number;
+                /** @enum {string} */
+                type: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER";
+                /** @enum {string} */
+                status: "ACTIVE" | "VOIDED";
+                amount: string;
                 currency: string;
                 date: string;
+                /** Format: uuid */
+                accountId: string | null;
+                /** Format: uuid */
+                counterAccountId: string | null;
+                /** Format: uuid */
+                journalEntryId: string | null;
                 vendor: string | null;
                 note: string | null;
                 hasReceipt: boolean;
@@ -18186,10 +18358,16 @@ export interface components {
         CreateFinanceEntryDto: {
             /** Format: uuid */
             categoryId: string;
-            amount: number;
+            amount: string;
             /** @enum {string} */
             currency: "CRC" | "USD";
             date: string;
+            /** @enum {string} */
+            type?: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER";
+            /** Format: uuid */
+            accountId?: string | null;
+            /** Format: uuid */
+            counterAccountId?: string | null;
             vendor?: string | null;
             note?: string | null;
             receiptKey?: string | null;
@@ -18197,13 +18375,20 @@ export interface components {
         UpdateFinanceEntryDto: {
             /** Format: uuid */
             categoryId?: string;
-            amount?: number;
+            amount?: string;
             /** @enum {string} */
             currency?: "CRC" | "USD";
             date?: string;
+            /** @enum {string} */
+            type?: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER";
+            /** Format: uuid */
+            counterAccountId?: string | null;
             vendor?: string | null;
             note?: string | null;
             receiptKey?: string | null;
+        };
+        VoidFinanceEntryDto: {
+            reason: string;
         };
         FinancePnlResponse: {
             data: {
@@ -19680,7 +19865,9 @@ export interface operations {
     };
     EnergyController_getEnergy: {
         parameters: {
-            query?: never;
+            query?: {
+                module_id?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -19699,7 +19886,9 @@ export interface operations {
     };
     EnergyController_rechargeEnergy: {
         parameters: {
-            query?: never;
+            query?: {
+                module_id?: string;
+            };
             header?: {
                 /** @description UUID v4 por intento; repetir la clave devuelve la respuesta original */
                 "Idempotency-Key"?: string;
@@ -19721,7 +19910,9 @@ export interface operations {
     };
     EnergyController_practiceQuota: {
         parameters: {
-            query?: never;
+            query?: {
+                module_id?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -19740,7 +19931,9 @@ export interface operations {
     };
     EnergyController_videoBoost: {
         parameters: {
-            query?: never;
+            query?: {
+                module_id?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -20450,6 +20643,7 @@ export interface operations {
         parameters: {
             query?: {
                 context?: "game" | "mission" | "practice" | "kokos" | "energy";
+                module_id?: string;
             };
             header?: never;
             path?: never;
@@ -20471,6 +20665,7 @@ export interface operations {
         parameters: {
             query: {
                 context: "practice" | "game" | "kokos" | "energy";
+                module_id?: string;
             };
             header?: never;
             path?: never;
@@ -27771,6 +27966,54 @@ export interface operations {
             };
         };
     };
+    ModerationAdminController_listAvatarReviews: {
+        parameters: {
+            query?: {
+                status?: "pending" | "approved" | "rejected" | "superseded";
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvatarReviewListResponse"];
+                };
+            };
+        };
+    };
+    ModerationAdminController_decideAvatarReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecideAvatarReviewDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvatarReviewDecisionResponse"];
+                };
+            };
+        };
+    };
     ProhibitedWordsAdminController_list: {
         parameters: {
             query?: {
@@ -32002,7 +32245,7 @@ export interface operations {
         parameters: {
             query?: {
                 status?: "open" | "triaging" | "resolved" | "dismissed";
-                type?: "question_report" | "suggestion" | "bug_report";
+                type?: "question_report" | "suggestion" | "bug_report" | "ai_content_report";
                 country?: ("CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR")[];
                 page?: number;
                 pageSize?: number;
@@ -32478,6 +32721,28 @@ export interface operations {
             };
         };
     };
+    FinanceAdminController_listAccounts: {
+        parameters: {
+            query?: {
+                postable?: boolean;
+                type?: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAccountListResponse"];
+                };
+            };
+        };
+    };
     FinanceAdminController_listCategories: {
         parameters: {
             query?: {
@@ -32683,27 +32948,6 @@ export interface operations {
             };
         };
     };
-    FinanceAdminController_removeEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FinanceRemovedResponse"];
-                };
-            };
-        };
-    };
     FinanceAdminController_updateEntry: {
         parameters: {
             query?: never;
@@ -32720,6 +32964,31 @@ export interface operations {
         };
         responses: {
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceEntryResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_voidEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoidFinanceEntryDto"];
+            };
+        };
+        responses: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
