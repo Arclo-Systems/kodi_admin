@@ -1,8 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TrialBalance } from '@/hooks/use-finance';
 
 let report: TrialBalance | undefined;
+
+const downloadReport = vi.fn();
+vi.mock('@/lib/download-report', () => ({
+  downloadReport: (...args: unknown[]) => downloadReport(...args),
+}));
 
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
@@ -85,12 +90,16 @@ describe('FinanceTrialBalance — el descuadre se muestra, no se esconde', () =>
     expect(screen.queryByText('Totales')).not.toBeInTheDocument();
   });
 
-  it('ofrece el CSV de la moneda elegida', () => {
+  it('baja el CSV de la moneda elegida', async () => {
     render(<FinanceTrialBalance />);
 
-    expect(screen.getByRole('link', { name: 'Exportar CSV' })).toHaveAttribute(
-      'href',
-      '/api/admin/finance/reports/trial-balance.csv?currency=CRC',
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }));
+
+    await waitFor(() =>
+      expect(downloadReport).toHaveBeenCalledWith(
+        '/api/admin/finance/reports/trial-balance.csv?currency=CRC',
+        'comprobacion.csv',
+      ),
     );
   });
 });

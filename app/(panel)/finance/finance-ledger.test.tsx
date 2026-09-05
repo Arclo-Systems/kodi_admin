@@ -3,8 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { FinanceAccount, Ledger } from '@/hooks/use-finance';
 
 let ledger: Ledger | undefined;
+
+const downloadReport = vi.fn();
+vi.mock('@/lib/download-report', () => ({
+  downloadReport: (...args: unknown[]) => downloadReport(...args),
+}));
 let accounts: FinanceAccount[] = [];
-const ledgerQuery = vi.fn();
 
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
@@ -15,10 +19,7 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => ({
     isSuccess: true,
     refetch: vi.fn(),
   }),
-  useFinanceLedger: (params: unknown) => {
-    ledgerQuery(params);
-    return { data: ledger, isLoading: false, isError: false, error: null };
-  },
+  useFinanceLedger: () => ({ data: ledger, isLoading: false, isError: false, error: null }),
 }));
 
 import { FinanceLedger } from './finance-ledger';
@@ -123,21 +124,23 @@ describe('FinanceLedger — el saldo corrido es lo que el mayor tiene que mostra
     );
   });
 
-  it('no pide el reporte hasta que hay cuenta elegida', () => {
+  it('sin cuenta elegida explica qué falta en vez de mostrar una tabla vacía', () => {
     render(<FinanceLedger />);
 
-    expect(ledgerQuery).toHaveBeenCalledWith(expect.objectContaining({ accountId: '' }));
     expect(screen.getByText(/Elegí una cuenta y una moneda/)).toBeInTheDocument();
+    expect(screen.queryByRole('table')).toBeNull();
   });
 
   it('el CSV lleva la cuenta y la moneda que se están mirando', async () => {
     render(<FinanceLedger />);
     await elegirCuenta();
 
+    fireEvent.click(await screen.findByRole('button', { name: 'Exportar CSV' }));
+
     await waitFor(() =>
-      expect(screen.getByRole('link', { name: 'Exportar CSV' })).toHaveAttribute(
-        'href',
+      expect(downloadReport).toHaveBeenCalledWith(
         '/api/admin/finance/reports/ledger.csv?accountId=acc-6900&currency=CRC',
+        'mayor.csv',
       ),
     );
   });

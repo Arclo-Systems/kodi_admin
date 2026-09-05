@@ -6,6 +6,7 @@ const create = vi.fn();
 const update = vi.fn();
 let accounts: FinanceAccount[] = [];
 let balances: AccountBalances | undefined;
+let balancesError = false;
 
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
@@ -16,7 +17,12 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => ({
     isSuccess: true,
     refetch: vi.fn(),
   }),
-  useFinanceAccountBalances: () => ({ data: balances, isLoading: false, isError: false }),
+  useFinanceAccountBalances: () => ({
+    data: balancesError ? undefined : balances,
+    isLoading: false,
+    isError: balancesError,
+    refetch: vi.fn(),
+  }),
   useFinanceAccountMutations: () => ({
     create: { mutateAsync: create },
     update: { mutateAsync: update },
@@ -62,6 +68,7 @@ async function abrirAlta(): Promise<void> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  balancesError = false;
   accounts = [PADRE, HIJA];
   balances = {
     currency: 'CRC',
@@ -89,9 +96,6 @@ describe('FinanceAccountsTree — el plan se lee como un árbol con saldo', () =
     expect(fila).toHaveTextContent('6900');
     expect(fila).toHaveTextContent('Gasto operativo');
     expect(fila).toHaveTextContent('1 400,00');
-    // Sin fila en el reporte de saldos no se inventa un cero.
-    const padre = screen.getByText('Gastos operativos').closest('tr') as HTMLTableRowElement;
-    expect(padre).toHaveTextContent('—');
   });
 
   it('sin permiso de escritura no ofrece alta ni edición', () => {
@@ -154,36 +158,106 @@ describe('FinanceAccountsTree — alta de una cuenta hija', () => {
   });
 });
 
-describe('FinanceAccountsTree — edición', () => {
-  it('no deja tocar el código: es la llave con la que la cuenta ya figura en papeles', async () => {
-    render(<FinanceAccountsTree canWrite />);
+describe('FinanceAccountsTree — edición: el PATCH lleva solo lo que se tocó', () => {
+  async function abrirEdicion(): Promise<void> {
     const fila = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
     fireEvent.click(within(fila).getByRole('button', { name: 'Editar' }));
-
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeNull());
-    expect(within(dialog()).getByLabelText('Código')).toBeDisabled();
+  }
+
+  it('el código se puede leer y copiar, pero no cambiar', async () => {
+    render(<FinanceAccountsTree canWrite />);
+    await abrirEdicion();
+
+    const codigo = within(dialog()).getByLabelText('Código');
+    expect(codigo).toHaveAttribute('readonly');
+    expect(codigo).toHaveValue(HIJA.code);
     expect(within(dialog()).queryByRole('combobox', { name: /Cuenta padre/ })).toBeNull();
   });
 
-  it('retira la cuenta con el switch en vez de borrarla', async () => {
+  // El backend corre su comprobación de líneas con que `currency` esté PRESENTE:
+  // reenviarla sin cambio hacía que renombrar una cuenta con asientos muriera en
+  // un 409 ACCOUNT_HAS_LINES que no tenía nada que ver con lo pedido.
+  it('renombrar no manda currency', async () => {
     render(<FinanceAccountsTree canWrite />);
-    const fila = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
-    fireEvent.click(within(fila).getByRole('button', { name: 'Editar' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeNull());
+    await abrirEdicion();
 
-    fireEvent.click(within(dialog()).getByRole('switch', { name: 'Activa' }));
+    fireEvent.change(within(dialog()).getByLabelText('Nombre'), {
+      target: { value: 'Otros gastos varios' },
+    });
     fireEvent.click(within(dialog()).getByRole('button', { name: 'Guardar' }));
 
     await waitFor(() => expect(update).toHaveBeenCalled());
     expect(update).toHaveBeenCalledWith({
       id: HIJA.id,
-      input: {
-        name: HIJA.name,
-        currency: null,
-        isActive: false,
-        allowsManualEntry: true,
-      },
+      input: { name: 'Otros gastos varios' },
     });
+  });
+
+  it('retirar manda exactamente { isActive: false }, previa confirmación', async () => {
+    render(<FinanceAccountsTree canWrite />);
+    await abrirEdicion();
+
+    fireEvent.click(within(dialog()).getByRole('switch', { name: 'Activa' }));
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Guardar' }));
+
+    // Retirar arrastra a la rama: no se hace sin confirmar.
+    expect(await screen.findByText('Retirar cuenta')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Al retirar esta cuenta también dejan de estar disponibles sus subcuentas para nuevos movimientos.',
+      ),
+    ).toBeInTheDocument();
+    expect(update).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retirar' }));
+
+    await waitFor(() => expect(update).toHaveBeenCalled());
+    expect(update).toHaveBeenCalledWith({ id: HIJA.id, input: { isActive: false } });
     expect(screen.queryByRole('button', { name: 'Borrar' })).toBeNull();
+  });
+
+  it('cancelar la confirmación no retira nada', async () => {
+    render(<FinanceAccountsTree canWrite />);
+    await abrirEdicion();
+
+    fireEvent.click(within(dialog()).getByRole('switch', { name: 'Activa' }));
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Guardar' }));
+    expect(await screen.findByText('Retirar cuenta')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+
+    await waitFor(() => expect(screen.queryByText('Retirar cuenta')).toBeNull());
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('guardar sin tocar nada no manda un PATCH vacío', async () => {
+    render(<FinanceAccountsTree canWrite />);
+    await abrirEdicion();
+
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Guardar' }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(update).not.toHaveBeenCalled();
+  });
+});
+
+describe('FinanceAccountsTree — saldos', () => {
+  it('con el reporte caído la celda dice que no hay dato, no un cero', async () => {
+    balancesError = true;
+    render(<FinanceAccountsTree canWrite />);
+
+    expect(screen.getByText(/No se pudieron cargar los saldos en CRC/)).toBeInTheDocument();
+    const fila = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
+    expect(fila).toHaveTextContent('sin dato');
+    expect(fila).not.toHaveTextContent('0,00');
+    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+  });
+
+  it('una cuenta que el reporte no lista está retirada y en cero', () => {
+    render(<FinanceAccountsTree canWrite />);
+
+    const padre = screen.getByText('Gastos operativos').closest('tr') as HTMLTableRowElement;
+    expect(padre).toHaveTextContent('0,00');
   });
 });

@@ -1,14 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { CircleCheckIcon, DownloadIcon, ScaleIcon, TriangleAlertIcon } from 'lucide-react';
-import {
-  FINANCE_CURRENCIES,
-  financeReportCsvHref,
-  useFinanceTrialBalance,
-} from '@/hooks/use-finance';
+import { CircleCheckIcon, ScaleIcon, TriangleAlertIcon } from 'lucide-react';
+import { FINANCE_CURRENCIES, useFinanceTrialBalance } from '@/hooks/use-finance';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
@@ -31,6 +26,7 @@ import { TableEmptyRow } from '@/components/admin/empty-state';
 import { StatusBadge } from '@/lib/status-badge';
 import { civilDayEndIso, civilDayStartIso } from '@/lib/civil-date';
 import { ACCOUNT_TYPE_LABELS, formatMoney } from './finance-format';
+import { FinanceReportCsvButton } from './finance-report-csv-button';
 
 const COLUMNS = 6;
 
@@ -73,12 +69,7 @@ export function FinanceTrialBalance() {
           className="w-auto"
         />
         <span className="text-muted-foreground text-sm">Sin fechas = últimos 12 meses.</span>
-        <Button variant="outline" size="sm" className="ml-auto" asChild>
-          <a href={financeReportCsvHref('trial-balance', params)} download>
-            <DownloadIcon className="size-4" />
-            Exportar CSV
-          </a>
-        </Button>
+        <FinanceReportCsvButton report="trial-balance" params={params} className="ml-auto" />
       </div>
 
       {isError && (

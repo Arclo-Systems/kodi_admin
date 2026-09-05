@@ -35,11 +35,13 @@ import { ACCOUNT_STATUS_LABELS, ACCOUNT_TYPE_LABELS, formatMoney } from './finan
 import {
   FinanceAccountDialog,
   type AccountDialogTarget,
-  type AccountSubmitValues,
+  type AccountSubmit,
 } from './finance-account-dialog';
 
 const COLUMNS = 7;
 const MULTI_CURRENCY = 'Todas';
+
+type QueryState = 'loading' | 'error' | 'ready';
 
 export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }) {
   const [currency, setCurrency] = useState<string>(FINANCE_CURRENCIES[0]);
@@ -51,6 +53,12 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
   const balancesQuery = useFinanceAccountBalances(currency);
   const { create, update } = useFinanceAccountMutations();
 
+  const balancesState: QueryState = balancesQuery.isError
+    ? 'error'
+    : balancesQuery.isLoading
+      ? 'loading'
+      : 'ready';
+
   const balances = useMemo(
     () => new Map((balancesQuery.data?.accounts ?? []).map((a) => [a.accountId, a.balance])),
     [balancesQuery.data],
@@ -59,27 +67,15 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
   // sobre el árbol completo: la jerarquía se pinta con sangría, sin re-armarla.
   const accounts = accountsQuery.data ?? [];
 
-  async function submit(values: AccountSubmitValues): Promise<void> {
-    if (values.id) {
-      await update.mutateAsync({
-        id: values.id,
-        input: {
-          name: values.name,
-          currency: values.currency,
-          isActive: values.isActive,
-          allowsManualEntry: values.allowsManualEntry,
-        },
-      });
-      toast.success('Cuenta actualizada');
-    } else {
-      await create.mutateAsync({
-        code: values.code,
-        name: values.name,
-        parentId: values.parentId,
-        currency: values.currency,
-        allowsManualEntry: values.allowsManualEntry,
-      });
+  // El diálogo arma el payload (es el que sabe qué campos se tocaron); acá solo
+  // se elige la mutación. El error sube para que lo muestre quien lo disparó.
+  async function submit(payload: AccountSubmit): Promise<void> {
+    if (payload.mode === 'create') {
+      await create.mutateAsync(payload.input);
       toast.success('Cuenta creada');
+    } else {
+      await update.mutateAsync({ id: payload.id, input: payload.input });
+      toast.success('Cuenta actualizada');
     }
     setTarget(null);
   }
@@ -112,6 +108,19 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
           </Button>
         )}
       </div>
+
+      {/* Sin saldos la columna queda sin dato: decirlo es lo que impide leer una
+          celda vacía como un cero. */}
+      {balancesQuery.isError && (
+        <Alert variant="destructive">
+          <AlertDescription className="flex flex-wrap items-center gap-3">
+            <span>No se pudieron cargar los saldos en {currency}.</span>
+            <Button variant="outline" size="sm" onClick={() => void balancesQuery.refetch()}>
+              Reintentar
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {accountsQuery.isError && (
         <Alert variant="destructive">
@@ -162,7 +171,7 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
                     key={account.id}
                     account={account}
                     balance={balances.get(account.id)}
-                    balancesLoading={balancesQuery.isLoading}
+                    balancesState={balancesState}
                     canWrite={canWrite}
                     onEdit={() => setTarget({ mode: 'edit', account })}
                   />
@@ -186,13 +195,13 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
 function AccountRow({
   account,
   balance,
-  balancesLoading,
+  balancesState,
   canWrite,
   onEdit,
 }: {
   account: FinanceAccount;
   balance: string | undefined;
-  balancesLoading: boolean;
+  balancesState: QueryState;
   canWrite: boolean;
   onEdit: () => void;
 }) {
@@ -222,14 +231,17 @@ function AccountRow({
         )}
       </TableCell>
       <TableCell className="text-right tabular-nums">
-        {balancesLoading ? (
+        {balancesState === 'loading' ? (
           <Skeleton className="ml-auto h-4 w-20" />
-        ) : balance === undefined ? (
-          // El reporte omite las cuentas retiradas SIN saldo: no tener fila ahí
-          // significa cero, no "se desconoce".
-          <span className="text-muted-foreground">—</span>
+        ) : balancesState === 'error' ? (
+          // Con el reporte caído la celda no puede decir un número: un "—" acá se
+          // lee como cero, que es exactamente lo que no se sabe.
+          <span className="text-muted-foreground text-sm">sin dato</span>
         ) : (
-          formatMoney(balance)
+          // El reporte trae TODA cuenta activa (en cero si no tuvo movimiento) y
+          // las retiradas CON saldo: que una cuenta no tenga fila significa que
+          // está retirada y en cero.
+          formatMoney(balance ?? '0.00')
         )}
       </TableCell>
       <TableCell className="text-right">

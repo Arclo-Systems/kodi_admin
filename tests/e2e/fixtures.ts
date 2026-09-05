@@ -82,8 +82,8 @@ export const FINANCE_FIXTURE = {
   unmappedCategory: 'E2E Sin cuenta',
   mappedAccount: '6900 Otros gastos operativos',
   // La hija se cuelga del padre y no de `6900`: una cuenta que ya tiene asientos
-  // no puede volverse padre (409 ACCOUNT_HAS_LINES).
+  // no puede volverse padre (409 ACCOUNT_HAS_LINES). El código lo elige el spec
+  // (el primer 69xx libre): una cuenta no se borra, así que no se puede reusar.
   parentAccount: '6000 Gastos operativos',
-  childCode: '6901',
   childName: 'E2E Cuenta hija',
 } as const;

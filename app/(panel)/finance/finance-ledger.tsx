@@ -2,11 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { BookOpenIcon, DownloadIcon } from 'lucide-react';
+import { BookOpenIcon } from 'lucide-react';
 import {
   ACCOUNT_TYPES,
   FINANCE_CURRENCIES,
-  financeReportCsvHref,
   useFinanceAccounts,
   useFinanceLedger,
   type AccountType,
@@ -28,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { civilDayEndIso, civilDayStartIso } from '@/lib/civil-date';
 import { ACCOUNT_TYPE_LABELS, JOURNAL_STATUS_LABELS, formatMoney } from './finance-format';
+import { FinanceReportCsvButton } from './finance-report-csv-button';
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
@@ -186,12 +186,7 @@ export function FinanceLedger() {
         />
         {/* Sin cuenta elegida no hay mayor que bajar: el backend respondería 400. */}
         {accountId && (
-          <Button variant="outline" size="sm" className="ml-auto" asChild>
-            <a href={financeReportCsvHref('ledger', params)} download>
-              <DownloadIcon className="size-4" />
-              Exportar CSV
-            </a>
-          </Button>
+          <FinanceReportCsvButton report="ledger" params={params} className="ml-auto" />
         )}
       </div>
 

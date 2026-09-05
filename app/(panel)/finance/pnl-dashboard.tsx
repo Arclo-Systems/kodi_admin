@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import {
   BarChart3Icon,
-  DownloadIcon,
   LayersIcon,
   ReceiptIcon,
   TrendingDownIcon,
@@ -12,7 +11,6 @@ import {
 } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
@@ -29,9 +27,10 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 import { KpiCard } from '@/components/admin/kpi-card';
-import { financeReportCsvHref, useFinancePnl } from '@/hooks/use-finance';
+import { useFinancePnl } from '@/hooks/use-finance';
 import { civilDayEndIso, civilDayStartIso } from '@/lib/civil-date';
 import { ACCOUNT_TYPE_LABELS, formatMoney } from './finance-format';
+import { FinanceReportCsvButton } from './finance-report-csv-button';
 
 const chartConfig = {
   income: { label: 'Ingresos', color: 'var(--chart-2)' },
@@ -90,14 +89,7 @@ export function PnlDashboard() {
           </Select>
         )}
         <span className="text-muted-foreground text-sm">Sin fechas = últimos 12 meses.</span>
-        {/* La descarga la hace el browser contra el BFF: un fetch tendría que
-            rearmar el archivo en memoria y perdería el nombre del backend. */}
-        <Button variant="outline" size="sm" className="ml-auto" asChild>
-          <a href={financeReportCsvHref('pnl', range)} download>
-            <DownloadIcon className="size-4" />
-            Exportar CSV
-          </a>
-        </Button>
+        <FinanceReportCsvButton report="pnl" params={range} className="ml-auto" />
       </div>
 
       {isError && (

@@ -10,8 +10,10 @@ import { FINANCE_FIXTURE } from './fixtures';
 // datos que otro spec pueda estar leyendo.
 // Los tests escriben en la misma contabilidad (misma categoría, misma cuenta,
 // misma moneda) y miden saldos: en paralelo el alta de uno mueve el número que
-// otro está a mitad de comparar. Van en serie.
-test.describe.configure({ mode: 'serial' });
+// otro está a mitad de comparar. `default` los corre uno detrás de otro en el
+// mismo worker; `serial` además saltearía los que siguen al primer rojo, y acá
+// cada test es independiente del anterior.
+test.describe.configure({ mode: 'default' });
 
 const AMOUNT = '1234.56';
 const AMOUNT_NUMBER = 1234.56;
@@ -78,6 +80,18 @@ async function abrirMayor(page: Page): Promise<number> {
   return aNumero(await saldo.innerText());
 }
 
+// Primer `69xx` que el árbol todavía no tiene. Sin esto el alta solo se puede
+// correr una vez: no hay DELETE de cuentas.
+async function freeChildCode(page: Page): Promise<string> {
+  const celdas = await page.locator('table tbody tr td:first-child').allInnerTexts();
+  const usados = new Set(celdas.map((t) => t.trim().slice(0, 4)));
+  for (let n = 1; n < 100; n += 1) {
+    const code = `69${String(n).padStart(2, '0')}`;
+    if (!usados.has(code)) return code;
+  }
+  throw new Error('No quedan códigos 69xx libres en el plan de cuentas.');
+}
+
 test('gasto contabilizado: entra al P&L, se anula con motivo y deja de sumar', async ({ page }) => {
   const vendor = vendorTag('Anulación');
   const gastosAntes = await gastosCrc(page);
@@ -90,8 +104,8 @@ test('gasto contabilizado: entra al P&L, se anula con motivo y deja de sumar', a
   await expect(fila.getByText(AMOUNT_LABEL)).toBeVisible();
   await expect(fila.getByText('Activo')).toBeVisible();
 
-  // Suma al P&L.
-  expect(await gastosCrc(page)).not.toBe(gastosAntes);
+  // Suma al P&L exactamente el monto del gasto.
+  expect(aNumero(await gastosCrc(page)) - aNumero(gastosAntes)).toBeCloseTo(AMOUNT_NUMBER, 2);
 
   // Anular exige motivo.
   const filaVigente = await gastosCrcRow(page, vendor);
@@ -136,38 +150,82 @@ test('el gasto recorre el libro: mayor con saldo corrido, comprobación que cuad
   await expect(page.getByText('Diferencia (débitos − créditos)')).toBeVisible();
 
   // Y el mismo gasto está en el estado de resultados, que sale del mayor.
-  expect(await gastosCrc(page)).not.toBe(gastosAntes);
+  expect(aNumero(await gastosCrc(page)) - aNumero(gastosAntes)).toBeCloseTo(AMOUNT_NUMBER, 2);
 });
 
-test('el plan de cuentas deja agregar una cuenta hija y la muestra en el árbol', async ({
+test('el plan de cuentas agrega una cuenta hija, la muestra en el árbol y la retira', async ({
   page,
 }) => {
   await page.goto('/finance/cuentas');
-  // La tabla arranca con skeletons: contar antes de que llegue el plan da cero y
-  // el test intentaría crear una cuenta que ya existe (409 ACCOUNT_CODE_EXISTS).
+  // La tabla arranca con skeletons: leer los códigos antes de que llegue el plan
+  // daría una lista vacía y el código "libre" ya estaría tomado.
   await expect(
     page.locator('table tbody tr').filter({ hasText: FINANCE_FIXTURE.parentAccount.slice(0, 4) }),
   ).toBeVisible();
-  const fila = page.locator('table tbody tr').filter({ hasText: FINANCE_FIXTURE.childCode });
 
-  // Una cuenta no se borra (se retira), así que el alta corre una sola vez: en
-  // la segunda corrida el test verifica que la cuenta sigue en el árbol.
-  if ((await fila.count()) === 0) {
-    await page.getByRole('button', { name: 'Nueva cuenta' }).click();
-    const dialog = page.getByRole('dialog');
-    await dialog.getByRole('combobox', { name: 'Cuenta padre' }).click();
-    await page.getByRole('option', { name: FINANCE_FIXTURE.parentAccount, exact: true }).click();
-    await dialog.getByLabel('Código').fill(FINANCE_FIXTURE.childCode);
-    await dialog.getByLabel('Nombre').fill(FINANCE_FIXTURE.childName);
-    await dialog.getByRole('button', { name: 'Crear cuenta' }).click();
-    await expect(page.getByText('Cuenta creada')).toBeVisible();
-  }
+  // Una cuenta no se borra: si el alta reusara un código fijo, la segunda corrida
+  // chocaría con 409 ACCOUNT_CODE_EXISTS. Se toma el primer 69xx libre del árbol.
+  const code = await freeChildCode(page);
+  const name = `${FINANCE_FIXTURE.childName} ${code}`;
 
+  await page.getByRole('button', { name: 'Nueva cuenta' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('combobox', { name: 'Cuenta padre' }).click();
+  await page.getByRole('option', { name: FINANCE_FIXTURE.parentAccount, exact: true }).click();
+  await dialog.getByLabel('Código').fill(code);
+  await dialog.getByLabel('Nombre').fill(name);
+  await dialog.getByRole('button', { name: 'Crear cuenta' }).click();
+  await expect(page.getByText('Cuenta creada')).toBeVisible();
+
+  const fila = page.locator('table tbody tr').filter({ hasText: name });
   await expect(fila).toBeVisible();
-  await expect(fila).toContainText(FINANCE_FIXTURE.childName);
   // La clase la heredó del padre: nunca viajó en el formulario.
   await expect(fila).toContainText('Gasto operativo');
   await expect(fila).toContainText('Activa');
+
+  // Y se retira (no se borra), confirmando el arrastre a las subcuentas.
+  await fila.getByRole('button', { name: 'Editar' }).click();
+  await dialog.getByRole('switch', { name: 'Activa' }).click();
+  await dialog.getByRole('button', { name: 'Guardar' }).click();
+  await expect(
+    page.getByText(
+      'Al retirar esta cuenta también dejan de estar disponibles sus subcuentas para nuevos movimientos.',
+    ),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Retirar' }).click();
+  await expect(page.getByText('Cuenta actualizada')).toBeVisible();
+  await expect(fila).toContainText('Retirada');
+});
+
+test('renombrar una cuenta con asientos no dispara el 409 de moneda', async ({ page }) => {
+  // `6900` es la cuenta contra la que se asientan los gastos del fixture, así que
+  // en esta base tiene líneas sí o sí. El PATCH que reenviaba `currency` sin
+  // cambio moría acá con ACCOUNT_HAS_LINES ("su moneda no se puede cambiar"),
+  // un error que no tenía nada que ver con lo que se pidió.
+  const [code, ...rest] = FINANCE_FIXTURE.mappedAccount.split(' ');
+  const original = rest.join(' ');
+  const renombrada = `${original} (e2e)`;
+
+  await page.goto('/finance/cuentas');
+  const fila = page.locator('table tbody tr').filter({ hasText: code as string });
+  await expect(fila).toBeVisible();
+
+  const dialog = page.getByRole('dialog');
+  await fila.getByRole('button', { name: 'Editar' }).click();
+  // El código se lee pero no se cambia.
+  await expect(dialog.getByLabel('Código')).toHaveAttribute('readonly', '');
+  await dialog.getByLabel('Nombre').fill(renombrada);
+  await dialog.getByRole('button', { name: 'Guardar' }).click();
+
+  await expect(page.getByText('Cuenta actualizada')).toBeVisible();
+  await expect(page.getByText(/no se puede cambiar/)).toHaveCount(0);
+  await expect(page.locator('table tbody tr').filter({ hasText: renombrada })).toBeVisible();
+
+  // Se deja el plan como estaba: el nombre lo usan los otros specs.
+  await page.locator('table tbody tr').filter({ hasText: renombrada }).getByRole('button', { name: 'Editar' }).click();
+  await dialog.getByLabel('Nombre').fill(original);
+  await dialog.getByRole('button', { name: 'Guardar' }).click();
+  await expect(page.getByText('Cuenta actualizada')).toBeVisible();
 });
 
 test('una categoría sin cuenta contable no se puede elegir y el aviso dice dónde arreglarla', async ({

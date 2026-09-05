@@ -1,8 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Pnl } from '@/hooks/use-finance';
 
 let pnl: Pnl | undefined;
+
+const downloadReport = vi.fn();
+vi.mock('@/lib/download-report', () => ({
+  downloadReport: (...args: unknown[]) => downloadReport(...args),
+}));
 
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
@@ -84,12 +89,16 @@ describe('PnlDashboard — los KPI salen de byCurrency del mayor', () => {
     expect(screen.queryByText('Tecnología y software')).not.toBeInTheDocument();
   });
 
-  it('ofrece el CSV del mismo rango que se está mirando', () => {
+  it('baja el CSV del mismo rango que se está mirando, por fetch y no por href', async () => {
     render(<PnlDashboard />);
 
-    expect(screen.getByRole('link', { name: 'Exportar CSV' })).toHaveAttribute(
-      'href',
-      '/api/admin/finance/reports/pnl.csv',
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar CSV' }));
+
+    await waitFor(() =>
+      expect(downloadReport).toHaveBeenCalledWith(
+        '/api/admin/finance/reports/pnl.csv',
+        'resultados.csv',
+      ),
     );
   });
 
