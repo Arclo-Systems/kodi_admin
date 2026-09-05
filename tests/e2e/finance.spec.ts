@@ -8,12 +8,10 @@ import { FINANCE_FIXTURE } from './fixtures';
 // corriente en OPEN y las dos categorías de gasto de `FINANCE_FIXTURE` (una
 // mapeada a `6900`, otra sin cuenta). El spec no mapea ni remapea nada: no toca
 // datos que otro spec pueda estar leyendo.
-// Los tests escriben en la misma contabilidad (misma categoría, misma cuenta,
-// misma moneda) y miden saldos: en paralelo el alta de uno mueve el número que
-// otro está a mitad de comparar. `default` los corre uno detrás de otro en el
-// mismo worker; `serial` además saltearía los que siguen al primer rojo, y acá
-// cada test es independiente del anterior.
-test.describe.configure({ mode: 'default' });
+// Serial: con `fullyParallel` los cinco escribirían la misma contabilidad a la vez
+// (mismo código de cuenta libre, mismos saldos a medio comparar) y `default` no
+// alcanza para desactivarlo.
+test.describe.configure({ mode: 'serial' });
 
 const AMOUNT = '1234.56';
 const AMOUNT_NUMBER = 1234.56;

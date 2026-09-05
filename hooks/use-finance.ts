@@ -427,7 +427,11 @@ function reportQuery(params: ReportParams): string {
   return qs ? `?${qs}` : '';
 }
 
-/** URL del CSV para un `<a download>`: la descarga la hace el browser, no un fetch. */
+/**
+ * URL del CSV en el BFF. La descarga la hace `downloadReport` (`lib/download-report.ts`)
+ * con fetch: un `<a download>` guardaría el JSON de un 413 o de un 401 como si fuera
+ * el archivo.
+ */
 export function financeReportCsvHref(report: FinanceReport, params: ReportParams): string {
   return `${BASE}/reports/${report}.csv${reportQuery(params)}`;
 }

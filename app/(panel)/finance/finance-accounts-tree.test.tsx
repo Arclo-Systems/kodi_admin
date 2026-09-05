@@ -59,6 +59,19 @@ const HIJA = account({
   allowsManualEntry: true,
 });
 
+// Retirada y sin saldo en la moneda mirada: es la única cuenta que
+// `reports/balances` puede no devolver.
+const RETIRADA = account({
+  id: 'acc-1103',
+  code: '1103',
+  name: 'Caja vieja',
+  type: 'ASSET',
+  parentId: null,
+  parentCode: null,
+  depth: 0,
+  isActive: false,
+});
+
 const dialog = () => screen.getByRole('dialog');
 
 async function abrirAlta(): Promise<void> {
@@ -254,10 +267,15 @@ describe('FinanceAccountsTree — saldos', () => {
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
   });
 
-  it('una cuenta que el reporte no lista está retirada y en cero', () => {
+  // El reporte trae TODA cuenta activa (en cero si no tuvo movimiento) y las
+  // retiradas CON saldo. La única que puede faltar es una retirada en cero, y
+  // ese cero es un cero de verdad, no un "se desconoce".
+  it('una cuenta retirada que el reporte no lista está en cero', () => {
+    accounts = [PADRE, HIJA, RETIRADA];
     render(<FinanceAccountsTree canWrite />);
 
-    const padre = screen.getByText('Gastos operativos').closest('tr') as HTMLTableRowElement;
-    expect(padre).toHaveTextContent('0,00');
+    const fila = screen.getByText('Caja vieja').closest('tr') as HTMLTableRowElement;
+    expect(fila).toHaveTextContent('Retirada');
+    expect(fila).toHaveTextContent('0,00');
   });
 });

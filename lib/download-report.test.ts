@@ -100,7 +100,10 @@ describe('downloadReport — el archivo se entrega con el nombre del backend', (
 
     expect(createObjectURL).toHaveBeenCalled();
     expect(click).toHaveBeenCalled();
-    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock');
+    // La revocación va un tick después del click (si no, Firefox y Safari
+    // abortan la descarga), así que no está hecha al volver de `downloadReport`.
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock'));
   });
 
   it('sin content-disposition cae al nombre de respaldo', async () => {

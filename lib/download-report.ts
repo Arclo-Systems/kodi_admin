@@ -21,7 +21,9 @@ export async function downloadReport(url: string, fallbackName: string): Promise
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(objectUrl);
+  // Diferido un tick: Firefox y Safari leen el blob DESPUÉS del click, y
+  // revocarlo en la misma vuelta del event loop aborta la descarga.
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
 }
 
 // `attachment; filename="mayor_6900_2026-01-01_2026-09-30.csv"`
