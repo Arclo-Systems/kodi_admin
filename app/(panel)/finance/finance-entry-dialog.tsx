@@ -64,6 +64,33 @@ export function FinanceEntryDialog({
               <Dato label="Estado">
                 <EntryStatusBadge status={entry.status} />
               </Dato>
+              {entry.status === 'VOIDED' && (
+                <>
+                  <Dato label="Motivo de la anulación">
+                    {entry.voidReason ? (
+                      <span className="whitespace-pre-line">{entry.voidReason}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </Dato>
+                  <Dato label="Anulado el">
+                    {entry.voidedAt ? (
+                      fmtDate(entry.voidedAt)
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </Dato>
+                  <Dato label="Anulado por">
+                    {entry.voidedBy ? (
+                      // El DTO trae el id del admin, no su nombre: se muestra tal cual
+                      // para poder cruzarlo con el audit log.
+                      <span className="font-mono text-xs">{entry.voidedBy}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </Dato>
+                </>
+              )}
               <Dato label="Categoría">{entry.categoryName}</Dato>
               <Dato label="Monto">
                 <span className="tabular-nums">{fmtAmount(entry)}</span>

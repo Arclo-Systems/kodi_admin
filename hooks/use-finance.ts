@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { throwApiError, unwrapData } from '@/lib/bff';
 import { fetchJson } from '@/lib/fetch-json';
 
@@ -77,6 +82,11 @@ export type FinanceEntry = {
   accountId: string | null;
   counterAccountId: string | null;
   journalEntryId: string | null; // null = histórico sin asiento (previo al backfill)
+  // Los tres solo tienen valor con `status === 'VOIDED'`: son el descargo del
+  // asiento de reversión (quién anuló, cuándo y por qué).
+  voidedAt: string | null;
+  voidedBy: string | null;
+  voidReason: string | null;
   vendor: string | null;
   note: string | null;
   hasReceipt: boolean;
@@ -206,6 +216,9 @@ export function useFinanceCategoryMutations() {
 export function useFinanceEntries(query: FinanceEntryListQuery) {
   return useQuery({
     queryKey: ['finance-entries', query],
+    // Paginación server-side: sin esto la tabla se vacía en cada cambio de
+    // página y la fila que se venía mirando salta de posición.
+    placeholderData: keepPreviousData,
     queryFn: async (): Promise<EntryListPage> => {
       const params = new URLSearchParams();
       for (const [k, v] of Object.entries(query)) {

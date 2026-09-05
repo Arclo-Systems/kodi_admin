@@ -18305,6 +18305,10 @@ export interface components {
                     counterAccountId: string | null;
                     /** Format: uuid */
                     journalEntryId: string | null;
+                    voidedAt: string | null;
+                    /** Format: uuid */
+                    voidedBy: string | null;
+                    voidReason: string | null;
                     vendor: string | null;
                     note: string | null;
                     hasReceipt: boolean;
@@ -18348,6 +18352,10 @@ export interface components {
                 counterAccountId: string | null;
                 /** Format: uuid */
                 journalEntryId: string | null;
+                voidedAt: string | null;
+                /** Format: uuid */
+                voidedBy: string | null;
+                voidReason: string | null;
                 vendor: string | null;
                 note: string | null;
                 hasReceipt: boolean;

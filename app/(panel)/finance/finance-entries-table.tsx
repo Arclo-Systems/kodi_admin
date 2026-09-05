@@ -15,7 +15,7 @@ import {
   type FinanceKind,
 } from '@/hooks/use-finance';
 import { DataTable } from '@/components/admin/data-table';
-import { ConfirmDialog } from '@/components/admin/confirm-dialog';
+import { FinanceVoidDialog } from './finance-void-dialog';
 import { openSignedAsset } from '@/lib/signed-asset';
 import { cn } from '@/lib/utils';
 import { EntryStatusBadge, MovementTypeBadge } from './finance-entry-badges';
@@ -31,7 +31,6 @@ import {
 } from '@/components/ui/select';
 
 const ALL = '__all__';
-const VOID_REASON_MIN = 5;
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 // `amount` viaja como string con dos decimales fijos; se pasa por Number solo para
@@ -247,17 +246,11 @@ export function FinanceEntriesTable() {
         fmtAmount={fmtAmount}
       />
 
-      <ConfirmDialog
+      <FinanceVoidDialog
         open={!!toVoid}
         onOpenChange={(o) => !o && setToVoid(null)}
-        title="Anular movimiento"
-        description="El movimiento queda anulado y su asiento se revierte con uno nuevo fechado hoy. El motivo queda en el libro."
-        destructive
-        requireReason
-        reasonMinLength={VOID_REASON_MIN}
-        confirmLabel="Anular"
-        onConfirm={async ({ reason }) => {
-          if (!toVoid || !reason) return;
+        onConfirm={async (reason) => {
+          if (!toVoid) return;
           await voidEntry.mutateAsync({ id: toVoid.id, reason });
           setToVoid(null);
         }}

@@ -31,6 +31,7 @@ import { StatusBadge } from '@/lib/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -54,13 +55,50 @@ const ACCOUNT_TYPES_BY_KIND: Record<FinanceKind, AccountType[]> = {
 
 const accountLabel = (a: FinanceAccount) => `${a.code} ${a.name}`;
 
-export function FinanceCategoriesManager() {
+type AccountsState = 'loading' | 'error' | 'ready';
+
+function CategoryAccountCell({
+  accountId,
+  accounts,
+  state,
+  onRetry,
+}: {
+  accountId: string | null;
+  accounts: Map<string, FinanceAccount>;
+  state: AccountsState;
+  onRetry: () => void;
+}) {
+  if (state === 'loading') return <Skeleton className="h-4 w-40" />;
+  if (state === 'error') {
+    return (
+      <span className="text-muted-foreground flex items-center gap-2 text-sm">
+        No se pudo cargar el plan de cuentas
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          Reintentar
+        </Button>
+      </span>
+    );
+  }
+  const account = accountId ? accounts.get(accountId) : undefined;
+  if (account) return <span className="tabular-nums">{accountLabel(account)}</span>;
+  // Sin cuenta el alta de un movimiento falla con CATEGORY_WITHOUT_ACCOUNT:
+  // conviene que se vea acá y no recién al guardar el gasto.
+  return (
+    <span className="text-destructive flex items-center gap-1.5 text-sm">
+      <TriangleAlertIcon className="size-3.5" aria-hidden />
+      Sin cuenta: los movimientos de esta categoría no se pueden contabilizar
+    </span>
+  );
+}
+
+export function FinanceCategoriesManager({ canWrite = false }: { canWrite?: boolean }) {
   const [filterKind, setFilterKind] = useState<FinanceKind | undefined>(undefined);
   const { data: categories, isLoading } = useFinanceCategories(filterKind);
   const { create, update, remove } = useFinanceCategoryMutations();
   // El plan entero (37 cuentas, sin paginar): se filtra en cliente por tipo y por
   // activa, que es lo que el backend exige para el mapeo de una categoría.
-  const { data: accounts } = useFinanceAccounts();
+  const accountsQuery = useFinanceAccounts();
+  const accounts = accountsQuery.data;
 
   const [editing, setEditing] = useState<FinanceCategory | null>(null);
   const [name, setName] = useState('');
@@ -69,6 +107,14 @@ export function FinanceCategoriesManager() {
   const [isActive, setIsActive] = useState(true);
   const [accountId, setAccountId] = useState<string>('');
   const [toDelete, setToDelete] = useState<FinanceCategory | null>(null);
+
+  // Mientras la query no terminó, `accountById` está vacío y toda categoría
+  // mapeada se leería como huérfana: el aviso solo sale con la lista ya cargada.
+  const accountsState: AccountsState = accountsQuery.isSuccess
+    ? 'ready'
+    : accountsQuery.isError
+      ? 'error'
+      : 'loading';
 
   const accountById = useMemo(
     () => new Map((accounts ?? []).map((a) => [a.id, a])),
@@ -151,20 +197,14 @@ export function FinanceCategoriesManager() {
         header: 'Cuenta contable',
         meta: { label: 'Cuenta contable' },
         enableSorting: false,
-        cell: ({ row }) => {
-          const account = row.original.accountId
-            ? accountById.get(row.original.accountId)
-            : undefined;
-          if (account) return <span className="tabular-nums">{accountLabel(account)}</span>;
-          // Sin cuenta el alta de un movimiento falla con CATEGORY_WITHOUT_ACCOUNT:
-          // conviene que se vea acá y no recién al guardar el gasto.
-          return (
-            <span className="text-destructive flex items-center gap-1.5 text-sm">
-              <TriangleAlertIcon className="size-3.5" aria-hidden />
-              Sin cuenta: los movimientos de esta categoría no se pueden contabilizar
-            </span>
-          );
-        },
+        cell: ({ row }) => (
+          <CategoryAccountCell
+            accountId={row.original.accountId}
+            accounts={accountById}
+            state={accountsState}
+            onRetry={() => void accountsQuery.refetch()}
+          />
+        ),
       },
       { accessorKey: 'sortOrder', header: 'Orden', meta: { label: 'Orden' }, enableSorting: false },
       {
@@ -203,7 +243,7 @@ export function FinanceCategoriesManager() {
         ),
       },
     ],
-    [startEdit, accountById],
+    [startEdit, accountById, accountsState, accountsQuery],
   );
 
   return (
@@ -257,25 +297,57 @@ export function FinanceCategoriesManager() {
               </div>
               <Field>
                 <FieldLabel htmlFor="fc-account">Cuenta contable</FieldLabel>
+                {/* Mapear una categoría es escritura contable: la página se abre con
+                    `view:finance`, pero solo `finance:write` puede tocar esto. */}
                 <Select
-                  value={accountId || NO_ACCOUNT}
+                  // Con la lista en vuelo el valor queda vacío para que se vea el
+                  // placeholder de carga y no un "Sin cuenta" que todavía no se sabe.
+                  value={accountsState === 'ready' ? accountId || NO_ACCOUNT : accountId}
                   onValueChange={(v) => setAccountId(v === NO_ACCOUNT ? '' : v)}
+                  disabled={!canWrite || accountsState !== 'ready'}
                 >
                   <SelectTrigger id="fc-account" className="sm:w-96">
-                    <SelectValue />
+                    <SelectValue
+                      placeholder={
+                        accountsState === 'loading' ? 'Cargando cuentas…' : 'Sin cuenta'
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={NO_ACCOUNT}>Sin cuenta</SelectItem>
-                    {accountOptions.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {accountLabel(a)}
+                    {accountOptions.length === 0 ? (
+                      <SelectItem value="__empty__" disabled>
+                        No hay cuentas disponibles
                       </SelectItem>
-                    ))}
+                    ) : (
+                      accountOptions.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {accountLabel(a)}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
                 <FieldDescription>
-                  Sin cuenta: los movimientos de esta categoría no se pueden contabilizar.
+                  {canWrite
+                    ? 'Sin cuenta: los movimientos de esta categoría no se pueden contabilizar.'
+                    : 'Necesitás permiso de escritura en finanzas para cambiar la cuenta.'}
                 </FieldDescription>
+                {accountsState === 'error' && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-destructive text-sm">
+                      No se pudo cargar el plan de cuentas.
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void accountsQuery.refetch()}
+                    >
+                      Reintentar
+                    </Button>
+                  </div>
+                )}
               </Field>
               {editing && (
                 <Field>

@@ -43,12 +43,22 @@ function account(over: Partial<FinanceAccount> = {}): FinanceAccount {
 
 const CAJA = account();
 const BANCO = account({ id: 'acc-banco', code: '1201', name: 'Banco BAC colones' });
+const CAJA_USD = account({
+  id: 'acc-usd',
+  code: '1102',
+  name: 'Caja dólares',
+  currency: 'USD',
+});
 const PROVEEDORES = account({
   id: 'acc-prov',
   code: '2110',
   name: 'Cuentas por pagar',
   type: 'LIABILITY',
+  currency: null, // acepta cualquier moneda
 });
+
+const refetch = vi.fn();
+let accountsState = { data: true, isLoading: false, isError: false };
 
 // Las categorías llegan por su propia query, SIEMPRE después del primer render del form
 // (el form recién se monta cuando el movimiento ya cargó). El mock replica ese desfase.
@@ -62,7 +72,14 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => {
       return { data };
     },
     useFinanceAccounts: ({ type }: { postable?: boolean; type?: string } = {}) => ({
-      data: type === 'ASSET' ? [CAJA, BANCO] : [CAJA, BANCO, PROVEEDORES],
+      data: accountsState.data
+        ? type === 'ASSET'
+          ? [CAJA, BANCO, CAJA_USD]
+          : [CAJA, BANCO, CAJA_USD, PROVEEDORES]
+        : undefined,
+      isLoading: accountsState.isLoading,
+      isError: accountsState.isError,
+      refetch,
     }),
     useFinanceEntry: () => ({ data: detail, isLoading: false }),
     useFinanceEntryMutations: () => ({
@@ -88,6 +105,9 @@ function entry(over: Partial<FinanceEntry> = {}): FinanceEntry {
     accountId: null,
     counterAccountId: null,
     journalEntryId: null,
+    voidedAt: null,
+    voidedBy: null,
+    voidReason: null,
     vendor: 'Paula Espinoza',
     note: null,
     hasReceipt: false,
@@ -117,6 +137,7 @@ async function pickOption(comboboxName: string | RegExp, optionName: string): Pr
 beforeEach(() => {
   vi.clearAllMocks();
   detail = undefined;
+  accountsState = { data: true, isLoading: false, isError: false };
   create.mockResolvedValue(undefined);
   update.mockResolvedValue(undefined);
 });
@@ -234,6 +255,7 @@ describe('FinanceEntryForm — una transferencia necesita sus dos cuentas', () =
     render(<FinanceEntryForm />);
 
     await pickOption('Tipo', 'Transferencia');
+    await pickOption('Moneda', 'CRC');
     await pickOption('Categoría', CATEGORY.name);
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '5000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
@@ -247,6 +269,7 @@ describe('FinanceEntryForm — una transferencia necesita sus dos cuentas', () =
     render(<FinanceEntryForm />);
 
     await pickOption('Tipo', 'Transferencia');
+    await pickOption('Moneda', 'CRC');
     await pickOption('Categoría', CATEGORY.name);
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '5000' } });
     await pickOption('Cuenta de origen', `${CAJA.code} ${CAJA.name}`);
@@ -267,6 +290,93 @@ describe('FinanceEntryForm — una transferencia necesita sus dos cuentas', () =
 
     expect(screen.queryByRole('combobox', { name: 'Cuenta de origen' })).toBeNull();
     expect(screen.getByRole('combobox', { name: 'Contrapartida' })).toBeInTheDocument();
+  });
+});
+
+describe('FinanceEntryForm — origen y destino no pueden ser la misma cuenta', () => {
+  it('lo dice en cliente, sin esperar el 409 del backend', async () => {
+    render(<FinanceEntryForm />);
+
+    await pickOption('Tipo', 'Transferencia');
+    await pickOption('Moneda', 'CRC');
+    await pickOption('Categoría', CATEGORY.name);
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '5000' } });
+    await pickOption('Cuenta de origen', `${CAJA.code} ${CAJA.name}`);
+    await pickOption('Cuenta de destino', `${CAJA.code} ${CAJA.name}`);
+    fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
+
+    expect(
+      await screen.findByText('La cuenta de destino debe ser distinta de la de origen'),
+    ).toBeInTheDocument();
+    expect(create).not.toHaveBeenCalled();
+  });
+});
+
+describe('FinanceEntryForm — las cuentas se filtran por moneda', () => {
+  it('con USD no ofrece una cuenta en colones', async () => {
+    render(<FinanceEntryForm />);
+
+    await pickOption('Moneda', 'USD');
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Contrapartida' }));
+
+    expect(await screen.findByRole('option', { name: /1102 Caja dólares/ })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /1101 Caja colones/ })).toBeNull();
+    // La cuenta sin moneda sirve para cualquiera.
+    expect(screen.getByRole('option', { name: /2110 Cuentas por pagar/ })).toBeInTheDocument();
+  });
+
+  it('limpia la cuenta elegida si la moneda deja de servirle', async () => {
+    render(<FinanceEntryForm />);
+
+    // Arranca en USD (default del alta): se elige colones cambiando la moneda primero.
+    await pickOption('Moneda', 'CRC');
+    await pickOption('Contrapartida', `${CAJA.code} ${CAJA.name}`);
+    expect(await screen.findByRole('combobox', { name: 'Contrapartida' })).toHaveTextContent(
+      'Caja colones',
+    );
+
+    await pickOption('Moneda', 'USD');
+
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Contrapartida' })).not.toHaveTextContent(
+        'Caja colones',
+      ),
+    );
+  });
+});
+
+describe('FinanceEntryForm — el plan de cuentas puede tardar o fallar', () => {
+  it('mientras carga, los selectores de cuenta quedan deshabilitados', async () => {
+    accountsState = { data: false, isLoading: true, isError: false };
+    render(<FinanceEntryForm />);
+
+    const contrapartida = await screen.findByRole('combobox', { name: 'Contrapartida' });
+    expect(contrapartida).toBeDisabled();
+    expect(contrapartida).toHaveTextContent('Cargando cuentas…');
+  });
+
+  it('si falla, avisa y ofrece reintentar', async () => {
+    accountsState = { data: false, isLoading: false, isError: true };
+    render(<FinanceEntryForm />);
+
+    expect(await screen.findByText('No se pudo cargar el plan de cuentas.')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Contrapartida' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(refetch).toHaveBeenCalled();
+  });
+
+  it('sin cuentas para el tipo elegido no abre un popover vacío', async () => {
+    render(<FinanceEntryForm />);
+
+    // Aporte de socio exige contrapartida de activo; con USD solo queda la caja
+    // en dólares y la cuenta sin moneda (que es de pasivo, no sirve acá).
+    await pickOption('Tipo', 'Aporte de socio');
+    await pickOption('Moneda', 'USD');
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Contrapartida' }));
+
+    expect(await screen.findByRole('option', { name: /1102 Caja dólares/ })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: /2110/ })).toBeNull();
   });
 });
 

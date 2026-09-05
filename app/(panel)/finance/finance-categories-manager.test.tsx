@@ -37,10 +37,18 @@ const RETIRADA = account({
   isActive: false,
 });
 
+const refetch = vi.fn();
+let accountsState = { isSuccess: true, isError: false };
+
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
   useFinanceCategories: () => ({ data: categories, isLoading: false }),
-  useFinanceAccounts: () => ({ data: [SUELDOS, INFRA, SUSCRIPCIONES, RETIRADA] }),
+  useFinanceAccounts: () => ({
+    data: accountsState.isSuccess ? [SUELDOS, INFRA, SUSCRIPCIONES, RETIRADA] : undefined,
+    isSuccess: accountsState.isSuccess,
+    isError: accountsState.isError,
+    refetch,
+  }),
   useFinanceCategoryMutations: () => ({
     create: { mutateAsync: create },
     update: { mutateAsync: update },
@@ -49,6 +57,9 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => ({
 }));
 
 import { FinanceCategoriesManager } from './finance-categories-manager';
+
+const renderManager = (canWrite = true) =>
+  render(<FinanceCategoriesManager canWrite={canWrite} />);
 
 function category(over: Partial<FinanceCategory> = {}): FinanceCategory {
   return {
@@ -72,13 +83,14 @@ const options = async (): Promise<string[]> => {
 beforeEach(() => {
   vi.clearAllMocks();
   categories = [category()];
+  accountsState = { isSuccess: true, isError: false };
   create.mockResolvedValue(undefined);
   update.mockResolvedValue(undefined);
 });
 
 describe('FinanceCategoriesManager — las cuentas se filtran por tipo de categoría', () => {
   it('un gasto solo ofrece cuentas de gasto operativo y costo de ingresos', async () => {
-    render(<FinanceCategoriesManager />);
+    renderManager();
 
     expect(await options()).toEqual([
       'Sin cuenta',
@@ -88,7 +100,7 @@ describe('FinanceCategoriesManager — las cuentas se filtran por tipo de catego
   });
 
   it('un ingreso solo ofrece cuentas de ingreso', async () => {
-    render(<FinanceCategoriesManager />);
+    renderManager();
 
     fireEvent.click(screen.getByRole('combobox', { name: 'Tipo' }));
     fireEvent.click(await screen.findByRole('option', { name: 'Ingreso' }));
@@ -100,7 +112,7 @@ describe('FinanceCategoriesManager — las cuentas se filtran por tipo de catego
   });
 
   it('no ofrece una cuenta retirada: el backend la rechazaría', async () => {
-    render(<FinanceCategoriesManager />);
+    renderManager();
 
     expect(await options()).not.toContain(`${RETIRADA.code} ${RETIRADA.name}`);
   });
@@ -108,7 +120,7 @@ describe('FinanceCategoriesManager — las cuentas se filtran por tipo de catego
 
 describe('FinanceCategoriesManager — la cuenta viaja en el PATCH', () => {
   it('guarda la cuenta elegida al editar', async () => {
-    render(<FinanceCategoriesManager />);
+    renderManager();
 
     fireEvent.click(screen.getAllByRole('button', { name: /Editar/ })[0]!);
     fireEvent.click(accountSelect());
@@ -121,7 +133,7 @@ describe('FinanceCategoriesManager — la cuenta viaja en el PATCH', () => {
   });
 
   it('desmapea con null explícito', async () => {
-    render(<FinanceCategoriesManager />);
+    renderManager();
 
     fireEvent.click(screen.getAllByRole('button', { name: /Editar/ })[0]!);
     fireEvent.click(accountSelect());
@@ -134,7 +146,7 @@ describe('FinanceCategoriesManager — la cuenta viaja en el PATCH', () => {
   });
 
   it('el alta lleva la cuenta', async () => {
-    render(<FinanceCategoriesManager />);
+    renderManager();
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Hosting' } });
     fireEvent.click(accountSelect());
@@ -150,7 +162,7 @@ describe('FinanceCategoriesManager — la cuenta viaja en el PATCH', () => {
 describe('FinanceCategoriesManager — una categoría huérfana se ve en la tabla', () => {
   it('avisa que sus movimientos no se pueden contabilizar', () => {
     categories = [category({ accountId: null })];
-    render(<FinanceCategoriesManager />);
+    renderManager();
 
     const fila = screen.getByText('Salarios').closest('tr') as HTMLTableRowElement;
     expect(
@@ -161,9 +173,57 @@ describe('FinanceCategoriesManager — una categoría huérfana se ve en la tabl
   });
 
   it('la categoría mapeada muestra su cuenta', () => {
-    render(<FinanceCategoriesManager />);
+    renderManager();
 
     const fila = screen.getByText('Salarios').closest('tr') as HTMLTableRowElement;
     expect(within(fila).getByText(`${SUELDOS.code} ${SUELDOS.name}`)).toBeInTheDocument();
+  });
+
+  // Con la lista de cuentas todavía en vuelo, `accountById` está vacío: sin este
+  // gate TODA categoría mapeada se pintaba como huérfana en el primer render.
+  it('mientras las cuentas cargan no acusa de huérfana a una categoría mapeada', () => {
+    accountsState = { isSuccess: false, isError: false };
+    renderManager();
+
+    expect(
+      screen.queryByText(
+        'Sin cuenta: los movimientos de esta categoría no se pueden contabilizar',
+      ),
+    ).toBeNull();
+  });
+
+  it('si las cuentas fallan lo dice y ofrece reintentar', () => {
+    accountsState = { isSuccess: false, isError: true };
+    renderManager();
+
+    const fila = screen.getByText('Salarios').closest('tr') as HTMLTableRowElement;
+    expect(within(fila).getByText('No se pudo cargar el plan de cuentas')).toBeInTheDocument();
+
+    fireEvent.click(within(fila).getByRole('button', { name: 'Reintentar' }));
+    expect(refetch).toHaveBeenCalled();
+  });
+});
+
+describe('FinanceCategoriesManager — mapear una cuenta exige finance:write', () => {
+  it('sin permiso de escritura el selector queda deshabilitado', () => {
+    renderManager(false);
+
+    expect(accountSelect()).toBeDisabled();
+    expect(
+      screen.getByText('Necesitás permiso de escritura en finanzas para cambiar la cuenta.'),
+    ).toBeInTheDocument();
+  });
+
+  it('con permiso el selector se puede usar', () => {
+    renderManager(true);
+    expect(accountSelect()).toBeEnabled();
+  });
+
+  it('mientras las cuentas cargan el selector no se puede tocar', () => {
+    accountsState = { isSuccess: false, isError: false };
+    renderManager(true);
+
+    expect(accountSelect()).toBeDisabled();
+    expect(accountSelect()).toHaveTextContent('Cargando cuentas…');
   });
 });

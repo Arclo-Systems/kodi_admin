@@ -34,6 +34,9 @@ function entry(over: Partial<FinanceEntry> = {}): FinanceEntry {
     accountId: null,
     counterAccountId: null,
     journalEntryId: 'je-1',
+    voidedAt: null,
+    voidedBy: null,
+    voidReason: null,
     vendor: 'Paula Espinoza',
     note: 'Segundo pago a Pau',
     hasReceipt: false,
@@ -172,6 +175,32 @@ describe('FinanceEntriesTable — anular reemplaza al borrado', () => {
     );
   });
 
+  it('acota el motivo a 300 caracteres y muestra cuánto lleva', async () => {
+    renderTable();
+    fireEvent.click(within(fila()).getByRole('button', { name: /Anular/ }));
+    await waitFor(() => expect(screen.getByText('Anular movimiento')).toBeInTheDocument());
+
+    const motivo = screen.getByLabelText('Motivo');
+    expect(motivo).toHaveAttribute('maxlength', '300');
+    expect(screen.getByText('0/300')).toBeInTheDocument();
+
+    fireEvent.change(motivo, { target: { value: 'Duplicado' } });
+    expect(screen.getByText('9/300')).toBeInTheDocument();
+  });
+
+  it('el error del backend se ve en el diálogo, que queda abierto', async () => {
+    voidEntry.mockRejectedValueOnce(new Error('El período contable está cerrado.'));
+    renderTable();
+    fireEvent.click(within(fila()).getByRole('button', { name: /Anular/ }));
+    await waitFor(() => expect(screen.getByText('Anular movimiento')).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText('Motivo'), { target: { value: 'Cargado dos veces' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Anular' }));
+
+    expect(await screen.findByText('El período contable está cerrado.')).toBeInTheDocument();
+    expect(screen.getByText('Anular movimiento')).toBeInTheDocument();
+  });
+
   it('un movimiento anulado no se puede volver a anular', () => {
     items = [entry({ status: 'VOIDED' })];
     renderTable();
@@ -189,6 +218,37 @@ describe('FinanceEntriesTable — anular reemplaza al borrado', () => {
     await waitFor(() =>
       expect(screen.getAllByText('Pendiente de contabilizar').length).toBeGreaterThan(0),
     );
+  });
+});
+
+describe('FinanceEntriesTable — el detalle de un anulado explica la anulación', () => {
+  it('muestra motivo, fecha y quién', async () => {
+    items = [
+      entry({
+        status: 'VOIDED',
+        voidedAt: '2026-09-05T15:30:00.000Z',
+        voidedBy: 'admin-uuid-1',
+        voidReason: 'Cargado dos veces por error',
+      }),
+    ];
+    renderTable();
+
+    fireEvent.click(fila());
+
+    await waitFor(() => expect(modal()).not.toBeNull());
+    const d = within(modal() as HTMLElement);
+    expect(d.getByText('Cargado dos veces por error')).toBeInTheDocument();
+    expect(d.getByText('5/9/2026')).toBeInTheDocument();
+    expect(d.getByText('admin-uuid-1')).toBeInTheDocument();
+  });
+
+  it('un movimiento activo no muestra nada de anulación', async () => {
+    renderTable();
+
+    fireEvent.click(fila());
+
+    await waitFor(() => expect(modal()).not.toBeNull());
+    expect(within(modal() as HTMLElement).queryByText('Motivo de la anulación')).toBeNull();
   });
 });
 

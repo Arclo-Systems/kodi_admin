@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -85,6 +85,15 @@ const FormSchema = z
         path: ['counterAccountId'],
         message: 'Elegí la cuenta de destino',
       });
+    // Transferir una cuenta contra sí misma cuadra el asiento sin que pase nada;
+    // el backend lo corta con 409 TRANSFER_REQUIRES_ASSET_ACCOUNTS, pero decirlo
+    // acá evita el viaje.
+    if (v.accountId && v.accountId === v.counterAccountId)
+      ctx.addIssue({
+        code: 'custom',
+        path: ['counterAccountId'],
+        message: 'La cuenta de destino debe ser distinta de la de origen',
+      });
   });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -131,6 +140,32 @@ function kindForType(type: MovementType): FinanceKind | undefined {
 
 const accountLabel = (a: FinanceAccount) => `${a.code} ${a.name}`;
 
+// `currency: null` = la cuenta acepta cualquier moneda (resultados, "Por
+// clasificar"). El resto solo admite líneas en la suya.
+const matchesCurrency = (accounts: FinanceAccount[], currency: string) =>
+  accounts.filter((a) => a.currency === null || a.currency === currency);
+
+// Radix abre un popover vacío si no hay hijos: un ítem deshabilitado explica por
+// qué no hay nada que elegir.
+function AccountItems({ accounts }: { accounts: FinanceAccount[] }) {
+  if (accounts.length === 0) {
+    return (
+      <SelectItem value="__empty__" disabled>
+        No hay cuentas disponibles
+      </SelectItem>
+    );
+  }
+  return (
+    <>
+      {accounts.map((a) => (
+        <SelectItem key={a.id} value={a.id}>
+          {accountLabel(a)}
+        </SelectItem>
+      ))}
+    </>
+  );
+}
+
 export function FinanceEntryForm({ entryId }: { entryId?: string }) {
   const { data: entry, isLoading } = useFinanceEntry(entryId);
   if (entryId) {
@@ -156,6 +191,7 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
   });
 
   const type = useWatch({ control: form.control, name: 'type' });
+  const currency = useWatch({ control: form.control, name: 'currency' });
   const isTransfer = type === 'TRANSFER';
 
   const voided = entry?.status === 'VOIDED';
@@ -166,14 +202,43 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
 
   const { data: categories } = useFinanceCategories(kindForType(type));
   const cats = categories ?? [];
-  const { data: assetAccounts } = useFinanceAccounts({ postable: true, type: 'ASSET' });
-  const { data: postableAccounts } = useFinanceAccounts({ postable: true });
+  const assets = useFinanceAccounts({ postable: true, type: 'ASSET' });
+  const postable = useFinanceAccounts({ postable: true });
+  const accountsLoading = assets.isLoading || postable.isLoading;
+  const accountsError = assets.isError || postable.isError;
+  const retryAccounts = () => {
+    void assets.refetch();
+    void postable.refetch();
+  };
+
+  const originOptions = useMemo(
+    () => matchesCurrency(assets.data ?? [], currency),
+    [assets.data, currency],
+  );
   const counterOptions = useMemo(() => {
-    if (ASSET_ONLY_TYPES.has(type)) return assetAccounts ?? [];
-    return (postableAccounts ?? []).filter(
-      (a) => a.type === 'ASSET' || a.type === 'LIABILITY',
-    );
-  }, [type, assetAccounts, postableAccounts]);
+    const pool = ASSET_ONLY_TYPES.has(type)
+      ? (assets.data ?? [])
+      : (postable.data ?? []).filter((a) => a.type === 'ASSET' || a.type === 'LIABILITY');
+    return matchesCurrency(pool, currency);
+  }, [type, currency, assets.data, postable.data]);
+
+  // Una cuenta en colones no puede recibir una línea en dólares: el backend la
+  // rechaza con 409 ACCOUNT_CURRENCY_MISMATCH. Al cambiar la moneda, la cuenta
+  // que dejó de servir se limpia sola en vez de esperar al submit.
+  const validIds = useMemo(
+    () => new Set([...originOptions, ...counterOptions].map((a) => a.id)),
+    [originOptions, counterOptions],
+  );
+  useEffect(() => {
+    if (accountsLoading || accountsError) return;
+    for (const field of ['accountId', 'counterAccountId'] as const) {
+      const chosen = form.getValues(field);
+      if (chosen && !validIds.has(chosen)) {
+        form.setValue(field, '');
+        void form.trigger(field);
+      }
+    }
+  }, [validIds, accountsLoading, accountsError, form]);
 
   async function submit(v: FormValues): Promise<void> {
     try {
@@ -277,7 +342,7 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="fe-category">Categoría</FieldLabel>
                     <Select
-                      value={field.value || undefined}
+                      value={field.value}
                       onValueChange={field.onChange}
                       disabled={lockAccounting}
                     >
@@ -379,19 +444,19 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="fe-account">Cuenta de origen</FieldLabel>
                       <Select
-                        value={field.value || undefined}
+                        value={field.value}
                         onValueChange={field.onChange}
-                        disabled={lockAccounting}
+                        disabled={lockAccounting || accountsLoading || accountsError}
                       >
                         <SelectTrigger id="fe-account" aria-invalid={fieldState.invalid}>
-                          <SelectValue placeholder="Elegí la cuenta de origen" />
+                          <SelectValue
+                            placeholder={
+                              accountsLoading ? 'Cargando cuentas…' : 'Cuenta de origen'
+                            }
+                          />
                         </SelectTrigger>
                         <SelectContent>
-                          {(assetAccounts ?? []).map((a) => (
-                            <SelectItem key={a.id} value={a.id}>
-                              {accountLabel(a)}
-                            </SelectItem>
-                          ))}
+                          <AccountItems accounts={originOptions} />
                         </SelectContent>
                       </Select>
                       <FieldDescription>De dónde sale la plata.</FieldDescription>
@@ -408,13 +473,20 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                     <FieldLabel htmlFor="fe-counter">
                       {isTransfer ? 'Cuenta de destino' : 'Contrapartida'}
                     </FieldLabel>
+                    {/* En transferencia el destino es obligatorio y no tiene default,
+                        así que arranca vacío con placeholder: caer en el sentinel sin
+                        su SelectItem dejaba el trigger en blanco. */}
                     <Select
-                      value={field.value || DEFAULT_ACCOUNT}
+                      value={
+                        isTransfer || accountsLoading ? field.value : field.value || DEFAULT_ACCOUNT
+                      }
                       onValueChange={(v) => field.onChange(v === DEFAULT_ACCOUNT ? '' : v)}
-                      disabled={lockAccounting}
+                      disabled={lockAccounting || accountsLoading || accountsError}
                     >
                       <SelectTrigger id="fe-counter" aria-invalid={fieldState.invalid}>
-                        <SelectValue />
+                        <SelectValue
+                          placeholder={accountsLoading ? 'Cargando cuentas…' : 'Cuenta de destino'}
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         {!isTransfer && (
@@ -422,11 +494,7 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                             Por clasificar (predeterminada)
                           </SelectItem>
                         )}
-                        {counterOptions.map((a) => (
-                          <SelectItem key={a.id} value={a.id}>
-                            {accountLabel(a)}
-                          </SelectItem>
-                        ))}
+                        <AccountItems accounts={counterOptions} />
                       </SelectContent>
                     </Select>
                     <FieldDescription>
@@ -437,6 +505,17 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                 )}
               />
             </div>
+
+            {accountsError && (
+              <Alert variant="destructive">
+                <AlertDescription className="flex flex-wrap items-center gap-3">
+                  <span>No se pudo cargar el plan de cuentas.</span>
+                  <Button type="button" variant="outline" size="sm" onClick={retryAccounts}>
+                    Reintentar
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
           </fieldset>
 
           <fieldset className="min-w-0 space-y-4" disabled={voided}>
