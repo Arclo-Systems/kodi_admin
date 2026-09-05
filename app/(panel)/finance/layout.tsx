@@ -3,12 +3,22 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3Icon, LayersIcon, ReceiptIcon } from 'lucide-react';
+import {
+  BarChart3Icon,
+  BookOpenIcon,
+  LandmarkIcon,
+  LayersIcon,
+  ReceiptIcon,
+  ScaleIcon,
+} from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const TABS = [
   { href: '/finance', label: 'Dashboard', icon: BarChart3Icon },
   { href: '/finance/movimientos', label: 'Movimientos', icon: ReceiptIcon },
+  { href: '/finance/mayor', label: 'Mayor', icon: BookOpenIcon },
+  { href: '/finance/comprobacion', label: 'Comprobación', icon: ScaleIcon },
+  { href: '/finance/cuentas', label: 'Cuentas', icon: LandmarkIcon },
   { href: '/finance/categorias', label: 'Categorías', icon: LayersIcon },
 ];
 
@@ -24,8 +34,8 @@ export default function FinanceLayout({ children }: { children: ReactNode }) {
       <div>
         <h1 className="text-2xl font-semibold">Finanzas</h1>
         <p className="text-muted-foreground">
-          Contabilidad de la empresa: P&amp;L por moneda, movimientos y categorías. Los ingresos incluyen
-          las facturas de sponsor pagadas.
+          Contabilidad de la empresa por partida doble: los reportes salen del libro mayor, no de un
+          agregado aparte. Los ingresos incluyen las facturas de sponsor pagadas.
         </p>
       </div>
       <Tabs value={active}>

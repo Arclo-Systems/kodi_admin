@@ -82,12 +82,14 @@ export function FinanceEntryDialog({
                     )}
                   </Dato>
                   <Dato label="Anulado por">
-                    {entry.voidedBy ? (
-                      // El DTO trae el id del admin, no su nombre: se muestra tal cual
-                      // para poder cruzarlo con el audit log.
-                      <span className="font-mono text-xs">{entry.voidedBy}</span>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
+                    {/* El nombre viaja null si ese admin ya no existe: ahí queda el
+                        uuid, que es lo único con lo que se puede cruzar el audit log. */}
+                    {entry.voidedByName ?? (
+                      entry.voidedBy ? (
+                        <span className="font-mono text-xs">{entry.voidedBy}</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )
                     )}
                   </Dato>
                 </>

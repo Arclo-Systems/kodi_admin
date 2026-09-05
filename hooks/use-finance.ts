@@ -46,6 +46,27 @@ export type FinanceAccount = {
   parentId: string | null;
   isActive: boolean;
   allowsManualEntry: boolean;
+  sortOrder: number;
+  // Calculados sobre el plan COMPLETO: siguen siendo correctos con `postable=true`,
+  // donde los padres no viajan en la respuesta.
+  parentCode: string | null;
+  depth: number;
+};
+
+export type FinanceAccountInput = {
+  code: string;
+  name: string;
+  parentId: string;
+  currency: string | null;
+  allowsManualEntry: boolean;
+};
+// `code`, `type` y `parentId` no están: el backend responde 409
+// ACCOUNT_FIELD_IMMUTABLE si viajan, porque cambiarlos reescribe el pasado.
+export type FinanceAccountUpdate = {
+  name?: string;
+  currency?: string | null;
+  isActive?: boolean;
+  allowsManualEntry?: boolean;
 };
 
 export type FinanceCategory = {
@@ -77,6 +98,10 @@ export type FinanceEntry = {
   // asiento de reversión (quién anuló, cuándo y por qué).
   voidedAt: string | null;
   voidedBy: string | null;
+  // `users.displayName` del admin que anuló. Viaja null si ese admin ya no existe:
+  // `voidedBy` (uuid suelto, sin FK) queda como último recurso para cruzarlo con
+  // el audit log.
+  voidedByName: string | null;
   voidReason: string | null;
   vendor: string | null;
   note: string | null;
@@ -89,6 +114,8 @@ export type FinanceEntryListQuery = {
   kind?: FinanceKind;
   categoryId?: string;
   currency?: string;
+  type?: MovementType;
+  status?: FinanceEntryStatus;
   from?: string;
   to?: string;
   page: number;
@@ -97,11 +124,89 @@ export type FinanceEntryListQuery = {
 
 type EntryListPage = { items: FinanceEntry[]; total: number; page: number; pageSize: number };
 
+// ─── Reportes del mayor ───────────────────────────────────────────────────────
+// Los cuatro salen de `journal_lines`: son la contabilidad, no un agregado
+// paralelo. Todo importe viaja como string con dos decimales; pasarlo por
+// `Number` para algo que no sea pintarlo reintroduce el double.
+export type DateRange = { from: string; to: string };
+
+// Un asiento reversado sigue sumando en el mayor (él y su reverso se cancelan):
+// el estado es descargo, no filtro.
+export type JournalEntryStatus = 'POSTED' | 'VOID' | 'REVERSED';
+
+export type LedgerLine = {
+  date: string;
+  entryId: string;
+  entryNumber: string;
+  entryStatus: JournalEntryStatus;
+  description: string;
+  debit: string;
+  credit: string;
+  runningBalance: string;
+};
+
+export type Ledger = {
+  account: { id: string; code: string; name: string; type: AccountType; currency: string | null };
+  currency: string;
+  range: DateRange;
+  openingBalance: string;
+  lines: LedgerLine[];
+  // Cierre y total son del RANGO, no de la página: el corrido de la última línea
+  // de la última página coincide con `closingBalance`.
+  closingBalance: string;
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export type AccountBalance = {
+  accountId: string;
+  code: string;
+  name: string;
+  type: AccountType;
+  isActive: boolean;
+  balance: string;
+};
+
+export type AccountBalances = { currency: string; asOf: string; accounts: AccountBalance[] };
+
+export type TrialBalanceRow = {
+  accountId: string;
+  code: string;
+  name: string;
+  type: AccountType;
+  debits: string;
+  credits: string;
+  balance: string;
+};
+
+export type TrialBalance = {
+  currency: string;
+  range: DateRange;
+  accounts: TrialBalanceRow[];
+  totals: { debits: string; credits: string };
+  balanced: boolean;
+  difference: string;
+};
+
 export type Pnl = {
-  byCurrency: { currency: string; income: number; expense: number; net: number }[];
-  byCategory: { currency: string; categoryName: string; kind: FinanceKind; total: number }[];
-  byMonth: { currency: string; month: string; income: number; expense: number }[];
-  range: { from: string; to: string };
+  range: DateRange;
+  byCurrency: {
+    currency: string;
+    income: string;
+    costOfRevenue: string;
+    operatingExpense: string;
+    net: string;
+  }[];
+  byAccount: {
+    currency: string;
+    accountCode: string;
+    accountName: string;
+    type: AccountType;
+    amount: string;
+  }[];
+  // `expense` = costo de ingresos + gasto operativo.
+  byMonth: { currency: string; month: string; income: string; expense: string; net: string }[];
 };
 
 export type FinanceCategoryInput = {
@@ -154,8 +259,9 @@ async function send(
 }
 
 // ─── Plan de cuentas ──────────────────────────────────────────────────────────
-// El plan se siembra (`seed:accounting`) y no se edita desde el panel: se cachea
-// en vez de re-pedirlo en cada apertura del formulario.
+// El plan base se siembra (`seed:accounting`); desde el panel se le agregan
+// cuentas hijas y se retiran las que ya no se usan. Se cachea en vez de
+// re-pedirlo en cada apertura del formulario.
 // `postable: true` = la cuenta se puede elegir a mano (activa y con asiento manual).
 export function useFinanceAccounts(filters: { postable?: boolean; type?: AccountType } = {}) {
   const { postable, type } = filters;
@@ -170,6 +276,29 @@ export function useFinanceAccounts(filters: { postable?: boolean; type?: Account
       return (await fetchJson<FinanceAccount[]>(`${BASE}/accounts${qs ? `?${qs}` : ''}`)) ?? [];
     },
   });
+}
+
+// Una cuenta no se borra: se retira con `isActive: false`. El backend no expone DELETE.
+export function useFinanceAccountMutations() {
+  const qc = useQueryClient();
+  // Alta y edición cambian el árbol y los saldos que se pintan al lado.
+  const invalidate = async () => {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ['finance-accounts'] }),
+      qc.invalidateQueries({ queryKey: ['finance-balances'] }),
+    ]);
+  };
+  return {
+    create: useMutation({
+      mutationFn: (input: FinanceAccountInput) => send(`${BASE}/accounts`, 'POST', input),
+      onSuccess: invalidate,
+    }),
+    update: useMutation({
+      mutationFn: ({ id, input }: { id: string; input: FinanceAccountUpdate }) =>
+        send(`${BASE}/accounts/${id}`, 'PATCH', input),
+      onSuccess: invalidate,
+    }),
+  };
 }
 
 // ─── Categorías ───────────────────────────────────────────────────────────────
@@ -238,15 +367,21 @@ export function useFinanceEntry(id: string | undefined) {
   });
 }
 
-// Toda mutación de un movimiento cambia la lista, el detalle y el P&L.
+// Toda mutación de un movimiento genera (o reversa) un asiento: cambia la lista,
+// el detalle y los cuatro reportes que salen del mayor.
 function useInvalidateEntries(): () => Promise<void> {
   const qc = useQueryClient();
   return async () => {
-    await Promise.all([
-      qc.invalidateQueries({ queryKey: ['finance-entries'] }),
-      qc.invalidateQueries({ queryKey: ['finance-entry'] }),
-      qc.invalidateQueries({ queryKey: ['finance-pnl'] }),
-    ]);
+    await Promise.all(
+      [
+        'finance-entries',
+        'finance-entry',
+        'finance-pnl',
+        'finance-ledger',
+        'finance-trial-balance',
+        'finance-balances',
+      ].map((key) => qc.invalidateQueries({ queryKey: [key] })),
+    );
   };
 }
 
@@ -277,17 +412,75 @@ export function useVoidFinanceEntry() {
   });
 }
 
-// ─── P&L ──────────────────────────────────────────────────────────────────────
+// ─── Reportes ─────────────────────────────────────────────────────────────────
+export type FinanceReport = 'ledger' | 'trial-balance' | 'pnl';
+
+type ReportParams = Record<string, string | number | undefined>;
+
+function reportQuery(params: ReportParams): string {
+  const search = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v === undefined || v === '') continue;
+    search.set(k, String(v));
+  }
+  const qs = search.toString();
+  return qs ? `?${qs}` : '';
+}
+
+/** URL del CSV para un `<a download>`: la descarga la hace el browser, no un fetch. */
+export function financeReportCsvHref(report: FinanceReport, params: ReportParams): string {
+  return `${BASE}/reports/${report}.csv${reportQuery(params)}`;
+}
+
+// El mayor es el de UNA cuenta en UNA moneda: sin las dos no hay reporte que pedir
+// (un saldo corrido que mezcla colones con dólares no es un saldo).
+export function useFinanceLedger(params: {
+  accountId?: string;
+  currency?: string;
+  from?: string;
+  to?: string;
+  page: number;
+  pageSize: number;
+}) {
+  const { accountId, currency } = params;
+  return useQuery({
+    queryKey: ['finance-ledger', params],
+    enabled: !!accountId && !!currency,
+    // Sin esto la tabla se vacía en cada cambio de página y la fila que se venía
+    // mirando salta de posición.
+    placeholderData: keepPreviousData,
+    queryFn: async (): Promise<Ledger | undefined> =>
+      fetchJson<Ledger>(`${BASE}/reports/ledger${reportQuery({ ...params })}`),
+  });
+}
+
+export function useFinanceAccountBalances(currency: string, asOf?: string) {
+  return useQuery({
+    queryKey: ['finance-balances', currency, asOf ?? null],
+    enabled: !!currency,
+    queryFn: async (): Promise<AccountBalances | undefined> =>
+      fetchJson<AccountBalances>(`${BASE}/reports/balances${reportQuery({ currency, asOf })}`),
+  });
+}
+
+export function useFinanceTrialBalance(params: {
+  currency?: string;
+  from?: string;
+  to?: string;
+}) {
+  return useQuery({
+    queryKey: ['finance-trial-balance', params],
+    enabled: !!params.currency,
+    queryFn: async (): Promise<TrialBalance | undefined> =>
+      fetchJson<TrialBalance>(`${BASE}/reports/trial-balance${reportQuery({ ...params })}`),
+  });
+}
+
 export function useFinancePnl(from?: string, to?: string) {
   return useQuery({
     queryKey: ['finance-pnl', from ?? null, to ?? null],
-    queryFn: async (): Promise<Pnl | undefined> => {
-      const params = new URLSearchParams();
-      if (from) params.set('from', from);
-      if (to) params.set('to', to);
-      const qs = params.toString();
-      return fetchJson<Pnl>(`${BASE}/pnl${qs ? `?${qs}` : ''}`);
-    },
+    queryFn: async (): Promise<Pnl | undefined> =>
+      fetchJson<Pnl>(`${BASE}/reports/pnl${reportQuery({ from, to })}`),
   });
 }
 

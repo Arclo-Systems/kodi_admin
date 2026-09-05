@@ -8712,11 +8712,27 @@ export interface paths {
         };
         get: operations["FinanceAdminController_listAccounts"];
         put?: never;
-        post?: never;
+        post: operations["FinanceAdminController_createAccount"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/accounts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["FinanceAdminController_updateAccount"];
         trace?: never;
     };
     "/v1/admin/finance/categories": {
@@ -8831,14 +8847,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/admin/finance/pnl": {
+    "/v1/admin/finance/reports/ledger": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["FinanceAdminController_getPnl"];
+        get: operations["FinanceAdminController_getLedger"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_getBalances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/trial-balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_getTrialBalance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/pnl": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_getLedgerPnl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/ledger.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_exportLedgerCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/trial-balance.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_exportTrialBalanceCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/pnl.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_exportPnlCsv"];
         put?: never;
         post?: never;
         delete?: never;
@@ -18232,7 +18344,50 @@ export interface components {
                 parentId: string | null;
                 isActive: boolean;
                 allowsManualEntry: boolean;
+                sortOrder: number;
+                parentCode: string | null;
+                depth: number;
             }[];
+        };
+        CreateFinanceAccountDto: {
+            code: string;
+            name: string;
+            /** Format: uuid */
+            parentId: string;
+            /** @enum {string|null} */
+            currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS" | null;
+            allowsManualEntry?: boolean;
+            sortOrder?: number;
+        };
+        FinanceAccountResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+                /** @enum {string} */
+                type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                /** @enum {string|null} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS" | null;
+                /** Format: uuid */
+                parentId: string | null;
+                isActive: boolean;
+                allowsManualEntry: boolean;
+                sortOrder: number;
+            };
+        };
+        UpdateFinanceAccountDto: {
+            name?: string;
+            /** @enum {string|null} */
+            currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS" | null;
+            isActive?: boolean;
+            allowsManualEntry?: boolean;
+            sortOrder?: number;
+            code?: string;
+            /** @enum {string} */
+            type?: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+            /** Format: uuid */
+            parentId?: string | null;
         };
         FinanceCategoryListResponse: {
             data: {
@@ -18308,6 +18463,7 @@ export interface components {
                     voidedAt: string | null;
                     /** Format: uuid */
                     voidedBy: string | null;
+                    voidedByName: string | null;
                     voidReason: string | null;
                     vendor: string | null;
                     note: string | null;
@@ -18355,6 +18511,7 @@ export interface components {
                 voidedAt: string | null;
                 /** Format: uuid */
                 voidedBy: string | null;
+                voidedByName: string | null;
                 voidReason: string | null;
                 vendor: string | null;
                 note: string | null;
@@ -18398,30 +18555,118 @@ export interface components {
         VoidFinanceEntryDto: {
             reason: string;
         };
-        FinancePnlResponse: {
+        FinanceLedgerResponse: {
             data: {
-                byCurrency: {
-                    currency: string;
-                    income: number;
-                    expense: number;
-                    net: number;
-                }[];
-                byCategory: {
-                    currency: string;
-                    categoryName: string;
-                    kind: string;
-                    total: number;
-                }[];
-                byMonth: {
-                    currency: string;
-                    month: string;
-                    income: number;
-                    expense: number;
-                }[];
+                account: {
+                    /** Format: uuid */
+                    id: string;
+                    code: string;
+                    name: string;
+                    /** @enum {string} */
+                    type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    /** @enum {string|null} */
+                    currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS" | null;
+                };
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
                 range: {
                     from: string;
                     to: string;
                 };
+                openingBalance: string;
+                lines: {
+                    date: string;
+                    /** Format: uuid */
+                    entryId: string;
+                    entryNumber: string;
+                    /** @enum {string} */
+                    entryStatus: "POSTED" | "VOID" | "REVERSED";
+                    description: string;
+                    debit: string;
+                    credit: string;
+                    runningBalance: string;
+                }[];
+                closingBalance: string;
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        FinanceAccountBalancesResponse: {
+            data: {
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                asOf: string;
+                accounts: {
+                    /** Format: uuid */
+                    accountId: string;
+                    code: string;
+                    name: string;
+                    /** @enum {string} */
+                    type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    isActive: boolean;
+                    balance: string;
+                }[];
+            };
+        };
+        FinanceTrialBalanceResponse: {
+            data: {
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                range: {
+                    from: string;
+                    to: string;
+                };
+                accounts: {
+                    /** Format: uuid */
+                    accountId: string;
+                    code: string;
+                    name: string;
+                    /** @enum {string} */
+                    type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    debits: string;
+                    credits: string;
+                    balance: string;
+                }[];
+                totals: {
+                    debits: string;
+                    credits: string;
+                };
+                balanced: boolean;
+                difference: string;
+            };
+        };
+        FinanceLedgerPnlResponse: {
+            data: {
+                range: {
+                    from: string;
+                    to: string;
+                };
+                byCurrency: {
+                    /** @enum {string} */
+                    currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    income: string;
+                    costOfRevenue: string;
+                    operatingExpense: string;
+                    net: string;
+                }[];
+                byAccount: {
+                    /** @enum {string} */
+                    currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    accountCode: string;
+                    accountName: string;
+                    /** @enum {string} */
+                    type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    amount: string;
+                }[];
+                byMonth: {
+                    /** @enum {string} */
+                    currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    month: string;
+                    income: string;
+                    expense: string;
+                    net: string;
+                }[];
             };
         };
         MatchAdminListResponse: {
@@ -32751,6 +32996,54 @@ export interface operations {
             };
         };
     };
+    FinanceAdminController_createAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFinanceAccountDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAccountResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_updateAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFinanceAccountDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAccountResponse"];
+                };
+            };
+        };
+    };
     FinanceAdminController_listCategories: {
         parameters: {
             query?: {
@@ -32847,6 +33140,8 @@ export interface operations {
                 kind?: "expense" | "income";
                 categoryId?: string;
                 currency?: "CRC" | "USD";
+                type?: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER";
+                status?: "ACTIVE" | "VOIDED";
                 from?: string;
                 to?: string;
                 page?: number;
@@ -33006,7 +33301,78 @@ export interface operations {
             };
         };
     };
-    FinanceAdminController_getPnl: {
+    FinanceAdminController_getLedger: {
+        parameters: {
+            query: {
+                accountId: string;
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                from?: string;
+                to?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceLedgerResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_getBalances: {
+        parameters: {
+            query: {
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                asOf?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAccountBalancesResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_getTrialBalance: {
+        parameters: {
+            query: {
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceTrialBalanceResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_getLedgerPnl: {
         parameters: {
             query?: {
                 from?: string;
@@ -33023,7 +33389,79 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FinancePnlResponse"];
+                    "application/json": components["schemas"]["FinanceLedgerPnlResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_exportLedgerCsv: {
+        parameters: {
+            query: {
+                accountId: string;
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Libro mayor en CSV (Excel es-CR) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+        };
+    };
+    FinanceAdminController_exportTrialBalanceCsv: {
+        parameters: {
+            query: {
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Balance de comprobación en CSV (Excel es-CR) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+        };
+    };
+    FinanceAdminController_exportPnlCsv: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Estado de resultados en CSV (Excel es-CR) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
                 };
             };
         };

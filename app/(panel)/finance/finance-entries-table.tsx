@@ -9,11 +9,14 @@ import {
   useFinanceEntries,
   useVoidFinanceEntry,
   FINANCE_CURRENCIES,
+  MOVEMENT_TYPES,
   type FinanceEntry,
   type FinanceEntryListQuery,
+  type FinanceEntryStatus,
   type FinanceKind,
+  type MovementType,
 } from '@/hooks/use-finance';
-import { KIND_LABELS } from './finance-format';
+import { KIND_LABELS, MOVEMENT_TYPE_LABELS, formatAmount } from './finance-format';
 import { DataTable } from '@/components/admin/data-table';
 import { FinanceVoidDialog } from './finance-void-dialog';
 import { openSignedAsset } from '@/lib/signed-asset';
@@ -33,10 +36,7 @@ import {
 const ALL = '__all__';
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
-// `amount` viaja como string con dos decimales fijos; se pasa por Number solo para
-// darle el separador de miles, nunca para guardarlo ni para reenviarlo.
-const fmtAmount = (e: FinanceEntry) =>
-  `${Number(e.amount).toLocaleString('es-CR', { minimumFractionDigits: 2 })} ${e.currency}`;
+const fmtAmount = (e: FinanceEntry) => formatAmount(e.amount, e.currency);
 
 function viewReceipt(id: string): void {
   openSignedAsset(`/api/admin/finance/entries/${id}/receipt-url`).catch((e) =>
@@ -199,6 +199,37 @@ export function FinanceEntriesTable() {
                 <SelectItem value={ALL}>Todos</SelectItem>
                 <SelectItem value="expense">{KIND_LABELS.expense}</SelectItem>
                 <SelectItem value="income">{KIND_LABELS.income}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={query.type ?? ALL}
+              onValueChange={(v) => set({ type: v === ALL ? undefined : (v as MovementType) })}
+            >
+              <SelectTrigger className="w-44" size="sm" aria-label="Filtrar por tipo">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos los tipos</SelectItem>
+                {MOVEMENT_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {MOVEMENT_TYPE_LABELS[t]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={query.status ?? ALL}
+              onValueChange={(v) =>
+                set({ status: v === ALL ? undefined : (v as FinanceEntryStatus) })
+              }
+            >
+              <SelectTrigger className="w-36" size="sm" aria-label="Filtrar por estado">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todos</SelectItem>
+                <SelectItem value="ACTIVE">Activo</SelectItem>
+                <SelectItem value="VOIDED">Anulado</SelectItem>
               </SelectContent>
             </Select>
             <Select

@@ -17,6 +17,9 @@ function account(over: Partial<FinanceAccount> = {}): FinanceAccount {
     parentId: null,
     isActive: true,
     allowsManualEntry: true,
+    sortOrder: 0,
+    parentCode: null,
+    depth: 0,
     ...over,
   };
 }

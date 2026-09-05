@@ -81,4 +81,9 @@ export const FINANCE_FIXTURE = {
   mappedCategory: 'E2E Gasto contable',
   unmappedCategory: 'E2E Sin cuenta',
   mappedAccount: '6900 Otros gastos operativos',
+  // La hija se cuelga del padre y no de `6900`: una cuenta que ya tiene asientos
+  // no puede volverse padre (409 ACCOUNT_HAS_LINES).
+  parentAccount: '6000 Gastos operativos',
+  childCode: '6901',
+  childName: 'E2E Cuenta hija',
 } as const;

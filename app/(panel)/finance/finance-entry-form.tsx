@@ -60,6 +60,9 @@ const ASSET_ONLY_TYPES = new Set<MovementType>([
   'PARTNER_LOAN',
 ]);
 
+// Los tres tipos cuyo asiento se imputa contra la cuenta de la categoría.
+const CATEGORY_ACCOUNT_TYPES = new Set<MovementType>(['INCOME', 'EXPENSE', 'OTHER']);
+
 const FormSchema = z
   .object({
     type: z.enum(MOVEMENT_TYPES),
@@ -201,10 +204,16 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
 
   const { data: categories } = useFinanceCategories(kindForType(type));
   const cats = categories ?? [];
+  // Solo el asiento de un ingreso, un gasto o un "otro" se imputa contra la cuenta
+  // de la categoría (`requireCategoryAccount`, rama `default` de
+  // `finance-entries.service.ts`). Una transferencia o un movimiento de socio se
+  // asientan entre cuentas de activo/patrimonio y la categoría queda como
+  // etiqueta: deshabilitarla ahí bloqueaba un alta que el backend acepta.
+  const needsCategoryAccount = CATEGORY_ACCOUNT_TYPES.has(type);
   // Una categoría sin cuenta no se puede contabilizar: elegirla solo consigue un
   // 409 CATEGORY_WITHOUT_ACCOUNT al guardar. Se ofrece deshabilitada (para que se
   // vea que existe y por qué no sirve) y el aviso dice dónde se arregla.
-  const hasUnmappedCategory = cats.some((c) => c.isActive && !c.accountId);
+  const hasUnmappedCategory = needsCategoryAccount && cats.some((c) => c.isActive && !c.accountId);
   const assets = useFinanceAccounts({ postable: true, type: 'ASSET' });
   const postable = useFinanceAccounts({ postable: true });
   const accountsLoading = assets.isLoading || postable.isLoading;
@@ -368,8 +377,14 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                       </SelectTrigger>
                       <SelectContent>
                         {cats.map((c) => (
-                          <SelectItem key={c.id} value={c.id} disabled={!c.accountId}>
-                            {c.accountId ? c.name : `${c.name} — sin cuenta contable`}
+                          <SelectItem
+                            key={c.id}
+                            value={c.id}
+                            disabled={needsCategoryAccount && !c.accountId}
+                          >
+                            {needsCategoryAccount && !c.accountId
+                              ? `${c.name} — sin cuenta contable`
+                              : c.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

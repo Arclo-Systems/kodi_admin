@@ -49,6 +49,9 @@ function account(over: Partial<FinanceAccount> = {}): FinanceAccount {
     parentId: null,
     isActive: true,
     allowsManualEntry: true,
+    sortOrder: 0,
+    parentCode: null,
+    depth: 0,
     ...over,
   };
 }
@@ -119,6 +122,7 @@ function entry(over: Partial<FinanceEntry> = {}): FinanceEntry {
     journalEntryId: null,
     voidedAt: null,
     voidedBy: null,
+    voidedByName: null,
     voidReason: null,
     vendor: 'Paula Espinoza',
     note: null,
@@ -495,5 +499,35 @@ describe('FinanceEntryForm — un movimiento contabilizado no pierde sus cuentas
     );
     expect(screen.queryByText('Elegí la cuenta de origen')).toBeNull();
     expect(screen.queryByText('Elegí la cuenta de destino')).toBeNull();
+  });
+});
+
+describe('FinanceEntryForm — la cuenta de la categoría solo la exigen ingreso, gasto y otro', () => {
+  // Una transferencia se asienta entre dos cuentas de activo y un movimiento de
+  // socio contra patrimonio: la categoría queda como etiqueta y el backend no le
+  // pide cuenta. Deshabilitarla ahí bloqueaba un alta que el backend acepta.
+  it('en una transferencia la categoría huérfana se puede elegir y no hay aviso', async () => {
+    categoryList = [CATEGORY, UNMAPPED_CATEGORY];
+    render(<FinanceEntryForm />);
+
+    await pickOption('Tipo', 'Transferencia');
+
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Categoría' }));
+    const item = await screen.findByRole('option', { name: 'Viáticos' });
+    expect(item).not.toHaveAttribute('aria-disabled', 'true');
+    expect(screen.queryByText('Hay categorías sin cuenta contable.')).toBeNull();
+  });
+
+  it('en un "Otro" sigue deshabilitada: ese asiento sí va contra la cuenta', async () => {
+    categoryList = [CATEGORY, UNMAPPED_CATEGORY];
+    render(<FinanceEntryForm />);
+
+    await pickOption('Tipo', 'Otro');
+
+    expect(await screen.findByText('Hay categorías sin cuenta contable.')).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Categoría' }));
+    expect(
+      await screen.findByRole('option', { name: 'Viáticos — sin cuenta contable' }),
+    ).toHaveAttribute('aria-disabled', 'true');
   });
 });

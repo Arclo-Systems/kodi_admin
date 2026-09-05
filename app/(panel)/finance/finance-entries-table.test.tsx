@@ -7,14 +7,18 @@ const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
 const voidEntry = vi.fn();
+const entriesQuery = vi.fn();
 let items: FinanceEntry[] = [];
 
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
-  useFinanceEntries: () => ({
-    data: { items, total: items.length, page: 1, pageSize: 20 },
-    isLoading: false,
-  }),
+  useFinanceEntries: (query: unknown) => {
+    entriesQuery(query);
+    return {
+      data: { items, total: items.length, page: 1, pageSize: 20 },
+      isLoading: false,
+    };
+  },
   useVoidFinanceEntry: () => ({ mutateAsync: voidEntry }),
 }));
 
@@ -36,6 +40,7 @@ function entry(over: Partial<FinanceEntry> = {}): FinanceEntry {
     journalEntryId: 'je-1',
     voidedAt: null,
     voidedBy: null,
+    voidedByName: null,
     voidReason: null,
     vendor: 'Paula Espinoza',
     note: 'Segundo pago a Pau',
@@ -259,5 +264,63 @@ describe('FinanceEntriesTable — el tipo de movimiento sale del backend', () =>
 
     expect(within(fila()).getByText('Transferencia')).toBeInTheDocument();
     expect(within(fila()).getByText('Activo')).toBeInTheDocument();
+  });
+});
+
+describe('FinanceEntriesTable — los filtros de tipo y estado los resuelve el backend', () => {
+  const lastQuery = () =>
+    entriesQuery.mock.calls[entriesQuery.mock.calls.length - 1]?.[0] as Record<string, unknown>;
+
+  async function filtrar(combobox: string, opcion: string): Promise<void> {
+    fireEvent.click(screen.getByRole('combobox', { name: combobox }));
+    fireEvent.click(await screen.findByRole('option', { name: opcion }));
+  }
+
+  it('manda `type` con el enum del backend, no el signo de la categoría', async () => {
+    renderTable();
+
+    await filtrar('Filtrar por tipo', 'Transferencia');
+
+    await waitFor(() => expect(lastQuery()).toMatchObject({ type: 'TRANSFER', page: 1 }));
+  });
+
+  it('manda `status` para ver solo los anulados', async () => {
+    renderTable();
+
+    await filtrar('Filtrar por estado', 'Anulado');
+
+    await waitFor(() => expect(lastQuery()).toMatchObject({ status: 'VOIDED', page: 1 }));
+  });
+
+  it('volver a "todos" saca el filtro en vez de mandar un valor vacío', async () => {
+    renderTable();
+
+    await filtrar('Filtrar por tipo', 'Gasto');
+    await waitFor(() => expect(lastQuery().type).toBe('EXPENSE'));
+    await filtrar('Filtrar por tipo', 'Todos los tipos');
+
+    await waitFor(() => expect(lastQuery().type).toBeUndefined());
+  });
+});
+
+describe('FinanceEntriesTable — "Anulado por" muestra a la persona', () => {
+  it('usa el nombre del admin y guarda el uuid para cuando ya no existe', async () => {
+    items = [
+      entry({
+        status: 'VOIDED',
+        voidedAt: '2026-09-05T15:30:00.000Z',
+        voidedBy: 'admin-uuid-1',
+        voidedByName: 'Emilio Rodríguez',
+        voidReason: 'Cargado dos veces por error',
+      }),
+    ];
+    renderTable();
+
+    fireEvent.click(fila());
+
+    await waitFor(() => expect(modal()).not.toBeNull());
+    const d = within(modal() as HTMLElement);
+    expect(d.getByText('Emilio Rodríguez')).toBeInTheDocument();
+    expect(d.queryByText('admin-uuid-1')).toBeNull();
   });
 });
