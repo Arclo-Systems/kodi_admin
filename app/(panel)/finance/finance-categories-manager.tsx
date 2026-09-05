@@ -19,12 +19,12 @@ import {
   useFinanceAccounts,
   useFinanceCategories,
   useFinanceCategoryMutations,
-  KIND_LABELS,
   type AccountType,
   type FinanceAccount,
   type FinanceCategory,
   type FinanceKind,
 } from '@/hooks/use-finance';
+import { KIND_LABELS, accountLabel } from './finance-format';
 import { DataTable } from '@/components/admin/data-table';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { StatusBadge } from '@/lib/status-badge';
@@ -52,8 +52,6 @@ const ACCOUNT_TYPES_BY_KIND: Record<FinanceKind, AccountType[]> = {
   expense: ['OPERATING_EXPENSE', 'COST_OF_REVENUE'],
   income: ['INCOME'],
 };
-
-const accountLabel = (a: FinanceAccount) => `${a.code} ${a.name}`;
 
 type AccountsState = 'loading' | 'error' | 'ready';
 
@@ -95,10 +93,15 @@ export function FinanceCategoriesManager({ canWrite = false }: { canWrite?: bool
   const [filterKind, setFilterKind] = useState<FinanceKind | undefined>(undefined);
   const { data: categories, isLoading } = useFinanceCategories(filterKind);
   const { create, update, remove } = useFinanceCategoryMutations();
-  // El plan entero (37 cuentas, sin paginar): se filtra en cliente por tipo y por
-  // activa, que es lo que el backend exige para el mapeo de una categoría.
+  // El plan entero (37 cuentas, sin paginar) solo para NOMBRAR la cuenta ya mapeada:
+  // una categoría vieja puede apuntar a una cuenta que hoy no es de asiento manual y
+  // aun así hay que mostrarla, no acusarla de huérfana.
   const accountsQuery = useFinanceAccounts();
   const accounts = accountsQuery.data;
+  // Para ELEGIR, en cambio, solo sirven las posteables (`isActive && allowsManualEntry`):
+  // ofrecer 6000 Gastos operativos (padre) o 5110 (la llena el sistema) es ofrecer un
+  // asiento que nadie debería escribir a mano.
+  const postableQuery = useFinanceAccounts({ postable: true });
 
   const [editing, setEditing] = useState<FinanceCategory | null>(null);
   const [name, setName] = useState('');
@@ -110,11 +113,19 @@ export function FinanceCategoriesManager({ canWrite = false }: { canWrite?: bool
 
   // Mientras la query no terminó, `accountById` está vacío y toda categoría
   // mapeada se leería como huérfana: el aviso solo sale con la lista ya cargada.
-  const accountsState: AccountsState = accountsQuery.isSuccess
-    ? 'ready'
-    : accountsQuery.isError
+  const accountsState: AccountsState =
+    accountsQuery.isError || postableQuery.isError
       ? 'error'
-      : 'loading';
+      : accountsQuery.isSuccess && postableQuery.isSuccess
+        ? 'ready'
+        : 'loading';
+
+  const { refetch: refetchPlan } = accountsQuery;
+  const { refetch: refetchPostable } = postableQuery;
+  const refetchAccounts = useCallback(() => {
+    void refetchPlan();
+    void refetchPostable();
+  }, [refetchPlan, refetchPostable]);
 
   const accountById = useMemo(
     () => new Map((accounts ?? []).map((a) => [a.id, a])),
@@ -122,10 +133,8 @@ export function FinanceCategoriesManager({ canWrite = false }: { canWrite?: bool
   );
   const accountOptions = useMemo(
     () =>
-      (accounts ?? []).filter(
-        (a) => a.isActive && ACCOUNT_TYPES_BY_KIND[kind].includes(a.type),
-      ),
-    [accounts, kind],
+      (postableQuery.data ?? []).filter((a) => ACCOUNT_TYPES_BY_KIND[kind].includes(a.type)),
+    [postableQuery.data, kind],
   );
 
   function resetForm() {
@@ -202,7 +211,7 @@ export function FinanceCategoriesManager({ canWrite = false }: { canWrite?: bool
             accountId={row.original.accountId}
             accounts={accountById}
             state={accountsState}
-            onRetry={() => void accountsQuery.refetch()}
+            onRetry={refetchAccounts}
           />
         ),
       },
@@ -243,7 +252,7 @@ export function FinanceCategoriesManager({ canWrite = false }: { canWrite?: bool
         ),
       },
     ],
-    [startEdit, accountById, accountsState, accountsQuery],
+    [startEdit, accountById, accountsState, refetchAccounts],
   );
 
   return (
@@ -342,7 +351,7 @@ export function FinanceCategoriesManager({ canWrite = false }: { canWrite?: bool
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => void accountsQuery.refetch()}
+                      onClick={refetchAccounts}
                     >
                       Reintentar
                     </Button>

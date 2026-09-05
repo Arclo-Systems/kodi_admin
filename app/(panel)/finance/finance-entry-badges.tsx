@@ -10,11 +10,8 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { StatusBadge, type StatusTone } from '@/lib/status-badge';
-import {
-  MOVEMENT_TYPE_LABELS,
-  type FinanceEntryStatus,
-  type MovementType,
-} from '@/hooks/use-finance';
+import { type FinanceEntryStatus, type MovementType } from '@/hooks/use-finance';
+import { MOVEMENT_TYPE_LABELS } from './finance-format';
 
 // Ingreso y gasto se distinguen por color porque son los únicos que mueven el
 // P&L; los tres que solo mueven caja comparten el gris para no competir con ellos.

@@ -27,6 +27,18 @@ const OTHER_CATEGORY: FinanceCategory = {
   accountId: 'acc-exp',
 };
 
+// Sin cuenta mapeada: el alta de un movimiento suyo muere en 409 CATEGORY_WITHOUT_ACCOUNT.
+const UNMAPPED_CATEGORY: FinanceCategory = {
+  id: 'cat-3',
+  name: 'Viáticos',
+  kind: 'expense',
+  sortOrder: 3,
+  isActive: true,
+  accountId: null,
+};
+
+let categoryList: FinanceCategory[] = [];
+
 function account(over: Partial<FinanceAccount> = {}): FinanceAccount {
   return {
     id: 'acc-caja',
@@ -68,7 +80,7 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => {
     ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
     useFinanceCategories: () => {
       const [data, setData] = useState<FinanceCategory[] | undefined>(undefined);
-      useEffect(() => setData([CATEGORY, OTHER_CATEGORY]), []);
+      useEffect(() => setData(categoryList), []);
       return { data };
     },
     useFinanceAccounts: ({ type }: { postable?: boolean; type?: string } = {}) => ({
@@ -137,6 +149,7 @@ async function pickOption(comboboxName: string | RegExp, optionName: string): Pr
 beforeEach(() => {
   vi.clearAllMocks();
   detail = undefined;
+  categoryList = [CATEGORY, OTHER_CATEGORY];
   accountsState = { data: true, isLoading: false, isError: false };
   create.mockResolvedValue(undefined);
   update.mockResolvedValue(undefined);
@@ -422,5 +435,65 @@ describe('FinanceEntryForm — un movimiento anulado es de solo lectura', () => 
       ),
     ).toBeInTheDocument();
     expect(screen.getByLabelText('Proveedor / fuente')).toBeDisabled();
+  });
+});
+
+describe('FinanceEntryForm — una categoría sin cuenta contable no se puede elegir', () => {
+  it('la ofrece deshabilitada y dice por qué', async () => {
+    categoryList = [CATEGORY, UNMAPPED_CATEGORY];
+    render(<FinanceEntryForm />);
+
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Categoría' }));
+
+    const item = await screen.findByRole('option', { name: 'Viáticos — sin cuenta contable' });
+    expect(item).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('option', { name: 'Salarios' })).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('avisa arriba del formulario y manda a Categorías', async () => {
+    categoryList = [CATEGORY, UNMAPPED_CATEGORY];
+    render(<FinanceEntryForm />);
+
+    expect(await screen.findByText('Hay categorías sin cuenta contable.')).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: 'Asignalas en Categorías.' });
+    expect(link).toHaveAttribute('href', '/finance/categorias');
+  });
+
+  it('sin categorías huérfanas no muestra el aviso', async () => {
+    render(<FinanceEntryForm />);
+
+    await screen.findByRole('combobox', { name: 'Categoría' });
+    expect(screen.queryByText('Hay categorías sin cuenta contable.')).toBeNull();
+  });
+
+  it('una categoría inactiva sin cuenta no dispara el aviso', async () => {
+    categoryList = [CATEGORY, { ...UNMAPPED_CATEGORY, isActive: false }];
+    render(<FinanceEntryForm />);
+
+    await screen.findByRole('combobox', { name: 'Categoría' });
+    expect(screen.queryByText('Hay categorías sin cuenta contable.')).toBeNull();
+  });
+});
+
+describe('FinanceEntryForm — un movimiento contabilizado no pierde sus cuentas', () => {
+  // El filtro por moneda limpia la cuenta que dejó de servir, pero un asiento ya
+  // escrito tiene sus cuentas congeladas: vaciarlas mostraba errores de validación
+  // sobre un movimiento que ni siquiera se puede editar.
+  it('no las limpia aunque la moneda no le calce', async () => {
+    detail = entry({
+      type: 'TRANSFER',
+      journalEntryId: 'je-1',
+      currency: 'USD',
+      accountId: CAJA.id,
+      counterAccountId: BANCO.id,
+    });
+    render(<FinanceEntryForm entryId="e1" />);
+
+    await screen.findByRole('combobox', { name: 'Cuenta de origen' });
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Cuenta de destino' })).toBeDisabled(),
+    );
+    expect(screen.queryByText('Elegí la cuenta de origen')).toBeNull();
+    expect(screen.queryByText('Elegí la cuenta de destino')).toBeNull();
   });
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -30,13 +31,13 @@ import {
   useFinanceEntryMutations,
   FINANCE_CURRENCIES,
   MOVEMENT_TYPES,
-  MOVEMENT_TYPE_LABELS,
   type FinanceAccount,
   type FinanceEntry,
   type FinanceEntryInput,
   type FinanceKind,
   type MovementType,
 } from '@/hooks/use-finance';
+import { MOVEMENT_TYPE_LABELS, accountLabel } from './finance-format';
 
 // Sentinel: el comprobante existente se mantiene si el usuario no lo toca (no se reenvía la key).
 const KEEP = '__keep__';
@@ -138,8 +139,6 @@ function kindForType(type: MovementType): FinanceKind | undefined {
   return undefined;
 }
 
-const accountLabel = (a: FinanceAccount) => `${a.code} ${a.name}`;
-
 // `currency: null` = la cuenta acepta cualquier moneda (resultados, "Por
 // clasificar"). El resto solo admite líneas en la suya.
 const matchesCurrency = (accounts: FinanceAccount[], currency: string) =>
@@ -202,6 +201,10 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
 
   const { data: categories } = useFinanceCategories(kindForType(type));
   const cats = categories ?? [];
+  // Una categoría sin cuenta no se puede contabilizar: elegirla solo consigue un
+  // 409 CATEGORY_WITHOUT_ACCOUNT al guardar. Se ofrece deshabilitada (para que se
+  // vea que existe y por qué no sirve) y el aviso dice dónde se arregla.
+  const hasUnmappedCategory = cats.some((c) => c.isActive && !c.accountId);
   const assets = useFinanceAccounts({ postable: true, type: 'ASSET' });
   const postable = useFinanceAccounts({ postable: true });
   const accountsLoading = assets.isLoading || postable.isLoading;
@@ -230,7 +233,10 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
     [originOptions, counterOptions],
   );
   useEffect(() => {
-    if (accountsLoading || accountsError) return;
+    // Un movimiento asentado tiene sus cuentas congeladas: limpiarlas acá vaciaría
+    // el selector de un dato que el backend ya no acepta cambiar (ENTRY_POSTED_IMMUTABLE)
+    // y lo mostraría en blanco como si nunca hubiera tenido cuenta.
+    if (lockAccounting || accountsLoading || accountsError) return;
     for (const field of ['accountId', 'counterAccountId'] as const) {
       const chosen = form.getValues(field);
       if (chosen && !validIds.has(chosen)) {
@@ -238,7 +244,7 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
         void form.trigger(field);
       }
     }
-  }, [validIds, accountsLoading, accountsError, form]);
+  }, [validIds, lockAccounting, accountsLoading, accountsError, form]);
 
   async function submit(v: FormValues): Promise<void> {
     try {
@@ -292,6 +298,17 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
             <Alert>
               <AlertDescription>
                 Movimiento anulado: no se edita. Registrá uno nuevo con los datos correctos.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {hasUnmappedCategory && (
+            <Alert>
+              <AlertDescription>
+                Hay categorías sin cuenta contable.{' '}
+                <Link href="/finance/categorias">
+                  Asignalas en Categorías.
+                </Link>
               </AlertDescription>
             </Alert>
           )}
@@ -351,8 +368,8 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                       </SelectTrigger>
                       <SelectContent>
                         {cats.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
+                          <SelectItem key={c.id} value={c.id} disabled={!c.accountId}>
+                            {c.accountId ? c.name : `${c.name} — sin cuenta contable`}
                           </SelectItem>
                         ))}
                       </SelectContent>

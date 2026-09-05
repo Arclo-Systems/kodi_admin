@@ -9,11 +9,11 @@ import {
   useFinanceEntries,
   useVoidFinanceEntry,
   FINANCE_CURRENCIES,
-  KIND_LABELS,
   type FinanceEntry,
   type FinanceEntryListQuery,
   type FinanceKind,
 } from '@/hooks/use-finance';
+import { KIND_LABELS } from './finance-format';
 import { DataTable } from '@/components/admin/data-table';
 import { FinanceVoidDialog } from './finance-void-dialog';
 import { openSignedAsset } from '@/lib/signed-asset';

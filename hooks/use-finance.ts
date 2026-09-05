@@ -10,7 +10,6 @@ import { throwApiError, unwrapData } from '@/lib/bff';
 import { fetchJson } from '@/lib/fetch-json';
 
 export type FinanceKind = 'expense' | 'income';
-export const KIND_LABELS: Record<FinanceKind, string> = { expense: 'Gasto', income: 'Ingreso' };
 export const FINANCE_CURRENCIES = ['CRC', 'USD'] as const;
 
 // Naturaleza contable del hecho económico: decide contra qué cuentas se asienta
@@ -25,14 +24,6 @@ export const MOVEMENT_TYPES = [
   'OTHER',
 ] as const;
 export type MovementType = (typeof MOVEMENT_TYPES)[number];
-export const MOVEMENT_TYPE_LABELS: Record<MovementType, string> = {
-  INCOME: 'Ingreso',
-  EXPENSE: 'Gasto',
-  TRANSFER: 'Transferencia',
-  PARTNER_CONTRIBUTION: 'Aporte de socio',
-  PARTNER_LOAN: 'Préstamo de socio',
-  OTHER: 'Otro',
-};
 
 export type FinanceEntryStatus = 'ACTIVE' | 'VOIDED';
 

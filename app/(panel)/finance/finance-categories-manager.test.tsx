@@ -36,6 +36,24 @@ const RETIRADA = account({
   type: 'OPERATING_EXPENSE',
   isActive: false,
 });
+// Cuenta padre: agrupa, no recibe asientos manuales.
+const PADRE = account({
+  id: 'acc-5',
+  code: '6000',
+  name: 'Gastos operativos',
+  type: 'OPERATING_EXPENSE',
+  allowsManualEntry: false,
+});
+// La llena el sistema (imputación automática), no una persona.
+const SISTEMA = account({
+  id: 'acc-6',
+  code: '5110',
+  name: 'Comisiones de tienda',
+  type: 'COST_OF_REVENUE',
+  allowsManualEntry: false,
+});
+
+const PLAN = [SUELDOS, INFRA, SUSCRIPCIONES, RETIRADA, PADRE, SISTEMA];
 
 const refetch = vi.fn();
 let accountsState = { isSuccess: true, isError: false };
@@ -43,8 +61,14 @@ let accountsState = { isSuccess: true, isError: false };
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
   useFinanceCategories: () => ({ data: categories, isLoading: false }),
-  useFinanceAccounts: () => ({
-    data: accountsState.isSuccess ? [SUELDOS, INFRA, SUSCRIPCIONES, RETIRADA] : undefined,
+  // `postable=true` lo resuelve el backend como `isActive && allowsManualEntry`:
+  // el mock replica esa traducción para que el filtro se pruebe de verdad.
+  useFinanceAccounts: ({ postable }: { postable?: boolean } = {}) => ({
+    data: accountsState.isSuccess
+      ? postable
+        ? PLAN.filter((a) => a.isActive && a.allowsManualEntry)
+        : PLAN
+      : undefined,
     isSuccess: accountsState.isSuccess,
     isError: accountsState.isError,
     refetch,
@@ -115,6 +139,15 @@ describe('FinanceCategoriesManager — las cuentas se filtran por tipo de catego
     renderManager();
 
     expect(await options()).not.toContain(`${RETIRADA.code} ${RETIRADA.name}`);
+  });
+
+  it('no ofrece una cuenta que no admite asiento manual', async () => {
+    renderManager();
+
+    const list = await options();
+    // 6000 es el padre que agrupa los gastos; 5110 la llena el sistema.
+    expect(list).not.toContain(`${PADRE.code} ${PADRE.name}`);
+    expect(list).not.toContain(`${SISTEMA.code} ${SISTEMA.name}`);
   });
 });
 

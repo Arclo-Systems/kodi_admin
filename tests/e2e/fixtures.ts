@@ -72,3 +72,13 @@ export const FEATURE_FIXTURE = {
   ideaId: '00000000-0000-4000-8000-0000000000d9',
   title: 'E2E · Idea de prueba',
 } as const;
+
+// Contabilidad: el seed deja el plan de cuentas completo (37 cuentas, con
+// `1900 Por clasificar` y `6900 Otros gastos operativos`), el período del mes
+// corriente en OPEN y dos categorías de gasto — una mapeada y otra huérfana —
+// para que el spec no tenga que mapear nada ni tocar datos compartidos.
+export const FINANCE_FIXTURE = {
+  mappedCategory: 'E2E Gasto contable',
+  unmappedCategory: 'E2E Sin cuenta',
+  mappedAccount: '6900 Otros gastos operativos',
+} as const;
