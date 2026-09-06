@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { CircleCheckIcon, ScaleIcon, TriangleAlertIcon } from 'lucide-react';
+import Link from 'next/link';
+import { BookOpenIcon, CircleCheckIcon, ScaleIcon, TriangleAlertIcon } from 'lucide-react';
 import { FINANCE_CURRENCIES, useFinanceTrialBalance } from '@/hooks/use-finance';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
@@ -25,10 +27,10 @@ import {
 import { TableEmptyRow } from '@/components/admin/empty-state';
 import { StatusBadge } from '@/lib/status-badge';
 import { civilDayEndIso, civilDayStartIso } from '@/lib/civil-date';
-import { ACCOUNT_TYPE_LABELS, formatMoney } from './finance-format';
+import { ACCOUNT_TYPE_LABELS, formatMoney, ledgerHref } from './finance-format';
 import { FinanceReportCsvButton } from './finance-report-csv-button';
 
-const COLUMNS = 6;
+const COLUMNS = 7;
 
 export function FinanceTrialBalance() {
   const [currency, setCurrency] = useState<string>(FINANCE_CURRENCIES[0]);
@@ -40,7 +42,7 @@ export function FinanceTrialBalance() {
     from: from ? civilDayStartIso(from) : undefined,
     to: to ? civilDayEndIso(to) : undefined,
   };
-  const { data: report, isLoading, isError, error } = useFinanceTrialBalance(params);
+  const { data: report, isLoading, isError, error, refetch } = useFinanceTrialBalance(params);
 
   return (
     <div className="space-y-4">
@@ -74,8 +76,15 @@ export function FinanceTrialBalance() {
 
       {isError && (
         <Alert variant="destructive">
-          <AlertDescription>
-            {error instanceof Error ? error.message : 'No se pudo cargar el balance de comprobación.'}
+          <AlertDescription className="flex flex-wrap items-center gap-3">
+            <span>
+              {error instanceof Error
+                ? error.message
+                : 'No se pudo cargar el balance de comprobación.'}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              Reintentar
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -117,6 +126,7 @@ export function FinanceTrialBalance() {
                 <TableHead className="text-right">Débitos</TableHead>
                 <TableHead className="text-right">Créditos</TableHead>
                 <TableHead className="text-right">Saldo</TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -148,6 +158,23 @@ export function FinanceTrialBalance() {
                       <TableCell className="text-right font-medium tabular-nums">
                         {formatMoney(a.balance)}
                       </TableCell>
+                      {/* El saldo dice cuánto; el mayor dice de dónde salió. Se
+                          abre con la misma moneda y el mismo rango. */}
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link
+                            href={ledgerHref({
+                              accountId: a.accountId,
+                              currency,
+                              from: from || undefined,
+                              to: to || undefined,
+                            })}
+                          >
+                            <BookOpenIcon className="size-4" />
+                            Mayor
+                          </Link>
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                   <TableRow className="hover:bg-transparent">
@@ -161,6 +188,7 @@ export function FinanceTrialBalance() {
                       {formatMoney(report.totals.credits)}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-right">—</TableCell>
+                    <TableCell />
                   </TableRow>
                   {/* La diferencia viaja también cuando es cero: que esté siempre a
                       la vista es lo que hace verificable el cuadre. */}
@@ -171,14 +199,22 @@ export function FinanceTrialBalance() {
                     <TableCell className="text-right font-semibold tabular-nums">
                       {formatMoney(report.difference)}
                     </TableCell>
+                    <TableCell />
                   </TableRow>
                 </>
               ) : (
                 <TableEmptyRow
                   colSpan={COLUMNS}
                   icon={<ScaleIcon />}
-                  message="Todavía no hay asientos en este período"
-                  description="Probá con otro rango de fechas u otra moneda, o cargá el movimiento desde Movimientos."
+                  // Un reporte caído deja la tabla igual de vacía que un período
+                  // sin asientos, y las dos cosas piden lo contrario: una que se
+                  // cambie el rango, la otra que se reintente la carga.
+                  message={isError ? 'No se pudo cargar' : 'Todavía no hay asientos en este período'}
+                  description={
+                    isError
+                      ? 'Reintentá la carga para ver el balance del período.'
+                      : 'Probá con otro rango de fechas u otra moneda, o cargá el movimiento desde Movimientos.'
+                  }
                 />
               )}
             </TableBody>

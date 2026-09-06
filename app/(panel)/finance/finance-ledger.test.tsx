@@ -3,6 +3,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { FinanceAccount, Ledger } from '@/hooks/use-finance';
 
 let ledger: Ledger | undefined;
+let ledgerError = false;
+const refetch = vi.fn();
+let searchParams = new URLSearchParams();
+
+vi.mock('next/navigation', () => ({ useSearchParams: () => searchParams }));
 
 const downloadReport = vi.fn();
 vi.mock('@/lib/download-report', () => ({
@@ -19,7 +24,13 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => ({
     isSuccess: true,
     refetch: vi.fn(),
   }),
-  useFinanceLedger: () => ({ data: ledger, isLoading: false, isError: false, error: null }),
+  useFinanceLedger: () => ({
+    data: ledgerError ? undefined : ledger,
+    isLoading: false,
+    isError: ledgerError,
+    error: ledgerError ? new Error('Se cayó el mayor') : null,
+    refetch,
+  }),
 }));
 
 import { FinanceLedger } from './finance-ledger';
@@ -33,6 +44,7 @@ const CUENTA: FinanceAccount = {
   parentId: 'acc-6000',
   isActive: true,
   allowsManualEntry: true,
+  isSystem: false,
   sortOrder: 0,
   parentCode: '6000',
   depth: 1,
@@ -84,6 +96,8 @@ async function elegirCuenta(): Promise<void> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  searchParams = new URLSearchParams();
+  ledgerError = false;
   accounts = [CUENTA];
   ledger = LEDGER;
 });
@@ -143,5 +157,46 @@ describe('FinanceLedger — el saldo corrido es lo que el mayor tiene que mostra
         'mayor.csv',
       ),
     );
+  });
+});
+
+describe('FinanceLedger — un mayor caído no es una cuenta sin asientos', () => {
+  it('con error no dice que no hay asientos: dice que no pudo cargar y ofrece reintentar', async () => {
+    ledgerError = true;
+    render(<FinanceLedger />);
+    await elegirCuenta();
+
+    await waitFor(() => expect(screen.getByText('No se pudo cargar')).toBeInTheDocument());
+    expect(screen.queryByText('Todavía no hay asientos en esta cuenta para el período')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(refetch).toHaveBeenCalled();
+  });
+});
+
+// La comprobación enlaza acá con la cuenta, la moneda y el rango que se venían
+// mirando: sin leer la URL el link abriría un mayor en blanco.
+describe('FinanceLedger — abre lo que dice la URL', () => {
+  it('arranca en la cuenta, la moneda y el rango que llegaron por query', async () => {
+    searchParams = new URLSearchParams({
+      accountId: CUENTA.id,
+      currency: 'USD',
+      from: '2026-07-01',
+      to: '2026-07-31',
+    });
+    render(<FinanceLedger />);
+
+    await waitFor(() => expect(screen.getByText('2026-000001')).toBeInTheDocument());
+    expect(screen.getByRole('combobox', { name: 'Cuenta' })).toHaveTextContent(
+      '6900 Otros gastos operativos',
+    );
+    expect(screen.getByRole('combobox', { name: 'Moneda' })).toHaveTextContent('USD');
+  });
+
+  it('ignora una moneda que la contabilidad no maneja en vez de pedirla al backend', async () => {
+    searchParams = new URLSearchParams({ accountId: CUENTA.id, currency: 'BRL' });
+    render(<FinanceLedger />);
+
+    expect(screen.getByRole('combobox', { name: 'Moneda' })).toHaveTextContent('CRC');
   });
 });

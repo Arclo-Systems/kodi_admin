@@ -2,7 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { CircleCheckIcon, CircleOffIcon, LandmarkIcon, PencilIcon, PlusIcon } from 'lucide-react';
+import {
+  CircleCheckIcon,
+  CircleOffIcon,
+  LandmarkIcon,
+  LockIcon,
+  PencilIcon,
+  PlusIcon,
+} from 'lucide-react';
 import {
   FINANCE_CURRENCIES,
   useFinanceAccountBalances,
@@ -30,6 +37,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { TableEmptyRow } from '@/components/admin/empty-state';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { StatusBadge } from '@/lib/status-badge';
 import { ACCOUNT_STATUS_LABELS, ACCOUNT_TYPE_LABELS, formatMoney } from './finance-format';
 import {
@@ -65,7 +73,8 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
   );
   // El backend ya devuelve el plan ordenado por código y con `depth` calculado
   // sobre el árbol completo: la jerarquía se pinta con sangría, sin re-armarla.
-  const accounts = accountsQuery.data ?? [];
+  const accounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
+  const byId = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts]);
 
   // El diálogo arma el payload (es el que sabe qué campos se tocaron); acá solo
   // se elige la mutación. El error sube para que lo muestre quien lo disparó.
@@ -135,7 +144,9 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
 
       <Card>
         <CardContent className="overflow-x-auto">
-          <Table>
+          {/* El plan ES un árbol: sin `treegrid` + `aria-level` la sangría es la
+              única pista de la jerarquía, y una sangría no se lee en voz alta. */}
+          <Table role="treegrid" aria-label="Plan de cuentas">
             <TableHeader>
               <TableRow>
                 <TableHead>Cuenta</TableHead>
@@ -170,6 +181,7 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
                   <AccountRow
                     key={account.id}
                     account={account}
+                    retiredAncestor={hasRetiredAncestor(account, byId)}
                     balance={balances.get(account.id)}
                     balancesState={balancesState}
                     canWrite={canWrite}
@@ -192,21 +204,42 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
   );
 }
 
+/**
+ * Retirar una cuenta arrastra a su rama, pero las hijas siguen con
+ * `isActive: true` en su propia fila: pintarlas "Activa" a secas dice lo
+ * contrario de lo que pasa cuando se las quiere usar.
+ */
+function hasRetiredAncestor(
+  account: FinanceAccount,
+  byId: Map<string, FinanceAccount>,
+): boolean {
+  let parent = account.parentId ? byId.get(account.parentId) : undefined;
+  // El plan tiene tres niveles y el backend garantiza que no hay ciclos; el tope
+  // es por las dudas, no por diseño.
+  for (let depth = 0; parent && depth < 16; depth += 1) {
+    if (!parent.isActive) return true;
+    parent = parent.parentId ? byId.get(parent.parentId) : undefined;
+  }
+  return false;
+}
+
 function AccountRow({
   account,
+  retiredAncestor,
   balance,
   balancesState,
   canWrite,
   onEdit,
 }: {
   account: FinanceAccount;
+  retiredAncestor: boolean;
   balance: string | undefined;
   balancesState: QueryState;
   canWrite: boolean;
   onEdit: () => void;
 }) {
   return (
-    <TableRow>
+    <TableRow aria-level={account.depth + 1}>
       <TableCell>
         <span
           className="flex items-center gap-2"
@@ -216,6 +249,18 @@ function AccountRow({
           <span className={account.depth === 0 ? 'font-semibold' : 'font-medium'}>
             {account.name}
           </span>
+          {account.isSystem && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span tabIndex={0}>
+                  <StatusBadge tone="info" icon={LockIcon} label="Sistema" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                Cuenta usada por el sistema: no se retira ni recibe subcuentas
+              </TooltipContent>
+            </Tooltip>
+          )}
         </span>
       </TableCell>
       <TableCell className="text-muted-foreground">{ACCOUNT_TYPE_LABELS[account.type]}</TableCell>
@@ -225,7 +270,15 @@ function AccountRow({
       </TableCell>
       <TableCell>
         {account.isActive ? (
-          <StatusBadge tone="success" icon={CircleCheckIcon} label={ACCOUNT_STATUS_LABELS.active} />
+          <StatusBadge
+            tone={retiredAncestor ? 'muted' : 'success'}
+            icon={retiredAncestor ? CircleOffIcon : CircleCheckIcon}
+            label={
+              retiredAncestor
+                ? ACCOUNT_STATUS_LABELS.inheritedInactive
+                : ACCOUNT_STATUS_LABELS.active
+            }
+          />
         ) : (
           <StatusBadge tone="muted" icon={CircleOffIcon} label={ACCOUNT_STATUS_LABELS.inactive} />
         )}

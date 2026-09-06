@@ -10,6 +10,7 @@ import {
   LayersIcon,
   ReceiptIcon,
   ScaleIcon,
+  StoreIcon,
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -18,6 +19,7 @@ const TABS = [
   { href: '/finance/movimientos', label: 'Movimientos', icon: ReceiptIcon },
   { href: '/finance/mayor', label: 'Mayor', icon: BookOpenIcon },
   { href: '/finance/comprobacion', label: 'Comprobación', icon: ScaleIcon },
+  { href: '/finance/play', label: 'Play', icon: StoreIcon },
   { href: '/finance/cuentas', label: 'Cuentas', icon: LandmarkIcon },
   { href: '/finance/categorias', label: 'Categorías', icon: LayersIcon },
 ];

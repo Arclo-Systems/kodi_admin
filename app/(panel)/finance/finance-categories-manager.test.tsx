@@ -17,6 +17,7 @@ function account(over: Partial<FinanceAccount> = {}): FinanceAccount {
     parentId: null,
     isActive: true,
     allowsManualEntry: true,
+    isSystem: false,
     sortOrder: 0,
     parentCode: null,
     depth: 0,
@@ -54,6 +55,7 @@ const SISTEMA = account({
   name: 'Comisiones de tienda',
   type: 'COST_OF_REVENUE',
   allowsManualEntry: false,
+  isSystem: true,
 });
 
 const PLAN = [SUELDOS, INFRA, SUSCRIPCIONES, RETIRADA, PADRE, SISTEMA];

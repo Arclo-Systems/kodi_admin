@@ -1,8 +1,10 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TrialBalance } from '@/hooks/use-finance';
 
 let report: TrialBalance | undefined;
+let reportError = false;
+const refetch = vi.fn();
 
 const downloadReport = vi.fn();
 vi.mock('@/lib/download-report', () => ({
@@ -11,7 +13,13 @@ vi.mock('@/lib/download-report', () => ({
 
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
-  useFinanceTrialBalance: () => ({ data: report, isLoading: false, isError: false, error: null }),
+  useFinanceTrialBalance: () => ({
+    data: reportError ? undefined : report,
+    isLoading: false,
+    isError: reportError,
+    error: reportError ? new Error('Se cayó el reporte') : null,
+    refetch,
+  }),
 }));
 
 import { FinanceTrialBalance } from './finance-trial-balance';
@@ -45,6 +53,8 @@ const CUADRADO: TrialBalance = {
 };
 
 beforeEach(() => {
+  vi.clearAllMocks();
+  reportError = false;
   report = CUADRADO;
 });
 
@@ -100,6 +110,31 @@ describe('FinanceTrialBalance — el descuadre se muestra, no se esconde', () =>
         '/api/admin/finance/reports/trial-balance.csv?currency=CRC',
         'comprobacion.csv',
       ),
+    );
+  });
+});
+
+describe('FinanceTrialBalance — un reporte caído no es un período sin asientos', () => {
+  it('con error no dice que no hay asientos: dice que no pudo cargar y ofrece reintentar', () => {
+    reportError = true;
+    render(<FinanceTrialBalance />);
+
+    expect(screen.queryByText('Todavía no hay asientos en este período')).toBeNull();
+    expect(screen.getByText('No se pudo cargar')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(refetch).toHaveBeenCalled();
+  });
+});
+
+describe('FinanceTrialBalance — de la comprobación al mayor', () => {
+  it('cada cuenta enlaza a su mayor con la misma moneda y el mismo rango', () => {
+    render(<FinanceTrialBalance />);
+
+    const fila = screen.getByText('Caja colones').closest('tr') as HTMLTableRowElement;
+    expect(within(fila).getByRole('link', { name: /Mayor/ })).toHaveAttribute(
+      'href',
+      '/finance/mayor?accountId=a1&currency=CRC',
     );
   });
 });

@@ -209,21 +209,67 @@ test('renombrar una cuenta con asientos no dispara el 409 de moneda', async ({ p
   await expect(fila).toBeVisible();
 
   const dialog = page.getByRole('dialog');
+  try {
+    await fila.getByRole('button', { name: 'Editar' }).click();
+    // El código se lee pero no se cambia.
+    await expect(dialog.getByLabel('Código')).toHaveAttribute('readonly', '');
+    await dialog.getByLabel('Nombre').fill(renombrada);
+    await dialog.getByRole('button', { name: 'Guardar' }).click();
+
+    await expect(page.getByText('Cuenta actualizada')).toBeVisible();
+    await expect(page.getByText(/no se puede cambiar/)).toHaveCount(0);
+    await expect(page.locator('table tbody tr').filter({ hasText: renombrada })).toBeVisible();
+  } finally {
+    // El nombre lo usan los otros specs y una cuenta no se borra: si la assertion
+    // de arriba falla, dejar `6900` renombrada rompe la corrida siguiente.
+    await page
+      .locator('table tbody tr')
+      .filter({ hasText: renombrada })
+      .getByRole('button', { name: 'Editar' })
+      .click();
+    await dialog.getByLabel('Nombre').fill(original);
+    await dialog.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByText('Cuenta actualizada')).toBeVisible();
+  }
+});
+
+test('la cuenta 1900 es del sistema: se marca en el árbol y no se ofrece retirar', async ({
+  page,
+}) => {
+  const [code] = FINANCE_FIXTURE.systemAccount.split(' ');
+
+  await page.goto('/finance/cuentas');
+  const fila = page.locator('table tbody tr').filter({ hasText: code as string });
+  await expect(fila).toBeVisible();
+  await expect(fila).toContainText('Sistema');
+
   await fila.getByRole('button', { name: 'Editar' }).click();
-  // El código se lee pero no se cambia.
-  await expect(dialog.getByLabel('Código')).toHaveAttribute('readonly', '');
-  await dialog.getByLabel('Nombre').fill(renombrada);
-  await dialog.getByRole('button', { name: 'Guardar' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('Nombre')).toBeVisible();
+  // Retirarla dejaría al emisor automático sin destino (409 ACCOUNT_IS_SYSTEM):
+  // el panel no lo ofrece en vez de dejar que el backend lo rechace.
+  await expect(dialog.getByRole('switch', { name: 'Activa' })).toHaveCount(0);
+  await expect(dialog.getByText(/no se retira ni recibe subcuentas/)).toBeVisible();
+});
 
-  await expect(page.getByText('Cuenta actualizada')).toBeVisible();
-  await expect(page.getByText(/no se puede cambiar/)).toHaveCount(0);
-  await expect(page.locator('table tbody tr').filter({ hasText: renombrada })).toBeVisible();
+test('la pestaña Play lista las órdenes de Google con su resumen por estado', async ({ page }) => {
+  await page.goto('/finance/play');
 
-  // Se deja el plan como estaba: el nombre lo usan los otros specs.
-  await page.locator('table tbody tr').filter({ hasText: renombrada }).getByRole('button', { name: 'Editar' }).click();
-  await dialog.getByLabel('Nombre').fill(original);
-  await dialog.getByRole('button', { name: 'Guardar' }).click();
-  await expect(page.getByText('Cuenta actualizada')).toBeVisible();
+  // El resumen se pinta con o sin órdenes: es el que dice cuántas necesitan
+  // atención, que es la razón de ser de la pantalla.
+  const resumen = page.getByRole('group', { name: 'Órdenes por estado' });
+  await expect(resumen).toBeVisible();
+  await expect(resumen.getByRole('button', { name: /Sin asentar/ })).toBeVisible();
+
+  // La base e2e puede tener órdenes o no: las dos salidas son válidas. Lo que no
+  // puede pasar es que la tabla quede muda, ni que diga "no hay órdenes" porque
+  // la carga falló.
+  const vacio = page.getByText('Todavía no hay órdenes de Google Play registradas');
+  const conOrden = page.locator('table tbody tr').filter({ hasText: /Asentada|Pendiente/ });
+  await expect(vacio.or(conOrden.first())).toBeVisible();
+  await expect(page.getByText('No se pudo cargar')).toHaveCount(0);
+
+  await expect(page.getByRole('combobox', { name: 'Filtrar por estado' })).toBeVisible();
 });
 
 test('una categoría sin cuenta contable no se puede elegir y el aviso dice dónde arreglarla', async ({

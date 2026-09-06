@@ -3,6 +3,7 @@
 import {
   keepPreviousData,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
@@ -46,6 +47,10 @@ export type FinanceAccount = {
   parentId: string | null;
   isActive: boolean;
   allowsManualEntry: boolean;
+  // `true` = el CÓDIGO la resuelve por su `code` (4110, 5110, 1220, 1900…) para
+  // asentar automáticamente. El panel la muestra pero no ofrece retirarla ni
+  // colgarle subcuentas: el backend responde 409 ACCOUNT_IS_SYSTEM.
+  isSystem: boolean;
   sortOrder: number;
   // Calculados sobre el plan COMPLETO: siguen siendo correctos con `postable=true`,
   // donde los padres no viajan en la respuesta.
@@ -485,6 +490,145 @@ export function useFinancePnl(from?: string, to?: string) {
     queryKey: ['finance-pnl', from ?? null, to ?? null],
     queryFn: async (): Promise<Pnl | undefined> =>
       fetchJson<Pnl>(`${BASE}/reports/pnl${reportQuery({ from, to })}`),
+  });
+}
+
+// ─── Órdenes de Google Play ───────────────────────────────────────────────────
+// La plata real de las suscripciones: qué cobró Google, qué se llevó de comisión
+// y qué órdenes NO llegaron a asentarse. Solo lectura + reintentar: el asiento lo
+// emite el worker del backend, nunca el panel.
+export const PLAY_ORDER_STATUSES = [
+  'PENDING',
+  'POSTED',
+  'UNSUPPORTED_CURRENCY',
+  'REVERSED',
+  'FAILED',
+  'SKIPPED',
+  'NEEDS_REVIEW',
+] as const;
+export type PlayOrderStatus = (typeof PLAY_ORDER_STATUSES)[number];
+
+// Los tres que alguien tiene que mirar: son ingresos cobrados que todavía no
+// están en el libro (o que dejaron de estarlo).
+export const PLAY_ORDER_ATTENTION_STATUSES = [
+  'FAILED',
+  'NEEDS_REVIEW',
+  'UNSUPPORTED_CURRENCY',
+] as const satisfies readonly PlayOrderStatus[];
+
+export type PlayOrder = {
+  orderId: string;
+  subscriptionId: string | null;
+  userId: string | null;
+  /** Estado CRUDO de la orden en Google (`PROCESSED`, `PENDING`, `REFUNDED`…). */
+  state: string;
+  createTime: string;
+  // Cada monto viaja con SU moneda: es la del comprador, no la del panel, y puede
+  // ser una que la contabilidad todavía no maneja. Nunca se convierte ni se suma
+  // entre monedas distintas.
+  totalAmount: string;
+  totalCurrency: string;
+  /** Impuesto que recauda y remite Google: informativo, NO se asienta. */
+  taxAmount: string;
+  taxCurrency: string;
+  developerRevenue: string;
+  developerRevenueCurrency: string;
+  /** `(total − impuesto) − neto`. `null` si la orden mezcla monedas. */
+  commission: string | null;
+  postingStatus: PlayOrderStatus;
+  postingError: string | null;
+  journalEntryId: string | null;
+  journalEntryNumber: string | null;
+};
+
+export type PlayOrderListQuery = {
+  postingStatus?: PlayOrderStatus;
+  from?: string;
+  to?: string;
+  page: number;
+  pageSize: number;
+};
+
+export type PlayOrderPage = {
+  items: PlayOrder[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+function playOrdersPath(query: PlayOrderListQuery): string {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(query)) {
+    if (v === undefined || v === '') continue;
+    params.set(k, String(v));
+  }
+  return `${BASE}/play-orders?${params}`;
+}
+
+export function usePlayOrders(query: PlayOrderListQuery) {
+  return useQuery({
+    queryKey: ['play-orders', query],
+    // Paginación server-side: sin esto la tabla se vacía en cada cambio de página.
+    placeholderData: keepPreviousData,
+    queryFn: async (): Promise<PlayOrderPage> =>
+      (await fetchJson<PlayOrderPage>(playOrdersPath(query))) ?? {
+        items: [],
+        total: 0,
+        page: query.page,
+        pageSize: query.pageSize,
+      },
+  });
+}
+
+/**
+ * Conteo por estado del MISMO rango que se está mirando.
+ *
+ * No hay endpoint de agregados: cada conteo es la misma lista pedida con
+ * `pageSize: 1`, de la que solo se lee `total`. Contar sobre la página cargada
+ * daría un número que cambia al pasar de página — es decir, un número falso.
+ */
+export function usePlayOrderCounts(range: { from?: string; to?: string }) {
+  return useQueries({
+    queries: PLAY_ORDER_STATUSES.map((postingStatus) => {
+      const query: PlayOrderListQuery = { ...range, postingStatus, page: 1, pageSize: 1 };
+      return {
+        queryKey: ['play-orders', query],
+        queryFn: async (): Promise<PlayOrderPage> =>
+          (await fetchJson<PlayOrderPage>(playOrdersPath(query))) ?? {
+            items: [],
+            total: 0,
+            page: 1,
+            pageSize: 1,
+          },
+      };
+    }),
+    combine: (results) => ({
+      isLoading: results.some((r) => r.isLoading),
+      counts: Object.fromEntries(
+        PLAY_ORDER_STATUSES.map((status, i) => [status, results[i]?.data?.total]),
+      ) as Record<PlayOrderStatus, number | undefined>,
+    }),
+  });
+}
+
+/**
+ * Re-encola la ingesta y el asiento de una orden. El job es idempotente: sirve
+ * para las dos cosas que cambian entre un intento y el siguiente — el plan de
+ * cuentas y el enum de monedas del backend.
+ */
+export function useRetryPlayOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (orderId: string) =>
+      send(`${BASE}/play-orders/${encodeURIComponent(orderId)}/retry`, 'POST'),
+    // El asiento que emite el worker entra al P&L: la lista y el estado de
+    // resultados dejan de coincidir si solo se refresca la primera.
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['play-orders'] }),
+        qc.invalidateQueries({ queryKey: ['finance-pnl'] }),
+      ]);
+    },
   });
 }
 

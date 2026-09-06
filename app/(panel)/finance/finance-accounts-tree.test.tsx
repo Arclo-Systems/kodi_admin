@@ -1,5 +1,13 @@
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import {
+  render as rtlRender,
+  screen,
+  fireEvent,
+  waitFor,
+  within,
+} from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import type { AccountBalances, FinanceAccount } from '@/hooks/use-finance';
 
 const create = vi.fn();
@@ -31,6 +39,9 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => ({
 
 import { FinanceAccountsTree } from './finance-accounts-tree';
 
+// El provider de tooltips lo pone el layout raíz del panel.
+const render = (ui: ReactElement) => rtlRender(<TooltipProvider>{ui}</TooltipProvider>);
+
 function account(over: Partial<FinanceAccount> = {}): FinanceAccount {
   return {
     id: 'acc-6000',
@@ -41,6 +52,7 @@ function account(over: Partial<FinanceAccount> = {}): FinanceAccount {
     parentId: null,
     isActive: true,
     allowsManualEntry: false,
+    isSystem: false,
     sortOrder: 0,
     parentCode: null,
     depth: 0,
@@ -70,6 +82,36 @@ const RETIRADA = account({
   parentCode: null,
   depth: 0,
   isActive: false,
+});
+
+// La resuelve el CÓDIGO por su `code`: el panel la muestra pero no la retira ni
+// le cuelga subcuentas (el backend responde 409 ACCOUNT_IS_SYSTEM).
+const SISTEMA = account({
+  id: 'acc-4110',
+  code: '4110',
+  name: 'Ingresos por suscripciones',
+  type: 'INCOME',
+  parentId: null,
+  parentCode: null,
+  depth: 0,
+  isSystem: true,
+});
+
+// Padre retirado con una hija que sigue `isActive: true` en la fila.
+const PADRE_RETIRADO = account({
+  id: 'acc-6500',
+  code: '6500',
+  name: 'Gastos discontinuados',
+  isActive: false,
+});
+const HIJA_HUERFANA = account({
+  id: 'acc-6510',
+  code: '6510',
+  name: 'Alquiler viejo',
+  parentId: PADRE_RETIRADO.id,
+  parentCode: PADRE_RETIRADO.code,
+  depth: 1,
+  allowsManualEntry: true,
 });
 
 const dialog = () => screen.getByRole('dialog');
@@ -277,5 +319,109 @@ describe('FinanceAccountsTree — saldos', () => {
     const fila = screen.getByText('Caja vieja').closest('tr') as HTMLTableRowElement;
     expect(fila).toHaveTextContent('Retirada');
     expect(fila).toHaveTextContent('0,00');
+  });
+});
+
+describe('FinanceAccountsTree — cuentas del sistema', () => {
+  it('las marca en el árbol y explica por qué no se tocan', async () => {
+    accounts = [PADRE, HIJA, SISTEMA];
+    render(<FinanceAccountsTree canWrite />);
+
+    const fila = screen.getByText('Ingresos por suscripciones').closest('tr') as HTMLTableRowElement;
+    expect(within(fila).getByText('Sistema')).toBeInTheDocument();
+
+    const trigger = within(fila).getByText('Sistema').closest('[data-slot="tooltip-trigger"]');
+    fireEvent.pointerMove(trigger as HTMLElement, { pointerType: 'mouse' });
+    expect(
+      await screen.findAllByText(
+        'Cuenta usada por el sistema: no se retira ni recibe subcuentas',
+      ),
+    ).not.toHaveLength(0);
+  });
+
+  it('no ofrece retirarla: el switch de estado no está', async () => {
+    accounts = [PADRE, HIJA, SISTEMA];
+    render(<FinanceAccountsTree canWrite />);
+
+    const fila = screen.getByText('Ingresos por suscripciones').closest('tr') as HTMLTableRowElement;
+    fireEvent.click(within(fila).getByRole('button', { name: 'Editar' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeNull());
+
+    expect(within(dialog()).queryByRole('switch', { name: 'Activa' })).toBeNull();
+    // El nombre sí se sigue editando: el flag protege dos operaciones, no la cuenta.
+    expect(within(dialog()).getByLabelText('Nombre')).toBeInTheDocument();
+  });
+
+  it('no se puede elegir como padre de una cuenta nueva', async () => {
+    accounts = [PADRE, HIJA, SISTEMA];
+    render(<FinanceAccountsTree canWrite />);
+    await abrirAlta();
+
+    fireEvent.click(within(dialog()).getByRole('combobox', { name: /Cuenta padre/ }));
+    expect(await screen.findByRole('option', { name: '6000 Gastos operativos' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: '4110 Ingresos por suscripciones' }),
+    ).toBeNull();
+  });
+});
+
+describe('FinanceAccountsTree — una hija de cuenta retirada no está disponible', () => {
+  it('no la pinta "Activa" a secas: dice que el padre está retirado', () => {
+    accounts = [PADRE_RETIRADO, HIJA_HUERFANA];
+    render(<FinanceAccountsTree canWrite />);
+
+    const fila = screen.getByText('Alquiler viejo').closest('tr') as HTMLTableRowElement;
+    expect(fila).toHaveTextContent('Activa (padre retirado)');
+  });
+
+  it('la hija de un padre vigente sigue diciendo Activa', () => {
+    accounts = [PADRE, HIJA];
+    render(<FinanceAccountsTree canWrite />);
+
+    const fila = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
+    expect(fila).toHaveTextContent('Activa');
+    expect(fila).not.toHaveTextContent('padre retirado');
+  });
+});
+
+describe('FinanceAccountsTree — el árbol se anuncia como árbol', () => {
+  it('expone la jerarquía con treegrid y el nivel de cada cuenta', () => {
+    accounts = [PADRE, HIJA];
+    render(<FinanceAccountsTree canWrite />);
+
+    expect(screen.getByRole('treegrid', { name: 'Plan de cuentas' })).toBeInTheDocument();
+    const padre = screen.getByText('Gastos operativos').closest('tr') as HTMLTableRowElement;
+    const hija = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
+    expect(padre).toHaveAttribute('aria-level', '1');
+    expect(hija).toHaveAttribute('aria-level', '2');
+  });
+});
+
+describe('FinanceAccountDialog — colgar una hija le quita los asientos manuales al padre', () => {
+  it('avisa cuando el padre elegido es una cuenta hoja que hoy recibe asientos', async () => {
+    accounts = [PADRE, HIJA];
+    render(<FinanceAccountsTree canWrite />);
+    await abrirAlta();
+
+    fireEvent.click(within(dialog()).getByRole('combobox', { name: /Cuenta padre/ }));
+    fireEvent.click(await screen.findByRole('option', { name: '6900 Otros gastos operativos' }));
+
+    expect(
+      await screen.findByText('Esta cuenta dejará de recibir asientos manuales'),
+    ).toBeInTheDocument();
+  });
+
+  it('no avisa cuando el padre ya es un nodo del árbol', async () => {
+    accounts = [PADRE, HIJA];
+    render(<FinanceAccountsTree canWrite />);
+    await abrirAlta();
+
+    fireEvent.click(within(dialog()).getByRole('combobox', { name: /Cuenta padre/ }));
+    fireEvent.click(await screen.findByRole('option', { name: '6000 Gastos operativos' }));
+
+    await waitFor(() =>
+      expect(within(dialog()).getByText(/Clase heredada/)).toBeInTheDocument(),
+    );
+    expect(screen.queryByText('Esta cuenta dejará de recibir asientos manuales')).toBeNull();
   });
 });

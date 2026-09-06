@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
@@ -47,7 +48,7 @@ export function PnlDashboard() {
     from: from ? civilDayStartIso(from) : undefined,
     to: to ? civilDayEndIso(to) : undefined,
   };
-  const { data: pnl, isLoading, isError } = useFinancePnl(range.from, range.to);
+  const { data: pnl, isLoading, isError, refetch } = useFinancePnl(range.from, range.to);
 
   const currencies = pnl?.byCurrency.map((c) => c.currency) ?? [];
   const currency = currencies.includes(selected) ? selected : (currencies[0] ?? '');
@@ -94,11 +95,19 @@ export function PnlDashboard() {
 
       {isError && (
         <Alert variant="destructive">
-          <AlertDescription>No se pudo cargar el estado de resultados.</AlertDescription>
+          <AlertDescription className="flex flex-wrap items-center gap-3">
+            <span>No se pudo cargar el estado de resultados.</span>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              Reintentar
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 
-      {!isLoading && currencies.length === 0 ? (
+      {/* Con el reporte caído no hay monedas, pero eso no significa que el rango
+          esté vacío: invitar a cargar gastos ahí manda a inventar movimientos que
+          quizá ya existen. */}
+      {isError ? null : !isLoading && currencies.length === 0 ? (
         <Card>
           <CardContent className="text-muted-foreground py-14 text-center text-sm">
             Sin movimientos en el rango. Cargá gastos/ingresos o ajustá las fechas.

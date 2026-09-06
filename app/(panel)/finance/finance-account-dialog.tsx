@@ -128,9 +128,20 @@ function AccountForm({
   onCancel: () => void;
 }) {
   const editing = target.mode === 'edit' ? target.account : undefined;
-  // Colgar una cuenta de una retirada da 409 ACCOUNT_PARENT_INACTIVE.
-  const parents = useMemo(() => accounts.filter((a) => a.isActive), [accounts]);
+  // Colgar una cuenta de una retirada da 409 ACCOUNT_PARENT_INACTIVE; colgarla de
+  // una del sistema da 409 ACCOUNT_IS_SYSTEM (el alta le quitaría los asientos al
+  // padre y dejaría al emisor automático sin destino). Ninguna de las dos se ofrece.
+  const parents = useMemo(
+    () => accounts.filter((a) => a.isActive && !a.isSystem),
+    [accounts],
+  );
   const parentById = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts]);
+  // Una cuenta hoja hoy recibe asientos manuales; al colgarle una hija pasa a ser
+  // nodo del árbol y los deja de recibir. Se dice ANTES de crearla.
+  const parentIds = useMemo(
+    () => new Set(accounts.map((a) => a.parentId).filter((id): id is string => id !== null)),
+    [accounts],
+  );
   const [pendingRetire, setPendingRetire] = useState<FinanceAccountUpdate | null>(null);
 
   const form = useForm<FormValues>({
@@ -147,6 +158,7 @@ function AccountForm({
 
   const parentId = useWatch({ control: form.control, name: 'parentId' });
   const parent = parentById.get(parentId);
+  const parentBecomesNode = !!parent && parent.allowsManualEntry && !parentIds.has(parent.id);
 
   // El PATCH lleva SOLO lo que se tocó. `currency` es el caso que obliga: el
   // backend corre su comprobación de líneas con que el campo esté presente
@@ -237,6 +249,11 @@ function AccountForm({
                       ? `Clase heredada: ${ACCOUNT_TYPE_LABELS[parent.type]}.`
                       : 'La clase de la cuenta nueva sale de acá.'}
                   </FieldDescription>
+                  {parentBecomesNode && (
+                    <FieldDescription className="text-warning">
+                      Esta cuenta dejará de recibir asientos manuales
+                    </FieldDescription>
+                  )}
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </Field>
               )}
@@ -316,7 +333,14 @@ function AccountForm({
             )}
           />
 
-          {editing && (
+          {editing?.isSystem && (
+            <FieldDescription>
+              Cuenta usada por el sistema: no se retira ni recibe subcuentas. El nombre y la
+              moneda se siguen editando.
+            </FieldDescription>
+          )}
+
+          {editing && !editing.isSystem && (
             <Controller
               name="isActive"
               control={form.control}

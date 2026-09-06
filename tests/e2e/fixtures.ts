@@ -86,4 +86,6 @@ export const FINANCE_FIXTURE = {
   // (el primer 69xx libre): una cuenta no se borra, así que no se puede reusar.
   parentAccount: '6000 Gastos operativos',
   childName: 'E2E Cuenta hija',
+  // La siembra el plan con `isSystem`: el panel la marca y no ofrece retirarla.
+  systemAccount: '1900 Por clasificar',
 } as const;

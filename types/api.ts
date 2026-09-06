@@ -8847,6 +8847,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/play-orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_listPlayOrders"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/play-orders/{orderId}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinanceAdminController_retryPlayOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/exchange-rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_listExchangeRates"];
+        put?: never;
+        post: operations["FinanceAdminController_createExchangeRate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/exchange-rates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["FinanceAdminController_removeExchangeRate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/finance/reports/ledger": {
         parameters: {
             query?: never;
@@ -8911,6 +8975,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/reports/balance-sheet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_getBalanceSheet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/cash-flow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_getCashFlow"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/finance/reports/ledger.csv": {
         parameters: {
             query?: never;
@@ -8935,6 +9031,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["FinanceAdminController_exportTrialBalanceCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/balance-sheet.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_exportBalanceSheetCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/cash-flow.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_exportCashFlowCsv"];
         put?: never;
         post?: never;
         delete?: never;
@@ -18344,6 +18472,7 @@ export interface components {
                 parentId: string | null;
                 isActive: boolean;
                 allowsManualEntry: boolean;
+                isSystem: boolean;
                 sortOrder: number;
                 parentCode: string | null;
                 depth: number;
@@ -18373,6 +18502,7 @@ export interface components {
                 parentId: string | null;
                 isActive: boolean;
                 allowsManualEntry: boolean;
+                isSystem: boolean;
                 sortOrder: number;
             };
         };
@@ -18458,6 +18588,7 @@ export interface components {
                     accountId: string | null;
                     /** Format: uuid */
                     counterAccountId: string | null;
+                    counterAmount: string | null;
                     /** Format: uuid */
                     journalEntryId: string | null;
                     voidedAt: string | null;
@@ -18506,6 +18637,7 @@ export interface components {
                 accountId: string | null;
                 /** Format: uuid */
                 counterAccountId: string | null;
+                counterAmount: string | null;
                 /** Format: uuid */
                 journalEntryId: string | null;
                 voidedAt: string | null;
@@ -18533,6 +18665,7 @@ export interface components {
             accountId?: string | null;
             /** Format: uuid */
             counterAccountId?: string | null;
+            counterAmount?: string;
             vendor?: string | null;
             note?: string | null;
             receiptKey?: string | null;
@@ -18554,6 +18687,86 @@ export interface components {
         };
         VoidFinanceEntryDto: {
             reason: string;
+        };
+        PlayOrderListResponse: {
+            data: {
+                items: {
+                    orderId: string;
+                    subscriptionId: string | null;
+                    /** Format: uuid */
+                    userId: string | null;
+                    state: string;
+                    createTime: string;
+                    totalAmount: string;
+                    totalCurrency: string;
+                    taxAmount: string;
+                    taxCurrency: string;
+                    developerRevenue: string;
+                    developerRevenueCurrency: string;
+                    commission: string | null;
+                    /** @enum {string} */
+                    postingStatus: "PENDING" | "POSTED" | "UNSUPPORTED_CURRENCY" | "REVERSED" | "FAILED" | "SKIPPED" | "NEEDS_REVIEW";
+                    postingError: string | null;
+                    /** Format: uuid */
+                    journalEntryId: string | null;
+                    journalEntryNumber: string | null;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        PlayOrderRetryResponse: {
+            data: {
+                orderId: string;
+                queued: boolean;
+            };
+        };
+        ExchangeRateListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    date: string;
+                    /** @enum {string} */
+                    fromCurrency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    /** @enum {string} */
+                    toCurrency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    rate: string;
+                    source: string;
+                    /** Format: uuid */
+                    createdBy: string | null;
+                    createdAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        CreateExchangeRateDto: {
+            date: string;
+            /** @enum {string} */
+            fromCurrency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            /** @enum {string} */
+            toCurrency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            rate: string;
+            source: string;
+        };
+        ExchangeRateResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                date: string;
+                /** @enum {string} */
+                fromCurrency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                /** @enum {string} */
+                toCurrency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                rate: string;
+                source: string;
+                /** Format: uuid */
+                createdBy: string | null;
+                createdAt: string;
+            };
         };
         FinanceLedgerResponse: {
             data: {
@@ -18613,6 +18826,20 @@ export interface components {
             data: {
                 /** @enum {string} */
                 currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                consolidation: {
+                    /** @enum {string} */
+                    to: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    rates: {
+                        /** @enum {string} */
+                        from: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                        /** @enum {string} */
+                        to: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                        rate: string;
+                        date: string;
+                        source: string;
+                    }[];
+                    missing: ("USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS")[];
+                } | null;
                 range: {
                     from: string;
                     to: string;
@@ -18642,6 +18869,20 @@ export interface components {
                     from: string;
                     to: string;
                 };
+                consolidation: {
+                    /** @enum {string} */
+                    to: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    rates: {
+                        /** @enum {string} */
+                        from: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                        /** @enum {string} */
+                        to: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                        rate: string;
+                        date: string;
+                        source: string;
+                    }[];
+                    missing: ("USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS")[];
+                } | null;
                 byCurrency: {
                     /** @enum {string} */
                     currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
@@ -18665,6 +18906,114 @@ export interface components {
                     month: string;
                     income: string;
                     expense: string;
+                    net: string;
+                }[];
+            };
+        };
+        FinanceBalanceSheetResponse: {
+            data: {
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                asOf: string;
+                consolidation: {
+                    /** @enum {string} */
+                    to: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    rates: {
+                        /** @enum {string} */
+                        from: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                        /** @enum {string} */
+                        to: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                        rate: string;
+                        date: string;
+                        source: string;
+                    }[];
+                    missing: ("USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS")[];
+                } | null;
+                assets: {
+                    /** @enum {string} */
+                    type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    lines: {
+                        /** Format: uuid */
+                        accountId: string | null;
+                        code: string | null;
+                        name: string;
+                        parentCode: string | null;
+                        depth: number;
+                        isActive: boolean;
+                        isSubtotal: boolean;
+                        balance: string;
+                    }[];
+                    total: string;
+                };
+                liabilities: {
+                    /** @enum {string} */
+                    type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    lines: {
+                        /** Format: uuid */
+                        accountId: string | null;
+                        code: string | null;
+                        name: string;
+                        parentCode: string | null;
+                        depth: number;
+                        isActive: boolean;
+                        isSubtotal: boolean;
+                        balance: string;
+                    }[];
+                    total: string;
+                };
+                equity: {
+                    /** @enum {string} */
+                    type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    lines: {
+                        /** Format: uuid */
+                        accountId: string | null;
+                        code: string | null;
+                        name: string;
+                        parentCode: string | null;
+                        depth: number;
+                        isActive: boolean;
+                        isSubtotal: boolean;
+                        balance: string;
+                    }[];
+                    total: string;
+                };
+                totals: {
+                    assets: string;
+                    liabilities: string;
+                    equity: string;
+                };
+                balanced: boolean;
+                difference: string;
+            };
+        };
+        FinanceCashFlowResponse: {
+            data: {
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                range: {
+                    from: string;
+                    to: string;
+                };
+                accounts: {
+                    /** Format: uuid */
+                    accountId: string;
+                    code: string;
+                    name: string;
+                    opening: string;
+                    inflow: string;
+                    outflow: string;
+                    closing: string;
+                }[];
+                totals: {
+                    opening: string;
+                    inflow: string;
+                    outflow: string;
+                    closing: string;
+                };
+                byMonth: {
+                    month: string;
+                    inflow: string;
+                    outflow: string;
                     net: string;
                 }[];
             };
@@ -33301,6 +33650,122 @@ export interface operations {
             };
         };
     };
+    FinanceAdminController_listPlayOrders: {
+        parameters: {
+            query?: {
+                postingStatus?: "PENDING" | "POSTED" | "UNSUPPORTED_CURRENCY" | "REVERSED" | "FAILED" | "SKIPPED" | "NEEDS_REVIEW";
+                from?: string;
+                to?: string;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayOrderListResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_retryPlayOrder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orderId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayOrderRetryResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_listExchangeRates: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                fromCurrency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                toCurrency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeRateListResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_createExchangeRate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateExchangeRateDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExchangeRateResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_removeExchangeRate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceRemovedResponse"];
+                };
+            };
+        };
+    };
     FinanceAdminController_getLedger: {
         parameters: {
             query: {
@@ -33351,8 +33816,9 @@ export interface operations {
     };
     FinanceAdminController_getTrialBalance: {
         parameters: {
-            query: {
-                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            query?: {
+                currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                consolidateTo?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
                 from?: string;
                 to?: string;
             };
@@ -33377,6 +33843,7 @@ export interface operations {
             query?: {
                 from?: string;
                 to?: string;
+                consolidateTo?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
             };
             header?: never;
             path?: never;
@@ -33390,6 +33857,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FinanceLedgerPnlResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_getBalanceSheet: {
+        parameters: {
+            query?: {
+                currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                consolidateTo?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                asOf?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceBalanceSheetResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_getCashFlow: {
+        parameters: {
+            query: {
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceCashFlowResponse"];
                 };
             };
         };
@@ -33421,8 +33934,9 @@ export interface operations {
     };
     FinanceAdminController_exportTrialBalanceCsv: {
         parameters: {
-            query: {
-                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            query?: {
+                currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                consolidateTo?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
                 from?: string;
                 to?: string;
             };
@@ -33443,11 +33957,60 @@ export interface operations {
             };
         };
     };
+    FinanceAdminController_exportBalanceSheetCsv: {
+        parameters: {
+            query?: {
+                currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                consolidateTo?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                asOf?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Balance general en CSV (Excel es-CR) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+        };
+    };
+    FinanceAdminController_exportCashFlowCsv: {
+        parameters: {
+            query: {
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Flujo de caja en CSV (Excel es-CR) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+        };
+    };
     FinanceAdminController_exportPnlCsv: {
         parameters: {
             query?: {
                 from?: string;
                 to?: string;
+                consolidateTo?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
             };
             header?: never;
             path?: never;

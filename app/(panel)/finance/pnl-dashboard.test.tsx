@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Pnl } from '@/hooks/use-finance';
 
 let pnl: Pnl | undefined;
+let pnlError = false;
+const refetch = vi.fn();
 
 const downloadReport = vi.fn();
 vi.mock('@/lib/download-report', () => ({
@@ -11,7 +13,12 @@ vi.mock('@/lib/download-report', () => ({
 
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
-  useFinancePnl: () => ({ data: pnl, isLoading: false, isError: false }),
+  useFinancePnl: () => ({
+    data: pnlError ? undefined : pnl,
+    isLoading: false,
+    isError: pnlError,
+    refetch,
+  }),
 }));
 
 // recharts mide el contenedor con ResizeObserver, que jsdom no tiene.
@@ -69,6 +76,8 @@ const kpi = (label: string) =>
   screen.getByText(label).closest('[data-slot="card"]') as HTMLElement;
 
 beforeEach(() => {
+  vi.clearAllMocks();
+  pnlError = false;
   pnl = REPORT;
 });
 
@@ -108,5 +117,18 @@ describe('PnlDashboard — los KPI salen de byCurrency del mayor', () => {
 
     expect(screen.getByText(/Sin movimientos en el rango/)).toBeInTheDocument();
     expect(screen.queryByText('Ingresos (CRC)')).not.toBeInTheDocument();
+  });
+});
+
+describe('PnlDashboard — un reporte caído no es un rango sin movimientos', () => {
+  it('con error no invita a cargar gastos: dice que no pudo cargar y ofrece reintentar', () => {
+    pnlError = true;
+    render(<PnlDashboard />);
+
+    expect(screen.queryByText(/Sin movimientos en el rango/)).toBeNull();
+    expect(screen.getByText('No se pudo cargar el estado de resultados.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(refetch).toHaveBeenCalled();
   });
 });

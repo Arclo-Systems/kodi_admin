@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type { ColumnDef } from '@tanstack/react-table';
 import { BookOpenIcon } from 'lucide-react';
 import {
@@ -31,13 +32,28 @@ import { FinanceReportCsvButton } from './finance-report-csv-button';
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
+const CIVIL_DAY = /^\d{4}-\d{2}-\d{2}$/;
+// `civilDayStartIso` tira ante un día mal formado, y la query viene de la URL:
+// un `?from=ayer` no puede tumbar la pantalla.
+const civilDayOr = (value: string | null): string => (value && CIVIL_DAY.test(value) ? value : '');
+
 export function FinanceLedger() {
-  const [accountId, setAccountId] = useState('');
+  // La comprobación enlaza acá con la cuenta, la moneda y el rango que se venían
+  // mirando: sin leer la query el link abriría un mayor en blanco y habría que
+  // re-elegir los tres filtros. Solo siembra el estado inicial; después manda la
+  // pantalla.
+  const search = useSearchParams();
+  const [accountId, setAccountId] = useState(() => search.get('accountId') ?? '');
   // La moneda no tiene "todas": un saldo corrido que mezcla colones con dólares no
   // es un saldo. Arranca en la que se usa a diario.
-  const [currency, setCurrency] = useState<string>(FINANCE_CURRENCIES[0]);
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  const [currency, setCurrency] = useState<string>(() => {
+    const desde = search.get('currency');
+    return desde && (FINANCE_CURRENCIES as readonly string[]).includes(desde)
+      ? desde
+      : FINANCE_CURRENCIES[0];
+  });
+  const [from, setFrom] = useState(() => civilDayOr(search.get('from')));
+  const [to, setTo] = useState(() => civilDayOr(search.get('to')));
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
 
@@ -48,7 +64,13 @@ export function FinanceLedger() {
     from: from ? civilDayStartIso(from) : undefined,
     to: to ? civilDayEndIso(to) : undefined,
   };
-  const { data: ledger, isLoading, isError, error } = useFinanceLedger({ ...params, page, pageSize });
+  const {
+    data: ledger,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useFinanceLedger({ ...params, page, pageSize });
 
   // Un plan de cuentas se lee por clase: 37 cuentas en una lista plana obligan a
   // recordar qué significa el primer dígito del código.
@@ -203,8 +225,13 @@ export function FinanceLedger() {
 
       {isError && (
         <Alert variant="destructive">
-          <AlertDescription>
-            {error instanceof Error ? error.message : 'No se pudo cargar el libro mayor.'}
+          <AlertDescription className="flex flex-wrap items-center gap-3">
+            <span>
+              {error instanceof Error ? error.message : 'No se pudo cargar el libro mayor.'}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              Reintentar
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -251,8 +278,16 @@ export function FinanceLedger() {
               setPage(1);
             }}
             emptyIcon={<BookOpenIcon />}
-            emptyMessage="Todavía no hay asientos en esta cuenta para el período"
-            emptyDescription="Probá con otro rango de fechas u otra moneda, o cargá el movimiento desde Movimientos."
+            // Un mayor caído deja la tabla igual de vacía que una cuenta sin
+            // movimiento: decir "no hay asientos" ahí afirma algo que no se sabe.
+            emptyMessage={
+              isError ? 'No se pudo cargar' : 'Todavía no hay asientos en esta cuenta para el período'
+            }
+            emptyDescription={
+              isError
+                ? 'Reintentá la carga para ver el mayor de la cuenta.'
+                : 'Probá con otro rango de fechas u otra moneda, o cargá el movimiento desde Movimientos.'
+            }
           />
         </>
       )}
