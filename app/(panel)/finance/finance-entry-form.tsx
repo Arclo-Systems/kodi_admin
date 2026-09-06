@@ -29,15 +29,17 @@ import {
   useFinanceCategories,
   useFinanceEntry,
   useFinanceEntryMutations,
+  CASH_ROOT_CODE,
   FINANCE_CURRENCIES,
   MOVEMENT_TYPES,
+  RECEIVABLE_ROOT_CODE,
   type FinanceAccount,
   type FinanceEntry,
   type FinanceEntryInput,
   type FinanceKind,
   type MovementType,
 } from '@/hooks/use-finance';
-import { MOVEMENT_TYPE_LABELS, accountLabel } from './finance-format';
+import { MOVEMENT_TYPE_HINTS, MOVEMENT_TYPE_LABELS, accountLabel } from './finance-format';
 
 // Sentinel: el comprobante existente se mantiene si el usuario no lo toca (no se reenvía la key).
 const KEEP = '__keep__';
@@ -62,6 +64,23 @@ const ASSET_ONLY_TYPES = new Set<MovementType>([
 
 // Los tres tipos cuyo asiento se imputa contra la cuenta de la categoría.
 const CATEGORY_ACCOUNT_TYPES = new Set<MovementType>(['INCOME', 'EXPENSE', 'OTHER']);
+
+// Liquidar un saldo ya registrado: las DOS cuentas son obligatorias y ninguna
+// admite la contrapartida por defecto ("1900 Por clasificar"), porque saldar una
+// deuda contra ella dejaría el pasivo en cero y el faltante donde nadie mira.
+const SETTLEMENT_TYPES = new Set<MovementType>(['LIABILITY_PAYMENT', 'RECEIVABLE_COLLECTION']);
+
+/**
+ * Si la cuenta cuelga de la rama `rootCode` del plan.
+ *
+ * El backend valida por RAMA y no por clase ni por prefijo del código: "caja o
+ * banco" es lo que cuelga de `1100` (`1190 Traslados entre monedas` y `1900 Por
+ * clasificar` también son ASSET y no lo son), y los códigos de las hijas los
+ * teclea el founder. `ancestorCodes` viene calculado sobre el plan COMPLETO, así
+ * que sigue siendo correcto con `postable=true`, donde los padres no viajan.
+ */
+const isUnderBranch = (account: FinanceAccount, rootCode: string): boolean =>
+  account.ancestorCodes.includes(rootCode);
 
 /**
  * Una transferencia entre cuentas de monedas FIJAS y distintas no mueve el mismo
@@ -99,6 +118,24 @@ function schemaFor(currencyById: ReadonlyMap<string, string | null>) {
       note: z.string(),
     })
     .superRefine((v, ctx) => {
+      if (SETTLEMENT_TYPES.has(v.type)) {
+        const esPago = v.type === 'LIABILITY_PAYMENT';
+        if (!v.accountId)
+          ctx.addIssue({
+            code: 'custom',
+            path: ['accountId'],
+            message: esPago ? 'Elegí la deuda que se paga' : 'Elegí la cuenta por cobrar',
+          });
+        if (!v.counterAccountId)
+          ctx.addIssue({
+            code: 'custom',
+            path: ['counterAccountId'],
+            message: 'Elegí la cuenta de caja o banco',
+          });
+        // Las dos no pueden coincidir por construcción: una cuelga de 1200 (o es
+        // un pasivo) y la otra de 1100. No hace falta comprobarlo.
+        return;
+      }
       if (v.type !== 'TRANSFER') return;
       if (!v.accountId)
         ctx.addIssue({ code: 'custom', path: ['accountId'], message: 'Elegí la cuenta de origen' });
@@ -168,6 +205,32 @@ function kindForType(type: MovementType): FinanceKind | undefined {
   if (type === 'EXPENSE') return 'expense';
   if (type === 'INCOME') return 'income';
   return undefined;
+}
+
+// Cómo se llama cada cuenta según el tipo. El nombre del campo dice qué elegir;
+// la ayuda de abajo, en qué dirección va la plata.
+function originLabel(type: MovementType): string {
+  if (type === 'LIABILITY_PAYMENT') return 'Cuenta a pagar';
+  if (type === 'RECEIVABLE_COLLECTION') return 'Cuenta por cobrar';
+  return 'Cuenta de origen';
+}
+
+function originHint(type: MovementType): string {
+  if (type === 'LIABILITY_PAYMENT') return '¿Qué deuda estás pagando?';
+  if (type === 'RECEIVABLE_COLLECTION') return '¿Qué estás cobrando?';
+  return 'De dónde sale la plata.';
+}
+
+function counterLabel(type: MovementType): string {
+  if (type === 'LIABILITY_PAYMENT') return 'Desde';
+  if (type === 'RECEIVABLE_COLLECTION') return 'Hacia';
+  return type === 'TRANSFER' ? 'Cuenta de destino' : 'Contrapartida';
+}
+
+function counterHint(type: MovementType): string {
+  if (type === 'LIABILITY_PAYMENT') return '¿De qué cuenta sale la plata? Caja o banco.';
+  if (type === 'RECEIVABLE_COLLECTION') return '¿A qué cuenta entra la plata? Caja o banco.';
+  return type === 'TRANSFER' ? 'A dónde entra la plata.' : 'Caja, banco o cuenta por pagar.';
 }
 
 // `currency: null` = la cuenta acepta cualquier moneda (resultados, "Por
@@ -249,6 +312,11 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
   const accountId = useWatch({ control: form.control, name: 'accountId' });
   const counterAccountId = useWatch({ control: form.control, name: 'counterAccountId' });
   const isTransfer = type === 'TRANSFER';
+  const isSettlement = SETTLEMENT_TYPES.has(type);
+  const isPayment = type === 'LIABILITY_PAYMENT';
+  // Los tres tipos que eligen las dos cuentas a mano: ninguno acepta la
+  // contrapartida por defecto.
+  const needsBothAccounts = isTransfer || isSettlement;
   const crossCurrency =
     isTransfer && isCrossCurrency(currencyById, accountId, counterAccountId);
   const destinationCurrency = currencyById.get(counterAccountId) ?? '';
@@ -266,11 +334,28 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
   // vea que existe y por qué no sirve) y el aviso dice dónde se arregla.
   const hasUnmappedCategory = needsCategoryAccount && cats.some((c) => c.isActive && !c.accountId);
 
-  const originOptions = useMemo(
-    () => matchesCurrency(assets.data ?? [], currency),
-    [assets.data, currency],
-  );
+  const branchOptions = useMemo(() => {
+    const postables = postable.data ?? [];
+    return {
+      cash: postables.filter((a) => isUnderBranch(a, CASH_ROOT_CODE)),
+      receivable: postables.filter((a) => isUnderBranch(a, RECEIVABLE_ROOT_CODE)),
+      liability: postables.filter((a) => a.type === 'LIABILITY'),
+    };
+  }, [postable.data]);
+
+  const originOptions = useMemo(() => {
+    if (isSettlement)
+      return matchesCurrency(
+        isPayment ? branchOptions.liability : branchOptions.receivable,
+        currency,
+      );
+    return matchesCurrency(assets.data ?? [], currency);
+  }, [isSettlement, isPayment, branchOptions, assets.data, currency]);
+
   const counterOptions = useMemo(() => {
+    // Los dos tipos de liquidación mueven la plata contra caja o banco, que es
+    // lo que cuelga de 1100 — no "cualquier ASSET".
+    if (isSettlement) return matchesCurrency(branchOptions.cash, currency);
     const pool = ASSET_ONLY_TYPES.has(type)
       ? (assets.data ?? [])
       : (postable.data ?? []).filter((a) => a.type === 'ASSET' || a.type === 'LIABILITY');
@@ -278,7 +363,7 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
     // exactamente el caso que el backend resuelve con `counterAmount`. Filtrarlo
     // por la moneda del movimiento dejaba la conversión fuera del panel.
     return isTransfer ? pool : matchesCurrency(pool, currency);
-  }, [type, isTransfer, currency, assets.data, postable.data]);
+  }, [type, isTransfer, isSettlement, branchOptions, currency, assets.data, postable.data]);
 
   // Una cuenta en colones no puede recibir una línea en dólares: el backend la
   // rechaza con 409 ACCOUNT_CURRENCY_MISMATCH. Al cambiar la moneda, la cuenta
@@ -415,6 +500,7 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FieldDescription>{MOVEMENT_TYPE_HINTS[field.value]}</FieldDescription>
                   </Field>
                 )}
               />
@@ -446,6 +532,11 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                         ))}
                       </SelectContent>
                     </Select>
+                    {isSettlement && (
+                      <FieldDescription>
+                        Solo etiqueta el movimiento: el asiento sale de las dos cuentas.
+                      </FieldDescription>
+                    )}
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
@@ -525,13 +616,13 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
             </legend>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {isTransfer && (
+              {needsBothAccounts && (
                 <Controller
                   name="accountId"
                   control={form.control}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="fe-account">Cuenta de origen</FieldLabel>
+                      <FieldLabel htmlFor="fe-account">{originLabel(type)}</FieldLabel>
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
@@ -540,7 +631,7 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                         <SelectTrigger id="fe-account" aria-invalid={fieldState.invalid}>
                           <SelectValue
                             placeholder={
-                              accountsLoading ? 'Cargando cuentas…' : 'Cuenta de origen'
+                              accountsLoading ? 'Cargando cuentas…' : originLabel(type)
                             }
                           />
                         </SelectTrigger>
@@ -548,7 +639,7 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                           <AccountItems accounts={originOptions} />
                         </SelectContent>
                       </Select>
-                      <FieldDescription>De dónde sale la plata.</FieldDescription>
+                      <FieldDescription>{originHint(type)}</FieldDescription>
                       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                     </Field>
                   )}
@@ -559,26 +650,26 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="fe-counter">
-                      {isTransfer ? 'Cuenta de destino' : 'Contrapartida'}
-                    </FieldLabel>
-                    {/* En transferencia el destino es obligatorio y no tiene default,
-                        así que arranca vacío con placeholder: caer en el sentinel sin
+                    <FieldLabel htmlFor="fe-counter">{counterLabel(type)}</FieldLabel>
+                    {/* Donde las dos cuentas son obligatorias no hay default, así
+                        que arranca vacío con placeholder: caer en el sentinel sin
                         su SelectItem dejaba el trigger en blanco. */}
                     <Select
                       value={
-                        isTransfer || accountsLoading ? field.value : field.value || DEFAULT_ACCOUNT
+                        needsBothAccounts || accountsLoading
+                          ? field.value
+                          : field.value || DEFAULT_ACCOUNT
                       }
                       onValueChange={(v) => field.onChange(v === DEFAULT_ACCOUNT ? '' : v)}
                       disabled={lockAccounting || accountsLoading || accountsError}
                     >
                       <SelectTrigger id="fe-counter" aria-invalid={fieldState.invalid}>
                         <SelectValue
-                          placeholder={accountsLoading ? 'Cargando cuentas…' : 'Cuenta de destino'}
+                          placeholder={accountsLoading ? 'Cargando cuentas…' : counterLabel(type)}
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {!isTransfer && (
+                        {!needsBothAccounts && (
                           <SelectItem value={DEFAULT_ACCOUNT}>
                             Por clasificar (predeterminada)
                           </SelectItem>
@@ -586,9 +677,7 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                         <AccountItems accounts={counterOptions} />
                       </SelectContent>
                     </Select>
-                    <FieldDescription>
-                      {isTransfer ? 'A dónde entra la plata.' : 'Caja, banco o cuenta por pagar.'}
-                    </FieldDescription>
+                    <FieldDescription>{counterHint(type)}</FieldDescription>
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}

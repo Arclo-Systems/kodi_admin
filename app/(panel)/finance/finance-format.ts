@@ -44,10 +44,28 @@ export const KIND_LABELS: Record<FinanceKind, string> = { expense: 'Gasto', inco
 export const MOVEMENT_TYPE_LABELS: Record<MovementType, string> = {
   INCOME: 'Ingreso',
   EXPENSE: 'Gasto',
+  LIABILITY_PAYMENT: 'Pago de deuda',
+  RECEIVABLE_COLLECTION: 'Cobro',
   TRANSFER: 'Transferencia',
   PARTNER_CONTRIBUTION: 'Aporte de socio',
   PARTNER_LOAN: 'Préstamo de socio',
   OTHER: 'Otro',
+};
+
+// Qué hace cada tipo, en una línea. Es lo que separa un gasto (nace la deuda) de
+// un pago de deuda (se salda una que ya estaba registrada): elegir mal el tipo
+// duplica el gasto en el P&L y el saldo del pasivo nunca baja.
+export const MOVEMENT_TYPE_HINTS: Record<MovementType, string> = {
+  INCOME: 'Plata que entra y suma al estado de resultados.',
+  EXPENSE: 'Plata que sale y suma al estado de resultados.',
+  LIABILITY_PAYMENT:
+    'Salda una deuda que ya estaba registrada. No es un gasto nuevo: el gasto se cargó cuando nació la deuda.',
+  RECEIVABLE_COLLECTION:
+    'Cobra algo ya facturado. No es un ingreso nuevo: el ingreso se registró al facturar.',
+  TRANSFER: 'Mueve saldo entre dos cuentas propias. No es ingreso ni gasto.',
+  PARTNER_CONTRIBUTION: 'Un socio pone plata en la empresa. Va a patrimonio, no a ingresos.',
+  PARTNER_LOAN: 'Un socio presta plata a la empresa. Queda como deuda, no como ingreso.',
+  OTHER: 'Cualquier otro hecho económico que se imputa contra la cuenta de la categoría.',
 };
 
 export const accountLabel = (a: FinanceAccount): string => `${a.code} ${a.name}`;

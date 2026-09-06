@@ -377,6 +377,10 @@ function PlayOrderSummary({
           return (
             <Tooltip key={status}>
               <TooltipTrigger
+                // Explícito: el `<button>` de Radix hereda `type="submit"`, y
+                // estas cards viven dentro del `<form>` de filtros — hacer clic
+                // en una lo enviaba en vez de filtrar.
+                type="button"
                 aria-pressed={actionable ? active : undefined}
                 onClick={actionable ? () => onSelect(active ? undefined : status) : undefined}
                 className={cn(

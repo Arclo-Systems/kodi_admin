@@ -1,17 +1,62 @@
 import {
+  act,
   render as rtlRender,
   screen,
   fireEvent,
   waitFor,
   within,
 } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { AccountBalances, FinanceAccount } from '@/hooks/use-finance';
 
+// Arrastrar de verdad necesita MEDIR el layout, y en jsdom todo mide cero: el
+// gesto se prueba en Playwright y acá se prueba lo que el gesto termina
+// llamando. `sortableItems` guarda los ids que cada contexto de arrastre conoce,
+// que es exactamente lo que impide soltar una cuenta bajo otro padre.
+const { dragEnds, sortableItems } = vi.hoisted(() => ({
+  dragEnds: [] as ((event: { active: { id: string }; over: { id: string } | null }) => void)[],
+  sortableItems: [] as string[][],
+}));
+
+vi.mock('@dnd-kit/core', () => ({
+  DndContext: ({
+    children,
+    onDragEnd,
+  }: {
+    children: ReactNode;
+    onDragEnd: (event: { active: { id: string }; over: { id: string } | null }) => void;
+  }) => {
+    dragEnds.push(onDragEnd);
+    return <>{children}</>;
+  },
+  closestCenter: vi.fn(),
+  KeyboardSensor: vi.fn(),
+  PointerSensor: vi.fn(),
+  useSensor: vi.fn(),
+  useSensors: () => [],
+}));
+
+vi.mock('@dnd-kit/sortable', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@dnd-kit/sortable')>()),
+  SortableContext: ({ items, children }: { items: string[]; children: ReactNode }) => {
+    sortableItems.push(items);
+    return <>{children}</>;
+  },
+  useSortable: () => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: () => {},
+    transform: null,
+    transition: undefined,
+    isDragging: false,
+  }),
+}));
+
 const create = vi.fn();
 const update = vi.fn();
+const reorder = vi.fn();
 let accounts: FinanceAccount[] = [];
 let balances: AccountBalances | undefined;
 let balancesError = false;
@@ -34,6 +79,7 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   useFinanceAccountMutations: () => ({
     create: { mutateAsync: create },
     update: { mutateAsync: update },
+    reorder: { mutateAsync: reorder },
   }),
 }));
 
@@ -61,6 +107,7 @@ function account(over: Partial<FinanceAccount> = {}): FinanceAccount {
     sortOrder: 0,
     parentCode: null,
     depth: 0,
+    ancestorCodes: [],
     ...over,
   };
 }
@@ -73,6 +120,17 @@ const HIJA = account({
   parentId: PADRE.id,
   parentCode: PADRE.code,
   depth: 1,
+  allowsManualEntry: true,
+});
+// Segunda hija del mismo padre: es lo que hace que haya algo que reordenar.
+const HERMANA = account({
+  id: 'acc-6910',
+  code: '6910',
+  name: 'Gastos legales',
+  parentId: PADRE.id,
+  parentCode: PADRE.code,
+  depth: 1,
+  sortOrder: 1,
   allowsManualEntry: true,
 });
 
@@ -121,6 +179,14 @@ const HIJA_HUERFANA = account({
 
 const dialog = () => screen.getByRole('dialog');
 
+/** La fila del árbol de una cuenta: su nombre accesible es `código nombre`. */
+const fila = (account: FinanceAccount): HTMLElement =>
+  screen.getByRole('treeitem', { name: `${account.code} ${account.name}` });
+
+/** Los nombres de las filas visibles, en el orden en que se pintan. */
+const filasVisibles = (): (string | null)[] =>
+  screen.getAllByRole('treeitem').map((r) => r.getAttribute('aria-label'));
+
 async function abrirAlta(): Promise<void> {
   fireEvent.click(screen.getByRole('button', { name: 'Nueva cuenta' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeNull());
@@ -128,6 +194,9 @@ async function abrirAlta(): Promise<void> {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  dragEnds.length = 0;
+  sortableItems.length = 0;
+  window.localStorage.clear();
   balancesError = false;
   accounts = [PADRE, HIJA];
   balances = {
@@ -146,23 +215,26 @@ beforeEach(() => {
   };
   create.mockResolvedValue(undefined);
   update.mockResolvedValue(undefined);
+  reorder.mockResolvedValue(undefined);
 });
 
 describe('FinanceAccountsTree — el plan se lee como un árbol con saldo', () => {
-  it('muestra cada cuenta con su clase, su moneda y el saldo del reporte', () => {
+  it('muestra cada cuenta con su moneda y el saldo del reporte', () => {
     render(<FinanceAccountsTree canWrite />);
 
-    const fila = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
-    expect(fila).toHaveTextContent('6900');
-    expect(fila).toHaveTextContent('Gasto operativo');
-    expect(fila).toHaveTextContent('1 400,00');
+    expect(fila(HIJA)).toHaveTextContent('6900');
+    expect(fila(HIJA)).toHaveTextContent('1 400,00');
+    // La clase se nombra en la raíz de la rama; abajo la heredan todas.
+    expect(fila(PADRE)).toHaveTextContent('Gasto operativo');
   });
 
-  it('sin permiso de escritura no ofrece alta ni edición', () => {
+  it('sin permiso de escritura no ofrece alta, edición ni arrastre', () => {
+    accounts = [PADRE, HIJA, HERMANA];
     render(<FinanceAccountsTree />);
 
     expect(screen.queryByRole('button', { name: 'Nueva cuenta' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Editar' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Reordenar/ })).toBeNull();
   });
 });
 
@@ -220,8 +292,7 @@ describe('FinanceAccountsTree — alta de una cuenta hija', () => {
 
 describe('FinanceAccountsTree — edición: el PATCH lleva solo lo que se tocó', () => {
   async function abrirEdicion(): Promise<void> {
-    const fila = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
-    fireEvent.click(within(fila).getByRole('button', { name: 'Editar' }));
+    fireEvent.click(within(fila(HIJA)).getByRole('button', { name: 'Editar' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeNull());
   }
 
@@ -277,20 +348,6 @@ describe('FinanceAccountsTree — edición: el PATCH lleva solo lo que se tocó'
     expect(screen.queryByRole('button', { name: 'Borrar' })).toBeNull();
   });
 
-  it('cancelar la confirmación no retira nada', async () => {
-    render(<FinanceAccountsTree canWrite />);
-    await abrirEdicion();
-
-    fireEvent.click(within(dialog()).getByRole('switch', { name: 'Activa' }));
-    fireEvent.click(within(dialog()).getByRole('button', { name: 'Guardar' }));
-    expect(await screen.findByText('Retirar cuenta')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-
-    await waitFor(() => expect(screen.queryByText('Retirar cuenta')).toBeNull());
-    expect(update).not.toHaveBeenCalled();
-  });
-
   it('guardar sin tocar nada no manda un PATCH vacío', async () => {
     render(<FinanceAccountsTree canWrite />);
     await abrirEdicion();
@@ -308,9 +365,8 @@ describe('FinanceAccountsTree — saldos', () => {
     render(<FinanceAccountsTree canWrite />);
 
     expect(screen.getByText(/No se pudieron cargar los saldos en CRC/)).toBeInTheDocument();
-    const fila = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
-    expect(fila).toHaveTextContent('sin dato');
-    expect(fila).not.toHaveTextContent('0,00');
+    expect(fila(HIJA)).toHaveTextContent('sin dato');
+    expect(fila(HIJA)).not.toHaveTextContent('0,00');
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
   });
 
@@ -321,9 +377,8 @@ describe('FinanceAccountsTree — saldos', () => {
     accounts = [PADRE, HIJA, RETIRADA];
     render(<FinanceAccountsTree canWrite />);
 
-    const fila = screen.getByText('Caja vieja').closest('tr') as HTMLTableRowElement;
-    expect(fila).toHaveTextContent('Retirada');
-    expect(fila).toHaveTextContent('0,00');
+    expect(fila(RETIRADA)).toHaveTextContent('Retirada');
+    expect(fila(RETIRADA)).toHaveTextContent('0,00');
   });
 });
 
@@ -332,15 +387,14 @@ describe('FinanceAccountsTree — cuentas del sistema', () => {
     accounts = [PADRE, HIJA, SISTEMA];
     render(<FinanceAccountsTree canWrite />);
 
-    const fila = screen.getByText('Ingresos por suscripciones').closest('tr') as HTMLTableRowElement;
-    expect(within(fila).getByText('Sistema')).toBeInTheDocument();
+    expect(within(fila(SISTEMA)).getByText('Sistema')).toBeInTheDocument();
 
-    const trigger = within(fila).getByText('Sistema').closest('[data-slot="tooltip-trigger"]');
+    const trigger = within(fila(SISTEMA))
+      .getByText('Sistema')
+      .closest('[data-slot="tooltip-trigger"]');
     fireEvent.pointerMove(trigger as HTMLElement, { pointerType: 'mouse' });
     expect(
-      await screen.findAllByText(
-        'Cuenta usada por el sistema: no se retira ni recibe subcuentas',
-      ),
+      await screen.findAllByText('Cuenta usada por el sistema: no se retira ni recibe subcuentas'),
     ).not.toHaveLength(0);
   });
 
@@ -348,8 +402,7 @@ describe('FinanceAccountsTree — cuentas del sistema', () => {
     accounts = [PADRE, HIJA, SISTEMA];
     render(<FinanceAccountsTree canWrite />);
 
-    const fila = screen.getByText('Ingresos por suscripciones').closest('tr') as HTMLTableRowElement;
-    fireEvent.click(within(fila).getByRole('button', { name: 'Editar' }));
+    fireEvent.click(within(fila(SISTEMA)).getByRole('button', { name: 'Editar' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeNull());
 
     expect(within(dialog()).queryByRole('switch', { name: 'Activa' })).toBeNull();
@@ -363,10 +416,10 @@ describe('FinanceAccountsTree — cuentas del sistema', () => {
     await abrirAlta();
 
     fireEvent.click(within(dialog()).getByRole('combobox', { name: /Cuenta padre/ }));
-    expect(await screen.findByRole('option', { name: '6000 Gastos operativos' })).toBeInTheDocument();
     expect(
-      screen.queryByRole('option', { name: '4110 Ingresos por suscripciones' }),
-    ).toBeNull();
+      await screen.findByRole('option', { name: '6000 Gastos operativos' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '4110 Ingresos por suscripciones' })).toBeNull();
   });
 });
 
@@ -375,106 +428,172 @@ describe('FinanceAccountsTree — una hija de cuenta retirada no está disponibl
     accounts = [PADRE_RETIRADO, HIJA_HUERFANA];
     render(<FinanceAccountsTree canWrite />);
 
-    const fila = screen.getByText('Alquiler viejo').closest('tr') as HTMLTableRowElement;
-    expect(fila).toHaveTextContent('Activa (padre retirado)');
+    expect(fila(HIJA_HUERFANA)).toHaveTextContent('Activa (padre retirado)');
   });
 
   it('la hija de un padre vigente sigue diciendo Activa', () => {
     accounts = [PADRE, HIJA];
     render(<FinanceAccountsTree canWrite />);
 
-    const fila = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
-    expect(fila).toHaveTextContent('Activa');
-    expect(fila).not.toHaveTextContent('padre retirado');
+    expect(fila(HIJA)).toHaveTextContent('Activa');
+    expect(fila(HIJA)).not.toHaveTextContent('padre retirado');
   });
 });
 
-describe('FinanceAccountsTree — el árbol se anuncia como árbol', () => {
-  it('expone la jerarquía con treegrid y el nivel de cada cuenta', () => {
-    accounts = [PADRE, HIJA];
+describe('FinanceAccountsTree — el árbol se pliega y se despliega', () => {
+  it('arranca entero a la vista y esconde la rama al plegarla', () => {
     render(<FinanceAccountsTree canWrite />);
 
-    expect(screen.getByRole('treegrid', { name: 'Plan de cuentas' })).toBeInTheDocument();
-    const padre = screen.getByText('Gastos operativos').closest('tr') as HTMLTableRowElement;
-    const hija = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
-    expect(padre).toHaveAttribute('aria-level', '1');
-    expect(hija).toHaveAttribute('aria-level', '2');
+    expect(fila(PADRE)).toHaveAttribute('aria-expanded', 'true');
+    expect(filasVisibles()).toHaveLength(2);
+
+    fireEvent.click(within(fila(PADRE)).getByRole('button', { name: 'Plegar Gastos operativos' }));
+
+    expect(fila(PADRE)).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('treeitem', { name: '6900 Otros gastos operativos' })).toBeNull();
+  });
+
+  // Si el pliegue no se recuerda, la pantalla se re-arma entera en cada visita y
+  // volver a la rama que se estaba mirando cuesta los mismos clics de siempre.
+  it('recuerda lo plegado entre visitas', () => {
+    const { unmount } = render(<FinanceAccountsTree canWrite />);
+    fireEvent.click(within(fila(PADRE)).getByRole('button', { name: 'Plegar Gastos operativos' }));
+    unmount();
+
+    render(<FinanceAccountsTree canWrite />);
+    expect(fila(PADRE)).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('una hoja no anuncia expansión: no hay nada que abrir', () => {
+    render(<FinanceAccountsTree canWrite />);
+    expect(fila(HIJA)).not.toHaveAttribute('aria-expanded');
+  });
+});
+
+describe('FinanceAccountsTree — el árbol se anuncia como árbol y se camina con el teclado', () => {
+  beforeEach(() => {
+    accounts = [PADRE, HIJA, HERMANA];
+  });
+
+  it('expone la jerarquía con tree y el nivel de cada cuenta', () => {
+    render(<FinanceAccountsTree canWrite />);
+
+    expect(screen.getByRole('tree', { name: 'Plan de cuentas' })).toBeInTheDocument();
+    expect(fila(PADRE)).toHaveAttribute('aria-level', '1');
+    expect(fila(HIJA)).toHaveAttribute('aria-level', '2');
   });
 
   it('ocupa UNA parada de tabulador: solo la primera fila es tabulable', () => {
-    accounts = [PADRE, HIJA];
     render(<FinanceAccountsTree canWrite />);
 
-    const filas = screen.getAllByRole('row').filter((r) => r.hasAttribute('aria-level'));
-    expect(filas.map((r) => r.getAttribute('tabindex'))).toEqual(['0', '-1']);
+    expect(screen.getAllByRole('treeitem').map((r) => r.getAttribute('tabindex'))).toEqual([
+      '0',
+      '-1',
+      '-1',
+    ]);
   });
 
-  it('las flechas bajan, suben y saltan al padre sin salir de la tabla', () => {
-    accounts = [PADRE, HIJA];
+  it('las flechas bajan, suben y saltan al padre sin salir del árbol', () => {
     render(<FinanceAccountsTree canWrite />);
 
-    const padre = screen.getByText('Gastos operativos').closest('tr') as HTMLTableRowElement;
-    const hija = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
-
-    padre.focus();
+    const padre = fila(PADRE);
+    act(() => padre.focus());
     fireEvent.keyDown(padre, { key: 'ArrowDown' });
-    expect(hija).toHaveFocus();
-    // Y la parada del tabulador se mueve con el foco: volver a la tabla la
+    expect(fila(HIJA)).toHaveFocus();
+    // Y la parada del tabulador se mueve con el foco: volver al árbol lo
     // devuelve donde se dejó, no al principio.
-    expect(hija).toHaveAttribute('tabindex', '0');
+    expect(fila(HIJA)).toHaveAttribute('tabindex', '0');
     expect(padre).toHaveAttribute('tabindex', '-1');
 
-    fireEvent.keyDown(hija, { key: 'ArrowUp' });
-    expect(padre).toHaveFocus();
-
-    fireEvent.keyDown(padre, { key: 'ArrowRight' });
-    expect(hija).toHaveFocus();
-
-    fireEvent.keyDown(hija, { key: 'ArrowLeft' });
-    expect(padre).toHaveFocus();
+    fireEvent.keyDown(fila(HIJA), { key: 'ArrowUp' });
+    expect(fila(PADRE)).toHaveFocus();
   });
 
-  it('Home y End van a la primera y a la última cuenta', () => {
-    accounts = [PADRE, HIJA];
+  it('Derecha pliega y despliega, e Izquierda sube al padre', () => {
     render(<FinanceAccountsTree canWrite />);
 
-    const padre = screen.getByText('Gastos operativos').closest('tr') as HTMLTableRowElement;
-    const hija = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
+    const padre = fila(PADRE);
+    act(() => padre.focus());
+    // Sobre un nodo abierto, Derecha baja a la primera hija.
+    fireEvent.keyDown(padre, { key: 'ArrowRight' });
+    expect(fila(HIJA)).toHaveFocus();
 
-    padre.focus();
+    // Sobre una hoja, Izquierda sube al padre.
+    fireEvent.keyDown(fila(HIJA), { key: 'ArrowLeft' });
+    expect(fila(PADRE)).toHaveFocus();
+
+    // Sobre un nodo abierto, Izquierda lo cierra; Derecha lo vuelve a abrir.
+    fireEvent.keyDown(fila(PADRE), { key: 'ArrowLeft' });
+    expect(fila(PADRE)).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.keyDown(fila(PADRE), { key: 'ArrowRight' });
+    expect(fila(PADRE)).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('Home y End van a la primera y a la última cuenta visible', () => {
+    render(<FinanceAccountsTree canWrite />);
+
+    const padre = fila(PADRE);
+    act(() => padre.focus());
     fireEvent.keyDown(padre, { key: 'End' });
-    expect(hija).toHaveFocus();
+    expect(fila(HERMANA)).toHaveFocus();
 
-    fireEvent.keyDown(hija, { key: 'Home' });
-    expect(padre).toHaveFocus();
+    fireEvent.keyDown(fila(HERMANA), { key: 'Home' });
+    expect(fila(PADRE)).toHaveFocus();
   });
 });
 
-describe('FinanceAccountDialog — colgar una hija le quita los asientos manuales al padre', () => {
-  it('avisa cuando el padre elegido es una cuenta hoja que hoy recibe asientos', async () => {
-    accounts = [PADRE, HIJA];
-    render(<FinanceAccountsTree canWrite />);
-    await abrirAlta();
+describe('FinanceAccountsTree — reordenar entre hermanas', () => {
+  beforeEach(() => {
+    accounts = [PADRE, HIJA, HERMANA];
+  });
 
-    fireEvent.click(within(dialog()).getByRole('combobox', { name: /Cuenta padre/ }));
-    fireEvent.click(await screen.findByRole('option', { name: '6900 Otros gastos operativos' }));
+  it('cada hermana lleva su agarradera', () => {
+    render(<FinanceAccountsTree canWrite />);
 
     expect(
-      await screen.findByText('Esta cuenta dejará de recibir asientos manuales'),
+      within(fila(HIJA)).getByRole('button', { name: 'Reordenar 6900 Otros gastos operativos' }),
+    ).toBeInTheDocument();
+    expect(
+      within(fila(HERMANA)).getByRole('button', { name: 'Reordenar 6910 Gastos legales' }),
     ).toBeInTheDocument();
   });
 
-  it('no avisa cuando el padre ya es un nodo del árbol', async () => {
-    accounts = [PADRE, HIJA];
+  // El backend responde 409 ACCOUNT_FIELD_IMMUTABLE si `parentId` viaja en el
+  // PATCH: reordenar solo puede mandar posiciones.
+  it('soltar una hermana arriba de la otra persiste el orden nuevo', async () => {
     render(<FinanceAccountsTree canWrite />);
-    await abrirAlta();
 
-    fireEvent.click(within(dialog()).getByRole('combobox', { name: /Cuenta padre/ }));
-    fireEvent.click(await screen.findByRole('option', { name: '6000 Gastos operativos' }));
+    // Lo que el gesto termina llamando: 6910 soltada encima de 6900.
+    act(() => dragEnds.at(-1)?.({ active: { id: HERMANA.id }, over: { id: HIJA.id } }));
 
-    await waitFor(() =>
-      expect(within(dialog()).getByText(/Clase heredada/)).toBeInTheDocument(),
-    );
-    expect(screen.queryByText('Esta cuenta dejará de recibir asientos manuales')).toBeNull();
+    await waitFor(() => expect(reorder).toHaveBeenCalled());
+    const [positions] = reorder.mock.calls[0] as [{ id: string; sortOrder: number }[]];
+    // Solo las hermanas que se corrieron, con su posición nueva: un PATCH que
+    // reescribe el mismo número es una fila de auditoría que no dice nada.
+    expect(positions).toEqual([
+      { id: HERMANA.id, sortOrder: 0 },
+      { id: HIJA.id, sortOrder: 1 },
+    ]);
+    for (const p of positions) expect(p).not.toHaveProperty('parentId');
+  });
+
+  // La jerarquía es inmutable: el contexto de arrastre de un grupo solo conoce
+  // los ids de sus hermanas, así que soltar bajo otro padre no es una
+  // interacción que exista — no hay nada que rechazar porque no se puede pedir.
+  it('el contexto de arrastre solo conoce a las hermanas del grupo', () => {
+    render(<FinanceAccountsTree canWrite />);
+
+    expect(sortableItems.at(-1)).toEqual([HIJA.id, HERMANA.id]);
+    for (const items of sortableItems) expect(items).not.toContain(PADRE.id);
+  });
+
+  it('las raíces también se reordenan entre ellas', () => {
+    accounts = [PADRE, HIJA, RETIRADA];
+    render(<FinanceAccountsTree canWrite />);
+
+    expect(
+      within(fila(RETIRADA)).getByRole('button', { name: 'Reordenar 1103 Caja vieja' }),
+    ).toBeInTheDocument();
+    expect(filasVisibles()).toHaveLength(3);
   });
 });

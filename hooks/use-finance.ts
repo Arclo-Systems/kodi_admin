@@ -10,15 +10,25 @@ export const FINANCE_CURRENCIES = ['CRC', 'USD'] as const;
 // Naturaleza contable del hecho económico: decide contra qué cuentas se asienta
 // el movimiento. Solo INCOME y EXPENSE mueven el P&L; una transferencia, un
 // aporte o un préstamo de socio meten plata en la caja sin ser ingreso.
+// Liquidar una deuda o cobrar algo facturado tampoco lo mueven: las dos patas
+// son activo o pasivo, y el asiento ya lo dice.
 export const MOVEMENT_TYPES = [
   'INCOME',
   'EXPENSE',
+  'LIABILITY_PAYMENT',
+  'RECEIVABLE_COLLECTION',
   'TRANSFER',
   'PARTNER_CONTRIBUTION',
   'PARTNER_LOAN',
   'OTHER',
 ] as const;
 export type MovementType = (typeof MOVEMENT_TYPES)[number];
+
+// Los dos tipos que liquidan un saldo ya registrado. Exigen las DOS cuentas
+// (no admiten la contrapartida por defecto "1900 Por clasificar") y se validan
+// por RAMA del plan, no por clase: "caja o banco" es lo que cuelga de 1100.
+export const CASH_ROOT_CODE = '1100';
+export const RECEIVABLE_ROOT_CODE = '1200';
 
 export type FinanceEntryStatus = 'ACTIVE' | 'VOIDED';
 
@@ -50,6 +60,10 @@ export type FinanceAccount = {
   // donde los padres no viajan en la respuesta.
   parentCode: string | null;
   depth: number;
+  // Los códigos de TODOS sus ancestros, de la raíz hacia abajo. Es lo que deja
+  // filtrar por rama sin pedir el plan entero ni encadenar `parentCode` a mano:
+  // "caja o banco" es lo que tiene `1100` acá adentro.
+  ancestorCodes: string[];
 };
 
 export type FinanceAccountInput = {
@@ -66,6 +80,9 @@ export type FinanceAccountUpdate = {
   currency?: string | null;
   isActive?: boolean;
   allowsManualEntry?: boolean;
+  // Posición entre HERMANAS. El backend lo guarda tal cual (no recalcula el
+  // resto), así que reordenar manda un PATCH por cada hermana que se corrió.
+  sortOrder?: number;
 };
 
 export type FinanceCategory = {
@@ -447,6 +464,20 @@ export function useFinanceAccountMutations() {
       mutationFn: ({ id, input }: { id: string; input: FinanceAccountUpdate }) =>
         sendFinanceRequest(`${BASE}/accounts/${id}`, 'PATCH', input),
       onSuccess: invalidate,
+    }),
+    // Reordenar entre hermanas. `PATCH /accounts/:id` guarda el `sortOrder` que
+    // recibe y no recalcula el de las demás, así que la posición nueva de CADA
+    // hermana corrida viaja en su propio PATCH. En serie y no en paralelo: son
+    // filas del mismo padre y el orden de escritura es el que queda.
+    reorder: useMutation({
+      mutationFn: async (positions: { id: string; sortOrder: number }[]) => {
+        for (const { id, sortOrder } of positions) {
+          await sendFinanceRequest(`${BASE}/accounts/${id}`, 'PATCH', { sortOrder });
+        }
+      },
+      // Solo el plan: cambiar de lugar una cuenta no mueve un céntimo, y el
+      // reporte de saldos recorre el mayor entero.
+      onSuccess: () => qc.invalidateQueries({ queryKey: ['finance-accounts'] }),
     }),
   };
 }

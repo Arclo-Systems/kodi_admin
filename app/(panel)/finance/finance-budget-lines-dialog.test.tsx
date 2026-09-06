@@ -42,6 +42,7 @@ const ACCOUNTS: FinanceAccount[] = [
     sortOrder: 1,
     parentCode: null,
     depth: 0,
+    ancestorCodes: [],
   },
   {
     id: 'a-marketing',
@@ -56,6 +57,7 @@ const ACCOUNTS: FinanceAccount[] = [
     sortOrder: 2,
     parentCode: '6100',
     depth: 1,
+    ancestorCodes: ['6100'],
   },
   {
     id: 'a-retirada',
@@ -70,6 +72,7 @@ const ACCOUNTS: FinanceAccount[] = [
     sortOrder: 3,
     parentCode: '6100',
     depth: 1,
+    ancestorCodes: ['6100'],
   },
   {
     id: 'a-caja',
@@ -84,6 +87,7 @@ const ACCOUNTS: FinanceAccount[] = [
     sortOrder: 4,
     parentCode: null,
     depth: 0,
+    ancestorCodes: [],
   },
 ];
 

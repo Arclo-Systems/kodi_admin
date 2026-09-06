@@ -113,20 +113,22 @@ const hoyYMD = (): string => {
  * de saldos sigue siendo válida: el saldo final es el del RANGO, y las dos
  * lecturas usan el mismo.
  */
-async function abrirMayor(page: Page): Promise<number> {
+async function irAlMayorDeHoy(page: Page): Promise<void> {
   const hoy = hoyYMD();
   await page.goto(`/finance/mayor?from=${hoy}&to=${hoy}`);
   await pick(page, 'Cuenta', FINANCE_FIXTURE.mappedAccount);
+  // Y la página al máximo, que es lo que reduce el número de páginas a recorrer.
+  await page.getByRole('combobox').last().click();
+  await page.getByRole('option', { name: '100', exact: true }).click();
+  await expect(page.locator('table tbody tr').first()).toBeVisible();
+}
+
+async function abrirMayor(page: Page): Promise<number> {
+  await irAlMayorDeHoy(page);
   const saldo = page
     .getByText('Saldo final', { exact: true })
     .locator('xpath=following-sibling::p');
   await expect(saldo).toBeVisible();
-
-  // Y la página al máximo: acotado a hoy quedan pocas páginas de cien líneas.
-  await page.getByRole('combobox').last().click();
-  await page.getByRole('option', { name: '100', exact: true }).click();
-  await expect(page.locator('table tbody tr').first()).toBeVisible();
-
   return aNumero(await saldo.innerText());
 }
 
@@ -142,27 +144,75 @@ async function abrirMayor(page: Page): Promise<number> {
  * El avance se espera contra el CONTENIDO de la primera fila y no contra el
  * indicador `n / total`: ese lo pinta el estado local y cambia al instante,
  * mientras `keepPreviousData` deja las filas de la página anterior a la vista.
+ *
+ * Y el recorrido se repite: con un ORDER BY sin desempate, `OFFSET` puede
+ * **repetir una fila y comerse otra** entre páginas, así que un solo barrido
+ * puede no ver una línea que SÍ está en el rango. Hoy la cuenta del fixture pasa
+ * de 200 líneas en `kodi_dev` (tres páginas de cien) y un barrido único fallaba.
+ * Cada barrido vuelve a pedir las páginas desde la primera, con un orden nuevo.
  */
 async function lineaEnMayor(page: Page, texto: string): Promise<Locator> {
   const linea = page.locator('table tbody tr').filter({ hasText: texto });
   const primera = page.locator('table tbody tr').first();
   const siguiente = page.getByRole('button', { name: 'Página siguiente' });
 
-  for (let i = 0; i < 20; i += 1) {
-    if ((await linea.count()) > 0) return linea;
-    if (!(await siguiente.isEnabled())) break;
-    const antes = await primera.innerText();
-    await siguiente.click();
-    await expect(primera).not.toHaveText(antes);
+  for (let barrido = 0; barrido < 4; barrido += 1) {
+    if (barrido > 0) await irAlMayorDeHoy(page);
+    for (let i = 0; i < 20; i += 1) {
+      if ((await linea.count()) > 0) return linea;
+      if (!(await siguiente.isEnabled())) break;
+      const antes = await primera.innerText();
+      await siguiente.click();
+      await expect(primera).not.toHaveText(antes);
+    }
   }
   return linea;
+}
+
+// La fila del plan de cuentas. Desde F6-B el plan es un árbol y no una tabla: el
+// nombre accesible de cada `treeitem` es exactamente "código nombre", así que la
+// fila se identifica por eso y no por un `filter({ hasText })` — que en un árbol
+// también matchea a los ancestros, porque un nodo CONTIENE a sus hijas.
+const cuenta = (page: Page, label: string): Locator =>
+  page.getByRole('treeitem', { name: label, exact: true });
+
+/**
+ * Arrastra `agarradera` hasta `destino`.
+ *
+ * A mano y no con `dragTo`: el `PointerSensor` de dnd-kit solo activa el
+ * arrastre después de 4 px de movimiento, y necesita eventos intermedios para
+ * medir la colisión. Un `mousedown`/`mouseup` con un solo salto no llega a
+ * empezar el gesto.
+ */
+async function arrastrar(page: Page, agarradera: Locator, destino: Locator): Promise<void> {
+  const origen = await agarradera.boundingBox();
+  const llegada = await destino.boundingBox();
+  if (!origen || !llegada) throw new Error('No se pudo medir el arrastre');
+  await page.mouse.move(origen.x + origen.width / 2, origen.y + origen.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(origen.x + origen.width / 2, origen.y + origen.height / 2 - 10, {
+    steps: 5,
+  });
+  await page.mouse.move(llegada.x + llegada.width / 2, llegada.y + llegada.height / 2, {
+    steps: 10,
+  });
+  await page.mouse.up();
+}
+
+/** El saldo que muestra la fila, ya en número. */
+async function saldoDeCuenta(page: Page, label: string): Promise<number> {
+  const celda = cuenta(page, label).locator('[data-slot="account-balance"]').first();
+  await expect(celda).toBeVisible();
+  return aNumero(await celda.innerText());
 }
 
 // Primer `69xx` que el árbol todavía no tiene. Sin esto el alta solo se puede
 // correr una vez: no hay DELETE de cuentas.
 async function freeChildCode(page: Page): Promise<string> {
-  const celdas = await page.locator('table tbody tr td:first-child').allInnerTexts();
-  const usados = new Set(celdas.map((t) => t.trim().slice(0, 4)));
+  const etiquetas = await page
+    .getByRole('treeitem')
+    .evaluateAll((filas) => filas.map((f) => f.getAttribute('aria-label') ?? ''));
+  const usados = new Set(etiquetas.map((t) => t.trim().slice(0, 4)));
   for (let n = 1; n < 100; n += 1) {
     const code = `69${String(n).padStart(2, '0')}`;
     if (!usados.has(code)) return code;
@@ -235,11 +285,9 @@ test('el plan de cuentas agrega una cuenta hija, la muestra en el árbol y la re
   page,
 }) => {
   await page.goto('/finance/cuentas');
-  // La tabla arranca con skeletons: leer los códigos antes de que llegue el plan
+  // El árbol arranca con skeletons: leer los códigos antes de que llegue el plan
   // daría una lista vacía y el código "libre" ya estaría tomado.
-  await expect(
-    page.locator('table tbody tr').filter({ hasText: FINANCE_FIXTURE.parentAccount.slice(0, 4) }),
-  ).toBeVisible();
+  await expect(cuenta(page, FINANCE_FIXTURE.parentAccount)).toBeVisible();
 
   // Una cuenta no se borra: si el alta reusara un código fijo, la segunda corrida
   // chocaría con 409 ACCOUNT_CODE_EXISTS. Se toma el primer 69xx libre del árbol.
@@ -253,12 +301,13 @@ test('el plan de cuentas agrega una cuenta hija, la muestra en el árbol y la re
   await dialog.getByLabel('Código').fill(code);
   await dialog.getByLabel('Nombre').fill(name);
   await dialog.getByRole('button', { name: 'Crear cuenta' }).click();
-  await expect(page.getByText('Cuenta creada')).toBeVisible();
+  await expect(page.getByText('Cuenta creada')).toBeVisible({ timeout: 30_000 });
 
-  const fila = page.locator('table tbody tr').filter({ hasText: name });
+  const fila = cuenta(page, `${code} ${name}`);
   await expect(fila).toBeVisible();
-  // La clase la heredó del padre: nunca viajó en el formulario.
-  await expect(fila).toContainText('Gasto operativo');
+  // La clase la heredó del padre: la nombra la raíz de la rama, que es de donde
+  // sale (el alta nunca la mandó).
+  await expect(cuenta(page, FINANCE_FIXTURE.parentAccount)).toContainText('Gasto operativo');
   await expect(fila).toContainText('Activa');
 
   // Y se retira (no se borra), confirmando el arrastre a las subcuentas.
@@ -271,7 +320,10 @@ test('el plan de cuentas agrega una cuenta hija, la muestra en el árbol y la re
     ),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Retirar' }).click();
-  await expect(page.getByText('Cuenta actualizada')).toBeVisible();
+  // Presupuesto largo: el PATCH invalida el plan Y el reporte de saldos, que
+  // recorre el mayor entero — y `kodi_dev` acumula una corrida tras otra. El
+  // diálogo se queda en "Procesando…" hasta que los dos refetch vuelven.
+  await expect(page.getByText('Cuenta actualizada')).toBeVisible({ timeout: 30_000 });
   await expect(fila).toContainText('Retirada');
 });
 
@@ -285,7 +337,7 @@ test('renombrar una cuenta con asientos no dispara el 409 de moneda', async ({ p
   const renombrada = `${original} (e2e)`;
 
   await page.goto('/finance/cuentas');
-  const fila = page.locator('table tbody tr').filter({ hasText: code as string });
+  const fila = cuenta(page, FINANCE_FIXTURE.mappedAccount);
   await expect(fila).toBeVisible();
 
   const dialog = page.getByRole('dialog');
@@ -296,9 +348,9 @@ test('renombrar una cuenta con asientos no dispara el 409 de moneda', async ({ p
     await dialog.getByLabel('Nombre').fill(renombrada);
     await dialog.getByRole('button', { name: 'Guardar' }).click();
 
-    await expect(page.getByText('Cuenta actualizada')).toBeVisible();
+    await expect(page.getByText('Cuenta actualizada')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText(/no se puede cambiar/)).toHaveCount(0);
-    await expect(page.locator('table tbody tr').filter({ hasText: renombrada })).toBeVisible();
+    await expect(cuenta(page, `${code as string} ${renombrada}`)).toBeVisible();
   } finally {
     // El nombre lo usan los otros specs y una cuenta no se borra: si la assertion
     // de arriba falla, dejar `6900` renombrada rompe la corrida siguiente.
@@ -308,14 +360,12 @@ test('renombrar una cuenta con asientos no dispara el 409 de moneda', async ({ p
     // `finally`, que reemplaza al original — el reporte terminaba culpando al
     // botón "Editar" de un fallo que había ocurrido tres líneas antes.
     try {
-      await page
-        .locator('table tbody tr')
-        .filter({ hasText: renombrada })
+      await cuenta(page, `${code as string} ${renombrada}`)
         .getByRole('button', { name: 'Editar' })
         .click();
       await dialog.getByLabel('Nombre').fill(original);
       await dialog.getByRole('button', { name: 'Guardar' }).click();
-      await expect(page.getByText('Cuenta actualizada')).toBeVisible();
+      await expect(page.getByText('Cuenta actualizada')).toBeVisible({ timeout: 30_000 });
     } catch (e) {
       console.warn(`No se pudo restaurar el nombre de ${code as string}:`, e);
     }
@@ -325,10 +375,8 @@ test('renombrar una cuenta con asientos no dispara el 409 de moneda', async ({ p
 test('la cuenta 1900 es del sistema: se marca en el árbol y no se ofrece retirar', async ({
   page,
 }) => {
-  const [code] = FINANCE_FIXTURE.systemAccount.split(' ');
-
   await page.goto('/finance/cuentas');
-  const fila = page.locator('table tbody tr').filter({ hasText: code as string });
+  const fila = cuenta(page, FINANCE_FIXTURE.systemAccount);
   await expect(fila).toBeVisible();
   await expect(fila).toContainText('Sistema');
 
@@ -339,6 +387,111 @@ test('la cuenta 1900 es del sistema: se marca en el árbol y no se ofrece retira
   // el panel no lo ofrece en vez de dejar que el backend lo rechace.
   await expect(dialog.getByRole('switch', { name: 'Activa' })).toHaveCount(0);
   await expect(dialog.getByText(/no se retira ni recibe subcuentas/)).toBeVisible();
+});
+
+test('pago de deuda: el gasto a crédito deja saldo en 2110 y el pago lo devuelve a cero', async ({
+  page,
+}) => {
+  // Dos etiquetas SIN prefijo común: el filtro de la tabla es por texto, y una
+  // que empezaba igual que la otra matcheaba las dos filas.
+  const deuda = vendorTag('Compra a crédito');
+  const pago = vendorTag('Pago de deuda');
+
+  await page.goto('/finance/cuentas');
+  const saldoAntes = await saldoDeCuenta(page, FINANCE_FIXTURE.payableAccount);
+
+  // 1 · La compra a crédito: el gasto se carga contra la cuenta por pagar, que
+  // es lo que deja el pasivo vivo. (El fixture no trae ninguno: el pago necesita
+  // una deuda que bajar.)
+  await page.goto('/finance/movimientos/new');
+  await pick(page, 'Tipo', 'Gasto');
+  await pick(page, 'Categoría', FINANCE_FIXTURE.mappedCategory);
+  await page.getByLabel('Monto').fill(AMOUNT);
+  await pick(page, 'Moneda', 'CRC');
+  await pick(page, 'Contrapartida', FINANCE_FIXTURE.payableAccount);
+  await page.getByLabel('Proveedor / fuente').fill(deuda);
+  await page.getByRole('button', { name: 'Crear movimiento' }).click();
+  await expect(page.getByText('Movimiento creado')).toBeVisible();
+
+  await page.goto('/finance/cuentas');
+  expect(await saldoDeCuenta(page, FINANCE_FIXTURE.payableAccount)).toBeCloseTo(
+    saldoAntes + AMOUNT_NUMBER,
+    2,
+  );
+
+  // 2 · El pago: baja el pasivo y saca la plata de la caja. NO es un gasto nuevo
+  // —el gasto se cargó al nacer la deuda— y por eso no toca el P&L.
+  const gastosAntes = await gastosCrc(page);
+
+  await page.goto('/finance/movimientos/new');
+  await pick(page, 'Tipo', 'Pago de deuda');
+  await pick(page, 'Categoría', FINANCE_FIXTURE.mappedCategory);
+  await page.getByLabel('Monto').fill(AMOUNT);
+  await pick(page, 'Moneda', 'CRC');
+  await pick(page, 'Cuenta a pagar', FINANCE_FIXTURE.payableAccount);
+  await pick(page, 'Desde', FINANCE_FIXTURE.cashAccount);
+  await page.getByLabel('Proveedor / fuente').fill(pago);
+  await page.getByRole('button', { name: 'Crear movimiento' }).click();
+  await expect(page.getByText('Movimiento creado')).toBeVisible();
+
+  // 3 · La deuda quedó saldada: el pasivo vuelve exactamente a donde estaba.
+  await page.goto('/finance/cuentas');
+  expect(await saldoDeCuenta(page, FINANCE_FIXTURE.payableAccount)).toBeCloseTo(saldoAntes, 2);
+
+  // 4 · Y el pago no aparece como gasto: las dos patas son activo y pasivo.
+  expect(await gastosCrc(page)).toBe(gastosAntes);
+
+  // 5 · La fila se lee con su etiqueta nueva.
+  const fila = await gastosCrcRow(page, pago);
+  await expect(fila).toContainText('Pago de deuda');
+});
+
+test('el plan de cuentas se pliega, se despliega y reordena hermanas', async ({ page }) => {
+  const [primera, segunda] = FINANCE_FIXTURE.cashSiblings;
+  await page.goto('/finance/cuentas');
+
+  const activos = page.getByRole('treeitem', { name: '1000 Activos', exact: true });
+  await expect(activos).toBeVisible();
+  await expect(cuenta(page, primera as string)).toBeVisible();
+
+  // 1 · Plegar Activos esconde toda la rama; desplegarlo la devuelve.
+  await activos.getByRole('button', { name: 'Plegar Activos' }).click();
+  await expect(activos).toHaveAttribute('aria-expanded', 'false');
+  await expect(cuenta(page, primera as string)).toHaveCount(0);
+
+  await activos.getByRole('button', { name: 'Desplegar Activos' }).click();
+  await expect(cuenta(page, primera as string)).toBeVisible();
+
+  // 2 · Cada hermana lleva su agarradera: es lo único que se arrastra, y solo
+  // entre hermanas (cada grupo tiene su propio contexto de arrastre).
+  const agarradera = (label: string) =>
+    cuenta(page, label).getByRole('button', { name: `Reordenar ${label}` });
+  await expect(agarradera(primera as string)).toBeVisible();
+  await expect(agarradera(segunda as string)).toBeVisible();
+
+  // 3 · El orden persiste: se sube la segunda por encima de la primera y después
+  // se deja como estaba. Una cuenta no se borra y el `sortOrder` es del plan real
+  // de esta base, así que el test devuelve lo que movió.
+  const ordenDeCaja = async (): Promise<string[]> =>
+    (
+      await page.getByRole('treeitem').evaluateAll((filas) =>
+        filas.map((f) => f.getAttribute('aria-label') ?? ''),
+      )
+    ).filter((l) => l.startsWith('11'));
+
+  const antes = await ordenDeCaja();
+  await arrastrar(page, agarradera(segunda as string), cuenta(page, primera as string));
+  await expect(page.getByText('Orden guardado')).toBeVisible();
+
+  await page.reload();
+  await expect(cuenta(page, segunda as string)).toBeVisible();
+  const despues = await ordenDeCaja();
+  expect(despues).not.toEqual(antes);
+  expect(despues.indexOf(segunda as string)).toBeLessThan(despues.indexOf(primera as string));
+
+  // Y se restaura, para que la corrida siguiente empiece donde empezó esta.
+  await arrastrar(page, agarradera(primera as string), cuenta(page, segunda as string));
+  await expect(page.getByText('Orden guardado')).toBeVisible();
 });
 
 test('Play lista las órdenes de Google con su resumen por estado', async ({ page }) => {
@@ -474,16 +627,16 @@ test('el consolidado convierte con la tasa cargada, y sin ella dice N/A', async 
   // 2 · El balance por moneda cuadra.
   await page.goto('/finance/balance');
   // El balance sale de recorrer todo el mayor y sobre `kodi_dev` —que crece con
-  // cada corrida— tarda más que los 5 s por defecto de `expect`. Un esqueleto no
-  // es un "no cuadra": se espera a que termine de cargar antes de afirmarlo.
-  await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 30_000 });
-  await expect(page.getByText('Cuadra', { exact: true })).toBeVisible();
+  // cada corrida— tarda más que los 5 s por defecto de `expect`. Se espera el
+  // RESULTADO con presupuesto largo y no la ausencia de esqueletos: "no hay
+  // esqueleto" también es cierto un instante antes de que el primero se pinte,
+  // así que esa espera podía pasar sin que el reporte hubiera cargado.
+  await expect(page.getByText('Cuadra', { exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/No cuadra/)).toHaveCount(0);
 
   // 3 · Y consolidado a USD también, etiquetado con la tasa que usó.
   await pick(page, 'Moneda', 'Consolidar a USD');
-  await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 30_000 });
-  await expect(page.getByText(/Convertido a USD/)).toBeVisible();
+  await expect(page.getByText(/Convertido a USD/)).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(/1 CRC = 0\.00200000 USD/)).toBeVisible();
   await expect(page.getByText('Cuadra', { exact: true })).toBeVisible();
   await expect(page.getByText(/N\/A/)).toHaveCount(0);
@@ -499,8 +652,9 @@ test('el consolidado convierte con la tasa cargada, y sin ella dice N/A', async 
   await limpiarTasasCrcUsd(page);
   await page.goto('/finance/balance');
   await pick(page, 'Moneda', 'Consolidar a USD');
-  await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 30_000 });
-  await expect(page.getByText(/Sin tipo de cambio para: CRC → N\/A/)).toBeVisible();
+  await expect(page.getByText(/Sin tipo de cambio para: CRC → N\/A/)).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(page.getByText(/NO están sumados en ningún total/)).toBeVisible();
 });
 

@@ -320,6 +320,9 @@ describe('FinancePlayOrders — resumen en siete cards', () => {
     const disparadores = resumen().querySelectorAll('[data-slot="tooltip-trigger"]');
     expect(disparadores).toHaveLength(7);
     for (const nodo of disparadores) expect(nodo.tagName).toBe('BUTTON');
+    // Deuda de F5: el `<button>` de Radix hereda `type="submit"`, y estas cards
+    // viven dentro del formulario de filtros — un clic lo enviaba.
+    for (const nodo of disparadores) expect(nodo).toHaveAttribute('type', 'button');
   });
 
   it('solo las tres accionables se anuncian como interruptor de filtro', () => {

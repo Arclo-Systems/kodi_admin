@@ -21,6 +21,7 @@ function account(over: Partial<FinanceAccount> = {}): FinanceAccount {
     sortOrder: 0,
     parentCode: null,
     depth: 0,
+    ancestorCodes: [],
     ...over,
   };
 }

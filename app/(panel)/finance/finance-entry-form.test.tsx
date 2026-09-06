@@ -5,6 +5,10 @@ import type { FinanceAccount, FinanceCategory, FinanceEntry } from '@/hooks/use-
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
+// `vi.hoisted`: la factoría de `vi.mock` corre antes que los `const` del archivo.
+const { toastError } = vi.hoisted(() => ({ toastError: vi.fn() }));
+vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: toastError } }));
+
 const create = vi.fn();
 const update = vi.fn();
 let detail: FinanceEntry | undefined;
@@ -46,19 +50,42 @@ function account(over: Partial<FinanceAccount> = {}): FinanceAccount {
     name: 'Caja colones',
     type: 'ASSET',
     currency: 'CRC',
-    parentId: null,
+    // Las imputables cuelgan de una rama: el panel decide qué es "caja o banco"
+    // por el padre (1100) y no por el prefijo del código.
+    parentId: 'acc-1100',
     isActive: true,
     allowsManualEntry: true,
     isSystem: false,
     sortOrder: 0,
-    parentCode: null,
-    depth: 0,
+    parentCode: '1100',
+    depth: 1,
+    ancestorCodes: ['1000', '1100'],
     ...over,
   };
 }
 
+// Las tres raíces del plan que el panel necesita para resolver la rama. No son
+// imputables: viajan en el plan completo y no en `postable=true`.
+const branch = (code: string, name: string, type: FinanceAccount['type']) =>
+  account({
+    id: `acc-${code}`,
+    code,
+    name,
+    type,
+    currency: null,
+    parentId: null,
+    parentCode: null,
+    depth: 0,
+    ancestorCodes: [],
+    allowsManualEntry: false,
+  });
+
+const EFECTIVO = branch('1100', 'Efectivo y equivalentes', 'ASSET');
+const POR_COBRAR = branch('1200', 'Cuentas por cobrar', 'ASSET');
+const PASIVOS = branch('2000', 'Pasivos', 'LIABILITY');
+
 const CAJA = account();
-const BANCO = account({ id: 'acc-banco', code: '1201', name: 'Banco BAC colones' });
+const BANCO = account({ id: 'acc-banco', code: '1111', name: 'Banco BAC colones' });
 const CAJA_USD = account({
   id: 'acc-usd',
   code: '1102',
@@ -71,6 +98,30 @@ const PROVEEDORES = account({
   name: 'Cuentas por pagar',
   type: 'LIABILITY',
   currency: null, // acepta cualquier moneda
+  parentId: PASIVOS.id,
+  parentCode: PASIVOS.code,
+  ancestorCodes: [PASIVOS.code],
+});
+// Cuelga de 1200: es lo que un cobro liquida.
+const CXC_SPONSORS = account({
+  id: 'acc-cxc',
+  code: '1210',
+  name: 'Cuentas por cobrar a sponsors',
+  currency: null,
+  parentId: POR_COBRAR.id,
+  parentCode: POR_COBRAR.code,
+  ancestorCodes: ['1000', POR_COBRAR.code],
+});
+// ASSET pero NO caja: cuelga de 1000, no de 1100. Es la trampa que hace que el
+// selector de "caja o banco" no pueda filtrar por clase.
+const POR_CLASIFICAR = account({
+  id: 'acc-1900',
+  code: '1900',
+  name: 'Por clasificar',
+  currency: null,
+  parentId: null,
+  parentCode: '1000',
+  ancestorCodes: ['1000'],
 });
 
 const refetch = vi.fn();
@@ -87,16 +138,22 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => {
       useEffect(() => setData(categoryList), []);
       return { data };
     },
-    useFinanceAccounts: ({ type }: { postable?: boolean; type?: string } = {}) => ({
-      data: accountsState.data
+    useFinanceAccounts: ({ postable, type }: { postable?: boolean; type?: string } = {}) => {
+      const postables = [CAJA, BANCO, CAJA_USD, PROVEEDORES, CXC_SPONSORS, POR_CLASIFICAR];
+      // Sin `postable` es el plan COMPLETO: el único que trae las raíces, y sin
+      // ellas no se puede saber de qué rama cuelga una cuenta imputable.
+      const data = postable
         ? type === 'ASSET'
           ? [CAJA, BANCO, CAJA_USD]
-          : [CAJA, BANCO, CAJA_USD, PROVEEDORES]
-        : undefined,
-      isLoading: accountsState.isLoading,
-      isError: accountsState.isError,
-      refetch,
-    }),
+          : postables
+        : [EFECTIVO, POR_COBRAR, PASIVOS, ...postables];
+      return {
+        data: accountsState.data ? data : undefined,
+        isLoading: accountsState.isLoading,
+        isError: accountsState.isError,
+        refetch,
+      };
+    },
     useFinanceEntry: () => ({ data: detail, isLoading: false }),
     useFinanceEntryMutations: () => ({
       create: { mutateAsync: create },
@@ -612,5 +669,133 @@ describe('FinanceEntryForm — la cuenta de la categoría solo la exigen ingreso
     expect(
       await screen.findByRole('option', { name: 'Viáticos — sin cuenta contable' }),
     ).toHaveAttribute('aria-disabled', 'true');
+  });
+});
+
+describe('FinanceEntryForm — pago de deuda y cobro', () => {
+  it('ofrece los dos tipos nuevos con su etiqueta', async () => {
+    render(<FinanceEntryForm />);
+
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Tipo' }));
+    expect(await screen.findByRole('option', { name: 'Pago de deuda' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Cobro' })).toBeInTheDocument();
+  });
+
+  // La cuenta a pagar es un PASIVO imputable; la contrapartida es caja o banco, y
+  // eso NO es "cualquier ASSET": `1900 Por clasificar` también lo es y cuelga de
+  // 1000. Ofrecerla acá dejaría el pasivo en cero con el faltante escondido.
+  it('el pago de deuda pide un pasivo y una cuenta bajo 1100', async () => {
+    render(<FinanceEntryForm />);
+    await pickOption('Tipo', 'Pago de deuda');
+    // Las cuentas se acotan por la moneda del movimiento (409
+    // ACCOUNT_CURRENCY_MISMATCH): sin fijarla, `1101 Caja colones` no aplica.
+    await pickOption('Moneda', 'CRC');
+
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Cuenta a pagar' }));
+    expect(await screen.findByRole('option', { name: '2110 Cuentas por pagar' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '1101 Caja colones' })).toBeNull();
+    fireEvent.click(screen.getByRole('option', { name: '2110 Cuentas por pagar' }));
+
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Desde' }));
+    expect(await screen.findByRole('option', { name: '1101 Caja colones' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '1111 Banco BAC colones' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '1900 Por clasificar' })).toBeNull();
+    expect(screen.queryByRole('option', { name: /Por clasificar \(predeterminada\)/ })).toBeNull();
+  });
+
+  it('el cobro pide una cuenta bajo 1200 y una cuenta bajo 1100', async () => {
+    render(<FinanceEntryForm />);
+    await pickOption('Tipo', 'Cobro');
+    await pickOption('Moneda', 'CRC');
+
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Cuenta por cobrar' }));
+    expect(
+      await screen.findByRole('option', { name: '1210 Cuentas por cobrar a sponsors' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '2110 Cuentas por pagar' })).toBeNull();
+    fireEvent.click(screen.getByRole('option', { name: '1210 Cuentas por cobrar a sponsors' }));
+
+    fireEvent.click(await screen.findByRole('combobox', { name: 'Hacia' }));
+    expect(await screen.findByRole('option', { name: '1101 Caja colones' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '1210 Cuentas por cobrar a sponsors' })).toBeNull();
+  });
+
+  it('sin las dos cuentas no manda nada', async () => {
+    categoryList = [CATEGORY];
+    render(<FinanceEntryForm />);
+    await pickOption('Tipo', 'Pago de deuda');
+    await pickOption('Categoría', CATEGORY.name);
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '500000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
+
+    expect(await screen.findByText('Elegí la deuda que se paga')).toBeInTheDocument();
+    expect(screen.getByText('Elegí la cuenta de caja o banco')).toBeInTheDocument();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('manda el pago con las dos cuentas y sin counterAmount', async () => {
+    categoryList = [CATEGORY];
+    render(<FinanceEntryForm />);
+    await pickOption('Tipo', 'Pago de deuda');
+    await pickOption('Categoría', CATEGORY.name);
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '500000' } });
+    await pickOption('Moneda', 'CRC');
+    await pickOption('Cuenta a pagar', '2110 Cuentas por pagar');
+    await pickOption('Desde', '1101 Caja colones');
+    fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
+
+    await waitFor(() => expect(create).toHaveBeenCalled());
+    const [input] = create.mock.calls[0] as [Record<string, unknown>];
+    expect(input).toMatchObject({
+      type: 'LIABILITY_PAYMENT',
+      categoryId: CATEGORY.id,
+      amount: '500000',
+      currency: 'CRC',
+      accountId: PROVEEDORES.id,
+      counterAccountId: CAJA.id,
+    });
+    expect(input).not.toHaveProperty('counterAmount');
+  });
+
+  it('manda el cobro con la cuenta por cobrar y la caja', async () => {
+    categoryList = [CATEGORY];
+    render(<FinanceEntryForm />);
+    await pickOption('Tipo', 'Cobro');
+    await pickOption('Categoría', CATEGORY.name);
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '120000' } });
+    await pickOption('Moneda', 'CRC');
+    await pickOption('Cuenta por cobrar', '1210 Cuentas por cobrar a sponsors');
+    await pickOption('Hacia', '1101 Caja colones');
+    fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
+
+    await waitFor(() => expect(create).toHaveBeenCalled());
+    const [input] = create.mock.calls[0] as [Record<string, unknown>];
+    expect(input).toMatchObject({
+      type: 'RECEIVABLE_COLLECTION',
+      accountId: CXC_SPONSORS.id,
+      counterAccountId: CAJA.id,
+    });
+  });
+
+  // El backend responde 409 con un `message` que dice qué arreglar: mostrarlo tal
+  // cual es la diferencia entre "Error" y "elegí la cuenta donde quedó la deuda".
+  it('muestra el message del 409 del backend', async () => {
+    categoryList = [CATEGORY];
+    create.mockRejectedValueOnce(
+      new Error('Un pago de deuda baja un PASIVO, y 1101 Caja colones no lo es.'),
+    );
+    render(<FinanceEntryForm />);
+    await pickOption('Tipo', 'Pago de deuda');
+    await pickOption('Categoría', CATEGORY.name);
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '500000' } });
+    await pickOption('Moneda', 'CRC');
+    await pickOption('Cuenta a pagar', '2110 Cuentas por pagar');
+    await pickOption('Desde', '1101 Caja colones');
+    fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
+
+    await waitFor(() => expect(toastError).toHaveBeenCalled());
+    expect(toastError).toHaveBeenCalledWith(
+      'Un pago de deuda baja un PASIVO, y 1101 Caja colones no lo es.',
+    );
   });
 });

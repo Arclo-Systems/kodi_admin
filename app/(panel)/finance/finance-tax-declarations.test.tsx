@@ -265,7 +265,10 @@ describe('FinanceTaxDeclarations — desactualizada: cada estado tiene su salida
     expect(screen.getByText(/Volvela a revisión para poder recalcularla/)).toBeInTheDocument();
   });
 
-  it('si el backend NO permite la vuelta, no se inventa el botón', () => {
+  // Deuda de F5: una FILED sin salidas pintaba DOS avisos que se contradecían
+  // —"declaración cerrada, terminal" (que ni siquiera es su estado) y "volvela a
+  // revisión" (sin botón que lo haga)—.
+  it('si el backend NO permite la vuelta, no se inventa el botón ni se contradice', () => {
     // La salida sale de intersecar `allowedTransitions` con la del estado: el
     // panel no reimplementa la máquina de estados ni ofrece lo que el backend
     // va a rechazar con un 409.
@@ -274,7 +277,15 @@ describe('FinanceTaxDeclarations — desactualizada: cada estado tiene su salida
     abrirDetalle();
 
     expect(screen.queryByRole('button', { name: 'Volver a revisión' })).toBeNull();
-    expect(screen.getByText('Solo lectura')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Presentada y desactualizada; el backend no permite volver a revisión — solo lectura.',
+      ),
+    ).toBeInTheDocument();
+    // Y NO se la llama cerrada: no lo está.
+    expect(screen.queryByText('Solo lectura')).toBeNull();
+    expect(screen.queryByText(/Volvela a revisión para poder recalcularla/)).toBeNull();
+    expect(screen.queryByText(/Una declaración cerrada es terminal/)).toBeNull();
   });
 
   it('CLOSED desactualizada es solo lectura y lo dice con la salida real', () => {

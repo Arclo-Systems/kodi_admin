@@ -48,6 +48,7 @@ const CUENTA: FinanceAccount = {
   sortOrder: 0,
   parentCode: '6000',
   depth: 1,
+  ancestorCodes: ['6000'],
 };
 
 const LEDGER: Ledger = {

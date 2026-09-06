@@ -479,9 +479,18 @@ function DeclarationDetail({ id, canWrite }: { id: string; canWrite: boolean }) 
 
   const badge = TAX_DECLARATION_STATUS_BADGE[data.status];
   const editable = RECALCULABLE.includes(data.status);
-  const terminal = data.allowedTransitions.length === 0;
+  // "Sin salidas" no es lo mismo que "cerrada": una FILED también puede quedar
+  // sin ninguna transición, y llamarla cerrada dice un estado que no tiene.
+  const terminal = data.status === 'CLOSED' && data.allowedTransitions.length === 0;
   const transitions = offeredTransitions(data);
-  const staleExit = STALE_EXIT[data.status];
+  // `allowedTransitions` es la autoridad, no la máquina de estados escrita acá:
+  // una presentada y desactualizada normalmente vuelve a revisión, pero si el
+  // backend no ofrece esa salida, prometerla manda a buscar un botón que no está
+  // —y dejaba el diálogo con dos avisos que se contradecían—.
+  const staleExit =
+    data.status === 'FILED' && !data.allowedTransitions.includes('REVIEW')
+      ? 'Presentada y desactualizada; el backend no permite volver a revisión — solo lectura.'
+      : STALE_EXIT[data.status];
   // Desde una presentada, REVIEW es una VUELTA ATRÁS: llamarla "Pasar a
   // revisión" haría pensar que avanza en el ciclo.
   const rectifying = data.stale && data.status === 'FILED';

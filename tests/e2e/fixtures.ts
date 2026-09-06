@@ -91,4 +91,10 @@ export const FINANCE_FIXTURE = {
   // Cuenta HOJA colgada de `1100 Efectivo y equivalentes`: es lo que el flujo de
   // caja llama "caja". Aparece aunque no tenga movimiento (en cero).
   cashAccount: '1101 Caja colones',
+  // El pasivo contra el que se registra una compra a crédito y que "Pago de
+  // deuda" liquida. Cuelga de `2000` y acepta cualquier moneda.
+  payableAccount: '2110 Cuentas por pagar a proveedores',
+  // Las dos primeras hijas de `1100`, que es el grupo de hermanas sobre el que
+  // se prueba el reordenamiento del plan.
+  cashSiblings: ['1101 Caja colones', '1102 Caja dólares'],
 } as const;

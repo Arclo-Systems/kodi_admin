@@ -13955,6 +13955,7 @@ export interface components {
                 month: number;
                 fileUrl: string;
                 rowCount: number;
+                retentionMonths: number;
                 archivedAt: string;
             }[];
         };
@@ -18940,6 +18941,7 @@ export interface components {
                 sortOrder: number;
                 parentCode: string | null;
                 depth: number;
+                ancestorCodes: string[];
             }[];
         };
         CreateFinanceAccountDto: {
@@ -19042,7 +19044,7 @@ export interface components {
                     categoryName: string;
                     kind: string;
                     /** @enum {string} */
-                    type: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER";
+                    type: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER" | "LIABILITY_PAYMENT" | "RECEIVABLE_COLLECTION";
                     /** @enum {string} */
                     status: "ACTIVE" | "VOIDED";
                     amount: string;
@@ -19091,7 +19093,7 @@ export interface components {
                 categoryName: string;
                 kind: string;
                 /** @enum {string} */
-                type: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER";
+                type: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER" | "LIABILITY_PAYMENT" | "RECEIVABLE_COLLECTION";
                 /** @enum {string} */
                 status: "ACTIVE" | "VOIDED";
                 amount: string;
@@ -19124,7 +19126,7 @@ export interface components {
             currency: "CRC" | "USD";
             date: string;
             /** @enum {string} */
-            type?: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER";
+            type?: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER" | "LIABILITY_PAYMENT" | "RECEIVABLE_COLLECTION";
             /** Format: uuid */
             accountId?: string | null;
             /** Format: uuid */
@@ -19142,7 +19144,7 @@ export interface components {
             currency?: "CRC" | "USD";
             date?: string;
             /** @enum {string} */
-            type?: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER";
+            type?: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER" | "LIABILITY_PAYMENT" | "RECEIVABLE_COLLECTION";
             /** Format: uuid */
             counterAccountId?: string | null;
             vendor?: string | null;
@@ -34802,7 +34804,7 @@ export interface operations {
                 kind?: "expense" | "income";
                 categoryId?: string;
                 currency?: "CRC" | "USD";
-                type?: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER";
+                type?: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER" | "LIABILITY_PAYMENT" | "RECEIVABLE_COLLECTION";
                 status?: "ACTIVE" | "VOIDED";
                 from?: string;
                 to?: string;

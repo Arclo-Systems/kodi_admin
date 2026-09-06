@@ -3,8 +3,10 @@ import {
   BanIcon,
   CircleCheckIcon,
   CircleDashedIcon,
+  CoinsIcon,
   HandCoinsIcon,
   LandmarkIcon,
+  ReceiptTextIcon,
   TrendingDownIcon,
   TrendingUpIcon,
 } from 'lucide-react';
@@ -18,6 +20,8 @@ import { MOVEMENT_TYPE_LABELS } from './finance-format';
 const TYPE_STYLE: Record<MovementType, { tone: StatusTone; icon: LucideIcon }> = {
   INCOME: { tone: 'success', icon: TrendingUpIcon },
   EXPENSE: { tone: 'warning', icon: TrendingDownIcon },
+  LIABILITY_PAYMENT: { tone: 'neutral', icon: ReceiptTextIcon },
+  RECEIVABLE_COLLECTION: { tone: 'neutral', icon: CoinsIcon },
   TRANSFER: { tone: 'info', icon: ArrowLeftRightIcon },
   PARTNER_CONTRIBUTION: { tone: 'neutral', icon: HandCoinsIcon },
   PARTNER_LOAN: { tone: 'neutral', icon: LandmarkIcon },
