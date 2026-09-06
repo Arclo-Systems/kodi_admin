@@ -200,6 +200,17 @@ function VarianceRows({ report }: { report: BudgetVariance }) {
               // hacer una comparación contra presupuesto.
               <p className="text-muted-foreground text-xs italic">Sin presupuestar: solo real.</p>
             )}
+            {line.stale && (
+              // La cuenta ganó subcuentas DESPUÉS de presupuestarla: el
+              // presupuesto es de una hoja y el real ya es el de toda la rama.
+              // La fila sigue —esconderla haría desaparecer plata
+              // presupuestada— pero comparar los dos números es comparar dos
+              // cosas distintas.
+              <p className="text-warning flex items-center gap-1 text-xs">
+                <TriangleAlertIcon className="size-3" aria-hidden />
+                La cuenta ganó subcuentas después de presupuestarse: el real es el de toda la rama.
+              </p>
+            )}
           </TableCell>
           <ComparisonCells comparison={line} currency={report.currency} />
         </TableRow>

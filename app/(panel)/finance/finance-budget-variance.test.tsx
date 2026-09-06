@@ -58,6 +58,7 @@ const REPORT: BudgetVariance = {
       variance: '120000.00',
       variancePercent: percent('24.00'),
       favorable: false,
+      stale: false,
     },
     {
       accountId: 'a2',
@@ -69,6 +70,7 @@ const REPORT: BudgetVariance = {
       variance: '200000.00',
       variancePercent: percent('20.00'),
       favorable: true,
+      stale: false,
     },
     {
       accountId: null,
@@ -80,6 +82,7 @@ const REPORT: BudgetVariance = {
       variance: '75000.00',
       variancePercent: PERCENT_NA,
       favorable: false,
+      stale: false,
     },
   ],
   totalsByType: [
@@ -196,5 +199,28 @@ describe('FinanceBudgetVariance — un mes sin presupuesto no es un mes con pres
 
     expect(screen.getByText('Se cayó el reporte')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
+  });
+});
+
+describe('FinanceBudgetVariance — la línea que quedó obsoleta', () => {
+  it('advierte cuando la cuenta ganó subcuentas después de presupuestarse', () => {
+    report = {
+      ...REPORT,
+      lines: [{ ...REPORT.lines[0]!, stale: true }],
+    };
+    render(<FinanceBudgetVariance />);
+
+    // La fila SIGUE: esconderla haría desaparecer plata presupuestada. Lo que
+    // cambia es que no se da por buena la comparación.
+    expect(screen.getByText('Marketing y publicidad')).toBeInTheDocument();
+    expect(
+      screen.getByText(/ganó subcuentas después de presupuestarse: el real es el de toda la rama/),
+    ).toBeInTheDocument();
+  });
+
+  it('una línea al día no lleva la advertencia', () => {
+    render(<FinanceBudgetVariance />);
+
+    expect(screen.queryByText(/ganó subcuentas después de presupuestarse/)).toBeNull();
   });
 });

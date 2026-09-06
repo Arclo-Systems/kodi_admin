@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
-import { CircleAlertIcon, RotateCcwIcon, StoreIcon } from 'lucide-react';
+import { RotateCcwIcon, StoreIcon } from 'lucide-react';
 import {
   PLAY_ORDER_ATTENTION_STATUSES,
   PLAY_ORDER_STATUSES,
@@ -15,10 +15,10 @@ import {
   type PlayOrderStatus,
 } from '@/hooks/use-finance';
 import { DataTable } from '@/components/admin/data-table';
+import { KpiCard } from '@/components/admin/kpi-card';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
   Select,
@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { civilDayEndIso, civilDayStartIso } from '@/lib/civil-date';
 import { cn } from '@/lib/utils';
@@ -35,7 +34,7 @@ import {
   PLAY_ORDER_STATUS_BADGE,
   PLAY_ORDER_STATUS_HINTS,
   PLAY_ORDER_STATUS_LABELS,
-  STATUS_TONE_TEXT,
+  STATUS_TONE_CHIP,
   formatAmount,
 } from './finance-format';
 import { FinancePlayOrderDialog } from './finance-play-order-dialog';
@@ -298,11 +297,13 @@ export function FinancePlayOrders({ canWrite = false }: { canWrite?: boolean }) 
 }
 
 /**
- * Conteo por estado del rango que se está mirando, y filtro de un clic.
+ * Conteo por estado del rango que se está mirando, en siete stat cards.
  *
- * Los tres estados que necesitan atención van primero y con el tono de su badge:
- * son ingresos cobrados que todavía no están en el libro, y en una lista
- * paginada se pierden entre las órdenes asentadas.
+ * Los tres estados que **necesitan atención** van primero, con el tono de su
+ * badge y clickeables: son ingresos cobrados que todavía no están en el libro, y
+ * un clic filtra la tabla para verlos. Los otros cuatro son informativos —no hay
+ * nada que hacer con una orden asentada— y por eso no son botones: la barra de
+ * filtros de la tabla sigue ofreciendo cualquier estado.
  */
 function PlayOrderSummary({
   counts,
@@ -325,65 +326,63 @@ function PlayOrderSummary({
   ];
 
   return (
-    <Card>
-      <CardContent className="space-y-2">
-        {/* Un conteo que no llegó no es un cero. Sin decirlo, "0 órdenes que
-            fallaron" sobre un endpoint caído se lee como una buena noticia. */}
-        {failed && (
-          <Alert variant="destructive">
-            <AlertDescription className="flex flex-wrap items-center gap-3">
-              <span>No se pudo contar las órdenes por estado.</span>
-              <Button variant="outline" size="sm" onClick={onRetry}>
-                Reintentar
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-        <div role="group" aria-label="Órdenes por estado" className="flex flex-wrap items-stretch gap-1">
-          {ordered.map((status) => {
-            const count = counts[status];
-            const attention = RETRYABLE.has(status) && (count ?? 0) > 0;
-            const active = selected === status;
-            return (
-              <Tooltip key={status}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={active ? 'secondary' : 'ghost'}
-                    className="h-auto flex-col items-start gap-0.5 px-3 py-2"
-                    aria-pressed={active}
-                    onClick={() => onSelect(active ? undefined : status)}
-                  >
-                    {loading ? (
-                      <Skeleton className="h-6 w-8" />
-                    ) : failed ? (
-                      // "—" a secas se lee como "ninguna": el icono dice que el
-                      // número falta, no que sea cero.
-                      <span className="text-destructive flex h-7 items-center">
-                        <CircleAlertIcon className="size-5" aria-label="sin dato" />
-                      </span>
-                    ) : (
-                      <span
-                        className={cn(
-                          'text-xl font-semibold tabular-nums',
-                          // El tono del propio estado: una moneda sin soporte es
-                          // una advertencia, no un fallo.
-                          attention && STATUS_TONE_TEXT[PLAY_ORDER_STATUS_BADGE[status].tone],
-                        )}
-                      >
-                        {count ?? '—'}
-                      </span>
-                    )}
-                    <span className="text-muted-foreground text-xs font-normal">
-                      {PLAY_ORDER_STATUS_LABELS[status]}
-                    </span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{PLAY_ORDER_STATUS_HINTS[status]}</TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      {/* Un conteo que no llegó no es un cero. Sin decirlo, "0 órdenes que
+          fallaron" sobre un endpoint caído se lee como una buena noticia. */}
+      {failed && (
+        <Alert variant="destructive">
+          <AlertDescription className="flex flex-wrap items-center gap-3">
+            <span>No se pudo contar las órdenes por estado.</span>
+            <Button variant="outline" size="sm" onClick={onRetry}>
+              Reintentar
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div
+        role="group"
+        aria-label="Órdenes por estado"
+        className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7"
+      >
+        {ordered.map((status) => {
+          const badge = PLAY_ORDER_STATUS_BADGE[status];
+          const actionable = RETRYABLE.has(status);
+          const active = selected === status;
+          const card = (
+            <KpiCard
+              label={PLAY_ORDER_STATUS_LABELS[status]}
+              // `failed` no cae en un cero ni en un guión mudo: dice que el dato
+              // no llegó, que es otra cosa que "no hay ninguna".
+              value={failed ? 'sin dato' : (counts[status] ?? 0)}
+              loading={loading}
+              icon={<badge.icon />}
+              iconClassName={STATUS_TONE_CHIP[badge.tone]}
+            />
+          );
+
+          if (!actionable) return <div key={status}>{card}</div>;
+
+          return (
+            <Tooltip key={status}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => onSelect(active ? undefined : status)}
+                  className={cn(
+                    'focus-visible:ring-ring rounded-xl text-left focus-visible:ring-2 focus-visible:outline-none',
+                    active && 'ring-primary ring-2',
+                  )}
+                >
+                  {card}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{PLAY_ORDER_STATUS_HINTS[status]}</TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </div>
+    </div>
   );
 }

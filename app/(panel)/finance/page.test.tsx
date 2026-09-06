@@ -24,7 +24,7 @@ vi.mock('@/hooks/use-finance-planning', async (importOriginal) => ({
 
 import FinanceHome from './page';
 
-// Las catorce pantallas de la sección, en el orden en que se trabajan. La barra
+// Las diecisiete pantallas de la sección, en el orden en que se trabajan. La barra
 // de pestañas se retiró (decisión del founder, 2026-09-06): este índice es la
 // única navegación de finanzas, así que una card que falte deja una pantalla
 // huérfana.
@@ -40,6 +40,9 @@ const CARDS: [string, string][] = [
   ['KPIs', '/finance/kpis'],
   ['Proyección', '/finance/proyeccion'],
   ['Alertas', '/finance/alertas'],
+  ['Impuestos', '/finance/impuestos'],
+  ['Cierre mensual', '/finance/cierre'],
+  ['Paquete del contador', '/finance/paquete-contador'],
   ['Cuentas', '/finance/cuentas'],
   ['Categorías', '/finance/categorias'],
   ['Tipos de cambio', '/finance/tipos-de-cambio'],
@@ -63,7 +66,7 @@ describe('Índice de Finanzas', () => {
     expect(requireAction).toHaveBeenCalledWith('view:finance');
   });
 
-  it('pinta las catorce pantallas, cada una con su ruta', async () => {
+  it('pinta las diecisiete pantallas, cada una con su ruta', async () => {
     await renderHome();
 
     const links = screen.getAllByRole('link');

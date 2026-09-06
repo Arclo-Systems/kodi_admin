@@ -100,6 +100,8 @@ const RUNWAY: Runway = {
     ],
     average: '150000.00',
     basisMonths: 3,
+    excludedCurrentMonth: '2026-09',
+    excludedPartialMonth: null,
   },
   runwayMonths: '5.0',
   na: null,
@@ -219,6 +221,34 @@ describe('FinanceRunway — la pista se dice o se explica, nunca se inventa', ()
     expect(screen.queryByText('∞')).toBeNull();
     // El saldo y la quema sí existen: se muestran igual.
     expect(screen.getByText('750 000,00 CRC')).toBeInTheDocument();
+  });
+
+  it('nombra el mes en curso que queda fuera del promedio pero sí está en el saldo', () => {
+    render(<FinanceForecast />);
+
+    // Sin decirlo, la diferencia entre el saldo de hoy y un promedio que solo
+    // mira meses cerrados se lee como un error de cuentas.
+    expect(
+      screen.getByText(/09\/2026 no entra en el promedio por estar en curso/),
+    ).toBeInTheDocument();
+  });
+
+  it('cuando el libro arrancó a mitad de mes, nombra también ese mes parcial', () => {
+    runway = {
+      ...RUNWAY,
+      burn: { ...RUNWAY.burn, excludedPartialMonth: '2026-06', basisMonths: 2 },
+    };
+    render(<FinanceForecast />);
+
+    expect(
+      screen.getByText(/06\/2026 tampoco: el libro arrancó adentro de ese mes/),
+    ).toBeInTheDocument();
+  });
+
+  it('con los tres meses enteros no inventa un mes parcial excluido', () => {
+    render(<FinanceForecast />);
+
+    expect(screen.queryByText(/tampoco: el libro arrancó adentro/)).toBeNull();
   });
 });
 

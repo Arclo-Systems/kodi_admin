@@ -46,10 +46,11 @@ import {
 import { ACCOUNT_TYPE_LABELS, formatAmount, formatPeriod, sumMoney } from './finance-format';
 
 // El mismo criterio que `zMoney()` en el backend: hasta 12 enteros, 2 decimales,
-// sin signo. El cero NO se manda como línea, se omite — el backend lo rechaza
-// porque "presupuesté cero" y "no presupuesté esta cuenta" son lo mismo.
+// sin signo. El CERO se admite desde la Fase 5 —el CHECK de la base es
+// `>= 0`— y no es lo mismo que dejarlo vacío: presupuestar cero dice que esa
+// cuenta no debía gastar nada, y la variación lo marca como `PRESUPUESTO_EN_CERO`;
+// dejarlo vacío la saca del presupuesto y la fila aparece "sin presupuestar".
 const AMOUNT_RE = /^\d{1,12}(\.\d{1,2})?$/;
-const IS_ZERO = /^0+(\.0+)?$/;
 
 const LinesSchema = z.object({
   amounts: z.record(
@@ -57,8 +58,8 @@ const LinesSchema = z.object({
     z
       .string()
       .refine(
-        (v) => v === '' || (AMOUNT_RE.test(v) && !IS_ZERO.test(v)),
-        'Monto inválido: hasta 2 decimales, sin signo y mayor que cero. Dejalo vacío para no presupuestarla.',
+        (v) => v === '' || AMOUNT_RE.test(v),
+        'Monto inválido: hasta 2 decimales y sin signo. Dejalo vacío para no presupuestar la cuenta.',
       ),
   ),
 });

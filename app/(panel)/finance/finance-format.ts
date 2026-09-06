@@ -5,6 +5,9 @@ import {
   CircleSlashIcon,
   ClockIcon,
   EyeIcon,
+  LockIcon,
+  LockOpenIcon,
+  PencilLineIcon,
   TriangleAlertIcon,
   Undo2Icon,
 } from 'lucide-react';
@@ -23,6 +26,13 @@ import type {
   Metric as PlanningMetric,
   ThresholdUnit,
 } from '@/hooks/use-finance-planning';
+import type {
+  PackageFile,
+  PackageStatus,
+  PeriodStatus,
+  TaxAppliesTo,
+  TaxDeclarationStatus,
+} from '@/hooks/use-finance-tax';
 import type { StatusTone } from '@/lib/status-badge';
 
 // Etiquetas y formato de presentación de finanzas. Viven acá y no en el hook para
@@ -353,4 +363,133 @@ export const STATUS_TONE_TEXT: Record<StatusTone, string> = {
   destructive: 'text-destructive',
   muted: 'text-muted-foreground',
   neutral: 'text-foreground',
+};
+
+// ─── Impuestos, cierre mensual y paquete del contador ─────────────────────────
+
+// A qué se le aplica la tarifa. Es parte de la llave y no se puede cambiar
+// después: por eso el formulario lo pide al crear y lo muestra al editar.
+export const TAX_APPLIES_TO_LABELS: Record<TaxAppliesTo, string> = {
+  GENERAL: 'General',
+  SPONSOR_INVOICE: 'Facturas de sponsor',
+  SUBSCRIPTION: 'Suscripciones',
+};
+
+// Qué usa cada ámbito, en una línea: sin esto "General" no dice si alguien la lee.
+export const TAX_APPLIES_TO_HINTS: Record<TaxAppliesTo, string> = {
+  GENERAL: 'La tarifa de referencia. No la consume ningún cálculo automático todavía.',
+  SPONSOR_INVOICE:
+    'La que usa la factura de sponsor por su fecha de emisión. Sin una vigente, facturar responde 409.',
+  SUBSCRIPTION: 'Reservada para las suscripciones. Todavía no la consume ningún cálculo.',
+};
+
+export const TAX_DECLARATION_STATUS_LABELS: Record<TaxDeclarationStatus, string> = {
+  DRAFT: 'Borrador',
+  REVIEW: 'En revisión',
+  FILED: 'Presentada',
+  CLOSED: 'Cerrada',
+};
+
+// Qué significa estar en cada estado y qué se puede hacer ahí. El botón de
+// transición dice a dónde va; esto dice dónde está.
+export const TAX_DECLARATION_STATUS_HINTS: Record<TaxDeclarationStatus, string> = {
+  DRAFT: 'Se puede recalcular contra el mayor las veces que haga falta.',
+  REVIEW: 'Se sigue pudiendo recalcular, y volver a borrador si aparece un error.',
+  FILED: 'Presentada ante Hacienda por fuera del sistema. Ya no se recalcula.',
+  CLOSED: 'Terminal e inmutable: no admite ninguna transición más.',
+};
+
+export const TAX_DECLARATION_STATUS_BADGE: Record<
+  TaxDeclarationStatus,
+  { tone: StatusTone; icon: LucideIcon }
+> = {
+  DRAFT: { tone: 'neutral', icon: PencilLineIcon },
+  REVIEW: { tone: 'info', icon: EyeIcon },
+  FILED: { tone: 'success', icon: CircleCheckIcon },
+  CLOSED: { tone: 'muted', icon: LockIcon },
+};
+
+/**
+ * El texto del botón que lleva a cada estado. Dice el VERBO y el destino, no el
+ * nombre del estado: "REVIEW" en un botón no explica qué va a pasar al apretarlo.
+ */
+export const TAX_DECLARATION_TRANSITION_LABELS: Record<TaxDeclarationStatus, string> = {
+  DRAFT: 'Volver a borrador',
+  REVIEW: 'Pasar a revisión',
+  FILED: 'Marcar presentada',
+  CLOSED: 'Cerrar declaración',
+};
+
+export const PERIOD_STATUS_LABELS: Record<PeriodStatus, string> = {
+  OPEN: 'Abierto',
+  CLOSED: 'Cerrado',
+};
+
+export const PERIOD_STATUS_BADGE: Record<PeriodStatus, { tone: StatusTone; icon: LucideIcon }> = {
+  OPEN: { tone: 'info', icon: LockOpenIcon },
+  CLOSED: { tone: 'success', icon: LockIcon },
+};
+
+export const PACKAGE_STATUS_LABELS: Record<PackageStatus, string> = {
+  GENERATING: 'Generando',
+  READY: 'Listo',
+  FAILED: 'Falló',
+  // No es "borrado": la fila queda con su número de versión, que no se reusa.
+  DISCARDED: 'Descartado',
+};
+
+export const PACKAGE_STATUS_BADGE: Record<
+  PackageStatus,
+  { tone: StatusTone; icon: LucideIcon }
+> = {
+  GENERATING: { tone: 'neutral', icon: ClockIcon },
+  READY: { tone: 'success', icon: CircleCheckIcon },
+  FAILED: { tone: 'destructive', icon: CircleAlertIcon },
+  DISCARDED: { tone: 'muted', icon: CircleSlashIcon },
+};
+
+/** El nombre con el que se ofrece cada archivo del paquete, no su key en R2. */
+export const PACKAGE_FILE_LABELS: Record<PackageFile, string> = {
+  pdf: 'PDF completo',
+  'mayor.csv': 'Mayor (CSV)',
+  'comprobacion.csv': 'Comprobación (CSV)',
+  'balance.csv': 'Balance general (CSV)',
+  'resultados.csv': 'Resultados (CSV)',
+};
+
+/**
+ * `'0.1300'` → `'13,00 %'`. Pasa por `ratioToPercent`, que corre la coma sobre el
+ * STRING: la tarifa llega como fracción con cuatro decimales y multiplicarla por
+ * 100 en double devolvería `13.000000000000002`.
+ */
+export const formatRate = (rate: string): string => `${formatMoney(ratioToPercent(rate))} %`;
+
+/** `'2026-09-01'` → `'2026-09'`. La vigencia se lee por día, el período por mes. */
+export const periodOfDate = (date: string): string => date.slice(0, 7);
+
+const KIB = 1024;
+
+/**
+ * Tamaño de un archivo del paquete, para que se vea si el PDF pesa 180 KB o 18 MB
+ * antes de pedir el enlace. `bytes` es un conteo, no plata: acá `Number` es
+ * legítimo y el redondeo no le cuesta un céntimo a nadie.
+ */
+export function formatBytes(bytes: number): string {
+  if (bytes < KIB) return `${bytes} B`;
+  const kb = bytes / KIB;
+  if (kb < KIB) return `${kb.toFixed(1).replace('.', ',')} KB`;
+  return `${(kb / KIB).toFixed(1).replace('.', ',')} MB`;
+}
+
+// El mismo tono del badge, como chip de icono de una stat card (fondo + texto).
+// Es el par que le falta a `KpiTone` para poder expresar los seis estados de
+// finanzas: `muted` y `neutral` se ven distinto y colapsarlos borraría la
+// diferencia entre "no va a haber asiento" y "todavía no lo hay".
+export const STATUS_TONE_CHIP: Record<StatusTone, string> = {
+  success: 'bg-success/10 text-success',
+  info: 'bg-info/10 text-info',
+  warning: 'bg-warning/10 text-warning',
+  destructive: 'bg-destructive/10 text-destructive',
+  muted: 'bg-muted text-muted-foreground',
+  neutral: 'bg-primary/10 text-primary',
 };

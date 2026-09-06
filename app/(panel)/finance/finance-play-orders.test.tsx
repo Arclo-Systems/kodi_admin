@@ -281,13 +281,51 @@ describe('FinancePlayOrders — vacío y error no son lo mismo', () => {
   });
 });
 
-describe('FinancePlayOrders — resumen', () => {
-  it('cuenta las órdenes por estado en el mismo rango que se está mirando', () => {
+describe('FinancePlayOrders — resumen en siete cards', () => {
+  const resumen = () => screen.getByRole('group', { name: 'Órdenes por estado' });
+
+  it('pinta una card por estado, cada una con su ícono y su conteo', () => {
     render(<FinancePlayOrders />);
 
-    const resumen = screen.getByRole('group', { name: 'Órdenes por estado' });
-    expect(within(resumen).getByRole('button', { name: /Falló/ })).toHaveTextContent('2');
-    expect(within(resumen).getByRole('button', { name: /Asentada/ })).toHaveTextContent('12');
+    const cards = resumen().querySelectorAll('[data-slot="card"]');
+    expect(cards).toHaveLength(7);
+    // El ícono no es decorativo: es la segunda señal del estado, además del
+    // tono. Una card sin ícono deja el color como único canal.
+    for (const card of cards) expect(card.querySelector('svg')).not.toBeNull();
+
+    expect(within(resumen()).getByText('Falló').closest('[data-slot="card"]')).toHaveTextContent(
+      '2',
+    );
+    expect(within(resumen()).getByText('Asentada').closest('[data-slot="card"]')).toHaveTextContent(
+      '12',
+    );
+  });
+
+  it('las tres que requieren acción son botones; las otras cuatro, informativas', () => {
+    render(<FinancePlayOrders />);
+
+    for (const accionable of ['Falló', 'Por revisar', 'Moneda sin soporte']) {
+      expect(within(resumen()).getByRole('button', { name: new RegExp(accionable) })).toBeTruthy();
+    }
+    // Con una orden asentada no hay nada que hacer: darle un botón sugeriría lo
+    // contrario. El filtro por cualquier estado sigue en la barra de la tabla.
+    for (const informativa of ['Asentada', 'Pendiente', 'Reversada', 'Omitida']) {
+      expect(
+        within(resumen()).queryByRole('button', { name: new RegExp(informativa) }),
+      ).toBeNull();
+    }
+  });
+
+  it('un clic en una card de acción filtra la tabla por ese estado', () => {
+    render(<FinancePlayOrders />);
+
+    fireEvent.click(within(resumen()).getByRole('button', { name: /Falló/ }));
+
+    const filtro = screen.getByRole('combobox', { name: 'Filtrar por estado' });
+    expect(filtro).toHaveTextContent('Falló');
+    // Y el segundo clic lo quita: la card es un interruptor, no un viaje de ida.
+    fireEvent.click(within(resumen()).getByRole('button', { name: /Falló/ }));
+    expect(filtro).toHaveTextContent('Todos');
   });
 
   // Un conteo que no llegó no es un cero: sin señal, "0 órdenes que fallaron"
@@ -296,9 +334,8 @@ describe('FinancePlayOrders — resumen', () => {
     countsError = true;
     render(<FinancePlayOrders />);
 
-    const resumen = screen.getByRole('group', { name: 'Órdenes por estado' });
-    expect(within(resumen).getByRole('button', { name: /Falló/ })).not.toHaveTextContent('2');
-    expect(within(resumen).getAllByLabelText('sin dato').length).toBeGreaterThan(0);
+    expect(within(resumen()).getAllByText('sin dato')).toHaveLength(7);
+    expect(within(resumen()).queryByText('12')).toBeNull();
     expect(screen.getByText('No se pudo contar las órdenes por estado.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));

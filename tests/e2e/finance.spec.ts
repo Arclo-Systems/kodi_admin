@@ -13,6 +13,15 @@ import { FINANCE_FIXTURE } from './fixtures';
 // alcanza para desactivarlo.
 test.describe.configure({ mode: 'serial' });
 
+// 90 s por caso en vez de los 30 s por defecto. No es para tapar un test lento:
+// cada caso de este spec recorre entre cuatro y seis pantallas de finanzas, y
+// contra `next dev` la primera visita de cada ruta la compila on-demand. Con el
+// presupuesto por defecto los casos largos quedaban a un segundo del límite y
+// fallaban por el reloj, no por la app.
+test.beforeEach(() => {
+  test.setTimeout(90_000);
+});
+
 const AMOUNT = '1234.56';
 const AMOUNT_NUMBER = 1234.56;
 const AMOUNT_LABEL = '1 234,56 CRC';
@@ -81,20 +90,72 @@ async function crearGasto(page: Page, vendor: string): Promise<void> {
 }
 
 // Abre el mayor de la cuenta mapeada del fixture y devuelve su saldo final.
+// El día civil de hoy, tal como lo espera el query del mayor (`YYYY-MM-DD`).
+const hoyYMD = (): string => {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+
+/**
+ * Abre el mayor de la cuenta del fixture ACOTADO AL DÍA DE HOY y devuelve su
+ * saldo final.
+ *
+ * El rango viaja por la URL (`?from=&to=`, que es de donde el componente saca su
+ * estado inicial) y no por el date picker: con los doce meses por defecto, esta
+ * base ya lleva más de cien líneas sobre `6900` —una por corrida acumulada— y el
+ * asiento recién creado cae en cualquier página. Peor: el mayor ordena por FECHA
+ * sin desempate, así que dentro del día de hoy su posición **no está
+ * determinada** (el mismo hueco que el fix round 1 del backend cerró para la
+ * lista de movimientos y que en el mayor sigue abierto).
+ *
+ * Acotando a hoy quedan unas pocas líneas en una sola página, y la comparación
+ * de saldos sigue siendo válida: el saldo final es el del RANGO, y las dos
+ * lecturas usan el mismo.
+ */
 async function abrirMayor(page: Page): Promise<number> {
-  await page.goto('/finance/mayor');
+  const hoy = hoyYMD();
+  await page.goto(`/finance/mayor?from=${hoy}&to=${hoy}`);
   await pick(page, 'Cuenta', FINANCE_FIXTURE.mappedAccount);
   const saldo = page
     .getByText('Saldo final', { exact: true })
     .locator('xpath=following-sibling::p');
   await expect(saldo).toBeVisible();
-  // El mayor va en orden ascendente y esta base acumula un asiento por corrida:
-  // pasadas las 50 líneas, el movimiento recién creado deja de estar en la
-  // primera página y el spec fallaba diciendo que nunca se asentó. El saldo
-  // final es del RANGO, no de la página, así que paginar no lo mueve.
-  const ultima = page.getByRole('button', { name: 'Última página' });
-  if (await ultima.isEnabled()) await ultima.click();
+
+  // Y la página al máximo: acotado a hoy quedan pocas páginas de cien líneas.
+  await page.getByRole('combobox').last().click();
+  await page.getByRole('option', { name: '100', exact: true }).click();
+  await expect(page.locator('table tbody tr').first()).toBeVisible();
+
   return aNumero(await saldo.innerText());
+}
+
+/**
+ * Busca una línea del mayor recorriendo sus páginas hacia adelante.
+ *
+ * Hace falta porque el mayor ordena por FECHA **sin desempate**: dentro del día
+ * de hoy la posición del asiento recién creado no está determinada, y esta base
+ * acumula una corrida tras otra sobre la misma cuenta. (Es el mismo hueco que el
+ * fix round 1 del backend cerró para la lista de movimientos y que en el mayor
+ * sigue abierto: ver el concern del reporte.)
+ *
+ * El avance se espera contra el CONTENIDO de la primera fila y no contra el
+ * indicador `n / total`: ese lo pinta el estado local y cambia al instante,
+ * mientras `keepPreviousData` deja las filas de la página anterior a la vista.
+ */
+async function lineaEnMayor(page: Page, texto: string): Promise<Locator> {
+  const linea = page.locator('table tbody tr').filter({ hasText: texto });
+  const primera = page.locator('table tbody tr').first();
+  const siguiente = page.getByRole('button', { name: 'Página siguiente' });
+
+  for (let i = 0; i < 20; i += 1) {
+    if ((await linea.count()) > 0) return linea;
+    if (!(await siguiente.isEnabled())) break;
+    const antes = await primera.innerText();
+    await siguiente.click();
+    await expect(primera).not.toHaveText(antes);
+  }
+  return linea;
 }
 
 // Primer `69xx` que el árbol todavía no tiene. Sin esto el alta solo se puede
@@ -154,7 +215,7 @@ test('el gasto recorre el libro: mayor con saldo corrido, comprobación que cuad
 
   // El asiento aparece en el mayor de la cuenta de la categoría, con su débito.
   const saldoDespues = await abrirMayor(page);
-  const linea = page.locator('table tbody tr').filter({ hasText: vendor });
+  const linea = await lineaEnMayor(page, vendor);
   await expect(linea).toBeVisible();
   await expect(linea).toContainText('1 234,56');
   // El saldo corrido se movió exactamente el monto del gasto.
@@ -340,12 +401,15 @@ const INDEX_CARDS = [
   ['KPIs', '/finance/kpis'],
   ['Proyección', '/finance/proyeccion'],
   ['Alertas', '/finance/alertas'],
+  ['Impuestos', '/finance/impuestos'],
+  ['Cierre mensual', '/finance/cierre'],
+  ['Paquete del contador', '/finance/paquete-contador'],
   ['Cuentas', '/finance/cuentas'],
   ['Categorías', '/finance/categorias'],
   ['Tipos de cambio', '/finance/tipos-de-cambio'],
 ] as const;
 
-test('el índice de Finanzas lleva a las catorce pantallas y se vuelve por el breadcrumb', async ({
+test('el índice de Finanzas lleva a las diecisiete pantallas y se vuelve por el breadcrumb', async ({
   page,
 }) => {
   await page.goto('/finance');
@@ -591,4 +655,144 @@ test('una regla de alerta se evalúa a mano y el índice de Finanzas avisa lo qu
   await expect(page.getByText(/alerta(s)? financiera(s)? sin ver/)).toBeVisible();
   await page.getByRole('link', { name: 'Ver alertas' }).click();
   await expect(page).toHaveURL(/\/finance\/alertas$/);
+});
+
+// ─── Fase 5: impuestos, cierre mensual y paquete del contador ────────────────
+
+test('las tarifas de impuesto muestran la que rige, con su vigencia', async ({ page }) => {
+  await page.goto('/finance/impuestos');
+
+  // `IVA_CR` la siembra `seedTaxRules` en el globalSetup: sin una tarifa vigente
+  // para facturas de sponsor, emitir una factura con IVA responde 409.
+  const fila = page.locator('table tbody tr').filter({ hasText: 'IVA_CR' }).first();
+  await expect(fila).toBeVisible();
+  await expect(fila).toContainText('13,00 %');
+  // La fracción exacta al lado del por ciento: es la que el backend valida.
+  await expect(fila).toContainText('0.1300');
+  await expect(fila).toContainText('2019-07-01');
+  await expect(fila).toContainText('Activa');
+});
+
+test('la declaración del mes se crea del mayor y pasa a revisión', async ({ page }) => {
+  await page.goto('/finance/impuestos');
+  await page.getByRole('tab', { name: 'Declaraciones de IVA' }).click();
+
+  const hoy = new Date();
+  const periodo = `${String(hoy.getMonth() + 1).padStart(2, '0')}/${hoy.getFullYear()}`;
+
+  // Idempotente: la declaración es única por (año, mes, tipo). Una segunda
+  // corrida del mismo mes choca con 409, así que se reusa la que ya está —pero
+  // hay que esperar a que la tabla termine de cargar antes de contar, o el
+  // reintento crea una copia que el backend rechaza.
+  await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0);
+  const fila = page.locator('table tbody tr').filter({ hasText: periodo }).first();
+  if ((await fila.count()) === 0) {
+    await page.getByRole('button', { name: /Nueva declaración/ }).click();
+    const alta = page.getByRole('dialog');
+    await alta.getByRole('button', { name: /Crear declaración/ }).click();
+    await expect(page.getByText('Declaración creada')).toBeVisible();
+  }
+  await expect(fila).toBeVisible();
+
+  await fila.getByRole('button', { name: 'Ver detalle' }).click();
+  const detalle = page.getByRole('dialog').first();
+
+  // El literal del backend, tal cual: el IVA de las compras no se modela y el
+  // contador tiene que verlo antes de usar la cifra.
+  await expect(detalle.getByText('IVA soportado (compras): N/A')).toBeVisible();
+  await expect(
+    detalle.getByText('IVA soportado no modelado en esta versión; el contador lo agrega a mano'),
+  ).toBeVisible();
+  await expect(detalle.getByText('IVA repercutido (cobrado)')).toBeVisible();
+
+  // Y las transiciones son las del estado, no todas: desde borrador solo se
+  // puede ir a revisión.
+  const enBorrador = await detalle.getByRole('button', { name: 'Pasar a revisión' }).count();
+  if (enBorrador > 0) {
+    await detalle.getByRole('button', { name: 'Pasar a revisión' }).click();
+    const confirmar = page.getByRole('dialog').last();
+    await confirmar.getByRole('button', { name: 'Pasar a revisión' }).click();
+    await expect(page.getByText('Declaración en En revisión')).toBeVisible();
+  }
+  await expect(page.locator('table tbody tr').filter({ hasText: periodo }).first()).toContainText(
+    'En revisión',
+  );
+});
+
+test('el cierre mensual dice qué falta, y lo cerrado se reabre con motivo', async ({ page }) => {
+  await page.goto('/finance/cierre');
+
+  const hoy = new Date();
+  const periodo = `${String(hoy.getMonth() + 1).padStart(2, '0')}/${hoy.getFullYear()}`;
+  await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0);
+  const fila = page.locator('table tbody tr').filter({ hasText: periodo }).first();
+  await expect(fila).toBeVisible();
+
+  const cerrar = fila.getByRole('button', { name: /^Cerrar/ });
+  if (await cerrar.isDisabled()) {
+    // Con un bloqueo no forzable el botón queda apagado Y el motivo se lee en la
+    // fila: el tooltip es el segundo canal, nunca el único.
+    await expect(fila.getByRole('listitem').first()).toBeVisible();
+    return;
+  }
+
+  await cerrar.click();
+  const cierre = page.getByRole('dialog');
+  const motivoDelCierre = cierre.getByLabel('Motivo');
+  if ((await motivoDelCierre.count()) > 0) {
+    await motivoDelCierre.fill('Cierre forzado por el e2e: las órdenes de Play siguen en cola.');
+  }
+  await cierre.getByRole('button', { name: /^Cerrar/ }).click();
+  await expect(page.getByText(/cerrado$/)).toBeVisible();
+  await expect(fila).toContainText('Cerrado');
+
+  // Y se reabre en el acto: dejar el mes cerrado bloquearía todo asiento con
+  // fecha de hoy para el resto de la suite.
+  await fila.getByRole('button', { name: 'Reabrir' }).click();
+  const reapertura = page.getByRole('dialog');
+  const confirmarReapertura = reapertura.getByRole('button', { name: 'Reabrir período' });
+  await expect(confirmarReapertura).toBeDisabled();
+  await reapertura.getByLabel('Motivo').fill('Reapertura del e2e: el mes tiene que seguir abierto.');
+  await confirmarReapertura.click();
+
+  await expect(page.getByText(/reabierto$/)).toBeVisible();
+  await expect(fila).toContainText('Abierto');
+});
+
+test('el paquete del contador se genera y queda listo para descargar', async ({ page }) => {
+  await page.goto('/finance/paquete-contador');
+
+  // El selector arranca en el mes ANTERIOR, que es el que se le manda al
+  // contador. No se cambia: el mes en curso todavía se mueve.
+  const versiones = page.locator('[data-slot="card"]').filter({ hasText: /^Versión/ });
+  // Contar mientras la lista está en su esqueleto da 0 y desalinea todo lo que
+  // sigue: primero se espera a que termine de cargar.
+  await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0);
+  const antes = await versiones.count();
+
+  // La generación es SINCRÓNICA (arma el PDF, los cuatro CSV y los sube a R2):
+  // se espera a la versión nueva y no al toast, que el de una corrida anterior
+  // puede seguir en pantalla.
+  await page.getByRole('button', { name: /Generar paquete/ }).click();
+  await expect(versiones).toHaveCount(antes + 1, { timeout: 120_000 });
+
+  // La más nueva va primero, lista y con sus cinco archivos.
+  const version = versiones.first();
+  await expect(version.getByText('Listo')).toBeVisible();
+  for (const archivo of [
+    'PDF completo',
+    'Mayor (CSV)',
+    'Comprobación (CSV)',
+    'Balance general (CSV)',
+    'Resultados (CSV)',
+  ]) {
+    // El nombre va como string y no como RegExp: los paréntesis de "(CSV)"
+    // serían un grupo de captura y matchearían "Mayor CSV", que no existe.
+    await expect(version.getByRole('button', { name: archivo })).toBeVisible();
+  }
+
+  // Regenerar NO pisa: nace una versión más y la anterior sigue descargable.
+  await page.getByRole('button', { name: /Generar paquete/ }).click();
+  await expect(versiones).toHaveCount(antes + 2, { timeout: 120_000 });
+  await expect(versiones.nth(1).getByText('Listo')).toBeVisible();
 });

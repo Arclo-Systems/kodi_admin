@@ -29,7 +29,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldTitle,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -501,10 +508,12 @@ function RuleDialog({
           <FieldGroup>
             {rule ? (
               <Field>
-                <FieldLabel htmlFor="rule-kind">Tipo</FieldLabel>
-                <p id="rule-kind" className="font-medium">
-                  {ALERT_KIND_LABELS[rule.kind]}
-                </p>
+                {/* `FieldTitle` y no `FieldLabel`: acá el tipo es un valor de
+                    solo lectura, no un control. Un `<label htmlFor>` apuntando a
+                    un `<p>` no asocia nada —`htmlFor` solo vale sobre elementos
+                    etiquetables— y deja al lector de pantalla sin la relación. */}
+                <FieldTitle>Tipo</FieldTitle>
+                <p className="font-medium">{ALERT_KIND_LABELS[rule.kind]}</p>
                 <FieldDescription>{ALERT_KIND_HINTS[rule.kind]}</FieldDescription>
               </Field>
             ) : (

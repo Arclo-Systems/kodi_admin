@@ -135,6 +135,12 @@ export type BudgetVarianceLine = VarianceComparison & {
   code: string;
   name: string;
   type: AccountType;
+  /**
+   * `true` = la cuenta ganó subcuentas DESPUÉS de presupuestarla, así que la
+   * línea compara un presupuesto de hoja contra un real de rama. Sigue viajando
+   * —esconderla haría desaparecer plata presupuestada— y el panel la advierte.
+   */
+  stale: boolean;
 };
 
 export type BudgetVariance = {
@@ -158,6 +164,17 @@ export type Runway = {
     /** `null` cuando no hay meses suficientes para promediar. */
     average: string | null;
     basisMonths: number;
+    /**
+     * El mes EN CURSO, que nunca entra al promedio. `cashBalance` sí incluye sus
+     * movimientos: es el saldo de hoy. El panel nombra la asimetría para que no
+     * se lea como un error.
+     */
+    excludedCurrentMonth: string;
+    /**
+     * El mes más viejo de la ventana que quedó fuera por INCOMPLETO: el libro
+     * arrancó adentro, así que no fue un mes de operación. `null` = todos enteros.
+     */
+    excludedPartialMonth: string | null;
   };
   /** Meses de pista, un decimal. `null` ⟺ `na` no es null. */
   runwayMonths: string | null;

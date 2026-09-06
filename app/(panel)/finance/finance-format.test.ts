@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { formatAmount, formatMoney, ratioToPercent, subtractMoney, sumMoney } from './finance-format';
+import {
+  formatAmount,
+  formatBytes,
+  formatMoney,
+  formatRate,
+  ratioToPercent,
+  subtractMoney,
+  sumMoney,
+} from './finance-format';
 
 // La resta de importes existe por una sola razón: el "bruto sin impuesto" de una
 // orden de Google (`total − impuesto`) no viaja en la respuesta y hay que
@@ -62,5 +70,25 @@ describe('ratioToPercent — una fracción se lee en por ciento', () => {
     expect(ratioToPercent('1.0000')).toBe('100.00');
     expect(ratioToPercent('0.1234')).toBe('12.34');
     expect(ratioToPercent('0.0000')).toBe('0.00');
+  });
+});
+
+describe('formatRate — la tarifa se habla en por ciento', () => {
+  it('lee la fracción de cuatro decimales sin pasar por double', () => {
+    // `Number('0.13') * 100` da 13.000000000000002: acá la coma se corre sobre
+    // el string, así que el 13 % es exactamente 13.
+    expect(formatRate('0.1300')).toBe('13,00 %');
+    expect(formatRate('0.13')).toBe('13,00 %');
+    expect(formatRate('0.0000')).toBe('0,00 %');
+    expect(formatRate('1.0000')).toBe('100,00 %');
+  });
+});
+
+describe('formatBytes — el peso de un archivo del paquete', () => {
+  it('cambia de unidad para que 18 MB no se lea como 18 000 000', () => {
+    expect(formatBytes(512)).toBe('512 B');
+    expect(formatBytes(4211)).toBe('4,1 KB');
+    expect(formatBytes(184320)).toBe('180,0 KB');
+    expect(formatBytes(20 * 1024 * 1024)).toBe('20,0 MB');
   });
 });

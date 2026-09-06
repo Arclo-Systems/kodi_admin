@@ -73,6 +73,16 @@ export function FinanceRunway({ currency }: { currency: string }) {
               </Alert>
             )}
 
+            {/* La asimetría se nombra: el saldo de caja SÍ incluye el mes en
+                curso (es el saldo de hoy) y el promedio no. Sin decirlo, la
+                diferencia entre las dos cifras se lee como un error. */}
+            <p className="text-muted-foreground text-xs">
+              {formatPeriod(report.burn.excludedCurrentMonth)} no entra en el promedio por estar en
+              curso, aunque sus movimientos sí están en el saldo de caja.
+              {report.burn.excludedPartialMonth &&
+                ` ${formatPeriod(report.burn.excludedPartialMonth)} tampoco: el libro arrancó adentro de ese mes, así que no fue un mes entero de operación.`}
+            </p>
+
             {report.burn.months.length > 0 && (
               <div>
                 <p className="text-muted-foreground mb-1 text-xs">

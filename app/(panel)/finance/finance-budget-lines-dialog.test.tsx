@@ -179,7 +179,11 @@ describe('FinanceBudgetLinesDialog — guardar es un reemplazo total', () => {
     await waitFor(() => expect(replaceLines).toHaveBeenCalledWith({ id: 'b-setiembre', lines: [] }));
   });
 
-  it('rechaza un monto en cero antes de mandarlo: el backend lo contesta 400', async () => {
+  // Desde la Fase 5 el backend admite el cero (`budget_lines_amount_non_negative`),
+  // y NO es lo mismo que dejarlo vacío: presupuestar cero dice que esa cuenta no
+  // debía gastar nada, y la variación lo mide contra el real; dejarlo vacío la
+  // saca del presupuesto y la fila aparece "sin presupuestar".
+  it('el cero se manda como línea: presupuestar cero no es no presupuestar', async () => {
     render(<FinanceBudgetLinesDialog budgetId="b-setiembre" onOpenChange={vi.fn()} />);
 
     fireEvent.change(screen.getByLabelText('Monto de 6210 Marketing y publicidad'), {
@@ -187,7 +191,23 @@ describe('FinanceBudgetLinesDialog — guardar es un reemplazo total', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: /Guardar presupuesto/ }));
 
-    expect(await screen.findByText(/mayor que cero/)).toBeInTheDocument();
+    await waitFor(() =>
+      expect(replaceLines).toHaveBeenCalledWith({
+        id: 'b-setiembre',
+        lines: [{ accountId: 'a-marketing', amount: '0' }],
+      }),
+    );
+  });
+
+  it('un monto a medio escribir sigue rechazándose antes de mandarlo', async () => {
+    render(<FinanceBudgetLinesDialog budgetId="b-setiembre" onOpenChange={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText('Monto de 6210 Marketing y publicidad'), {
+      target: { value: '1.234' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar presupuesto/ }));
+
+    expect(await screen.findByText(/hasta 2 decimales/)).toBeInTheDocument();
     expect(replaceLines).not.toHaveBeenCalled();
   });
 });

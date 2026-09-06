@@ -83,12 +83,21 @@ function BalanceSection({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Table aria-label={title}>
+        {/* `table-fixed`: con el ancho automático, la sangría de la rama
+            (`paddingLeft` por profundidad) entra en el ancho mínimo del
+            contenido y empuja la tabla más allá de la card — el contenedor
+            `overflow-x-auto` de shadcn aparecía con scroll y la columna Código
+            quedaba recortada. Con anchos declarados, las columnas no dependen
+            del contenido y el nombre largo parte de línea en vez de ensanchar.
+            El `min-w` deja el scroll solo donde de verdad no entra (móvil), y
+            un contenedor arranca siempre en scrollLeft 0: alineado a la
+            izquierda, con Código a la vista. */}
+        <Table aria-label={title} className="min-w-[30rem] table-fixed">
           <TableHeader>
             <TableRow>
               <TableHead className="w-20">Código</TableHead>
               <TableHead>Cuenta</TableHead>
-              <TableHead className="text-right">Saldo</TableHead>
+              <TableHead className="w-36 text-right">Saldo</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -137,7 +146,7 @@ function BalanceRow({ line }: { line: BalanceSheetLine }) {
       <TableCell className="text-muted-foreground tabular-nums">{line.code ?? '—'}</TableCell>
       <TableCell>
         <span
-          className="block min-w-0"
+          className="block min-w-0 break-words"
           style={{ paddingLeft: `${line.depth * INDENT_REM}rem` }}
         >
           <span
@@ -236,9 +245,12 @@ export function FinanceBalanceSheet() {
         )
       ) : null}
 
-      {/* Activo a la izquierda, pasivo y patrimonio a la derecha: es como se lee
-          un balance, y deja las dos mitades de la identidad enfrentadas. */}
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+      {/* Tres cards apiladas a ancho completo, en el orden del balance: Activos
+          → Pasivos → Patrimonio. El bento de dos columnas partía el ancho
+          disponible al medio y dejaba las tablas más angostas que su contenido;
+          a ancho completo, la sangría de la rama y los importes entran sin
+          comprimir nada. El cuadre queda arriba, que es lo que se lee primero. */}
+      <div className="space-y-6">
         <BalanceSection
           title="Activos"
           section={report?.assets}
@@ -246,22 +258,20 @@ export function FinanceBalanceSheet() {
           loading={isLoading}
           failed={isError}
         />
-        <div className="space-y-6">
-          <BalanceSection
-            title="Pasivos"
-            section={report?.liabilities}
-            currency={currency}
-            loading={isLoading}
-            failed={isError}
-          />
-          <BalanceSection
-            title="Patrimonio"
-            section={report?.equity}
-            currency={currency}
-            loading={isLoading}
-            failed={isError}
-          />
-        </div>
+        <BalanceSection
+          title="Pasivos"
+          section={report?.liabilities}
+          currency={currency}
+          loading={isLoading}
+          failed={isError}
+        />
+        <BalanceSection
+          title="Patrimonio"
+          section={report?.equity}
+          currency={currency}
+          loading={isLoading}
+          failed={isError}
+        />
       </div>
     </div>
   );

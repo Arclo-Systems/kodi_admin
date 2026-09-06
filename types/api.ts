@@ -9343,6 +9343,214 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/tax-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceTaxAdminController_listTaxRules"];
+        put?: never;
+        post: operations["FinanceTaxAdminController_createTaxRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/tax-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["FinanceTaxAdminController_updateTaxRule"];
+        trace?: never;
+    };
+    "/v1/admin/finance/tax-rules/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinanceTaxAdminController_deactivateTaxRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/tax-declarations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceTaxAdminController_listDeclarations"];
+        put?: never;
+        post: operations["FinanceTaxAdminController_createDeclaration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/tax-declarations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceTaxAdminController_getDeclaration"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/tax-declarations/{id}/recalculate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinanceTaxAdminController_recalculateDeclaration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/tax-declarations/{id}/transition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinanceTaxAdminController_transitionDeclaration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/periods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceTaxAdminController_listPeriods"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/periods/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinanceTaxAdminController_closePeriod"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/periods/{id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinanceTaxAdminController_reopenPeriod"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/accountant-package": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceTaxAdminController_listPackages"];
+        put?: never;
+        post: operations["FinanceTaxAdminController_generatePackage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/accountant-package/{id}/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinanceTaxAdminController_discardPackage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/accountant-package/{id}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceTaxAdminController_packageUrl"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/game/matches": {
         parameters: {
             query?: never;
@@ -19399,6 +19607,7 @@ export interface components {
                     name: string;
                     /** @enum {string} */
                     type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    stale: boolean;
                     budget: string;
                     actual: string;
                     variance: string;
@@ -19466,6 +19675,8 @@ export interface components {
                     }[];
                     average: string | null;
                     basisMonths: number;
+                    excludedCurrentMonth: string;
+                    excludedPartialMonth: string | null;
                 };
                 runwayMonths: string | null;
                 na: {
@@ -19808,6 +20019,316 @@ export interface components {
                 acknowledgedAt: string | null;
                 /** Format: uuid */
                 acknowledgedBy: string | null;
+            };
+        };
+        TaxRuleListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+                rate: string;
+                /** @enum {string} */
+                appliesTo: "GENERAL" | "SPONSOR_INVOICE" | "SUBSCRIPTION";
+                validFrom: string;
+                validTo: string | null;
+                isActive: boolean;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            }[];
+        };
+        CreateTaxRuleDto: {
+            code: string;
+            name: string;
+            rate: string;
+            /** @enum {string} */
+            appliesTo: "GENERAL" | "SPONSOR_INVOICE" | "SUBSCRIPTION";
+            validFrom: string;
+            validTo?: string | null;
+        };
+        TaxRuleResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+                name: string;
+                rate: string;
+                /** @enum {string} */
+                appliesTo: "GENERAL" | "SPONSOR_INVOICE" | "SUBSCRIPTION";
+                validFrom: string;
+                validTo: string | null;
+                isActive: boolean;
+                /** Format: uuid */
+                createdBy: string | null;
+                /** Format: uuid */
+                updatedBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        UpdateTaxRuleDto: {
+            name?: string;
+            rate?: string;
+            validFrom?: string;
+            validTo?: string | null;
+        };
+        TaxDeclarationListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    year: number;
+                    month: number;
+                    period: string;
+                    /** @enum {string} */
+                    kind: "IVA";
+                    /** @enum {string} */
+                    status: "DRAFT" | "REVIEW" | "FILED" | "CLOSED";
+                    /** @enum {string} */
+                    currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    taxableBase: string;
+                    taxAmount: string;
+                    ivaRepercutido: string;
+                    taxDebits: string;
+                    ivaSoportado: null;
+                    ivaSoportadoNote: string;
+                    calculatedAt: string;
+                    stale: boolean;
+                    notes: string | null;
+                    filedAt: string | null;
+                    /** Format: uuid */
+                    filedBy: string | null;
+                    /** Format: uuid */
+                    createdBy: string | null;
+                    createdAt: string;
+                    updatedAt: string;
+                    allowedTransitions: ("DRAFT" | "REVIEW" | "FILED" | "CLOSED")[];
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        TaxDeclarationResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                year: number;
+                month: number;
+                period: string;
+                /** @enum {string} */
+                kind: "IVA";
+                /** @enum {string} */
+                status: "DRAFT" | "REVIEW" | "FILED" | "CLOSED";
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                taxableBase: string;
+                taxAmount: string;
+                ivaRepercutido: string;
+                taxDebits: string;
+                ivaSoportado: null;
+                ivaSoportadoNote: string;
+                calculatedAt: string;
+                stale: boolean;
+                notes: string | null;
+                filedAt: string | null;
+                /** Format: uuid */
+                filedBy: string | null;
+                /** Format: uuid */
+                createdBy: string | null;
+                createdAt: string;
+                updatedAt: string;
+                allowedTransitions: ("DRAFT" | "REVIEW" | "FILED" | "CLOSED")[];
+                snapshot: {
+                    taxAccountCode: string;
+                    totals: {
+                        ivaRepercutido: string;
+                        taxDebits: string;
+                        ivaSoportado: null;
+                        note: string;
+                    };
+                    lines: {
+                        /** Format: uuid */
+                        entryId: string;
+                        entryNumber: string;
+                        date: string;
+                        description: string;
+                        base: string;
+                        taxCredit: string;
+                        taxDebit: string;
+                    }[];
+                    excludedCurrencies: {
+                        /** @enum {string} */
+                        currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                        taxAmount: string;
+                    }[];
+                };
+            };
+        };
+        CreateTaxDeclarationDto: {
+            year: number;
+            month: number;
+            /**
+             * @default IVA
+             * @enum {string}
+             */
+            kind: "IVA";
+            /**
+             * @default CRC
+             * @enum {string}
+             */
+            currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            notes?: string;
+        };
+        TransitionTaxDeclarationDto: {
+            /** @enum {string} */
+            to: "DRAFT" | "REVIEW" | "FILED" | "CLOSED";
+            notes?: string;
+        };
+        PeriodListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                year: number;
+                month: number;
+                period: string;
+                /** @enum {string} */
+                status: "OPEN" | "CLOSED";
+                closedAt: string | null;
+                /** Format: uuid */
+                closedBy: string | null;
+                reopenedAt: string | null;
+                /** Format: uuid */
+                reopenedBy: string | null;
+                reopenReason: string | null;
+                counts: {
+                    journalEntries: number;
+                    unpostedEntries: number;
+                    pendingPlayOrders: number;
+                };
+                balances: {
+                    /** @enum {string} */
+                    currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    debits: string;
+                    credits: string;
+                    difference: string;
+                }[];
+                balanced: boolean;
+                blockers: {
+                    code: string;
+                    message: string;
+                    forceable: boolean;
+                }[];
+            }[];
+        };
+        ClosePeriodDto: {
+            /** @default false */
+            force: boolean;
+            reason?: string;
+        };
+        PeriodResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                year: number;
+                month: number;
+                period: string;
+                /** @enum {string} */
+                status: "OPEN" | "CLOSED";
+                closedAt: string | null;
+                /** Format: uuid */
+                closedBy: string | null;
+                reopenedAt: string | null;
+                /** Format: uuid */
+                reopenedBy: string | null;
+                reopenReason: string | null;
+                counts: {
+                    journalEntries: number;
+                    unpostedEntries: number;
+                    pendingPlayOrders: number;
+                };
+                balances: {
+                    /** @enum {string} */
+                    currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    debits: string;
+                    credits: string;
+                    difference: string;
+                }[];
+                balanced: boolean;
+                blockers: {
+                    code: string;
+                    message: string;
+                    forceable: boolean;
+                }[];
+            };
+        };
+        ReopenPeriodDto: {
+            reason: string;
+            /** @default false */
+            force: boolean;
+        };
+        AccountantPackageResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                year: number;
+                month: number;
+                period: string;
+                version: number;
+                /** @enum {string} */
+                status: "GENERATING" | "READY" | "FAILED" | "DISCARDED";
+                error: string | null;
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                files: ("pdf" | "mayor.csv" | "comprobacion.csv" | "balance.csv" | "resultados.csv")[];
+                metadata: {
+                    pdfPages: number;
+                    bytes: {
+                        [key: string]: number;
+                    };
+                    ledgerRows: number;
+                    balanced: boolean;
+                } | null;
+                /** Format: uuid */
+                generatedBy: string | null;
+                generatedAt: string;
+            };
+        };
+        AccountantPackageListResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                year: number;
+                month: number;
+                period: string;
+                version: number;
+                /** @enum {string} */
+                status: "GENERATING" | "READY" | "FAILED" | "DISCARDED";
+                error: string | null;
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                files: ("pdf" | "mayor.csv" | "comprobacion.csv" | "balance.csv" | "resultados.csv")[];
+                metadata: {
+                    pdfPages: number;
+                    bytes: {
+                        [key: string]: number;
+                    };
+                    ledgerRows: number;
+                    balanced: boolean;
+                } | null;
+                /** Format: uuid */
+                generatedBy: string | null;
+                generatedAt: string;
+            }[];
+        };
+        AccountantPackageUrlResponse: {
+            data: {
+                url: string;
+                expiresInSeconds: number;
             };
         };
         MatchAdminListResponse: {
@@ -35275,6 +35796,377 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FinanceAlertResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_listTaxRules: {
+        parameters: {
+            query?: {
+                appliesTo?: "GENERAL" | "SPONSOR_INVOICE" | "SUBSCRIPTION";
+                isActive?: "true" | "false";
+                on?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRuleListResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_createTaxRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaxRuleDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRuleResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_updateTaxRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaxRuleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRuleResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_deactivateTaxRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxRuleResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_listDeclarations: {
+        parameters: {
+            query?: {
+                year?: number;
+                month?: number;
+                kind?: "IVA";
+                status?: "DRAFT" | "REVIEW" | "FILED" | "CLOSED";
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxDeclarationListResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_createDeclaration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTaxDeclarationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxDeclarationResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_getDeclaration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxDeclarationResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_recalculateDeclaration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxDeclarationResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_transitionDeclaration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionTaxDeclarationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaxDeclarationResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_listPeriods: {
+        parameters: {
+            query?: {
+                year?: number;
+                status?: "OPEN" | "CLOSED";
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodListResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_closePeriod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClosePeriodDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_reopenPeriod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReopenPeriodDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeriodResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_listPackages: {
+        parameters: {
+            query: {
+                year: number;
+                month: number;
+                currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountantPackageListResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_generatePackage: {
+        parameters: {
+            query: {
+                year: number;
+                month: number;
+                currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountantPackageResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_discardPackage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountantPackageResponse"];
+                };
+            };
+        };
+    };
+    FinanceTaxAdminController_packageUrl: {
+        parameters: {
+            query?: {
+                file?: "pdf" | "mayor.csv" | "comprobacion.csv" | "balance.csv" | "resultados.csv";
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountantPackageUrlResponse"];
                 };
             };
         };
