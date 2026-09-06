@@ -220,6 +220,11 @@ export function FinanceCashFlow() {
         <CardContent>
           {isLoading ? (
             <div className="bg-muted h-56 w-full animate-pulse rounded" />
+          ) : isError ? (
+            // Sin reporte no hay serie, pero eso no significa que no haya pasado
+            // nada: "sin movimientos" sobre una carga caída afirma lo contrario
+            // de lo que se sabe. El botón de reintentar es el del aviso de arriba.
+            <p className="text-muted-foreground text-sm">No se pudo cargar la serie mensual.</p>
           ) : months.length === 0 ? (
             <p className="text-muted-foreground text-sm">Sin movimientos de caja en el rango.</p>
           ) : (

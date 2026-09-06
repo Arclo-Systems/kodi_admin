@@ -155,6 +155,48 @@ describe('PnlDashboard — los KPI salen de byCurrency del mayor', () => {
   });
 });
 
+// El reporte cae a la primera moneda de `byCurrency` cuando la elegida no está
+// ahí. El selector tiene que caer con él: decir "CRC" sobre unos KPI en USD es la
+// peor forma de equivocarse con plata.
+describe('PnlDashboard — el selector dice la moneda que se está pintando', () => {
+  it('solo ofrece las monedas que el reporte trae', async () => {
+    pnl = { ...REPORT, byCurrency: [REPORT.byCurrency[1]!] }; // solo USD
+    render(<PnlDashboard />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Moneda' }));
+
+    expect(await screen.findByRole('option', { name: 'USD' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'CRC' })).toBeNull();
+    // Consolidar a una moneda sin movimientos sí es válido: no se acota.
+    expect(screen.getByRole('option', { name: 'Consolidar a CRC' })).toBeInTheDocument();
+  });
+
+  it('si la moneda elegida desaparece del rango, el selector se sincroniza con los KPI', async () => {
+    render(<PnlDashboard />);
+    expect(kpi('Ingresos (CRC)')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Moneda' })).toHaveTextContent('CRC');
+
+    // El rango nuevo ya no tiene colones: el reporte pasa a dólares.
+    pnl = { ...REPORT, byCurrency: [REPORT.byCurrency[1]!] };
+    fireEvent.click(screen.getByRole('combobox', { name: 'Moneda' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'USD' }));
+
+    expect(kpi('Ingresos (USD)')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Moneda' })).toHaveTextContent('USD');
+    expect(screen.queryByText('Ingresos (CRC)')).toBeNull();
+  });
+
+  it('sin datos ofrece las dos: un selector vacío no se puede usar ni para volver', async () => {
+    pnl = { ...REPORT, byCurrency: [], byAccount: [], byMonth: [] };
+    render(<PnlDashboard />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Moneda' }));
+
+    expect(await screen.findByRole('option', { name: 'CRC' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'USD' })).toBeInTheDocument();
+  });
+});
+
 describe('PnlDashboard — consolidado a una moneda', () => {
   it('etiqueta con qué tasa y de qué fecha convirtió', async () => {
     render(<PnlDashboard />);

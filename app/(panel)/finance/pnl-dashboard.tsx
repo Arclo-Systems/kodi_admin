@@ -56,6 +56,16 @@ export function PnlDashboard() {
   const currencies = pnl?.byCurrency.map((c) => c.currency) ?? [];
   const currency =
     consolidateTo ?? (picked && currencies.includes(picked) ? picked : (currencies[0] ?? ''));
+  // El selector muestra la moneda que se está PINTANDO, no la que se eligió: si
+  // la elegida no está en `byCurrency` el reporte cae a la primera que sí está, y
+  // dejar el trigger diciendo "CRC" sobre unos KPI en USD es la peor forma de
+  // equivocarse con plata. Se deriva en el render en vez de sincronizar el estado
+  // con un efecto: así no hay un frame con las dos cosas en desacuerdo.
+  const scopeValue = consolidateTo ? scope : currency || scope;
+  // Y solo se ofrecen las monedas que el reporte puede mostrar. Sin datos (o con
+  // el reporte caído) se ofrecen las dos: un selector vacío no se puede usar ni
+  // para volver.
+  const selectable = currencies.length > 0 ? currencies : FINANCE_CURRENCIES;
   const sinConvertir = currencies.length === 0 && (pnl?.consolidation?.missing.length ?? 0) > 0;
   const totals = pnl?.byCurrency.find((c) => c.currency === currency);
   // Recharts dibuja píxeles y necesita números: es el único punto donde el importe
@@ -80,7 +90,7 @@ export function PnlDashboard() {
           aria-label="Rango de fechas"
           className="w-auto"
         />
-        <CurrencyScopeSelect value={scope} onChange={setScope} />
+        <CurrencyScopeSelect value={scopeValue} onChange={setScope} currencies={selectable} />
         <span className="text-muted-foreground text-sm">Sin fechas = últimos 12 meses.</span>
         <FinanceReportCsvButton report="pnl" params={params} className="ml-auto" />
       </div>

@@ -38,11 +38,21 @@ export function currencyScopeParams(value: CurrencyScopeValue): CurrencyScope {
 export function CurrencyScopeSelect({
   value,
   onChange,
+  currencies = FINANCE_CURRENCIES,
   label = 'Moneda',
   className = 'w-52',
 }: {
   value: CurrencyScopeValue;
   onChange: (value: CurrencyScopeValue) => void;
+  /**
+   * Monedas que el reporte SÍ puede mostrar por separado. El P&L pasa las que
+   * trae la respuesta: ofrecer una que no está en los datos deja el selector
+   * diciendo una moneda y los KPI mostrando otra.
+   *
+   * "Consolidar a" no se acota: se puede convertir a una moneda que todavía no
+   * tiene movimientos.
+   */
+  currencies?: readonly string[];
   label?: string;
   className?: string;
 }) {
@@ -54,7 +64,7 @@ export function CurrencyScopeSelect({
       <SelectContent>
         <SelectGroup>
           <SelectLabel>Por moneda</SelectLabel>
-          {FINANCE_CURRENCIES.map((c) => (
+          {currencies.map((c) => (
             <SelectItem key={c} value={c}>
               {c}
             </SelectItem>

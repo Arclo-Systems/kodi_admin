@@ -114,6 +114,24 @@ describe('FinanceCashFlow — un reporte caído no es una caja vacía', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
     expect(refetch).toHaveBeenCalled();
   });
+
+  // El gráfico también se queda sin datos, y ahí "sin movimientos" afirma lo
+  // contrario de lo que se sabe.
+  it('el gráfico tampoco dice "sin movimientos" cuando lo que falló fue la carga', () => {
+    reportError = true;
+    render(<FinanceCashFlow />);
+
+    expect(screen.getByText('No se pudo cargar la serie mensual.')).toBeInTheDocument();
+    expect(screen.queryByText('Sin movimientos de caja en el rango.')).toBeNull();
+  });
+
+  it('sin error y sin serie sí dice que el rango está vacío', () => {
+    report = SIN_CAJAS;
+    render(<FinanceCashFlow />);
+
+    expect(screen.getByText('Sin movimientos de caja en el rango.')).toBeInTheDocument();
+    expect(screen.queryByText('No se pudo cargar la serie mensual.')).toBeNull();
+  });
 });
 
 describe('FinanceCashFlow — CSV', () => {
