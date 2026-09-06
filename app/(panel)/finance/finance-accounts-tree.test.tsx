@@ -39,6 +39,11 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => ({
 
 import { FinanceAccountsTree } from './finance-accounts-tree';
 
+// Abrir un `Select` de Radix en jsdom cuesta ~1 s y este archivo encadena
+// varios por test: con 80 archivos corriendo en paralelo los 5 s por defecto se
+// agotan por el reloj, no por el código. El resto de la suite NO paga esto.
+vi.setConfig({ testTimeout: 20_000 });
+
 // El provider de tooltips lo pone el layout raíz del panel.
 const render = (ui: ReactElement) => rtlRender(<TooltipProvider>{ui}</TooltipProvider>);
 

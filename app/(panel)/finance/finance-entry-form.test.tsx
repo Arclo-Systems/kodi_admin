@@ -107,6 +107,11 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => {
 
 import { FinanceEntryForm } from './finance-entry-form';
 
+// Abrir un `Select` de Radix en jsdom cuesta ~1 s y este archivo encadena
+// varios por test: con 80 archivos corriendo en paralelo los 5 s por defecto se
+// agotan por el reloj, no por el código. El resto de la suite NO paga esto.
+vi.setConfig({ testTimeout: 20_000 });
+
 function entry(over: Partial<FinanceEntry> = {}): FinanceEntry {
   return {
     id: 'e1',

@@ -171,6 +171,19 @@ describe('PnlDashboard — el selector dice la moneda que se está pintando', ()
     expect(screen.getByRole('option', { name: 'Consolidar a CRC' })).toBeInTheDocument();
   });
 
+  // Sin este test, cambiar `value={scopeValue}` por `value={scope}` no rompe
+  // nada: los demás eligen la moneda a mano, y ahí las dos coinciden. El agujero
+  // aparece cuando NADIE la eligió — el estado sigue en CRC y el reporte ya cayó
+  // a la única que hay.
+  it('sin tocar el selector, el trigger dice la moneda que se está pintando', () => {
+    pnl = { ...REPORT, byCurrency: [REPORT.byCurrency[1]!] }; // solo USD; el estado sigue en CRC
+    render(<PnlDashboard />);
+
+    expect(kpi('Ingresos (USD)')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Moneda' })).toHaveTextContent('USD');
+    expect(screen.getByRole('combobox', { name: 'Moneda' })).not.toHaveTextContent('CRC');
+  });
+
   it('si la moneda elegida desaparece del rango, el selector se sincroniza con los KPI', async () => {
     render(<PnlDashboard />);
     expect(kpi('Ingresos (CRC)')).toBeInTheDocument();

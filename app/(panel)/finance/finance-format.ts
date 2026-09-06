@@ -16,6 +16,13 @@ import type {
   MovementType,
   PlayOrderStatus,
 } from '@/hooks/use-finance';
+import type {
+  AlertKind,
+  BudgetStatus,
+  KpiMetricKey,
+  Metric as PlanningMetric,
+  ThresholdUnit,
+} from '@/hooks/use-finance-planning';
 import type { StatusTone } from '@/lib/status-badge';
 
 // Etiquetas y formato de presentación de finanzas. Viven acá y no en el hook para
@@ -180,6 +187,136 @@ export function ledgerHref(params: {
   if (params.from) search.set('from', params.from);
   if (params.to) search.set('to', params.to);
   return `/finance/mayor?${search}`;
+}
+
+// ─── Planeamiento: presupuesto, KPIs, proyección y alertas ────────────────────
+
+export const BUDGET_STATUS_LABELS: Record<BudgetStatus, string> = {
+  DRAFT: 'Borrador',
+  ACTIVE: 'Vigente',
+  // No es "borrado": la variación de un mes pasado tiene que seguir dando lo
+  // mismo dentro de un año, así que el presupuesto se guarda y se desarchiva.
+  ARCHIVED: 'Archivado',
+};
+
+export const BUDGET_STATUS_TONE: Record<BudgetStatus, StatusTone> = {
+  DRAFT: 'neutral',
+  ACTIVE: 'success',
+  ARCHIVED: 'muted',
+};
+
+export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
+  RUNWAY_BELOW_MONTHS: 'Pista de caja por debajo de',
+  BUDGET_OVERRUN_PERCENT: 'Gasto sobre el presupuesto en más de',
+  UNPOSTED_PLAY_ORDERS: 'Órdenes de Play sin asentar por encima de',
+};
+
+// Qué mira cada regla, en una línea: sin esto el umbral es un número suelto y
+// nadie sabe si "3" son meses, por ciento u órdenes.
+export const ALERT_KIND_HINTS: Record<AlertKind, string> = {
+  RUNWAY_BELOW_MONTHS:
+    'Saldo de caja ÷ quema promedio de los 3 últimos meses completos, en la moneda de la regla.',
+  BUDGET_OVERRUN_PERCENT:
+    'Gasto real agregado del mes en curso contra el presupuesto vigente de ese mes y moneda.',
+  UNPOSTED_PLAY_ORDERS: 'Órdenes con plata cobrada y sin asiento. No lleva moneda: cuenta filas.',
+};
+
+export const THRESHOLD_UNIT_LABELS: Record<ThresholdUnit, string> = {
+  months: 'meses',
+  percent: '%',
+  count: 'órdenes',
+};
+
+/**
+ * El nombre corto de cada KPI en la tarjeta. La explicación larga NO se escribe
+ * acá: es el `label` que manda el backend, que viaja con el número y se muestra
+ * debajo. Así el título es leíble de un vistazo y la definición no puede quedar
+ * desfasada de la fórmula.
+ *
+ * Los dos primeros tienen nombres deliberadamente distintos: son dos números de
+ * dos cosas distintas (caja cobrada contra precio de lista × activas) y llamar a
+ * los dos "MRR" haría pensar que uno está mal.
+ */
+export const KPI_TITLES: Record<KpiMetricKey, string> = {
+  subscriptionRevenue: 'Ingresos por suscripciones del mes (caja real)',
+  mrrEstimated: 'MRR estimado (precio de lista × activas)',
+  arrFromRevenue: 'ARR desde ingresos (× 12)',
+  marketingSpend: 'Gasto de marketing del mes',
+  activeSubscriptions: 'Clientes activos al cierre',
+  activeAtMonthStart: 'Clientes activos al arrancar el mes',
+  newSubscriptions: 'Altas del mes',
+  churnedSubscriptions: 'Bajas del mes',
+  moduleSubscriptions: 'Módulos suscritos vigentes',
+  churnRate: 'Churn del mes',
+  arpu: 'ARPU',
+  ltv: 'LTV',
+  cac: 'CAC',
+};
+
+/** `'2026-09'` → `'09/2026'`. Sin `new Date`: correría el mes en cualquier zona al oeste de UTC. */
+export const formatPeriod = (period: string): string =>
+  `${period.slice(5)}/${period.slice(0, 4)}`;
+
+const MONTH_NAMES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Setiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+] as const;
+
+/** 1-12 → nombre del mes en es-CR ("Setiembre", no "Septiembre"). */
+export const monthName = (month: number): string => MONTH_NAMES[month - 1] ?? String(month);
+
+export const MONTH_OPTIONS = MONTH_NAMES.map((label, i) => ({ value: i + 1, label }));
+
+/**
+ * `'0.0500'` → `'5.00'`. Corre la coma dos lugares sobre el STRING, sin pasar por
+ * `Number`: el backend manda la fracción con cuatro decimales fijos y
+ * multiplicarla por 100 en double la devolvería como `5.000000000000001`.
+ */
+export function ratioToPercent(ratio: string): string {
+  const negative = ratio.startsWith('-');
+  const [whole = '0', decimals = ''] = (negative ? ratio.slice(1) : ratio).split('.');
+  const padded = decimals.padEnd(4, '0');
+  const shiftedWhole = `${whole}${padded.slice(0, 2)}`.replace(/^0+(?=\d)/, '');
+  const shiftedDecimals = padded.slice(2, 4).padEnd(2, '0');
+  return `${negative ? '-' : ''}${shiftedWhole}.${shiftedDecimals}`;
+}
+
+/** Entero agrupado en miles: `'1234'` → `'1 234'`. Un conteo no lleva decimales. */
+export const formatCount = (value: string): string =>
+  value.replace(/\B(?=(\d{3})+(?!\d))/g, THOUSANDS_SEPARATOR);
+
+/**
+ * Cómo se lee el `value` de una métrica según su `unit`.
+ *
+ * La unidad viene del backend a propósito: los importes viajan como string y sin
+ * ella `"0.0500"` es tan válido como cinco céntimos o como un churn del 5 %.
+ * Devuelve `null` cuando la métrica es N/A — quién la pinta decide cómo mostrar
+ * el motivo, pero nunca puede caer en un cero.
+ */
+export function formatMetricValue(metric: PlanningMetric, currency: string): string | null {
+  if (metric.value === null) return null;
+  switch (metric.unit) {
+    case 'money':
+      return formatAmount(metric.value, currency);
+    case 'count':
+      return formatCount(metric.value);
+    case 'ratio':
+      return `${formatMoney(ratioToPercent(metric.value))} %`;
+    case 'percent':
+      return `${formatMoney(metric.value)} %`;
+    case 'months':
+      return `${formatMoney(metric.value)} meses`;
+  }
 }
 
 // El mismo tono del badge, como color de texto: lo usan el conteo del semáforo y

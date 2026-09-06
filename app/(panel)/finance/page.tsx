@@ -1,18 +1,23 @@
 import {
   ArrowLeftRightIcon,
   BarChart3Icon,
+  BellRingIcon,
   BookOpenIcon,
   FileChartColumnIcon,
+  GaugeIcon,
   LandmarkIcon,
   LayersIcon,
   ReceiptIcon,
   ScaleIcon,
   StoreIcon,
+  TargetIcon,
+  TrendingUpIcon,
   WalletIcon,
 } from 'lucide-react';
 import { SectionIndex, type SectionCard } from '@/components/admin/section-index';
 import { requireAction } from '@/lib/guard';
 import { can } from '@/lib/permissions';
+import { FinanceAlertsBanner } from './finance-alerts-banner';
 
 // El orden es el del trabajo, no el alfabético: primero lo que se mira todos los
 // días (resultado, movimientos, Play), después los reportes que salen del mayor,
@@ -68,6 +73,34 @@ const AREAS: SectionCard[] = [
     action: 'view:finance',
   },
   {
+    href: '/finance/presupuesto',
+    label: 'Presupuesto',
+    description: 'Lo que se pensaba gastar y cobrar cada mes, contra lo que dice el mayor.',
+    icon: TargetIcon,
+    action: 'view:finance',
+  },
+  {
+    href: '/finance/kpis',
+    label: 'KPIs',
+    description: 'Suscripciones, clientes, churn, ARPU, LTV y CAC del mes, con N/A cuando no hay dato.',
+    icon: GaugeIcon,
+    action: 'view:finance',
+  },
+  {
+    href: '/finance/proyeccion',
+    label: 'Proyección',
+    description: 'La recta de ingresos y gastos a 3, 6 o 12 meses, y la pista que aguanta la caja.',
+    icon: TrendingUpIcon,
+    action: 'view:finance',
+  },
+  {
+    href: '/finance/alertas',
+    label: 'Alertas',
+    description: 'Umbrales de pista de caja, sobregiro y órdenes sin asentar, y lo que dispararon.',
+    icon: BellRingIcon,
+    action: 'view:finance',
+  },
+  {
     href: '/finance/cuentas',
     label: 'Cuentas',
     description: 'El plan de cuentas: el árbol contra el que se asienta todo.',
@@ -105,6 +138,10 @@ export default async function FinanceHome() {
           agregado aparte. Los ingresos incluyen las facturas de sponsor pagadas.
         </p>
       </div>
+
+      {/* El canal principal de las alertas es este banner: sin correo a admins,
+          una alerta que solo vive en su pantalla no la ve nadie. */}
+      <FinanceAlertsBanner />
 
       <SectionIndex cards={areas} />
     </div>

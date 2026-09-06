@@ -44,13 +44,28 @@ async function gastosCrc(page: Page): Promise<string> {
   return (await card.locator('[data-slot="card-content"]').innerText()).trim();
 }
 
-// La lista se acota a gastos en CRC para que el movimiento recién creado (el más
-// reciente, `orderBy date desc`) esté sí o sí en la primera página.
+// La fila de un movimiento en la lista, acotada a gastos en CRC.
+//
+// El backend ordena por `date desc` SIN desempate y todos los movimientos del
+// e2e llevan la fecha de hoy: con varias corridas en el mismo día el recién
+// creado no cae necesariamente en la primera página de 20. Se sube la página a
+// 100 en vez de asumir dónde está — asumirlo hacía fallar al spec con un "nunca
+// se asentó" que era falso.
 async function gastosCrcRow(page: Page, vendor: string): Promise<Locator> {
   await page.goto('/finance/movimientos');
   await pick(page, 'Filtrar por signo', 'Gasto');
   await pick(page, 'Filtrar por moneda', 'CRC');
-  return page.locator('table tbody tr').filter({ hasText: vendor });
+
+  // El selector de tamaño de página es el último combobox de la pantalla (va
+  // debajo de la tabla, después de los filtros).
+  await page.getByRole('combobox').last().click();
+  await page.getByRole('option', { name: '100', exact: true }).click();
+
+  const fila = page.locator('table tbody tr').filter({ hasText: vendor });
+  // La tabla usa `keepPreviousData`: hasta que llega la página nueva sigue
+  // pintando la anterior. Esperar la fila acá evita leer ese render viejo.
+  await expect(fila).toBeVisible();
+  return fila;
 }
 
 async function crearGasto(page: Page, vendor: string): Promise<void> {
@@ -73,6 +88,12 @@ async function abrirMayor(page: Page): Promise<number> {
     .getByText('Saldo final', { exact: true })
     .locator('xpath=following-sibling::p');
   await expect(saldo).toBeVisible();
+  // El mayor va en orden ascendente y esta base acumula un asiento por corrida:
+  // pasadas las 50 líneas, el movimiento recién creado deja de estar en la
+  // primera página y el spec fallaba diciendo que nunca se asentó. El saldo
+  // final es del RANGO, no de la página, así que paginar no lo mueve.
+  const ultima = page.getByRole('button', { name: 'Última página' });
+  if (await ultima.isEnabled()) await ultima.click();
   return aNumero(await saldo.innerText());
 }
 
@@ -315,12 +336,16 @@ const INDEX_CARDS = [
   ['Comprobación', '/finance/comprobacion'],
   ['Balance general', '/finance/balance'],
   ['Flujo de caja', '/finance/flujo'],
+  ['Presupuesto', '/finance/presupuesto'],
+  ['KPIs', '/finance/kpis'],
+  ['Proyección', '/finance/proyeccion'],
+  ['Alertas', '/finance/alertas'],
   ['Cuentas', '/finance/cuentas'],
   ['Categorías', '/finance/categorias'],
   ['Tipos de cambio', '/finance/tipos-de-cambio'],
 ] as const;
 
-test('el índice de Finanzas lleva a las diez pantallas y se vuelve por el breadcrumb', async ({
+test('el índice de Finanzas lleva a las catorce pantallas y se vuelve por el breadcrumb', async ({
   page,
 }) => {
   await page.goto('/finance');
@@ -350,7 +375,10 @@ async function limpiarTasasCrcUsd(page: Page): Promise<void> {
   await pick(page, 'Filtrar por moneda de origen', 'CRC');
   await pick(page, 'Filtrar por moneda de destino', 'USD');
   for (let i = 0; i < 20; i += 1) {
-    const borrar = page.getByRole('button', { name: 'Borrar' }).first();
+    // `exact`: sin él, "Borrar" también matchea el "Borrar tasa" del diálogo de
+    // confirmación, y el helper terminaba clickeando el botón de un diálogo que
+    // todavía se estaba animando ("element is not stable").
+    const borrar = page.locator('table').getByRole('button', { name: 'Borrar', exact: true }).first();
     if (!(await borrar.isVisible().catch(() => false))) return;
     await borrar.click();
     await page.getByRole('button', { name: 'Borrar tasa' }).click();
@@ -399,4 +427,168 @@ test('el consolidado convierte con la tasa cargada, y sin ella dice N/A', async 
   await pick(page, 'Moneda', 'Consolidar a USD');
   await expect(page.getByText(/Sin tipo de cambio para: CRC → N\/A/)).toBeVisible();
   await expect(page.getByText(/NO están sumados en ningún total/)).toBeVisible();
+});
+
+// ─── Fase 4: presupuesto, variación, KPIs, proyección y alertas ───────────────
+
+// Los mismos que el panel (`finance-format.ts`): "Setiembre", no "Septiembre".
+const MESES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Setiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+] as const;
+
+const HOY = new Date();
+const ANIO_ACTUAL = String(HOY.getFullYear());
+const MES_ACTUAL = MESES[HOY.getMonth()] as string;
+
+// El presupuesto del mes es único por (año, mes, moneda) y NO se borra: una
+// segunda corrida tiene que reusar el que dejó la primera, o choca con 409
+// BUDGET_EXISTS.
+const PRESUPUESTO_E2E = 'E2E Presupuesto del mes';
+// Un colón: cualquier gasto real del mes lo deja por encima, que es justo lo que
+// la variación y la alerta de sobregiro tienen que mostrar.
+const MONTO_PRESUPUESTADO = '1.00';
+
+async function filaDelPresupuestoDelMes(page: Page): Promise<Locator> {
+  await page.goto('/finance/presupuesto');
+  await pick(page, 'Filtrar por año', ANIO_ACTUAL);
+  await pick(page, 'Filtrar por mes', MES_ACTUAL);
+  await pick(page, 'Filtrar por moneda', 'CRC');
+  return page.locator('table tbody tr').filter({ hasText: PRESUPUESTO_E2E });
+}
+
+test('el presupuesto del mes se carga por cuenta y la variación lo compara contra el real', async ({
+  page,
+}) => {
+  // Gasto real en `6900` de este mes: sin él la variación no tendría contra qué
+  // comparar y el sobregiro no existiría.
+  await crearGasto(page, vendorTag('Presupuesto'));
+
+  let fila = await filaDelPresupuestoDelMes(page);
+  if ((await fila.count()) === 0) {
+    await page.getByRole('button', { name: 'Nuevo presupuesto' }).click();
+    const alta = page.getByRole('dialog');
+    await alta.getByRole('combobox', { name: 'Año' }).click();
+    await page.getByRole('option', { name: ANIO_ACTUAL, exact: true }).click();
+    await alta.getByRole('combobox', { name: 'Mes' }).click();
+    await page.getByRole('option', { name: MES_ACTUAL, exact: true }).click();
+    await alta.getByLabel('Nombre').fill(PRESUPUESTO_E2E);
+    await alta.getByRole('button', { name: 'Crear presupuesto' }).click();
+    await expect(page.getByText('Presupuesto creado')).toBeVisible();
+    fila = await filaDelPresupuestoDelMes(page);
+  }
+  await expect(fila).toBeVisible();
+  // Nace vigente: es el único estado que mira la alerta de sobregiro.
+  await expect(fila).toContainText('Vigente');
+
+  // Una línea sobre la cuenta del fixture. Guardar es un reemplazo total.
+  await fila.getByRole('button', { name: 'Editar líneas' }).click();
+  const editor = page.getByRole('dialog');
+  await expect(editor.getByText(PRESUPUESTO_E2E)).toBeVisible();
+  await editor
+    .getByLabel(`Monto de ${FINANCE_FIXTURE.mappedAccount}`)
+    .fill(MONTO_PRESUPUESTADO);
+  await editor.getByRole('button', { name: 'Guardar presupuesto' }).click();
+  await expect(page.getByText(/Presupuesto guardado/)).toBeVisible();
+
+  // La variación del mismo mes ya compara: presupuesto de 1,00 contra el real.
+  const variacion = page
+    .locator('[data-slot="card"]')
+    .filter({ hasText: 'Presupuesto contra real' });
+  await expect(variacion).toBeVisible();
+  const linea = variacion.locator('table tbody tr').filter({ hasText: 'Otros gastos operativos' });
+  await expect(linea).toBeVisible();
+  await expect(linea).toContainText('1,00');
+  // Gastar por encima de lo presupuestado juega EN CONTRA: el signo por sí solo
+  // no alcanza para decirlo (en un ingreso, el mismo signo sería a favor).
+  await expect(linea.getByText('en contra')).toBeAttached();
+  await expect(variacion.getByText('Resultado neto')).toBeVisible();
+});
+
+test('los KPIs y la pista de caja dicen N/A con motivo, nunca un cero', async ({ page }) => {
+  await page.goto('/finance/kpis');
+
+  // El motivo viaja en el nombre accesible del N/A: sin eso, un "N/A" suelto no
+  // se distingue de un dato que se perdió.
+  const conMotivo = page.getByRole('button', { name: /^N\/A: .+/ });
+  await expect(conMotivo.first()).toBeVisible();
+
+  for (const kpi of ['LTV', 'CAC']) {
+    const card = page.locator('[data-slot="card"]').filter({ hasText: new RegExp(`^${kpi}`) });
+    await expect(card).toBeVisible();
+    await expect(card.getByRole('button', { name: /^N\/A: .+/ })).toBeVisible();
+    // Un LTV o un CAC en cero se leerían como "nadie se va nunca" y "adquirir un
+    // cliente sale gratis": las dos afirmaciones son falsas.
+    await expect(card.getByText('0,00 CRC')).toHaveCount(0);
+  }
+
+  // La pista de caja vive en Proyección y sigue la misma regla.
+  await page.goto('/finance/proyeccion');
+  await expect(page.getByText('Meses de pista')).toBeVisible();
+  const pista = page.getByText('Meses de pista').locator('..');
+  await expect(pista.getByRole('button', { name: /^N\/A: .+/ })).toBeVisible();
+  await expect(pista.getByText('0,0 meses')).toHaveCount(0);
+
+  // Y el método de la proyección está a la vista, con la advertencia.
+  await expect(page.getByText(/Proyección lineal sobre \d+ meses/)).toBeVisible();
+  await expect(page.getByText('No es un dato.')).toBeVisible();
+});
+
+test('una regla de alerta se evalúa a mano y el índice de Finanzas avisa lo que nadie vio', async ({
+  page,
+}) => {
+  await page.goto('/finance/alertas');
+
+  // Las dos tablas de la pantalla dicen el mismo nombre de regla: sin acotar a su
+  // card, el locator matchea la regla Y su disparo.
+  const cardReglas = page.locator('[data-slot="card"]').filter({ hasText: 'Reglas' });
+  const cardAlertas = page.locator('[data-slot="card"]').filter({ hasText: 'Alertas disparadas' });
+
+  // Idempotente: la regla no se borra sola entre corridas. Se espera a que la
+  // tabla termine de cargar antes de contar, o cada corrida crearía una copia.
+  await expect(cardReglas.locator('[data-slot="skeleton"]')).toHaveCount(0);
+  const regla = cardReglas
+    .locator('table tbody tr')
+    .filter({ hasText: 'Gasto sobre el presupuesto' })
+    .first();
+  if ((await regla.count()) === 0) {
+    await page.getByRole('button', { name: 'Nueva regla' }).click();
+    const alta = page.getByRole('dialog');
+    await alta.getByRole('combobox', { name: 'Tipo' }).click();
+    await page.getByRole('option', { name: /Gasto sobre el presupuesto/ }).click();
+    // Cualquier peso por encima del presupuesto del mes.
+    await alta.getByLabel('Umbral').fill('0');
+    await alta.getByRole('button', { name: 'Crear regla' }).click();
+    await expect(page.getByText('Regla creada')).toBeVisible();
+  }
+  await expect(regla).toBeVisible();
+  await expect(regla).toContainText('0,00 %');
+
+  // Evaluar a mano corre el mismo evaluador que el cron diario.
+  await page.getByRole('button', { name: 'Evaluar ahora' }).click();
+  await expect(page.getByText(/regla\(s\) evaluadas el \d{4}-\d{2}-\d{2}/)).toBeVisible();
+
+  // El disparo queda listado, sin ver.
+  const alerta = cardAlertas
+    .locator('table tbody tr')
+    .filter({ hasText: 'Gasto sobre el presupuesto' })
+    .filter({ has: page.getByRole('button', { name: 'Marcar como vista' }) });
+  await expect(alerta.first()).toBeVisible();
+
+  // Y el índice de la sección lo dice: sin correo a admins, este banner ES el
+  // canal, y una alerta que solo vive en su pantalla no la ve nadie.
+  await page.goto('/finance');
+  await expect(page.getByText(/alerta(s)? financiera(s)? sin ver/)).toBeVisible();
+  await page.getByRole('link', { name: 'Ver alertas' }).click();
+  await expect(page).toHaveURL(/\/finance\/alertas$/);
 });

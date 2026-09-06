@@ -13,9 +13,10 @@ const FALLBACK_NAME: Record<FinanceReport, string> = {
   pnl: 'resultados.csv',
   'balance-sheet': 'balance-general.csv',
   'cash-flow': 'flujo-de-caja.csv',
+  'budget-variance': 'variacion-presupuestaria.csv',
 };
 
-// Un solo botón para los cinco reportes: el archivo se pide con fetch (no con
+// Un solo botón para los seis reportes: el archivo se pide con fetch (no con
 // `<a download>`) para que un 413 o una sesión caída se vean como mensaje y no
 // terminen guardados en el disco con extensión `.csv`.
 export function FinanceReportCsvButton({

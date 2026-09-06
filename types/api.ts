@@ -9103,6 +9103,246 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinancePlanningAdminController_listBudgets"];
+        put?: never;
+        post: operations["FinancePlanningAdminController_createBudget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/budgets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinancePlanningAdminController_getBudget"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["FinancePlanningAdminController_updateBudget"];
+        trace?: never;
+    };
+    "/v1/admin/finance/budgets/{id}/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["FinancePlanningAdminController_replaceBudgetLines"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/budgets/{id}/copy-from": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinancePlanningAdminController_copyBudgetFrom"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/budgets/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinancePlanningAdminController_archiveBudget"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/budget-variance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinancePlanningAdminController_getBudgetVariance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/budget-variance.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinancePlanningAdminController_exportBudgetVarianceCsv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/runway": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinancePlanningAdminController_getRunway"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/forecast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinancePlanningAdminController_getForecast"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports/kpis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinancePlanningAdminController_getKpis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/alert-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinancePlanningAdminController_listAlertRules"];
+        put?: never;
+        post: operations["FinancePlanningAdminController_createAlertRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/alert-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["FinancePlanningAdminController_removeAlertRule"];
+        options?: never;
+        head?: never;
+        patch: operations["FinancePlanningAdminController_updateAlertRule"];
+        trace?: never;
+    };
+    "/v1/admin/finance/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinancePlanningAdminController_listAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/alerts/evaluate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinancePlanningAdminController_evaluateAlerts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/alerts/{id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["FinancePlanningAdminController_acknowledgeAlert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/game/matches": {
         parameters: {
             query?: never;
@@ -18736,7 +18976,13 @@ export interface components {
         PlayOrdersSummaryResponse: {
             data: {
                 counts: {
-                    [key: string]: number;
+                    PENDING: number;
+                    POSTED: number;
+                    UNSUPPORTED_CURRENCY: number;
+                    REVERSED: number;
+                    FAILED: number;
+                    SKIPPED: number;
+                    NEEDS_REVIEW: number;
                 };
                 needsAttention: number;
             };
@@ -19054,6 +19300,514 @@ export interface components {
                     outflow: string;
                     net: string;
                 }[];
+            };
+        };
+        BudgetListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    year: number;
+                    month: number;
+                    period: string;
+                    /** @enum {string} */
+                    currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                    name: string;
+                    /** @enum {string} */
+                    status: "DRAFT" | "ACTIVE" | "ARCHIVED";
+                    lineCount: number;
+                    totalAmount: string;
+                    createdAt: string;
+                    updatedAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        CreateBudgetDto: {
+            year: number;
+            month: number;
+            /** @enum {string} */
+            currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            name: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "ACTIVE";
+        };
+        BudgetResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                year: number;
+                month: number;
+                period: string;
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                name: string;
+                /** @enum {string} */
+                status: "DRAFT" | "ACTIVE" | "ARCHIVED";
+                lineCount: number;
+                totalAmount: string;
+                createdAt: string;
+                updatedAt: string;
+                lines: {
+                    /** Format: uuid */
+                    accountId: string;
+                    code: string;
+                    name: string;
+                    /** @enum {string} */
+                    type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    amount: string;
+                }[];
+                totalsByType: {
+                    INCOME: string;
+                    COST_OF_REVENUE: string;
+                    OPERATING_EXPENSE: string;
+                };
+            };
+        };
+        UpdateBudgetDto: {
+            name?: string;
+            /** @enum {string} */
+            status?: "DRAFT" | "ACTIVE" | "ARCHIVED";
+        };
+        ReplaceBudgetLinesDto: {
+            lines: {
+                /** Format: uuid */
+                accountId: string;
+                amount: string;
+            }[];
+        };
+        BudgetVarianceResponse: {
+            data: {
+                period: string;
+                year: number;
+                month: number;
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                budget: {
+                    /** Format: uuid */
+                    id: string;
+                    name: string;
+                    /** @enum {string} */
+                    status: "DRAFT" | "ACTIVE" | "ARCHIVED";
+                };
+                lines: {
+                    /** Format: uuid */
+                    accountId: string | null;
+                    code: string;
+                    name: string;
+                    /** @enum {string} */
+                    type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    budget: string;
+                    actual: string;
+                    variance: string;
+                    variancePercent: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    favorable: boolean;
+                }[];
+                totalsByType: {
+                    /** @enum {string} */
+                    type: "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    budget: string;
+                    actual: string;
+                    variance: string;
+                    variancePercent: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    favorable: boolean;
+                }[];
+                net: {
+                    budget: string;
+                    actual: string;
+                    variance: string;
+                    variancePercent: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    favorable: boolean;
+                };
+            };
+        };
+        FinanceRunwayResponse: {
+            data: {
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                asOf: string;
+                cashBalance: string;
+                burn: {
+                    months: {
+                        month: string;
+                        burn: string;
+                    }[];
+                    average: string | null;
+                    basisMonths: number;
+                };
+                runwayMonths: string | null;
+                na: {
+                    /** @enum {string} */
+                    reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                    message: string;
+                } | null;
+            };
+        };
+        FinanceForecastResponse: {
+            data: {
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                /** @enum {string} */
+                method: "linear";
+                label: string;
+                horizon: number;
+                basisMonths: number;
+                history: {
+                    month: string;
+                    income: string;
+                    expense: string;
+                    net: string;
+                    isProjection: boolean;
+                    negativeProjection: boolean;
+                }[];
+                projection: {
+                    month: string;
+                    income: string;
+                    expense: string;
+                    net: string;
+                    isProjection: boolean;
+                    negativeProjection: boolean;
+                }[];
+                fit: {
+                    income: {
+                        slope: string;
+                        intercept: string;
+                        r2: string | null;
+                        r2Na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    expense: {
+                        slope: string;
+                        intercept: string;
+                        r2: string | null;
+                        r2Na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                } | null;
+                na: {
+                    /** @enum {string} */
+                    reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                    message: string;
+                } | null;
+            };
+        };
+        FinanceKpisResponse: {
+            data: {
+                /** @enum {string} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                period: string;
+                year: number;
+                month: number;
+                isCurrentMonth: boolean;
+                range: {
+                    from: string;
+                    to: string;
+                };
+                metrics: {
+                    subscriptionRevenue: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    mrrEstimated: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    arrFromRevenue: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    marketingSpend: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    activeSubscriptions: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    activeAtMonthStart: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    newSubscriptions: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    churnedSubscriptions: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    moduleSubscriptions: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    churnRate: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    arpu: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    ltv: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                    cac: {
+                        value: string | null;
+                        /** @enum {string} */
+                        unit: "money" | "count" | "ratio" | "percent" | "months";
+                        label: string;
+                        na: {
+                            /** @enum {string} */
+                            reason: "SIN_DATOS" | "HISTORIAL_INSUFICIENTE" | "SIN_QUEMA_NETA" | "SIN_CAJA" | "SERIE_CONSTANTE" | "PRESUPUESTO_EN_CERO" | "SIN_ACTIVOS" | "SIN_ACTIVOS_AL_INICIO" | "SIN_CHURN_MEDIBLE" | "SIN_GASTO_DE_MARKETING" | "SIN_ALTAS" | "SIN_PRECIOS_DE_LISTA" | "CUENTA_AUSENTE";
+                            message: string;
+                        } | null;
+                    };
+                };
+            };
+        };
+        FinanceAlertRuleListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** @enum {string} */
+                    kind: "RUNWAY_BELOW_MONTHS" | "BUDGET_OVERRUN_PERCENT" | "UNPOSTED_PLAY_ORDERS";
+                    threshold: string;
+                    /** @enum {string} */
+                    thresholdUnit: "months" | "percent" | "count";
+                    /** @enum {string|null} */
+                    currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS" | null;
+                    isActive: boolean;
+                    createdAt: string;
+                    updatedAt: string;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        CreateFinanceAlertRuleDto: {
+            /** @enum {string} */
+            kind: "RUNWAY_BELOW_MONTHS" | "BUDGET_OVERRUN_PERCENT" | "UNPOSTED_PLAY_ORDERS";
+            threshold: string;
+            /** @enum {string} */
+            currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            isActive?: boolean;
+        };
+        FinanceAlertRuleResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** @enum {string} */
+                kind: "RUNWAY_BELOW_MONTHS" | "BUDGET_OVERRUN_PERCENT" | "UNPOSTED_PLAY_ORDERS";
+                threshold: string;
+                /** @enum {string} */
+                thresholdUnit: "months" | "percent" | "count";
+                /** @enum {string|null} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS" | null;
+                isActive: boolean;
+                createdAt: string;
+                updatedAt: string;
+            };
+        };
+        UpdateFinanceAlertRuleDto: {
+            threshold?: string;
+            /** @enum {string|null} */
+            currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS" | null;
+            isActive?: boolean;
+            /** @enum {string} */
+            kind?: "RUNWAY_BELOW_MONTHS" | "BUDGET_OVERRUN_PERCENT" | "UNPOSTED_PLAY_ORDERS";
+        };
+        FinanceAlertRuleRemovedResponse: {
+            data: {
+                removed: boolean;
+            };
+        };
+        FinanceAlertListResponse: {
+            data: {
+                items: {
+                    /** Format: uuid */
+                    id: string;
+                    /** Format: uuid */
+                    ruleId: string;
+                    /** @enum {string} */
+                    kind: "RUNWAY_BELOW_MONTHS" | "BUDGET_OVERRUN_PERCENT" | "UNPOSTED_PLAY_ORDERS";
+                    /** @enum {string|null} */
+                    currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS" | null;
+                    threshold: string;
+                    firedOn: string;
+                    firedAt: string;
+                    message: string;
+                    context: {
+                        [key: string]: unknown;
+                    };
+                    acknowledgedAt: string | null;
+                    /** Format: uuid */
+                    acknowledgedBy: string | null;
+                }[];
+                total: number;
+                page: number;
+                pageSize: number;
+            };
+        };
+        FinanceAlertEvaluationResponse: {
+            data: {
+                evaluatedOn: string;
+                evaluated: number;
+                fired: number;
+                deduped: number;
+                skipped: {
+                    /** Format: uuid */
+                    ruleId: string;
+                    /** @enum {string} */
+                    kind: "RUNWAY_BELOW_MONTHS" | "BUDGET_OVERRUN_PERCENT" | "UNPOSTED_PLAY_ORDERS";
+                    reason: string;
+                }[];
+            };
+        };
+        FinanceAlertResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                /** Format: uuid */
+                ruleId: string;
+                /** @enum {string} */
+                kind: "RUNWAY_BELOW_MONTHS" | "BUDGET_OVERRUN_PERCENT" | "UNPOSTED_PLAY_ORDERS";
+                /** @enum {string|null} */
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS" | null;
+                threshold: string;
+                firedOn: string;
+                firedAt: string;
+                message: string;
+                context: {
+                    [key: string]: unknown;
+                };
+                acknowledgedAt: string | null;
+                /** Format: uuid */
+                acknowledgedBy: string | null;
             };
         };
         MatchAdminListResponse: {
@@ -33950,6 +34704,7 @@ export interface operations {
                 currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
                 from?: string;
                 to?: string;
+                consolidateTo?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
             };
             header?: never;
             path?: never;
@@ -34047,6 +34802,7 @@ export interface operations {
                 currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
                 from?: string;
                 to?: string;
+                consolidateTo?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
             };
             header?: never;
             path?: never;
@@ -34085,6 +34841,440 @@ export interface operations {
                 };
                 content: {
                     "text/csv": string;
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_listBudgets: {
+        parameters: {
+            query?: {
+                year?: number;
+                month?: number;
+                currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                status?: "DRAFT" | "ACTIVE" | "ARCHIVED";
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetListResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_createBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateBudgetDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_getBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_updateBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateBudgetDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_replaceBudgetLines: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReplaceBudgetLinesDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_copyBudgetFrom: {
+        parameters: {
+            query: {
+                source: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_archiveBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_getBudgetVariance: {
+        parameters: {
+            query: {
+                year: number;
+                month: number;
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetVarianceResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_exportBudgetVarianceCsv: {
+        parameters: {
+            query: {
+                year: number;
+                month: number;
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Variación presupuesto vs. real en CSV (Excel es-CR) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_getRunway: {
+        parameters: {
+            query: {
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceRunwayResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_getForecast: {
+        parameters: {
+            query: {
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                horizon?: "3" | "6" | "12";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceForecastResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_getKpis: {
+        parameters: {
+            query: {
+                currency: "USD" | "CRC" | "GTQ" | "HNL" | "PAB" | "MXN" | "CLP" | "ARS";
+                year?: number;
+                month?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceKpisResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_listAlertRules: {
+        parameters: {
+            query?: {
+                kind?: "RUNWAY_BELOW_MONTHS" | "BUDGET_OVERRUN_PERCENT" | "UNPOSTED_PLAY_ORDERS";
+                isActive?: boolean;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAlertRuleListResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_createAlertRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFinanceAlertRuleDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAlertRuleResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_removeAlertRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAlertRuleRemovedResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_updateAlertRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFinanceAlertRuleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAlertRuleResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_listAlerts: {
+        parameters: {
+            query?: {
+                acknowledged?: boolean;
+                kind?: "RUNWAY_BELOW_MONTHS" | "BUDGET_OVERRUN_PERCENT" | "UNPOSTED_PLAY_ORDERS";
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAlertListResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_evaluateAlerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAlertEvaluationResponse"];
+                };
+            };
+        };
+    };
+    FinancePlanningAdminController_acknowledgeAlert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAlertResponse"];
                 };
             };
         };

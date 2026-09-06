@@ -11,12 +11,10 @@ export default defineConfig({
     // ("Timeout waiting for worker to respond") y deja el step de tests sin correr. Threads es
     // fiable para jsdom + RTL.
     pool: 'threads',
-    // Los 5 s por defecto alcanzan para un test suelto pero no para la suite
-    // completa: abrir un `Select` de Radix en jsdom cuesta ~1 s, un test que
-    // encadena cuatro tarda 2 s en frío y con 82 archivos en paralelo se pasa de
-    // los 5 s. Los que fallaban así (formulario de finanzas, árbol de cuentas,
-    // categorías) pasan sueltos y en verde: era el reloj, no el código.
-    testTimeout: 20_000,
+    // El timeout sigue en los 5 s por defecto: subirlo para todo el repo
+    // esconde un test que se volvió lento de verdad detrás de otros que solo
+    // abren un `Select` de Radix. Los tres archivos que sí lo necesitan lo
+    // piden por archivo con `vi.setConfig`.
     setupFiles: ['./vitest.setup.ts'],
     globals: true,
     exclude: ['node_modules', '.next', 'tests/e2e'],

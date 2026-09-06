@@ -11,11 +11,23 @@ let allowed: Action[] = ['view:finance'];
 vi.mock('@/lib/guard', () => ({ requireAction: (action: Action) => requireAction(action) }));
 vi.mock('@/lib/permissions', () => ({ can: (_role: string, a: Action) => allowed.includes(a) }));
 
+let sinVer: number | undefined = 0;
+let conteoCaido = false;
+vi.mock('@/hooks/use-finance-planning', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/hooks/use-finance-planning')>()),
+  useUnseenFinanceAlerts: () => ({
+    count: conteoCaido ? undefined : sinVer,
+    isLoading: false,
+    isError: conteoCaido,
+  }),
+}));
+
 import FinanceHome from './page';
 
-// Las diez pantallas de la sección, en el orden en que se trabajan. La barra de
-// pestañas se retiró (decisión del founder, 2026-09-06): este índice es la única
-// navegación de finanzas, así que una card que falte deja una pantalla huérfana.
+// Las catorce pantallas de la sección, en el orden en que se trabajan. La barra
+// de pestañas se retiró (decisión del founder, 2026-09-06): este índice es la
+// única navegación de finanzas, así que una card que falte deja una pantalla
+// huérfana.
 const CARDS: [string, string][] = [
   ['Dashboard', '/finance/dashboard'],
   ['Movimientos', '/finance/movimientos'],
@@ -24,6 +36,10 @@ const CARDS: [string, string][] = [
   ['Comprobación', '/finance/comprobacion'],
   ['Balance general', '/finance/balance'],
   ['Flujo de caja', '/finance/flujo'],
+  ['Presupuesto', '/finance/presupuesto'],
+  ['KPIs', '/finance/kpis'],
+  ['Proyección', '/finance/proyeccion'],
+  ['Alertas', '/finance/alertas'],
   ['Cuentas', '/finance/cuentas'],
   ['Categorías', '/finance/categorias'],
   ['Tipos de cambio', '/finance/tipos-de-cambio'],
@@ -36,6 +52,8 @@ async function renderHome(): Promise<void> {
 beforeEach(() => {
   vi.clearAllMocks();
   allowed = ['view:finance'];
+  sinVer = 0;
+  conteoCaido = false;
 });
 
 describe('Índice de Finanzas', () => {
@@ -45,7 +63,7 @@ describe('Índice de Finanzas', () => {
     expect(requireAction).toHaveBeenCalledWith('view:finance');
   });
 
-  it('pinta las diez pantallas, cada una con su ruta', async () => {
+  it('pinta las catorce pantallas, cada una con su ruta', async () => {
     await renderHome();
 
     const links = screen.getAllByRole('link');
@@ -67,5 +85,40 @@ describe('Índice de Finanzas', () => {
     await renderHome();
 
     expect(screen.queryAllByRole('link')).toHaveLength(0);
+  });
+});
+
+// Sin correo a admins, este banner es el canal: una alerta que solo vive en su
+// pantalla no la ve nadie hasta que entre a buscarla.
+describe('Índice de Finanzas — el banner de alertas sin ver', () => {
+  it('cuenta cuántas hay y lleva a la pantalla', async () => {
+    sinVer = 3;
+    await renderHome();
+
+    expect(screen.getByText('Hay 3 alertas financieras sin ver.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ver alertas' })).toHaveAttribute(
+      'href',
+      '/finance/alertas',
+    );
+  });
+
+  it('con una sola no dice "1 alertas"', async () => {
+    sinVer = 1;
+    await renderHome();
+
+    expect(screen.getByText('Hay 1 alerta financiera sin ver.')).toBeInTheDocument();
+  });
+
+  it('sin alertas pendientes no ocupa espacio', async () => {
+    await renderHome();
+
+    expect(screen.queryByText(/sin ver/)).toBeNull();
+  });
+
+  it('con el conteo caído no afirma que no hay nada pendiente', async () => {
+    conteoCaido = true;
+    await renderHome();
+
+    expect(screen.queryByText(/sin ver/)).toBeNull();
   });
 });

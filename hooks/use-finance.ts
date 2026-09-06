@@ -384,9 +384,15 @@ export type FinanceEntryUpdate = Partial<Omit<FinanceEntryInput, 'accountId' | '
 
 const BASE = '/api/admin/finance';
 
-async function send(
+/**
+ * Mutación contra el BFF de finanzas. Exportada porque el hook de planeamiento
+ * (`use-finance-planning.ts`) manda contra el MISMO prefijo y con el mismo
+ * envelope de error: una segunda copia derivaría, y con ella el manejo del 409
+ * contable.
+ */
+export async function sendFinanceRequest(
   url: string,
-  method: 'POST' | 'PATCH' | 'DELETE',
+  method: 'POST' | 'PATCH' | 'PUT' | 'DELETE',
   body?: unknown,
 ): Promise<unknown> {
   const res = await fetch(url, {
@@ -434,12 +440,12 @@ export function useFinanceAccountMutations() {
   };
   return {
     create: useMutation({
-      mutationFn: (input: FinanceAccountInput) => send(`${BASE}/accounts`, 'POST', input),
+      mutationFn: (input: FinanceAccountInput) => sendFinanceRequest(`${BASE}/accounts`, 'POST', input),
       onSuccess: invalidate,
     }),
     update: useMutation({
       mutationFn: ({ id, input }: { id: string; input: FinanceAccountUpdate }) =>
-        send(`${BASE}/accounts/${id}`, 'PATCH', input),
+        sendFinanceRequest(`${BASE}/accounts/${id}`, 'PATCH', input),
       onSuccess: invalidate,
     }),
   };
@@ -461,16 +467,16 @@ export function useFinanceCategoryMutations() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ['finance-categories'] });
   return {
     create: useMutation({
-      mutationFn: (input: FinanceCategoryInput) => send(`${BASE}/categories`, 'POST', input),
+      mutationFn: (input: FinanceCategoryInput) => sendFinanceRequest(`${BASE}/categories`, 'POST', input),
       onSuccess: invalidate,
     }),
     update: useMutation({
       mutationFn: ({ id, input }: { id: string; input: FinanceCategoryUpdate }) =>
-        send(`${BASE}/categories/${id}`, 'PATCH', input),
+        sendFinanceRequest(`${BASE}/categories/${id}`, 'PATCH', input),
       onSuccess: invalidate,
     }),
     remove: useMutation({
-      mutationFn: (id: string) => send(`${BASE}/categories/${id}`, 'DELETE'),
+      mutationFn: (id: string) => sendFinanceRequest(`${BASE}/categories/${id}`, 'DELETE'),
       onSuccess: invalidate,
     }),
   };
@@ -533,12 +539,12 @@ export function useFinanceEntryMutations() {
   const invalidate = useInvalidateEntries();
   return {
     create: useMutation({
-      mutationFn: (input: FinanceEntryInput) => send(`${BASE}/entries`, 'POST', input),
+      mutationFn: (input: FinanceEntryInput) => sendFinanceRequest(`${BASE}/entries`, 'POST', input),
       onSuccess: invalidate,
     }),
     update: useMutation({
       mutationFn: ({ id, input }: { id: string; input: FinanceEntryUpdate }) =>
-        send(`${BASE}/entries/${id}`, 'PATCH', input),
+        sendFinanceRequest(`${BASE}/entries/${id}`, 'PATCH', input),
       onSuccess: invalidate,
     }),
   };
@@ -551,13 +557,19 @@ export function useVoidFinanceEntry() {
   const invalidate = useInvalidateEntries();
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      send(`${BASE}/entries/${id}/void`, 'POST', { reason }),
+      sendFinanceRequest(`${BASE}/entries/${id}/void`, 'POST', { reason }),
     onSuccess: invalidate,
   });
 }
 
 // ─── Reportes ─────────────────────────────────────────────────────────────────
-export type FinanceReport = 'ledger' | 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow';
+export type FinanceReport =
+  | 'ledger'
+  | 'trial-balance'
+  | 'pnl'
+  | 'balance-sheet'
+  | 'cash-flow'
+  | 'budget-variance';
 
 type ReportParams = Record<string, string | number | undefined>;
 
@@ -696,11 +708,11 @@ export function useExchangeRateMutations() {
   };
   return {
     create: useMutation({
-      mutationFn: (input: ExchangeRateInput) => send(`${BASE}/exchange-rates`, 'POST', input),
+      mutationFn: (input: ExchangeRateInput) => sendFinanceRequest(`${BASE}/exchange-rates`, 'POST', input),
       onSuccess: invalidate,
     }),
     remove: useMutation({
-      mutationFn: (id: string) => send(`${BASE}/exchange-rates/${id}`, 'DELETE'),
+      mutationFn: (id: string) => sendFinanceRequest(`${BASE}/exchange-rates/${id}`, 'DELETE'),
       onSuccess: invalidate,
     }),
   };
@@ -842,7 +854,7 @@ export function useRetryPlayOrder() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (orderId: string) =>
-      send(`${BASE}/play-orders/${encodeURIComponent(orderId)}/retry`, 'POST'),
+      sendFinanceRequest(`${BASE}/play-orders/${encodeURIComponent(orderId)}/retry`, 'POST'),
     // El asiento que emite el worker entra al P&L: la lista y el estado de
     // resultados dejan de coincidir si solo se refresca la primera.
     onSuccess: async () => {
