@@ -316,6 +316,18 @@ describe('FinancePlayOrders — resumen en siete cards', () => {
     }
   });
 
+  it('las siete llevan su explicación: no ser accionable no la vuelve evidente', () => {
+    render(<FinancePlayOrders />);
+
+    // El disparador cambia (botón donde hay algo que hacer, `span` focusable
+    // donde no), pero el tooltip lo tienen las siete.
+    expect(within(resumen()).getAllByRole('button')).toHaveLength(3);
+    const disparadores = resumen().querySelectorAll('[data-slot="tooltip-trigger"]');
+    expect(disparadores).toHaveLength(7);
+    // Y las cuatro informativas siguen siendo alcanzables con el teclado.
+    for (const nodo of disparadores) expect(nodo.getAttribute('tabindex')).not.toBe('-1');
+  });
+
   it('un clic en una card de acción filtra la tabla por ese estado', () => {
     render(<FinancePlayOrders />);
 

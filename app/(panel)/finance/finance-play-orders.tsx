@@ -361,22 +361,34 @@ function PlayOrderSummary({
             />
           );
 
-          if (!actionable) return <div key={status}>{card}</div>;
-
+          // La explicación del estado la llevan las SIETE: no ser accionable no
+          // la vuelve evidente —"Omitida" sigue necesitando decir que no va a
+          // haber asiento y que eso no es un error—. Lo que cambia es el
+          // disparador: botón donde hay algo que hacer, y un `<span>` focusable
+          // que Radix pone solo donde no lo hay.
           return (
             <Tooltip key={status}>
               <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => onSelect(active ? undefined : status)}
-                  className={cn(
-                    'focus-visible:ring-ring rounded-xl text-left focus-visible:ring-2 focus-visible:outline-none',
-                    active && 'ring-primary ring-2',
-                  )}
-                >
-                  {card}
-                </button>
+                {actionable ? (
+                  <button
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => onSelect(active ? undefined : status)}
+                    className={cn(
+                      'focus-visible:ring-ring rounded-xl text-left focus-visible:ring-2 focus-visible:outline-none',
+                      active && 'ring-primary ring-2',
+                    )}
+                  >
+                    {card}
+                  </button>
+                ) : (
+                  <span
+                    tabIndex={0}
+                    className="focus-visible:ring-ring block rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+                  >
+                    {card}
+                  </span>
+                )}
               </TooltipTrigger>
               <TooltipContent>{PLAY_ORDER_STATUS_HINTS[status]}</TooltipContent>
             </Tooltip>

@@ -1,7 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
   FileTextIcon,
@@ -13,6 +16,7 @@ import {
 import { FINANCE_CURRENCIES } from '@/hooks/use-finance';
 import {
   TAX_DECLARATION_STATUSES,
+  type TaxDeclarationDetail,
   useTaxDeclaration,
   useTaxDeclarationMutations,
   useTaxDeclarations,
@@ -20,7 +24,6 @@ import {
   type TaxDeclarationStatus,
 } from '@/hooks/use-finance-tax';
 import { DataTable } from '@/components/admin/data-table';
-import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { StatusBadge } from '@/lib/status-badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -33,7 +36,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field';
 import {
   Select,
   SelectContent,
@@ -71,6 +80,10 @@ function recentMonths(): { year: number; month: number }[] {
 // entregó, y recalcularla dejaría el papel de trabajo diciendo otra cosa que lo
 // presentado.
 const RECALCULABLE: readonly TaxDeclarationStatus[] = ['DRAFT', 'REVIEW'];
+
+// El backend acota las notas a 2000; el mínimo solo rige donde son obligatorias.
+const NOTES_MIN = 10;
+const NOTES_MAX = 2000;
 
 /**
  * Declaraciones de IVA: la lista por mes y el detalle con sus cifras del mayor.
@@ -295,28 +308,38 @@ export function FinanceTaxDeclarations({ canWrite = false }: { canWrite?: boolea
   );
 }
 
+const CreateSchema = z.object({
+  // El índice del mes dentro de `recentMonths()`: el par (año, mes) va junto o
+  // no va, así que el estado del formulario NO puede representar una fecha que
+  // el backend rechace.
+  monthIndex: z.string(),
+  currency: z.enum(FINANCE_CURRENCIES),
+  notes: z.string().trim().max(NOTES_MAX, `Máximo ${NOTES_MAX} caracteres`),
+});
+
+type CreateValues = z.infer<typeof CreateSchema>;
+
 function CreateDeclarationForm({ onDone }: { onDone: () => void }) {
   const { create } = useTaxDeclarationMutations();
   const months = useMemo(() => recentMonths(), []);
-  const [selected, setSelected] = useState(0);
-  const [currency, setCurrency] = useState<(typeof FINANCE_CURRENCIES)[number]>('CRC');
-  const [notes, setNotes] = useState('');
   const [conflict, setConflict] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
-  const target = months[selected] ?? months[0];
+  const form = useForm<CreateValues>({
+    resolver: zodResolver(CreateSchema),
+    defaultValues: { monthIndex: '0', currency: 'CRC', notes: '' },
+  });
 
-  async function submit(): Promise<void> {
+  async function submit(v: CreateValues): Promise<void> {
+    const target = months[Number(v.monthIndex)] ?? months[0];
     if (!target) return;
     setConflict(null);
-    setSaving(true);
     try {
       await create.mutateAsync({
         year: target.year,
         month: target.month,
         kind: 'IVA',
-        currency,
-        notes: notes.trim() || undefined,
+        currency: v.currency,
+        notes: v.notes.trim() || undefined,
       });
       toast.success('Declaración creada');
       onDone();
@@ -324,13 +347,11 @@ function CreateDeclarationForm({ onDone }: { onDone: () => void }) {
       // El 409 `TAX_DECLARATION_EXISTS` se corrige eligiendo otro mes, que está
       // acá adentro: el diálogo queda abierto con lo elegido.
       setConflict(e instanceof Error ? e.message : 'No se pudo crear la declaración');
-    } finally {
-      setSaving(false);
     }
   }
 
   return (
-    <>
+    <form onSubmit={form.handleSubmit(submit)}>
       <DialogHeader>
         <DialogTitle>Nueva declaración de IVA</DialogTitle>
         <DialogDescription>
@@ -340,52 +361,71 @@ function CreateDeclarationForm({ onDone }: { onDone: () => void }) {
       </DialogHeader>
 
       <FieldGroup className="py-4">
-        <Field>
-          <FieldLabel htmlFor="decl-period">Período</FieldLabel>
-          <Select value={String(selected)} onValueChange={(v) => setSelected(Number(v))}>
-            <SelectTrigger id="decl-period">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {months.map((m, i) => (
-                <SelectItem key={`${m.year}-${m.month}`} value={String(i)}>
-                  {monthName(m.month)} {m.year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+        <Controller
+          name="monthIndex"
+          control={form.control}
+          render={({ field }) => (
+            <Field>
+              <FieldLabel htmlFor="decl-period">Período</FieldLabel>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id="decl-period">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((m, i) => (
+                    <SelectItem key={`${m.year}-${m.month}`} value={String(i)}>
+                      {monthName(m.month)} {m.year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          )}
+        />
 
-        <Field>
-          <FieldLabel htmlFor="decl-currency">Moneda</FieldLabel>
-          <Select value={currency} onValueChange={(v) => setCurrency(v as (typeof FINANCE_CURRENCIES)[number])}>
-            <SelectTrigger id="decl-currency">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {FINANCE_CURRENCIES.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FieldDescription>
-            Las líneas del mayor en otra moneda no se convierten ni se suman: quedan nombradas como
-            excluidas en el detalle.
-          </FieldDescription>
-        </Field>
+        <Controller
+          name="currency"
+          control={form.control}
+          render={({ field }) => (
+            <Field>
+              <FieldLabel htmlFor="decl-currency">Moneda</FieldLabel>
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger id="decl-currency">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FINANCE_CURRENCIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldDescription>
+                Las líneas del mayor en otra moneda no se convierten ni se suman: quedan nombradas
+                como excluidas en el detalle.
+              </FieldDescription>
+            </Field>
+          )}
+        />
 
-        <Field>
-          <FieldLabel htmlFor="decl-notes">Notas</FieldLabel>
-          <Textarea
-            id="decl-notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            maxLength={2000}
-            placeholder="Opcional"
-          />
-        </Field>
+        <Controller
+          name="notes"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="decl-notes">Notas</FieldLabel>
+              <Textarea
+                {...field}
+                id="decl-notes"
+                maxLength={NOTES_MAX}
+                placeholder="Opcional"
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
 
         {conflict && (
           <Alert variant="destructive">
@@ -398,12 +438,12 @@ function CreateDeclarationForm({ onDone }: { onDone: () => void }) {
         <Button type="button" variant="outline" onClick={onDone}>
           Cancelar
         </Button>
-        <Button type="button" disabled={saving} onClick={() => void submit()}>
+        <Button type="submit" disabled={form.formState.isSubmitting}>
           <SaveIcon className="size-4" />
           Crear declaración
         </Button>
       </DialogFooter>
-    </>
+    </form>
   );
 }
 
@@ -440,10 +480,13 @@ function DeclarationDetail({ id, canWrite }: { id: string; canWrite: boolean }) 
   const badge = TAX_DECLARATION_STATUS_BADGE[data.status];
   const editable = RECALCULABLE.includes(data.status);
   const terminal = data.allowedTransitions.length === 0;
-  // Con el período reabierto, las cifras congeladas ya no describen el mayor:
-  // avanzar de estado sellaría un número que sabemos viejo. Recalcular sí, y por
-  // eso el botón sigue disponible donde el contrato lo permite.
-  const transitions = data.stale ? [] : data.allowedTransitions;
+  const transitions = offeredTransitions(data);
+  const staleExit = STALE_EXIT[data.status];
+  // Desde una presentada, REVIEW es una VUELTA ATRÁS: llamarla "Pasar a
+  // revisión" haría pensar que avanza en el ciclo.
+  const rectifying = data.stale && data.status === 'FILED';
+  const labelFor = (to: TaxDeclarationStatus): string =>
+    rectifying && to === 'REVIEW' ? 'Volver a revisión' : TAX_DECLARATION_TRANSITION_LABELS[to];
 
   return (
     <>
@@ -487,13 +530,12 @@ function DeclarationDetail({ id, canWrite }: { id: string; canWrite: boolean }) 
         {data.stale && (
           <Alert variant="destructive">
             {/* El título NO repite la palabra del badge: dice el HECHO que la
-                dejó vieja, que es lo que hay que entender para decidir. */}
+                dejó vieja, que es lo que hay que entender para decidir. El
+                cuerpo dice la SALIDA de ese estado, que es distinta en cada uno:
+                un texto único terminaba ofreciendo `FILED → DRAFT`, que no
+                existe en la máquina de estados. */}
             <AlertTitle>El período se reabrió después de presentarla</AlertTitle>
-            <AlertDescription>
-              Las cifras de abajo son las que se congelaron entonces, no las que dice el mayor hoy.
-              No se puede avanzar de estado hasta recalcularla
-              {editable ? '.' : ': volvela a borrador desde el período reabierto.'}
-            </AlertDescription>
+            <AlertDescription>{staleExit}</AlertDescription>
           </Alert>
         )}
 
@@ -600,6 +642,8 @@ function DeclarationDetail({ id, canWrite }: { id: string; canWrite: boolean }) 
 
       {canWrite && (
         <DialogFooter className="flex-wrap gap-2">
+          {/* Recalcular es la salida de una DRAFT/REVIEW desactualizada: el
+              recálculo la vuelve a traer del mayor y limpia la marca. */}
           {editable && (
             <Button
               type="button"
@@ -620,33 +664,161 @@ function DeclarationDetail({ id, canWrite }: { id: string; canWrite: boolean }) 
           )}
           {transitions.map((to) => (
             <Button key={to} type="button" onClick={() => setPendingTransition(to)}>
-              {TAX_DECLARATION_TRANSITION_LABELS[to]}
+              {labelFor(to)}
             </Button>
           ))}
         </DialogFooter>
       )}
 
-      <ConfirmDialog
-        open={!!pendingTransition}
-        onOpenChange={(open) => !open && setPendingTransition(null)}
-        title={
-          pendingTransition ? TAX_DECLARATION_TRANSITION_LABELS[pendingTransition] : 'Confirmar'
-        }
-        description={pendingTransition ? transitionWarning(pendingTransition) : undefined}
-        // El motivo es opcional en el contrato, pero el campo queda a la vista:
-        // la nota es lo que queda en la auditoría explicando la transición.
-        requireReason={false}
-        confirmLabel={
-          pendingTransition ? TAX_DECLARATION_TRANSITION_LABELS[pendingTransition] : 'Confirmar'
-        }
-        onConfirm={async () => {
-          if (!pendingTransition) return;
-          await transition.mutateAsync({ id: data.id, to: pendingTransition });
-          toast.success(`Declaración en ${TAX_DECLARATION_STATUS_LABELS[pendingTransition]}`);
-          setPendingTransition(null);
-        }}
-      />
+      {pendingTransition && (
+        <TransitionDialog
+          to={pendingTransition}
+          label={labelFor(pendingTransition)}
+          // Rectificar una declaración YA PRESENTADA es lo único que exige
+          // explicación: en el resto del ciclo la nota ayuda, acá justifica.
+          requireNotes={rectifying && pendingTransition === 'REVIEW'}
+          onOpenChange={(open) => !open && setPendingTransition(null)}
+          onConfirm={async (notes) => {
+            await transition.mutateAsync({ id: data.id, to: pendingTransition, notes });
+            toast.success(`Declaración en ${TAX_DECLARATION_STATUS_LABELS[pendingTransition]}`);
+            setPendingTransition(null);
+          }}
+        />
+      )}
     </>
+  );
+}
+
+/**
+ * Qué se puede hacer con una declaración AHORA.
+ *
+ * Sin `stale` manda el backend. Con `stale`, las cifras congeladas ya no
+ * describen el mayor y avanzar sellaría un número que sabemos viejo, así que
+ * cada estado tiene UNA salida y solo una: `DRAFT`/`REVIEW` recalculan (y el
+ * recálculo limpia la marca), `FILED` vuelve a revisión —que es la única forma
+ * de poder recalcularla— y `CLOSED` no tiene ninguna: es terminal, y corregirla
+ * es una rectificativa que se presenta afuera.
+ */
+function offeredTransitions(d: TaxDeclarationDetail): TaxDeclarationStatus[] {
+  if (!d.stale) return d.allowedTransitions;
+  return d.status === 'FILED' ? ['REVIEW'] : [];
+}
+
+/** El texto del aviso: dice lo que el botón de ese estado ofrece, no otra cosa. */
+const STALE_EXIT: Record<TaxDeclarationStatus, string> = {
+  DRAFT:
+    'Las cifras de abajo son las que se congelaron al calcularla, no las que dice el mayor hoy. Recalculala contra el mayor para ponerla al día; hasta entonces no se puede avanzar de estado.',
+  REVIEW:
+    'Las cifras de abajo son las que se congelaron al calcularla, no las que dice el mayor hoy. Recalculala contra el mayor para ponerla al día; hasta entonces no se puede avanzar de estado.',
+  FILED:
+    'Las cifras de abajo son las que se presentaron, no las que dice el mayor hoy. Volvela a revisión para poder recalcularla; lo presentado ante Hacienda se corrige por fuera del sistema.',
+  CLOSED:
+    'Declaración cerrada de un período reabierto: solo lectura; el contador decide con una rectificativa.',
+};
+
+/**
+ * Confirmación de una transición, con las notas que quedan en la auditoría.
+ *
+ * No reusa `ConfirmDialog`: ese solo ofrece un motivo OBLIGATORIO o ninguno, y
+ * acá la nota es opcional en casi todo el ciclo pero tiene que viajar igual
+ * cuando se escribe — sin ella la fila de auditoría dice qué pasó y no por qué.
+ */
+function TransitionDialog({
+  to,
+  label,
+  requireNotes,
+  onOpenChange,
+  onConfirm,
+}: {
+  to: TaxDeclarationStatus;
+  /** El verbo del botón, que no siempre es el del estado (ver `labelFor`). */
+  label: string;
+  requireNotes: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: (notes: string | undefined) => Promise<void>;
+}) {
+  const [failure, setFailure] = useState<string | null>(null);
+
+  const schema = useMemo(
+    () =>
+      z.object({
+        notes: requireNotes
+          ? z.string().trim().min(NOTES_MIN, `Mínimo ${NOTES_MIN} caracteres`).max(NOTES_MAX)
+          : z.string().trim().max(NOTES_MAX, `Máximo ${NOTES_MAX} caracteres`),
+      }),
+    [requireNotes],
+  );
+
+  const form = useForm<{ notes: string }>({
+    resolver: zodResolver(schema),
+    defaultValues: { notes: '' },
+  });
+
+  async function submit(v: { notes: string }): Promise<void> {
+    setFailure(null);
+    try {
+      await onConfirm(v.notes.trim() || undefined);
+    } catch (e) {
+      setFailure(e instanceof Error ? e.message : 'No se pudo cambiar el estado');
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent>
+        <form onSubmit={form.handleSubmit(submit)}>
+          <DialogHeader>
+            <DialogTitle>{label}</DialogTitle>
+            <DialogDescription>
+              {requireNotes
+                ? 'La declaración vuelve a revisión para poder recalcularla contra el mayor. Lo ya presentado ante Hacienda no cambia por esto: se corrige con una rectificativa.'
+                : transitionWarning(to)}
+            </DialogDescription>
+          </DialogHeader>
+
+          <FieldGroup className="py-4">
+            <Controller
+              name="notes"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="transition-notes">Notas</FieldLabel>
+                  <Textarea
+                    {...field}
+                    id="transition-notes"
+                    rows={3}
+                    maxLength={NOTES_MAX}
+                    aria-invalid={fieldState.invalid}
+                    placeholder={requireNotes ? `Mínimo ${NOTES_MIN} caracteres` : 'Opcional'}
+                  />
+                  <FieldDescription>
+                    {requireNotes
+                      ? 'Obligatorias: rectificar una declaración ya presentada tiene que quedar explicado.'
+                      : 'Quedan en la auditoría como el motivo de esta transición.'}
+                  </FieldDescription>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
+            {failure && (
+              <Alert variant="destructive">
+                <AlertDescription>{failure}</AlertDescription>
+              </Alert>
+            )}
+          </FieldGroup>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {label}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

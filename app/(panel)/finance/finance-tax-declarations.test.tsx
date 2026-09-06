@@ -87,6 +87,13 @@ function abrirDetalle(): void {
   fireEvent.click(screen.getByRole('button', { name: 'Ver detalle' }));
 }
 
+// El diálogo de la transición se monta ENCIMA del detalle: los dos están en el
+// árbol, y el de arriba es el último.
+function ultimoDialogo(): HTMLElement {
+  const dialogs = screen.getAllByRole('dialog');
+  return dialogs[dialogs.length - 1] as HTMLElement;
+}
+
 beforeEach(() => {
   page = { items: [BASE], total: 1, page: 1, pageSize: 20 };
   detail = DETAIL;
@@ -217,12 +224,128 @@ describe('FinanceTaxDeclarations — los botones según el estado', () => {
     expect(confirm).toBeInTheDocument();
     expect(transition).not.toHaveBeenCalled();
 
-    const dialogs = screen.getAllByRole('dialog');
-    const confirmDialog = dialogs[dialogs.length - 1];
-    fireEvent.click(
-      within(confirmDialog as HTMLElement).getByRole('button', { name: 'Pasar a revisión' }),
+    fireEvent.click(within(ultimoDialogo()).getByRole('button', { name: 'Pasar a revisión' }));
+    await waitFor(() =>
+      expect(transition).toHaveBeenCalledWith({ id: 'd1', to: 'REVIEW', notes: undefined }),
     );
-    await waitFor(() => expect(transition).toHaveBeenCalledWith({ id: 'd1', to: 'REVIEW' }));
+  });
+});
+
+describe('FinanceTaxDeclarations — desactualizada: cada estado tiene su salida', () => {
+  it('DRAFT desactualizada ofrece recalcular y ninguna transición', () => {
+    detail = { ...DETAIL, stale: true, allowedTransitions: ['REVIEW'] };
+    render(<FinanceTaxDeclarations canWrite />);
+    abrirDetalle();
+
+    expect(screen.getByRole('button', { name: /Recalcular/ })).toBeInTheDocument();
+    // Avanzar sellaría un número que ya sabemos viejo.
+    expect(screen.queryByRole('button', { name: 'Pasar a revisión' })).toBeNull();
+    expect(screen.getByText(/Recalculala contra el mayor/)).toBeInTheDocument();
+  });
+
+  it('REVIEW desactualizada también recalcula', () => {
+    detail = { ...DETAIL, status: 'REVIEW', stale: true, allowedTransitions: ['DRAFT', 'FILED'] };
+    render(<FinanceTaxDeclarations canWrite />);
+    abrirDetalle();
+
+    expect(screen.getByRole('button', { name: /Recalcular/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Marcar presentada' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Volver a borrador' })).toBeNull();
+  });
+
+  it('FILED desactualizada no recalcula: ofrece VOLVER A REVISIÓN, que es la salida', () => {
+    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: ['CLOSED'] };
+    render(<FinanceTaxDeclarations canWrite />);
+    abrirDetalle();
+
+    // Una presentada no se recalcula sola: primero vuelve a revisión.
+    expect(screen.queryByRole('button', { name: /Recalcular/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Volver a revisión' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cerrar declaración' })).toBeNull();
+    expect(screen.getByText(/Volvela a revisión para poder recalcularla/)).toBeInTheDocument();
+  });
+
+  it('CLOSED desactualizada es solo lectura y lo dice con la salida real', () => {
+    detail = { ...DETAIL, status: 'CLOSED', stale: true, allowedTransitions: [] };
+    render(<FinanceTaxDeclarations canWrite />);
+    abrirDetalle();
+
+    expect(screen.queryByRole('button', { name: /Recalcular/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Volver a revisión' })).toBeNull();
+    expect(
+      screen.getByText(
+        'Declaración cerrada de un período reabierto: solo lectura; el contador decide con una rectificativa.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('el aviso NUNCA ofrece volver a borrador desde presentada: esa transición no existe', () => {
+    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: ['CLOSED'] };
+    render(<FinanceTaxDeclarations canWrite />);
+    abrirDetalle();
+
+    expect(screen.queryByText(/volvela a borrador/i)).toBeNull();
+  });
+
+  it('volver a revisión desde presentada EXIGE notas y las manda', async () => {
+    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: ['CLOSED'] };
+    render(<FinanceTaxDeclarations canWrite />);
+    abrirDetalle();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Volver a revisión' }));
+    const dialog = ultimoDialogo();
+
+    // Rectificar una declaración ya presentada sin decir por qué no es una opción.
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Volver a revisión' }));
+    expect(await within(dialog).findByText(/Mínimo 10 caracteres/)).toBeInTheDocument();
+    expect(transition).not.toHaveBeenCalled();
+
+    fireEvent.change(within(dialog).getByLabelText('Notas'), {
+      target: { value: 'El período se reabrió y entró una factura de setiembre.' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Volver a revisión' }));
+
+    await waitFor(() =>
+      expect(transition).toHaveBeenCalledWith({
+        id: 'd1',
+        to: 'REVIEW',
+        notes: 'El período se reabrió y entró una factura de setiembre.',
+      }),
+    );
+  });
+
+  it('una transición normal manda las notas tecleadas, aunque sean opcionales', async () => {
+    render(<FinanceTaxDeclarations canWrite />);
+    abrirDetalle();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pasar a revisión' }));
+    const dialog = ultimoDialogo();
+
+    fireEvent.change(within(dialog).getByLabelText('Notas'), {
+      target: { value: 'Revisada contra el mayor.' },
+    });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Pasar a revisión' }));
+
+    await waitFor(() =>
+      expect(transition).toHaveBeenCalledWith({
+        id: 'd1',
+        to: 'REVIEW',
+        notes: 'Revisada contra el mayor.',
+      }),
+    );
+  });
+
+  it('sin notas, la transición opcional viaja sin el campo', async () => {
+    render(<FinanceTaxDeclarations canWrite />);
+    abrirDetalle();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pasar a revisión' }));
+    const dialog = ultimoDialogo();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Pasar a revisión' }));
+
+    await waitFor(() =>
+      expect(transition).toHaveBeenCalledWith({ id: 'd1', to: 'REVIEW', notes: undefined }),
+    );
   });
 });
 
@@ -251,6 +374,15 @@ describe('FinanceTaxDeclarations — declaración desactualizada', () => {
       screen.getByText('El período se reabrió después de presentarla'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Cerrar declaración' })).toBeNull();
+  });
+
+  it('recalcular una DRAFT desactualizada la pone al día', async () => {
+    detail = { ...DETAIL, stale: true, allowedTransitions: ['REVIEW'] };
+    render(<FinanceTaxDeclarations canWrite />);
+    abrirDetalle();
+
+    fireEvent.click(screen.getByRole('button', { name: /Recalcular/ }));
+    await waitFor(() => expect(recalculate).toHaveBeenCalledWith('d1'));
   });
 });
 

@@ -190,40 +190,35 @@ describe('FinanceBalanceSheet — las tres secciones', () => {
     expect(screen.getByText('Caja colones')).toBeInTheDocument();
   });
 
-  it('van apiladas en el orden del balance: Activos → Pasivos → Patrimonio', () => {
+  // El orden es el del balance, no el de dos columnas enfrentadas: se lee de
+  // arriba abajo, cada card a ancho completo y con su total al lado del título.
+  // El separador de miles es un espacio DURO: normalizarlo evita meter un
+  // carácter invisible en la aserción, que es imposible de leer en un diff.
+  const seccionesConTotal = (container: HTMLElement): string[] =>
+    [...container.querySelectorAll('[data-slot="card-title"]')]
+      .map((n) => (n.textContent ?? '').replace(/\s/g, ' '))
+      .filter((t) => /^(Activos|Pasivos|Patrimonio)/.test(t));
+
+  it('van apiladas en el orden del balance, cada una con su total', () => {
     const { container } = render(<FinanceBalanceSheet />);
 
-    // El orden es el del balance, no el de dos columnas enfrentadas: se lee de
-    // arriba abajo y cada card ocupa el ancho entero.
-    const titulos = [...container.querySelectorAll('[data-slot="card-title"]')]
-      .map((n) => n.textContent ?? '')
-      .filter((t) => /Activos|Pasivos|Patrimonio/.test(t));
-    expect(titulos.map((t) => t.replace(/[\d\s.,]+CRC$/, '').trim())).toEqual([
-      'Activos',
-      'Pasivos',
-      'Patrimonio',
+    // Los totales del fixture: 699 000 de activo, 200 000 de pasivo y 499 000 de
+    // patrimonio. Van EN el título, así que se afirman con él y en su orden.
+    expect(seccionesConTotal(container)).toEqual([
+      'Activos699 000,00 CRC',
+      'Pasivos200 000,00 CRC',
+      'Patrimonio499 000,00 CRC',
     ]);
   });
 
-  it('cada sección lleva su total al lado del título', () => {
-    const { container } = render(<FinanceBalanceSheet />);
-
-    const titulos = [...container.querySelectorAll('[data-slot="card-title"]')].map(
-      (n) => n.textContent ?? '',
-    );
-    expect(titulos.some((t) => t.startsWith('Activos') && t.includes('CRC'))).toBe(true);
-    expect(titulos.some((t) => t.startsWith('Pasivos') && t.includes('CRC'))).toBe(true);
-    expect(titulos.some((t) => t.startsWith('Patrimonio') && t.includes('CRC'))).toBe(true);
-  });
-
-  it('la tabla no depende del contenido para su ancho: no puede desbordar la card', () => {
+  it('la columna Código se lee en las tres', () => {
     render(<FinanceBalanceSheet />);
 
-    // `table-fixed` es lo que impide que la sangría de la rama empuje la tabla
-    // más allá de la card y aparezca el scroll que recortaba la columna Código.
-    const tabla = screen.getByRole('table', { name: 'Activos' });
-    expect(tabla.className).toContain('table-fixed');
-    expect(within(tabla).getByText('Código')).toBeInTheDocument();
+    // Es la que el bento recortaba: la tabla ya no desborda su card.
+    for (const seccion of ['Activos', 'Pasivos', 'Patrimonio']) {
+      const tabla = screen.getByRole('table', { name: seccion });
+      expect(within(tabla).getByText('Código')).toBeInTheDocument();
+    }
   });
 
   it('la línea calculada del resultado se distingue de una cuenta', () => {

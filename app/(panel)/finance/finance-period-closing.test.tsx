@@ -151,17 +151,24 @@ describe('FinancePeriodClosing — cerrar', () => {
     );
   });
 
-  it('forzar exige un motivo de al menos 10 caracteres antes de habilitar el botón', async () => {
+  it('forzar exige un motivo de al menos 10 caracteres, y lo dice al lado del campo', async () => {
     periods = [{ ...ABIERTO, blockers: [ORDENES_PENDIENTES] }];
     render(<FinancePeriodClosing canWrite />);
     fireEvent.click(screen.getByRole('button', { name: /Cerrar de todos modos/ }));
 
     const dialog = await screen.findByRole('dialog');
     const confirmar = within(dialog).getByRole('button', { name: /Cerrar de todos modos/ });
-    expect(confirmar).toBeDisabled();
+
+    // Sin motivo no sale: el error se lee en el campo en vez de dejar un botón
+    // apagado que no explica qué le falta.
+    fireEvent.click(confirmar);
+    expect(await within(dialog).findByText(/Mínimo 10 caracteres/)).toBeInTheDocument();
+    expect(close).not.toHaveBeenCalled();
 
     fireEvent.change(within(dialog).getByLabelText('Motivo'), { target: { value: 'corto' } });
-    expect(confirmar).toBeDisabled();
+    fireEvent.click(confirmar);
+    await waitFor(() => expect(within(dialog).getByText(/Mínimo 10 caracteres/)).toBeTruthy());
+    expect(close).not.toHaveBeenCalled();
 
     fireEvent.change(within(dialog).getByLabelText('Motivo'), {
       target: { value: 'Google no responde y vence el plazo fiscal.' },
@@ -203,13 +210,16 @@ describe('FinancePeriodClosing — reabrir', () => {
     periods = [CERRADO];
   });
 
-  it('exige el motivo antes de habilitar y lo manda sin force', async () => {
+  it('exige el motivo y lo manda sin force', async () => {
     render(<FinancePeriodClosing canWrite />);
     fireEvent.click(screen.getByRole('button', { name: /Reabrir/ }));
 
     const dialog = await screen.findByRole('dialog');
     const confirmar = within(dialog).getByRole('button', { name: 'Reabrir período' });
-    expect(confirmar).toBeDisabled();
+
+    fireEvent.click(confirmar);
+    expect(await within(dialog).findByText(/Mínimo 10 caracteres/)).toBeInTheDocument();
+    expect(reopen).not.toHaveBeenCalled();
 
     fireEvent.change(within(dialog).getByLabelText('Motivo'), {
       target: { value: 'Llegó la factura de Railway con fecha de setiembre.' },

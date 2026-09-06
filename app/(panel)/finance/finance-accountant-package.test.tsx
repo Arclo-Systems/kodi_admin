@@ -6,7 +6,6 @@ let packages: AccountantPackage[];
 const generate = vi.fn();
 const discard = vi.fn();
 const refetch = vi.fn();
-const fetchUrl = vi.fn();
 
 vi.mock('@/hooks/use-finance-tax', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance-tax')>()),
@@ -20,7 +19,11 @@ vi.mock('@/hooks/use-finance-tax', async (importOriginal) => ({
     generate: { mutateAsync: generate, isPending: false },
     discard: { mutateAsync: discard },
   }),
-  fetchPackageFileUrl: (...args: unknown[]) => fetchUrl(...args),
+}));
+
+const openSigned = vi.fn<(path: string) => Promise<void>>();
+vi.mock('@/lib/signed-asset', () => ({
+  openSignedAsset: (path: string) => openSigned(path),
 }));
 
 const toastError = vi.fn();
@@ -53,7 +56,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   generate.mockResolvedValue({});
   discard.mockResolvedValue({});
-  fetchUrl.mockResolvedValue({ url: 'https://r2.example/firmada', expiresInSeconds: 300 });
+  openSigned.mockResolvedValue(undefined);
   vi.stubGlobal('open', vi.fn());
 });
 
@@ -120,25 +123,30 @@ describe('FinanceAccountantPackage — los tres estados', () => {
 });
 
 describe('FinanceAccountantPackage — descargar', () => {
-  it('pide el enlace firmado del archivo y lo abre', async () => {
+  it('abre el archivo con openSignedAsset, DENTRO del gesto del click', async () => {
     render(<FinanceAccountantPackage canWrite />);
     fireEvent.click(screen.getByRole('button', { name: /Mayor \(CSV\)/ }));
 
-    await waitFor(() => expect(fetchUrl).toHaveBeenCalledWith('pk2', 'mayor.csv'));
-    expect(window.open).toHaveBeenCalledWith(
-      'https://r2.example/firmada',
-      '_blank',
-      'noopener,noreferrer',
+    // `openSignedAsset` abre la pestaña sincrónicamente y recién después le
+    // asigna la URL firmada. Pedir la URL primero y llamar a `window.open`
+    // después de un `await` lo come el bloqueador de popups, sin ningún error a
+    // la vista: por eso el componente NO puede tocar `window.open` él mismo.
+    await waitFor(() =>
+      expect(openSigned).toHaveBeenCalledWith(
+        '/api/admin/finance/reports/accountant-package/pk2/url?file=mayor.csv',
+      ),
     );
+    expect(window.open).not.toHaveBeenCalled();
   });
 
   it('un paquete que no está listo se muestra como mensaje, no se baja al disco', async () => {
-    fetchUrl.mockRejectedValue(new Error('El paquete todavía no está listo.'));
+    openSigned.mockRejectedValue(new Error('El paquete todavía no está listo.'));
     render(<FinanceAccountantPackage canWrite />);
     fireEvent.click(screen.getByRole('button', { name: /PDF completo/ }));
 
-    await waitFor(() => expect(toastError).toHaveBeenCalledWith('El paquete todavía no está listo.'));
-    expect(window.open).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith('El paquete todavía no está listo.'),
+    );
   });
 });
 

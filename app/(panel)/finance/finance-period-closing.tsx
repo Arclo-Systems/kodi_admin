@@ -1,7 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
 import { CalendarCheckIcon, LockIcon, LockOpenIcon, TriangleAlertIcon } from 'lucide-react';
 import {
@@ -23,7 +26,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field';
 import {
   Select,
   SelectContent,
@@ -41,7 +50,20 @@ import {
 } from './finance-format';
 
 const ALL = '__all__';
+// Los mismos límites que `ClosePeriodDto`/`ReopenPeriodDto`: "ok" no explica
+// nada dentro de un año, y pasarse de 500 es un 400 que se puede evitar
+// mientras se escribe.
 const REASON_MIN = 10;
+const REASON_MAX = 500;
+
+const reasonField = z
+  .string()
+  .trim()
+  .min(REASON_MIN, `Mínimo ${REASON_MIN} caracteres`)
+  .max(REASON_MAX, `Máximo ${REASON_MAX} caracteres`);
+
+const ReasonSchema = z.object({ reason: reasonField });
+type ReasonValues = z.infer<typeof ReasonSchema>;
 
 /**
  * Cierre mensual: la lista de períodos con lo que cada uno tiene pendiente.
@@ -319,21 +341,28 @@ function BlockerList({ blockers }: { blockers: PeriodBlocker[] }) {
 
 function ClosePeriodForm({ period, onDone }: { period: AccountingPeriod; onDone: () => void }) {
   const { close } = usePeriodMutations();
-  const [reason, setReason] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const forceable = period.blockers.length > 0 && period.blockers.every((b) => b.forceable);
-  const reasonOk = !forceable || reason.trim().length >= REASON_MIN;
 
-  async function submit(): Promise<void> {
+  // Sin bloqueos no hay nada que justificar y el campo ni aparece; con un
+  // bloqueo forzable, `force` sin motivo no existe (el backend lo rechaza).
+  const schema = useMemo(
+    () => (forceable ? ReasonSchema : z.object({ reason: z.string() })),
+    [forceable],
+  );
+  const form = useForm<ReasonValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { reason: '' },
+  });
+
+  async function submit(v: ReasonValues): Promise<void> {
     setFailure(null);
-    setSaving(true);
     try {
       await close.mutateAsync({
         id: period.id,
         force: forceable,
-        reason: forceable ? reason.trim() : undefined,
+        reason: forceable ? v.reason.trim() : undefined,
       });
       toast.success(`Período ${formatPeriod(period.period)} cerrado`);
       onDone();
@@ -342,13 +371,11 @@ function ClosePeriodForm({ period, onDone }: { period: AccountingPeriod; onDone:
       // que cerrar primero dentro del `message`: se muestra tal cual, porque
       // reescribirlo acá perdería justo el dato que sirve.
       setFailure(e instanceof Error ? e.message : 'No se pudo cerrar el período');
-    } finally {
-      setSaving(false);
     }
   }
 
   return (
-    <>
+    <form onSubmit={form.handleSubmit(submit)}>
       <DialogHeader>
         <DialogTitle>Cerrar {formatPeriod(period.period)}</DialogTitle>
         <DialogDescription>
@@ -357,7 +384,7 @@ function ClosePeriodForm({ period, onDone }: { period: AccountingPeriod; onDone:
         </DialogDescription>
       </DialogHeader>
 
-      <div className="space-y-4">
+      <FieldGroup className="py-4">
         {forceable && (
           <Alert variant="destructive">
             <AlertDescription>
@@ -371,19 +398,28 @@ function ClosePeriodForm({ period, onDone }: { period: AccountingPeriod; onDone:
         )}
 
         {forceable && (
-          <Field>
-            <FieldLabel htmlFor="close-reason">Motivo</FieldLabel>
-            <Textarea
-              id="close-reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              maxLength={500}
-              placeholder={`Mínimo ${REASON_MIN} caracteres`}
-            />
-            <FieldDescription>
-              Saltarse una validación es una decisión de alguien: el motivo queda en la auditoría.
-            </FieldDescription>
-          </Field>
+          <Controller
+            name="reason"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor="close-reason">Motivo</FieldLabel>
+                <Textarea
+                  {...field}
+                  id="close-reason"
+                  rows={3}
+                  maxLength={REASON_MAX}
+                  aria-invalid={fieldState.invalid}
+                  placeholder={`Mínimo ${REASON_MIN} caracteres`}
+                />
+                <FieldDescription>
+                  Saltarse una validación es una decisión de alguien: el motivo queda en la
+                  auditoría.
+                </FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
+            )}
+          />
         )}
 
         {failure && (
@@ -391,18 +427,18 @@ function ClosePeriodForm({ period, onDone }: { period: AccountingPeriod; onDone:
             <AlertDescription>{failure}</AlertDescription>
           </Alert>
         )}
-      </div>
+      </FieldGroup>
 
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>
           Cancelar
         </Button>
-        <Button type="button" disabled={!reasonOk || saving} onClick={() => void submit()}>
+        <Button type="submit" disabled={form.formState.isSubmitting}>
           <LockIcon className="size-4" />
           {forceable ? 'Cerrar de todos modos' : 'Cerrar período'}
         </Button>
       </DialogFooter>
-    </>
+    </form>
   );
 }
 
@@ -416,31 +452,30 @@ function ClosePeriodForm({ period, onDone }: { period: AccountingPeriod; onDone:
  */
 function ReopenPeriodForm({ period, onDone }: { period: AccountingPeriod; onDone: () => void }) {
   const { reopen } = usePeriodMutations();
-  const [reason, setReason] = useState('');
   const [warning, setWarning] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
-  const reasonOk = reason.trim().length >= REASON_MIN;
+  const form = useForm<ReasonValues>({
+    resolver: zodResolver(ReasonSchema),
+    defaultValues: { reason: '' },
+  });
 
-  async function submit(force: boolean): Promise<void> {
+  async function submit(v: ReasonValues): Promise<void> {
     setFailure(null);
-    setSaving(true);
+    const force = !!warning;
     try {
-      await reopen.mutateAsync({ id: period.id, reason: reason.trim(), force });
+      await reopen.mutateAsync({ id: period.id, reason: v.reason.trim(), force });
       toast.success(`Período ${formatPeriod(period.period)} reabierto`);
       onDone();
     } catch (e) {
       const message = e instanceof Error ? e.message : 'No se pudo reabrir el período';
       if (!force && isFiledDeclarationConflict(e)) setWarning(message);
       else setFailure(message);
-    } finally {
-      setSaving(false);
     }
   }
 
   return (
-    <>
+    <form onSubmit={form.handleSubmit(submit)}>
       <DialogHeader>
         <DialogTitle>Reabrir {formatPeriod(period.period)}</DialogTitle>
         <DialogDescription>
@@ -449,20 +484,28 @@ function ReopenPeriodForm({ period, onDone }: { period: AccountingPeriod; onDone
         </DialogDescription>
       </DialogHeader>
 
-      <div className="space-y-4">
-        <Field>
-          <FieldLabel htmlFor="reopen-reason">Motivo</FieldLabel>
-          <Textarea
-            id="reopen-reason"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            maxLength={500}
-            placeholder={`Mínimo ${REASON_MIN} caracteres`}
-          />
-          <FieldDescription>
-            Qué llegó tarde y por qué. Dentro de un año, &quot;ok&quot; no explica nada.
-          </FieldDescription>
-        </Field>
+      <FieldGroup className="py-4">
+        <Controller
+          name="reason"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="reopen-reason">Motivo</FieldLabel>
+              <Textarea
+                {...field}
+                id="reopen-reason"
+                rows={3}
+                maxLength={REASON_MAX}
+                aria-invalid={fieldState.invalid}
+                placeholder={`Mínimo ${REASON_MIN} caracteres`}
+              />
+              <FieldDescription>
+                Qué llegó tarde y por qué. Dentro de un año, &quot;ok&quot; no explica nada.
+              </FieldDescription>
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
 
         {warning && (
           <Alert variant="destructive">
@@ -475,23 +518,22 @@ function ReopenPeriodForm({ period, onDone }: { period: AccountingPeriod; onDone
             <AlertDescription>{failure}</AlertDescription>
           </Alert>
         )}
-      </div>
+      </FieldGroup>
 
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onDone}>
           Cancelar
         </Button>
         <Button
-          type="button"
+          type="submit"
           variant={warning ? 'destructive' : 'default'}
-          disabled={!reasonOk || saving}
-          onClick={() => void submit(!!warning)}
+          disabled={form.formState.isSubmitting}
         >
           <LockOpenIcon className="size-4" />
           {warning ? 'Reabrir de todos modos' : 'Reabrir período'}
         </Button>
       </DialogFooter>
-    </>
+    </form>
   );
 }
 

@@ -464,9 +464,6 @@ export const PACKAGE_FILE_LABELS: Record<PackageFile, string> = {
  */
 export const formatRate = (rate: string): string => `${formatMoney(ratioToPercent(rate))} %`;
 
-/** `'2026-09-01'` → `'2026-09'`. La vigencia se lee por día, el período por mes. */
-export const periodOfDate = (date: string): string => date.slice(0, 7);
-
 const KIB = 1024;
 
 /**

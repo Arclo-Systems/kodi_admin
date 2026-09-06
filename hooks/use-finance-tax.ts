@@ -175,6 +175,8 @@ export type TaxDeclarationDetail = TaxDeclaration & {
 export type TaxDeclarationListQuery = {
   year?: number;
   month?: number;
+  /** Hoy solo existe `IVA`, pero el filtro es del contrato y viaja igual. */
+  kind?: TaxDeclarationKind;
   status?: TaxDeclarationStatus;
   page: number;
   pageSize: number;
@@ -188,14 +190,23 @@ export type TaxDeclarationPage = {
 };
 
 export function useTaxDeclarations(query: TaxDeclarationListQuery) {
-  const { year, month, status, page, pageSize } = query;
+  const { year, month, kind, status, page, pageSize } = query;
   return useQuery({
-    queryKey: ['finance-tax-declarations', year ?? null, month ?? null, status ?? null, page, pageSize],
+    queryKey: [
+      'finance-tax-declarations',
+      year ?? null,
+      month ?? null,
+      kind ?? null,
+      status ?? null,
+      page,
+      pageSize,
+    ],
     placeholderData: keepPreviousData,
     queryFn: async (): Promise<TaxDeclarationPage> => {
       const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
       if (year !== undefined) params.set('year', String(year));
       if (month !== undefined) params.set('month', String(month));
+      if (kind) params.set('kind', kind);
       if (status) params.set('status', status);
       return (
         (await fetchJson<TaxDeclarationPage>(`${BASE}/tax-declarations?${params}`)) ?? {
@@ -302,9 +313,14 @@ export function usePeriods(filters: { year?: number; status?: PeriodStatus } = {
 
 export function usePeriodMutations() {
   const qc = useQueryClient();
-  // Cerrar y reabrir cambian lo que el mayor acepta: cualquier pantalla de
-  // finanzas que esté montada tiene que volver a preguntar.
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['finance-periods'] });
+  // Cerrar y reabrir no solo cambian el período: reabrir uno marca como
+  // desactualizada la declaración de ese mes (`stale`), así que la lista y el
+  // detalle de declaraciones también quedan viejos y hay que re-preguntarlos.
+  const invalidate = () => {
+    void qc.invalidateQueries({ queryKey: ['finance-periods'] });
+    void qc.invalidateQueries({ queryKey: ['finance-tax-declarations'] });
+    void qc.invalidateQueries({ queryKey: ['finance-tax-declaration'] });
+  };
   return {
     close: useMutation({
       mutationFn: ({ id, force, reason }: { id: string; force: boolean; reason?: string }) =>
@@ -410,13 +426,12 @@ export function useAccountantPackageMutations() {
   };
 }
 
-/** Enlace firmado de vida corta (300 s) para UN archivo de UNA versión. */
-export type SignedUrl = { url: string; expiresInSeconds: number };
-
-export async function fetchPackageFileUrl(id: string, file: PackageFile): Promise<SignedUrl> {
-  const signed = await fetchJson<SignedUrl>(
-    `${BASE}/reports/accountant-package/${id}/url?file=${encodeURIComponent(file)}`,
-  );
-  if (!signed) throw new Error('El backend no devolvió el enlace del archivo.');
-  return signed;
-}
+/**
+ * El endpoint que devuelve el enlace firmado (TTL 300 s) de UN archivo.
+ *
+ * Devuelve la ruta y no el enlace: quien descarga usa `openSignedAsset`, que
+ * abre la pestaña dentro del gesto del click y recién después la navega. Pedir
+ * la URL primero y abrir después es lo que come el bloqueador de popups.
+ */
+export const packageFileUrlPath = (id: string, file: PackageFile): string =>
+  `${BASE}/reports/accountant-package/${id}/url?file=${encodeURIComponent(file)}`;

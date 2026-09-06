@@ -581,6 +581,11 @@ test('el presupuesto del mes se carga por cuenta y la variación lo compara cont
 
 test('los KPIs y la pista de caja dicen N/A con motivo, nunca un cero', async ({ page }) => {
   await page.goto('/finance/kpis');
+  // Los trece indicadores salen de una consulta que agrega toda la base: sobre
+  // `kodi_dev`, que crece con cada corrida, tarda más que los 5 s por defecto de
+  // `expect`. Se espera a que los esqueletos se vayan y recién ahí se afirma —un
+  // esqueleto no es un N/A, y confundirlos hacía fallar al spec por el reloj.
+  await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 30_000 });
 
   // El motivo viaja en el nombre accesible del N/A: sin eso, un "N/A" suelto no
   // se distingue de un dato que se perdió.

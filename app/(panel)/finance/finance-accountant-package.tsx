@@ -5,12 +5,13 @@ import { toast } from 'sonner';
 import { DownloadIcon, PackageIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react';
 import { FINANCE_CURRENCIES } from '@/hooks/use-finance';
 import {
-  fetchPackageFileUrl,
+  packageFileUrlPath,
   useAccountantPackageMutations,
   useAccountantPackages,
   type AccountantPackage,
   type PackageFile,
 } from '@/hooks/use-finance-tax';
+import { openSignedAsset } from '@/lib/signed-asset';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { EmptyState } from '@/components/admin/empty-state';
 import { StatusBadge } from '@/lib/status-badge';
@@ -302,10 +303,15 @@ function PackageVersion({
 /**
  * Un archivo del paquete.
  *
- * El objeto vive en R2 privado: primero se pide el enlace firmado (TTL 300 s) y
- * recién después se navega a él. No se usa un `<a href>` fijo porque la URL no
- * existe hasta que se pide, y porque un 409 `PACKAGE_NOT_READY` o un 404 tienen
- * que verse como mensaje y no bajarse al disco con extensión `.pdf`.
+ * El objeto vive en R2 privado y su URL no existe hasta que se pide (TTL 300 s),
+ * así que un `<a href>` fijo no sirve. Va por `openSignedAsset`, que abre la
+ * pestaña **dentro del gesto** y recién después le asigna la URL firmada:
+ * llamar a `window.open` DESPUÉS de un `await` lo come el bloqueador de popups
+ * y el archivo no se abre nunca, sin ningún error a la vista. Es el mismo
+ * camino que el comprobante de un movimiento.
+ *
+ * Los errores se leen como mensaje —un 409 `PACKAGE_NOT_READY` o un 404— en vez
+ * de bajarse al disco con extensión `.pdf`.
  */
 function PackageFileButton({
   id,
@@ -316,27 +322,16 @@ function PackageFileButton({
   file: PackageFile;
   bytes?: number;
 }) {
-  const [pending, setPending] = useState(false);
-
-  async function download(): Promise<void> {
-    setPending(true);
-    try {
-      const signed = await fetchPackageFileUrl(id, file);
-      window.open(signed.url, '_blank', 'noopener,noreferrer');
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'No se pudo abrir el archivo');
-    } finally {
-      setPending(false);
-    }
-  }
-
   return (
     <Button
       type="button"
       variant="outline"
       size="sm"
-      disabled={pending}
-      onClick={() => void download()}
+      onClick={() =>
+        openSignedAsset(packageFileUrlPath(id, file)).catch((e) =>
+          toast.error(e instanceof Error ? e.message : 'No se pudo abrir el archivo'),
+        )
+      }
     >
       <DownloadIcon className="size-4" />
       {PACKAGE_FILE_LABELS[file]}
