@@ -89,6 +89,7 @@ const EVALUACION: AlertEvaluation = {
 beforeEach(() => {
   vi.clearAllMocks();
   rules = RULES;
+  remove.mockResolvedValue({});
   alerts = { items: [ALERTA], total: 1, page: 1, pageSize: 20 };
   create.mockResolvedValue({});
   update.mockResolvedValue({});
@@ -145,6 +146,74 @@ describe('FinanceAlerts — crear una regla', () => {
   });
 });
 
+describe('FinanceAlerts — editar una regla', () => {
+  it('cambia el umbral y la moneda sin tocar el tipo, que es inmutable', async () => {
+    render(<FinanceAlerts canWrite />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Editar/ }));
+    const dialogo = await screen.findByRole('dialog');
+
+    // El `kind` decide qué UNIDAD es el umbral: cambiarlo reinterpretaría el
+    // número guardado, así que se muestra pero no se ofrece cambiar.
+    expect(within(dialogo).queryByRole('combobox', { name: 'Tipo' })).toBeNull();
+    expect(within(dialogo).getByText('Pista de caja por debajo de')).toBeInTheDocument();
+
+    fireEvent.change(within(dialogo).getByLabelText('Umbral'), { target: { value: '3.50' } });
+    fireEvent.click(within(dialogo).getByRole('button', { name: /Guardar/ }));
+
+    await waitFor(() =>
+      expect(update).toHaveBeenCalledWith({
+        id: 'r1',
+        input: { threshold: '3.50', currency: 'CRC', isActive: true },
+      }),
+    );
+  });
+
+  it('la regla que cuenta órdenes se edita sin moneda: el backend la prohíbe', async () => {
+    rules = {
+      ...RULES,
+      items: [
+        {
+          ...RULES.items[0]!,
+          id: 'r2',
+          kind: 'UNPOSTED_PLAY_ORDERS',
+          thresholdUnit: 'count',
+          threshold: '0.00',
+          currency: null,
+        },
+      ],
+    };
+    render(<FinanceAlerts canWrite />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Editar/ }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).queryByRole('combobox', { name: 'Moneda' })).toBeNull();
+
+    fireEvent.change(within(dialogo).getByLabelText('Umbral'), { target: { value: '2' } });
+    fireEvent.click(within(dialogo).getByRole('button', { name: /Guardar/ }));
+
+    await waitFor(() =>
+      expect(update).toHaveBeenCalledWith({
+        id: 'r2',
+        input: { threshold: '2', isActive: true },
+      }),
+    );
+  });
+});
+
+describe('FinanceAlerts — borrar una regla se lleva su historial', () => {
+  it('lo avisa antes de borrar', async () => {
+    render(<FinanceAlerts canWrite />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Borrar/ }));
+
+    expect(await screen.findByText(/se pierde el historial de disparos/)).toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Borrar' }));
+
+    await waitFor(() => expect(remove).toHaveBeenCalledWith('r1'));
+  });
+});
+
 describe('FinanceAlerts — acusar recibo de una alerta', () => {
   it('marca la alerta como vista', async () => {
     render(<FinanceAlerts canWrite />);
@@ -183,6 +252,8 @@ describe('FinanceAlerts — sin permiso de escritura', () => {
     render(<FinanceAlerts />);
 
     expect(screen.queryByRole('button', { name: /Nueva regla/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Editar/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Borrar/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Evaluar ahora/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Marcar como vista' })).toBeNull();
   });

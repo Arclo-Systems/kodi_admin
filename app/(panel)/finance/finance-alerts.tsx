@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { BellIcon, BellRingIcon, PlayIcon, PlusIcon, Trash2Icon } from 'lucide-react';
+import { BellIcon, BellRingIcon, PencilIcon, PlayIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { FINANCE_CURRENCIES } from '@/hooks/use-finance';
 import {
   ALERT_KINDS,
@@ -101,6 +101,7 @@ export function FinanceAlerts({ canWrite = false }: { canWrite?: boolean }) {
   const [onlyUnseen, setOnlyUnseen] = useState(true);
   const [page, setPage] = useState(1);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<FinanceAlertRule | null>(null);
   const [toDelete, setToDelete] = useState<FinanceAlertRule | null>(null);
   const [evaluation, setEvaluation] = useState<AlertEvaluation | null>(null);
 
@@ -146,7 +147,7 @@ export function FinanceAlerts({ canWrite = false }: { canWrite?: boolean }) {
                 <TableHead className="w-40 text-right">Umbral</TableHead>
                 <TableHead className="w-24">Moneda</TableHead>
                 <TableHead className="w-28">Activa</TableHead>
-                <TableHead className="w-24" />
+                <TableHead className="w-44" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -185,10 +186,16 @@ export function FinanceAlerts({ canWrite = false }: { canWrite?: boolean }) {
                     </TableCell>
                     <TableCell className="text-right">
                       {canWrite && (
-                        <Button variant="ghost" size="sm" onClick={() => setToDelete(rule)}>
-                          <Trash2Icon className="size-4" />
-                          Borrar
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => setEditing(rule)}>
+                            <PencilIcon className="size-4" />
+                            Editar
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setToDelete(rule)}>
+                            <Trash2Icon className="size-4" />
+                            Borrar
+                          </Button>
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>
@@ -346,13 +353,22 @@ export function FinanceAlerts({ canWrite = false }: { canWrite?: boolean }) {
         </CardContent>
       </Card>
 
-      <CreateRuleDialog open={creating} onOpenChange={setCreating} />
+      <RuleDialog rule={null} open={creating} onOpenChange={setCreating} />
+
+      {/* `key`: el formulario nace con los valores de la regla elegida, así que
+          tiene que renacer al cambiar de regla. */}
+      <RuleDialog
+        key={editing?.id ?? 'sin-regla'}
+        rule={editing}
+        open={!!editing}
+        onOpenChange={(open) => !open && setEditing(null)}
+      />
 
       <ConfirmDialog
         open={!!toDelete}
         onOpenChange={(open) => !open && setToDelete(null)}
         title="¿Borrar la regla?"
-        description="Se lleva también las alertas que ya disparó. Para conservar el historial, apagala con el interruptor en vez de borrarla."
+        description="Con la regla se pierde el historial de disparos que ya generó: las alertas cuelgan de ella. Para conservarlo, apagala con el interruptor en vez de borrarla."
         destructive
         confirmLabel="Borrar"
         onConfirm={async () => {
@@ -400,14 +416,26 @@ function EvaluationSummary({ evaluation }: { evaluation: AlertEvaluation }) {
   );
 }
 
-function CreateRuleDialog({
+/**
+ * Alta y edición de una regla, en el mismo formulario.
+ *
+ * La diferencia es una sola y es del contrato: **`kind` es inmutable**. Decide
+ * qué unidad es el umbral, así que cambiarlo reinterpretaría el número guardado
+ * (un "3" que significaba meses pasaría a significar por ciento) y dejaría las
+ * alertas ya disparadas explicadas por una regla que dice otra cosa — el backend
+ * responde 409 `ALERT_RULE_FIELD_IMMUTABLE`. Editando se muestra pero no se
+ * ofrece cambiar.
+ */
+function RuleDialog({
+  rule,
   open,
   onOpenChange,
 }: {
+  rule: FinanceAlertRule | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { create } = useFinanceAlertRuleMutations();
+  const { create, update } = useFinanceAlertRuleMutations();
   const {
     control,
     register,
@@ -417,10 +445,10 @@ function CreateRuleDialog({
   } = useForm<RuleForm>({
     resolver: zodResolver(RuleSchema),
     defaultValues: {
-      kind: 'RUNWAY_BELOW_MONTHS',
-      threshold: '',
-      currency: FINANCE_CURRENCIES[0],
-      isActive: true,
+      kind: rule?.kind ?? 'RUNWAY_BELOW_MONTHS',
+      threshold: rule?.threshold ?? '',
+      currency: (rule?.currency as RuleForm['currency']) ?? FINANCE_CURRENCIES[0],
+      isActive: rule?.isActive ?? true,
     },
   });
 
@@ -430,20 +458,25 @@ function CreateRuleDialog({
   const necesitaMoneda = KINDS_CON_MONEDA.includes(kind);
 
   async function submit(values: RuleForm): Promise<void> {
+    // La moneda NO viaja donde está prohibida: mandarla sería un 400 con el
+    // campo nombrado, y guardarla haría creer que la regla filtra por ella.
+    const moneda = necesitaMoneda && values.currency ? { currency: values.currency } : {};
     try {
-      await create.mutateAsync({
-        kind: values.kind,
-        threshold: values.threshold,
-        // La moneda NO viaja donde está prohibida: mandarla sería un 400 con el
-        // campo nombrado, y guardarla haría creer que la regla filtra por ella.
-        ...(necesitaMoneda && values.currency ? { currency: values.currency } : {}),
-        isActive: values.isActive,
-      });
-      toast.success('Regla creada.');
+      if (rule) {
+        await update.mutateAsync({
+          id: rule.id,
+          // `kind` no viaja: es inmutable y mandarlo devuelve 409.
+          input: { threshold: values.threshold, ...moneda, isActive: values.isActive },
+        });
+        toast.success('Regla actualizada.');
+      } else {
+        await create.mutateAsync({ kind: values.kind, threshold: values.threshold, ...moneda, isActive: values.isActive });
+        toast.success('Regla creada.');
+      }
       reset();
       onOpenChange(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'No se pudo crear la regla');
+      toast.error(e instanceof Error ? e.message : 'No se pudo guardar la regla');
     }
   }
 
@@ -457,7 +490,7 @@ function CreateRuleDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Nueva regla de alerta</DialogTitle>
+          <DialogTitle>{rule ? 'Editar regla de alerta' : 'Nueva regla de alerta'}</DialogTitle>
           <DialogDescription>
             El tipo no se puede cambiar después: decide qué unidad es el umbral, y cambiarlo
             reinterpretaría el número guardado.
@@ -466,28 +499,38 @@ function CreateRuleDialog({
 
         <form onSubmit={handleSubmit(submit)} className="space-y-4">
           <FieldGroup>
-            <Controller
-              control={control}
-              name="kind"
-              render={({ field }) => (
-                <Field data-invalid={!!errors.kind}>
-                  <FieldLabel htmlFor="rule-kind">Tipo</FieldLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="rule-kind" aria-label="Tipo">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ALERT_KINDS.map((k) => (
-                        <SelectItem key={k} value={k}>
-                          {ALERT_KIND_LABELS[k]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FieldDescription>{ALERT_KIND_HINTS[field.value]}</FieldDescription>
-                </Field>
-              )}
-            />
+            {rule ? (
+              <Field>
+                <FieldLabel htmlFor="rule-kind">Tipo</FieldLabel>
+                <p id="rule-kind" className="font-medium">
+                  {ALERT_KIND_LABELS[rule.kind]}
+                </p>
+                <FieldDescription>{ALERT_KIND_HINTS[rule.kind]}</FieldDescription>
+              </Field>
+            ) : (
+              <Controller
+                control={control}
+                name="kind"
+                render={({ field }) => (
+                  <Field data-invalid={!!errors.kind}>
+                    <FieldLabel htmlFor="rule-kind">Tipo</FieldLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="rule-kind" aria-label="Tipo">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ALERT_KINDS.map((k) => (
+                          <SelectItem key={k} value={k}>
+                            {ALERT_KIND_LABELS[k]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldDescription>{ALERT_KIND_HINTS[field.value]}</FieldDescription>
+                  </Field>
+                )}
+              />
+            )}
 
             <Field data-invalid={!!errors.threshold}>
               <FieldLabel htmlFor="rule-threshold">Umbral</FieldLabel>
@@ -549,7 +592,13 @@ function CreateRuleDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creando…' : 'Crear regla'}
+              {rule
+                ? isSubmitting
+                  ? 'Guardando…'
+                  : 'Guardar regla'
+                : isSubmitting
+                  ? 'Creando…'
+                  : 'Crear regla'}
             </Button>
           </DialogFooter>
         </form>

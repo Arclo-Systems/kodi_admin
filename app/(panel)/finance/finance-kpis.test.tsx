@@ -157,13 +157,36 @@ describe('FinanceKpis — el mes en curso se avisa', () => {
   });
 });
 
-describe('FinanceKpis — un reporte caído no es un mes en cero', () => {
-  it('lo dice y ofrece reintentar', () => {
-    reportError = true;
+describe('FinanceKpis — los trece números tienen jerarquía', () => {
+  it('los agrupa por lo que responden', () => {
     render(<FinanceKpis />);
+
+    for (const grupo of ['Ingresos del mes', 'Clientes', 'Ratios']) {
+      expect(screen.getByRole('heading', { name: grupo })).toBeInTheDocument();
+    }
+  });
+
+  it('los módulos suscritos van como dato secundario, no como una tarjeta más', () => {
+    render(<FinanceKpis />);
+
+    // Es el único conteo de FILAS entre cuatro de clientes: darle la misma
+    // tarjeta lo haría leer como uno más de ellos.
+    const modulos = screen.getByText(/Módulos suscritos vigentes/);
+    expect(modulos.closest('[data-slot="card"]')).toBeNull();
+    expect(modulos).toHaveTextContent('3');
+  });
+});
+
+describe('FinanceKpis — un reporte caído no es un mes en cero', () => {
+  it('lo dice, ofrece reintentar y no deja tarjetas cargando para siempre', () => {
+    reportError = true;
+    const { container } = render(<FinanceKpis />);
 
     expect(screen.getByText('Se cayeron los KPIs')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument();
     expect(screen.queryByText('N/A')).toBeNull();
+    // Un esqueleto que nunca se va se lee como "todavía está cargando".
+    expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(0);
+    expect(screen.queryByText('ARPU')).toBeNull();
   });
 });

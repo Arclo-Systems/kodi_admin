@@ -192,20 +192,15 @@ export function FinanceForecast() {
                   <TableRow key={point.month}>
                     <TableCell className="tabular-nums">{point.month}</TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatMoney(point.income)}
+                      <ProjectedAmount amount={point.income} />
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {formatMoney(point.expense)}
+                      <ProjectedAmount amount={point.expense} />
                     </TableCell>
+                    {/* El neto no se marca: que dé negativo es el resultado
+                        normal de una empresa que todavía no factura. */}
                     <TableCell className="text-right tabular-nums">
                       {formatMoney(point.net)}
-                      {point.negativeProjection && (
-                        // No se recorta a cero: taparlo escondería que el
-                        // horizonte es demasiado largo para los datos que hay.
-                        <span className="text-warning ml-2 text-xs">
-                          la recta cayó bajo cero
-                        </span>
-                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -217,6 +212,28 @@ export function FinanceForecast() {
 
       <FinanceRunway currency={currency} />
     </div>
+  );
+}
+
+/**
+ * Un importe proyectado, marcado si la recta lo llevó por debajo de cero.
+ *
+ * `negativeProjection` del backend es "ingresos **o** gastos proyectados < 0"
+ * (`forecast.service.ts:197`), no el neto: unos ingresos negativos son un
+ * imposible aritmético que delata que el horizonte es demasiado largo para los
+ * datos, mientras que un neto negativo es simplemente perder plata. Por eso el
+ * marcador va en la celda de la serie que cayó y no en la fila entera.
+ *
+ * El número NO se recorta a cero: taparlo escondería exactamente eso.
+ */
+function ProjectedAmount({ amount }: { amount: string }) {
+  return (
+    <>
+      {formatMoney(amount)}
+      {amount.startsWith('-') && (
+        <span className="text-warning ml-2 text-xs">proyección imposible: &lt; 0</span>
+      )}
+    </>
   );
 }
 

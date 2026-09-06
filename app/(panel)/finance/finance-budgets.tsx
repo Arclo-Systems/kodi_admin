@@ -407,8 +407,9 @@ function CreateBudgetDialog({
       reset();
       onOpenChange(false);
     } catch (e) {
-      // El 409 `BUDGET_EXISTS` se muestra acá y no en un toast: es donde se
-      // corrige el mes o la moneda que ya tienen presupuesto.
+      // El diálogo queda ABIERTO con lo tecleado: el 409 `BUDGET_EXISTS` se
+      // corrige cambiando el mes o la moneda, que están acá adentro. El toast
+      // solo trae el mensaje del backend, que nombra el período que ya existe.
       toast.error(e instanceof Error ? e.message : 'No se pudo crear el presupuesto');
     }
   }

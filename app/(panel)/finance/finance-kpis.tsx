@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { InfoIcon } from 'lucide-react';
+import { useMemo, useState, type ReactNode } from 'react';
+import { CoinsIcon, InfoIcon, RepeatIcon } from 'lucide-react';
 import { FINANCE_CURRENCIES } from '@/hooks/use-finance';
-import { KPI_METRIC_KEYS, useFinanceKpis } from '@/hooks/use-finance-planning';
+import { useFinanceKpis, type KpiMetricKey, type Metric } from '@/hooks/use-finance-planning';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import { KPI_TITLES, formatPeriod, monthName } from './finance-format';
 import { MetricValue } from './finance-metric';
 
@@ -26,6 +27,20 @@ const CURRENT_MONTH = 'CURRENT';
 const MONTHS_OFFERED = 24;
 
 type Period = { year: number; month: number };
+
+// Los tres grupos, en el orden en que se leen: cuánta plata entró, cuántos
+// clientes hay y qué sale de cruzarlos. `subscriptionRevenue` y `mrrEstimated`
+// se pintan aparte, con más peso: son los dos que se confunden entre sí.
+const SECUNDARIOS_DE_INGRESOS = ['arrFromRevenue', 'marketingSpend'] as const;
+const CLIENTES = [
+  'activeSubscriptions',
+  'activeAtMonthStart',
+  'newSubscriptions',
+  'churnedSubscriptions',
+] as const;
+const RATIOS = ['churnRate', 'arpu', 'ltv', 'cac'] as const;
+
+const VALUE_SIZE = { lg: 'text-3xl', md: 'text-2xl', sm: 'text-xl' } as const;
 
 /** Los últimos N meses civiles, del más nuevo al más viejo, incluido el corriente. */
 function recentMonths(now: Date, count: number): Period[] {
@@ -119,34 +134,147 @@ export function FinanceKpis() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {KPI_METRIC_KEYS.map((key) => {
-          const metric = data?.metrics[key];
-          return (
-            <Card key={key}>
-              <CardHeader>
-                <CardTitle className="text-muted-foreground text-sm font-medium">
-                  {KPI_TITLES[key]}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {isLoading || !metric ? (
-                  <Skeleton className="h-8 w-28" />
-                ) : (
-                  <>
-                    <div className="text-2xl font-bold">
-                      <MetricValue metric={metric} currency={data.currency} />
-                    </div>
-                    {/* La definición viene del backend con el número: escribirla
-                        acá la dejaría desfasada de la fórmula el día que cambie. */}
-                    <p className="text-muted-foreground text-xs">{metric.label}</p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* Tres preguntas distintas, tres bloques: cuánta plata entró, cuántos
+          clientes hay y qué ratio sale de cruzarlos. Trece tarjetas iguales
+          obligan a leerlas todas para encontrar una (regla #1 de DESIGN.md). */}
+      {!isError && (
+        <>
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">Ingresos del mes</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {/* Los dos números que se confunden entre sí van primero y más
+                  grandes: son la caja cobrada y una foto del precio de lista. */}
+              <MetricCard
+                metricKey="subscriptionRevenue"
+                metric={data?.metrics.subscriptionRevenue}
+                currency={data?.currency ?? currency}
+                loading={isLoading}
+                size="lg"
+                icon={<CoinsIcon />}
+                iconClassName="bg-primary/10 text-primary"
+              />
+              <MetricCard
+                metricKey="mrrEstimated"
+                metric={data?.metrics.mrrEstimated}
+                currency={data?.currency ?? currency}
+                loading={isLoading}
+                size="lg"
+                icon={<RepeatIcon />}
+                iconClassName="bg-info/10 text-info"
+              />
+              {SECUNDARIOS_DE_INGRESOS.map((key) => (
+                <MetricCard
+                  key={key}
+                  metricKey={key}
+                  metric={data?.metrics[key]}
+                  currency={data?.currency ?? currency}
+                  loading={isLoading}
+                />
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">Clientes</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {CLIENTES.map((key) => (
+                <MetricCard
+                  key={key}
+                  metricKey={key}
+                  metric={data?.metrics[key]}
+                  currency={data?.currency ?? currency}
+                  loading={isLoading}
+                  size="sm"
+                />
+              ))}
+            </div>
+            {/* Es el único conteo de FILAS entre cuatro de clientes: con la
+                misma tarjeta se leería como uno más de ellos. */}
+            {data && (
+              <p className="text-muted-foreground text-sm">
+                {KPI_TITLES.moduleSubscriptions}:{' '}
+                <MetricValue
+                  metric={data.metrics.moduleSubscriptions}
+                  currency={data.currency}
+                  className="text-foreground font-medium"
+                />{' '}
+                — {data.metrics.moduleSubscriptions.label}
+              </p>
+            )}
+          </section>
+
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">Ratios</h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {RATIOS.map((key) => (
+                <MetricCard
+                  key={key}
+                  metricKey={key}
+                  metric={data?.metrics[key]}
+                  currency={data?.currency ?? currency}
+                  loading={isLoading}
+                  size="sm"
+                />
+              ))}
+            </div>
+          </section>
+        </>
+      )}
     </div>
+  );
+}
+
+/**
+ * Una métrica en su tarjeta. El nombre corto arriba, el número, y debajo la
+ * definición que manda el backend con el dato: escribirla acá la dejaría
+ * desfasada de la fórmula el día que cambie.
+ */
+function MetricCard({
+  metricKey,
+  metric,
+  currency,
+  loading,
+  size = 'md',
+  icon,
+  iconClassName,
+}: {
+  metricKey: KpiMetricKey;
+  metric: Metric | undefined;
+  currency: string;
+  loading: boolean;
+  size?: keyof typeof VALUE_SIZE;
+  icon?: ReactNode;
+  iconClassName?: string;
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-start justify-between space-y-0 gap-2">
+        <CardTitle className="text-muted-foreground text-sm font-medium">
+          {KPI_TITLES[metricKey]}
+        </CardTitle>
+        {icon && (
+          <span
+            className={cn(
+              'flex size-8 shrink-0 items-center justify-center rounded-lg [&>svg]:size-4',
+              iconClassName,
+            )}
+          >
+            {icon}
+          </span>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {loading || !metric ? (
+          <Skeleton className="h-8 w-28" />
+        ) : (
+          <>
+            <div className={cn('font-bold', VALUE_SIZE[size])}>
+              <MetricValue metric={metric} currency={currency} />
+            </div>
+            <p className="text-muted-foreground text-xs">{metric.label}</p>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }

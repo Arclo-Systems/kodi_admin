@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ACCOUNT_TYPE_LABELS, MONTH_OPTIONS, formatMoney } from './finance-format';
+import { ACCOUNT_TYPE_LABELS, MONTH_OPTIONS, formatAmount } from './finance-format';
 import { MetricValue } from './finance-metric';
 import { FinanceReportCsvButton } from './finance-report-csv-button';
 
@@ -242,10 +242,10 @@ function ComparisonCells({
   return (
     <>
       <TableCell className={cn('text-right tabular-nums', weight)}>
-        {formatMoney(comparison.budget)}
+        {formatAmount(comparison.budget, currency)}
       </TableCell>
       <TableCell className={cn('text-right tabular-nums', weight)}>
-        {formatMoney(comparison.actual)}
+        {formatAmount(comparison.actual, currency)}
       </TableCell>
       <TableCell className="text-right">
         <span
@@ -255,7 +255,7 @@ function ComparisonCells({
             weight,
           )}
         >
-          {formatMoney(comparison.variance)}
+          {formatAmount(comparison.variance, currency)}
           <Icon className="size-3.5" aria-hidden />
           {/* El color no puede ser la única señal: la palabra viaja para quien
               no lo distingue y para el lector de pantalla. */}

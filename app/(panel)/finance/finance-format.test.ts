@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatAmount, formatMoney, subtractMoney } from './finance-format';
+import { formatAmount, formatMoney, ratioToPercent, subtractMoney, sumMoney } from './finance-format';
 
 // La resta de importes existe por una sola razón: el "bruto sin impuesto" de una
 // orden de Google (`total − impuesto`) no viaja en la respuesta y hay que
@@ -33,5 +33,34 @@ describe('formatMoney / formatAmount — el string del backend se pinta tal cual
 
   it('pega la moneda cruda que mandó Google, sin traducirla a la del panel', () => {
     expect(formatAmount('9.61', 'BRL')).toBe('9,61 BRL');
+  });
+});
+
+describe('sumMoney — el subtotal de un formulario, en céntimos enteros', () => {
+  it('suma lo tecleado sin pasar por double', () => {
+    expect(sumMoney(['0.1', '0.2'])).toBe('0.30');
+    expect(sumMoney(['300000', '500000.50'])).toBe('800000.50');
+  });
+
+  it('ignora las cuentas sin monto: no presupuestar no es presupuestar cero', () => {
+    expect(sumMoney(['', '1000.00', ''])).toBe('1000.00');
+    expect(sumMoney([])).toBe('0.00');
+  });
+
+  it('devuelve null si algún monto está a medio escribir, en vez de sumar los demás', () => {
+    // Sumar solo los válidos daría un subtotal más bajo que el real y nadie
+    // vería por qué.
+    expect(sumMoney(['1000', '1.234'])).toBeNull();
+    expect(sumMoney(['1000', '-5'])).toBeNull();
+    expect(sumMoney(['1000', 'x'])).toBeNull();
+  });
+});
+
+describe('ratioToPercent — una fracción se lee en por ciento', () => {
+  it('corre la coma dos lugares sobre el string', () => {
+    expect(ratioToPercent('0.0500')).toBe('5.00');
+    expect(ratioToPercent('1.0000')).toBe('100.00');
+    expect(ratioToPercent('0.1234')).toBe('12.34');
+    expect(ratioToPercent('0.0000')).toBe('0.00');
   });
 });

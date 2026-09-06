@@ -135,7 +135,7 @@ describe('FinanceBudgetVariance — favorable no se deduce del signo', () => {
     render(<FinanceBudgetVariance />);
 
     const row = fila('Marketing y publicidad');
-    expect(within(row).getByText('120 000,00')).toBeInTheDocument();
+    expect(within(row).getByText('120 000,00 CRC')).toBeInTheDocument();
     expect(within(row).getByText('en contra')).toBeInTheDocument();
   });
 
@@ -143,7 +143,7 @@ describe('FinanceBudgetVariance — favorable no se deduce del signo', () => {
     render(<FinanceBudgetVariance />);
 
     const row = fila('Ingresos por suscripciones');
-    expect(within(row).getByText('200 000,00')).toBeInTheDocument();
+    expect(within(row).getByText('200 000,00 CRC')).toBeInTheDocument();
     expect(within(row).getByText('a favor')).toBeInTheDocument();
   });
 });
@@ -174,9 +174,9 @@ describe('FinanceBudgetVariance — totales por clase y neto', () => {
     render(<FinanceBudgetVariance />);
 
     // Presupuesto, real y variación: la clase sin movimiento viaja igual, en cero.
-    expect(within(fila('Costo de ingresos')).getAllByText('0,00')).toHaveLength(3);
+    expect(within(fila('Costo de ingresos')).getAllByText('0,00 CRC')).toHaveLength(3);
     const neto = fila('Resultado neto');
-    expect(within(neto).getByText('5 000,00')).toBeInTheDocument();
+    expect(within(neto).getByText('5 000,00 CRC')).toBeInTheDocument();
     expect(within(neto).getByText('1,00 %')).toBeInTheDocument();
   });
 });

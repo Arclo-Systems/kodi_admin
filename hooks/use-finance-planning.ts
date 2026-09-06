@@ -200,24 +200,24 @@ export type Forecast = {
 };
 
 // ─── KPIs ─────────────────────────────────────────────────────────────────────
-export const KPI_METRIC_KEYS = [
-  'subscriptionRevenue',
-  'mrrEstimated',
-  'arrFromRevenue',
-  'marketingSpend',
-  'activeSubscriptions',
-  'activeAtMonthStart',
-  'newSubscriptions',
-  'churnedSubscriptions',
-  // Filas, no clientes: un mismo cliente puede tener varios módulos. Va aparte de
-  // los cuatro conteos de clientes justamente para que no se lean como lo mismo.
-  'moduleSubscriptions',
-  'churnRate',
-  'arpu',
-  'ltv',
-  'cac',
-] as const;
-export type KpiMetricKey = (typeof KPI_METRIC_KEYS)[number];
+// Las trece métricas del reporte. Es un tipo y no una lista: la pantalla las
+// agrupa por lo que responden (plata, clientes, ratios), así que nadie las
+// itera de corrido.
+export type KpiMetricKey =
+  | 'subscriptionRevenue'
+  | 'mrrEstimated'
+  | 'arrFromRevenue'
+  | 'marketingSpend'
+  | 'activeSubscriptions'
+  | 'activeAtMonthStart'
+  | 'newSubscriptions'
+  | 'churnedSubscriptions'
+  // Filas, no clientes: un mismo cliente puede tener varios módulos.
+  | 'moduleSubscriptions'
+  | 'churnRate'
+  | 'arpu'
+  | 'ltv'
+  | 'cac';
 
 export type FinanceKpis = {
   currency: string;

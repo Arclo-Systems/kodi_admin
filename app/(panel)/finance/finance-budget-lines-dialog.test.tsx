@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { FinanceAccount } from '@/hooks/use-finance';
 import type { BudgetDetail, BudgetPage } from '@/hooks/use-finance-planning';
@@ -189,6 +189,76 @@ describe('FinanceBudgetLinesDialog — guardar es un reemplazo total', () => {
 
     expect(await screen.findByText(/mayor que cero/)).toBeInTheDocument();
     expect(replaceLines).not.toHaveBeenCalled();
+  });
+});
+
+describe('FinanceBudgetLinesDialog — las líneas huérfanas se ven antes de perderse', () => {
+  // Una cuenta presupuestada puede dejar de ser presupuestable después (la
+  // retiran, o le cuelgan hijas). El `PUT` es un reemplazo TOTAL: si el
+  // formulario no la muestra, guardar la borra sin que nadie se entere.
+  beforeEach(() => {
+    budget = {
+      ...DETALLE,
+      lineCount: 2,
+      totalAmount: '380000.00',
+      lines: [
+        ...DETALLE.lines,
+        {
+          accountId: 'a-retirada',
+          code: '6900',
+          name: 'Cuenta retirada',
+          type: 'OPERATING_EXPENSE',
+          amount: '80000.00',
+        },
+      ],
+    };
+  });
+
+  it('las lista aparte, con su monto y el aviso de que al guardar se quitan', () => {
+    render(<FinanceBudgetLinesDialog budgetId="b-setiembre" onOpenChange={vi.fn()} />);
+
+    expect(screen.getByText('Cuentas que ya no se pueden presupuestar')).toBeInTheDocument();
+    const huerfana = screen.getByText('Cuenta retirada').closest('tr');
+    expect(within(huerfana as HTMLElement).getByText('80 000,00 CRC')).toBeInTheDocument();
+    // Solo lectura: no hay dónde teclearles un monto.
+    expect(within(huerfana as HTMLElement).queryByRole('textbox')).toBeNull();
+    expect(screen.getByText(/al guardar se quitan del presupuesto/)).toBeInTheDocument();
+  });
+
+  it('guardar las quita, que es exactamente lo que el aviso anuncia', async () => {
+    render(<FinanceBudgetLinesDialog budgetId="b-setiembre" onOpenChange={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /Guardar presupuesto/ }));
+
+    await waitFor(() => expect(replaceLines).toHaveBeenCalled());
+    const [{ lines }] = replaceLines.mock.calls[0] as [{ lines: { accountId: string }[] }];
+    expect(lines.map((l) => l.accountId)).toEqual(['a-marketing']);
+  });
+});
+
+describe('FinanceBudgetLinesDialog — el subtotal por clase sigue lo tecleado', () => {
+  it('se recalcula al escribir, en vez de repetir el total guardado', () => {
+    render(<FinanceBudgetLinesDialog budgetId="b-setiembre" onOpenChange={vi.fn()} />);
+
+    const subtotal = screen.getByText('Gasto operativo').closest('tr');
+    expect(within(subtotal as HTMLElement).getByText('300 000,00 CRC')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Monto de 6210 Marketing y publicidad'), {
+      target: { value: '450000.50' },
+    });
+
+    expect(within(subtotal as HTMLElement).getByText('450 000,50 CRC')).toBeInTheDocument();
+  });
+
+  it('con un monto a medio escribir no inventa un subtotal más bajo', () => {
+    render(<FinanceBudgetLinesDialog budgetId="b-setiembre" onOpenChange={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText('Monto de 6210 Marketing y publicidad'), {
+      target: { value: '1.234' },
+    });
+
+    const subtotal = screen.getByText('Gasto operativo').closest('tr');
+    expect(within(subtotal as HTMLElement).getByText('Revisá los montos')).toBeInTheDocument();
   });
 });
 

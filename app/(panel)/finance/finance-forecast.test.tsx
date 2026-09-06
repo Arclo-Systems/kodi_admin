@@ -31,6 +31,15 @@ import { FinanceForecast } from './finance-forecast';
 
 const render = (ui: ReactElement) => rtlRender(<TooltipProvider>{ui}</TooltipProvider>);
 
+/** La fila de un mes proyectado, dentro de la tabla que solo lista proyecciones. */
+const filaProyectada = (mes: string): HTMLElement => {
+  const tabla = screen.getByText('Meses proyectados').closest('[data-slot="card"]');
+  if (!tabla) throw new Error('No hay tabla de meses proyectados');
+  const row = within(tabla as HTMLElement).getByText(mes).closest('tr');
+  if (!row) throw new Error(`No hay fila para ${mes}`);
+  return row;
+};
+
 /** La cifra de la pista, por su rótulo: la quema del promedio y la de un mes suelto valen igual. */
 const figura = (label: string | RegExp): HTMLElement => {
   const parent = screen.getByText(label).parentElement;
@@ -61,7 +70,11 @@ const REPORT: Forecast = {
   ],
   projection: [
     point('2026-09', '0.00', '250000.00', '-250000.00', true),
-    point('2026-10', '0.00', '300000.00', '-300000.00', true, true),
+    // `negativeProjection` del backend es "ingresos o gastos proyectados < 0"
+    // (`forecast.service.ts:197`), NO el neto: acá la recta de ingresos es la
+    // que cayó. Un neto negativo con la bandera puesta es un estado que el
+    // backend no produce.
+    point('2026-10', '-50000.00', '300000.00', '-350000.00', true, true),
   ],
   fit: {
     income: {
@@ -133,7 +146,30 @@ describe('FinanceForecast — histórico y proyección no se confunden', () => {
     expect(filas).toHaveLength(3);
     expect(within(tabla as HTMLElement).getByText('2026-10')).toBeInTheDocument();
     expect(within(tabla as HTMLElement).queryByText('2026-08')).toBeNull();
-    expect(within(tabla as HTMLElement).getByText('la recta cayó bajo cero')).toBeInTheDocument();
+  });
+});
+
+// Un neto negativo es el resultado NORMAL de una empresa que todavía no factura;
+// unos ingresos negativos son un imposible que delata que el horizonte es
+// demasiado largo para los datos. Marcarlos en el mismo lugar los confunde.
+describe('FinanceForecast — el imposible se marca en la serie que cayó, no en el neto', () => {
+  it('marca los ingresos proyectados bajo cero y deja el neto sin marcar', () => {
+    render(<FinanceForecast />);
+
+    const celdas = within(filaProyectada('2026-10')).getAllByRole('cell');
+    expect(celdas[1]).toHaveTextContent('proyección imposible: < 0');
+    expect(celdas[2]).not.toHaveTextContent('proyección imposible');
+    // El neto es −350 000 y NO se marca.
+    expect(celdas[3]).toHaveTextContent('-350 000,00');
+    expect(celdas[3]).not.toHaveTextContent('proyección imposible');
+  });
+
+  it('un mes con las dos series por encima de cero no lleva marcador, aunque el neto sea negativo', () => {
+    render(<FinanceForecast />);
+
+    const celdas = within(filaProyectada('2026-09')).getAllByRole('cell');
+    expect(celdas[3]).toHaveTextContent('-250 000,00');
+    for (const celda of celdas) expect(celda).not.toHaveTextContent('proyección imposible');
   });
 });
 

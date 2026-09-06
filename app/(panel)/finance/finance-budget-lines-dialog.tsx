@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { CopyIcon, SaveIcon } from 'lucide-react';
+import { CopyIcon, SaveIcon, TriangleAlertIcon } from 'lucide-react';
 import { useFinanceAccounts, type FinanceAccount } from '@/hooks/use-finance';
 import {
   RESULT_ACCOUNT_TYPES,
@@ -43,7 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ACCOUNT_TYPE_LABELS, formatAmount, formatPeriod } from './finance-format';
+import { ACCOUNT_TYPE_LABELS, formatAmount, formatPeriod, sumMoney } from './finance-format';
 
 // El mismo criterio que `zMoney()` en el backend: hasta 12 enteros, 2 decimales,
 // sin signo. El cero NO se manda como línea, se omite — el backend lo rechaza
@@ -160,7 +160,17 @@ function LinesEditor({
     [budget.lines],
   );
 
+  // Las líneas guardadas sobre cuentas que YA NO son presupuestables (la
+  // retiraron, o le colgaron hijas después de presupuestarla). No entran al
+  // formulario —el backend las rechazaría— pero tampoco pueden desaparecer en
+  // silencio: el `PUT` es un reemplazo total y guardar las borra.
+  const orphans = useMemo(
+    () => budget.lines.filter((line) => !accounts.some((a) => a.id === line.accountId)),
+    [budget.lines, accounts],
+  );
+
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
@@ -170,6 +180,12 @@ function LinesEditor({
       amounts: Object.fromEntries(accounts.map((a) => [a.id, saved.get(a.id) ?? ''])),
     },
   });
+
+  // El subtotal por clase se calcula con lo TECLEADO, no con `totalsByType`, que
+  // es el del presupuesto guardado: mientras se edita, repetirlo diría que el
+  // total no se movió. `useWatch` y no `watch()` — el segundo devuelve una
+  // función que el compilador de React no puede memoizar.
+  const amounts = useWatch({ control, name: 'amounts' });
 
   const archived = budget.status === 'ARCHIVED';
 
@@ -232,7 +248,7 @@ function LinesEditor({
                 key={type}
                 type={type}
                 accounts={ofType}
-                total={budget.totalsByType[type]}
+                subtotal={sumMoney(ofType.map((a) => amounts?.[a.id] ?? ''))}
                 currency={budget.currency}
                 disabled={archived}
                 register={register}
@@ -242,6 +258,40 @@ function LinesEditor({
           })}
         </TableBody>
       </Table>
+
+      {orphans.length > 0 && (
+        <div className="space-y-2">
+          <p className="font-medium">Cuentas que ya no se pueden presupuestar</p>
+          <Alert variant="destructive">
+            <TriangleAlertIcon />
+            <AlertDescription>
+              Las retiraron o les colgaron subcuentas después de presupuestarlas. No se pueden
+              editar y <strong>al guardar se quitan del presupuesto</strong>. Si querés
+              conservarlas, reactivá la cuenta antes de guardar.
+            </AlertDescription>
+          </Alert>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-20">Código</TableHead>
+                <TableHead>Cuenta</TableHead>
+                <TableHead className="w-44 text-right">Monto guardado</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orphans.map((line) => (
+                <TableRow key={line.accountId} className="text-muted-foreground">
+                  <TableCell className="tabular-nums">{line.code}</TableCell>
+                  <TableCell>{line.name}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {formatAmount(line.amount, budget.currency)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <DialogFooter>
         <Button type="submit" disabled={isSubmitting || archived}>
@@ -256,7 +306,7 @@ function LinesEditor({
 function TypeSection({
   type,
   accounts,
-  total,
+  subtotal,
   currency,
   disabled,
   register,
@@ -264,7 +314,8 @@ function TypeSection({
 }: {
   type: ResultAccountType;
   accounts: FinanceAccount[];
-  total: string;
+  /** `null` = hay un monto a medio escribir; sumar el resto daría un total falso. */
+  subtotal: string | null;
   currency: string;
   disabled: boolean;
   register: ReturnType<typeof useForm<LinesForm>>['register'];
@@ -277,7 +328,11 @@ function TypeSection({
           {ACCOUNT_TYPE_LABELS[type]}
         </TableCell>
         <TableCell className="text-right font-semibold tabular-nums">
-          {formatAmount(total, currency)}
+          {subtotal === null ? (
+            <span className="text-destructive font-normal">Revisá los montos</span>
+          ) : (
+            formatAmount(subtotal, currency)
+          )}
         </TableCell>
       </TableRow>
       {accounts.map((account) => {

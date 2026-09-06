@@ -126,6 +126,30 @@ export function subtractMoney(minuend: string, subtrahend: string): string | nul
   return fromCents(a - b);
 }
 
+// El importe TAL COMO SE TECLEA en un formulario: hasta 12 enteros y 0-2
+// decimales, sin signo. Es el mismo criterio que `zMoney()` en el backend, y es
+// más laxo que `BACKEND_AMOUNT` porque nadie escribe los dos decimales siempre.
+const FORM_AMOUNT = /^\d{1,12}(\.\d{1,2})?$/;
+
+/**
+ * Suma importes tecleados, en céntimos enteros: `['0.1', '0.2']` → `'0.30'`.
+ *
+ * Los vacíos no suman —no presupuestar una cuenta no es presupuestarla en cero—
+ * y un solo importe malformado devuelve `null` en vez de sumar los demás: un
+ * subtotal que ignora en silencio lo que no supo leer es más bajo que el real y
+ * nadie ve por qué.
+ */
+export function sumMoney(amounts: readonly string[]): string | null {
+  let total = ZERO;
+  for (const raw of amounts) {
+    if (raw === '') continue;
+    if (!FORM_AMOUNT.test(raw)) return null;
+    const [whole = '0', decimals = ''] = raw.split('.');
+    total += BigInt(whole) * CENTS_PER_UNIT + BigInt(decimals.padEnd(2, '0'));
+  }
+  return fromCents(total);
+}
+
 // ─── Órdenes de Google Play ───────────────────────────────────────────────────
 // El estado no es decorativo: separa las órdenes que YA están en el libro de las
 // que cobraron plata y todavía no, que son las únicas sobre las que hay algo que
