@@ -301,31 +301,40 @@ describe('FinancePlayOrders — resumen en siete cards', () => {
     );
   });
 
-  it('las tres que requieren acción son botones; las otras cuatro, informativas', () => {
+  it('un clic en una card informativa no filtra: no hay nada que hacer con ella', () => {
     render(<FinancePlayOrders />);
 
-    for (const accionable of ['Falló', 'Por revisar', 'Moneda sin soporte']) {
-      expect(within(resumen()).getByRole('button', { name: new RegExp(accionable) })).toBeTruthy();
-    }
-    // Con una orden asentada no hay nada que hacer: darle un botón sugeriría lo
-    // contrario. El filtro por cualquier estado sigue en la barra de la tabla.
-    for (const informativa of ['Asentada', 'Pendiente', 'Reversada', 'Omitida']) {
-      expect(
-        within(resumen()).queryByRole('button', { name: new RegExp(informativa) }),
-      ).toBeNull();
-    }
+    fireEvent.click(within(resumen()).getByRole('button', { name: /Asentada/ }));
+
+    // El filtro por cualquier estado sigue en la barra de la tabla.
+    expect(screen.getByRole('combobox', { name: 'Filtrar por estado' })).toHaveTextContent('Todos');
   });
 
-  it('las siete llevan su explicación: no ser accionable no la vuelve evidente', () => {
+  it('las siete llevan su explicación en un disparador anunciable', () => {
     render(<FinancePlayOrders />);
 
-    // El disparador cambia (botón donde hay algo que hacer, `span` focusable
-    // donde no), pero el tooltip lo tienen las siete.
-    expect(within(resumen()).getAllByRole('button')).toHaveLength(3);
+    // Sin `asChild`: Radix pone su propio `<button>` en las SIETE. Un
+    // `<span tabIndex={0}>` entra al tab order sin rol ni nombre y el lector de
+    // pantalla lo lee como texto suelto (mismo criterio que el badge "Sistema"
+    // del árbol de cuentas y que el N/A de las métricas).
     const disparadores = resumen().querySelectorAll('[data-slot="tooltip-trigger"]');
     expect(disparadores).toHaveLength(7);
-    // Y las cuatro informativas siguen siendo alcanzables con el teclado.
-    for (const nodo of disparadores) expect(nodo.getAttribute('tabindex')).not.toBe('-1');
+    for (const nodo of disparadores) expect(nodo.tagName).toBe('BUTTON');
+  });
+
+  it('solo las tres accionables se anuncian como interruptor de filtro', () => {
+    render(<FinancePlayOrders />);
+
+    // `aria-pressed` es lo que distingue "filtra" de "solo explica": con una
+    // orden asentada no hay nada que hacer y prometerlo sería mentir.
+    for (const accionable of ['Falló', 'Por revisar', 'Moneda sin soporte']) {
+      const boton = within(resumen()).getByRole('button', { name: new RegExp(accionable) });
+      expect(boton).toHaveAttribute('aria-pressed', 'false');
+    }
+    for (const informativa of ['Asentada', 'Pendiente', 'Reversada', 'Omitida']) {
+      const boton = within(resumen()).getByRole('button', { name: new RegExp(informativa) });
+      expect(boton).not.toHaveAttribute('aria-pressed');
+    }
   });
 
   it('un clic en una card de acción filtra la tabla por ese estado', () => {

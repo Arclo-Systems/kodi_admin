@@ -414,9 +414,14 @@ test('el índice de Finanzas lleva a las diecisiete pantallas y se vuelve por el
 }) => {
   await page.goto('/finance');
 
-  // Por href y no por nombre: el sidebar también dice "Dashboard".
+  // Por href y no por nombre: el sidebar también dice "Dashboard". Y acotado a
+  // los enlaces que ENVUELVEN una card: el banner de alertas sin ver, cuando hay
+  // alguna, agrega un segundo enlace a `/finance/alertas` y el locator se
+  // volvía ambiguo — un fallo que dependía de si otra corrida había disparado
+  // una alerta.
+  const cards = page.locator('a').filter({ has: page.locator('[data-slot="card"]') });
   for (const [label, href] of INDEX_CARDS) {
-    const card = page.locator(`a[href="${href}"]`);
+    const card = cards.filter({ has: page.locator(`xpath=self::a[@href="${href}"]`) });
     await expect(card).toBeVisible();
     await expect(card).toContainText(label);
   }
@@ -468,11 +473,16 @@ test('el consolidado convierte con la tasa cargada, y sin ella dice N/A', async 
 
   // 2 · El balance por moneda cuadra.
   await page.goto('/finance/balance');
+  // El balance sale de recorrer todo el mayor y sobre `kodi_dev` —que crece con
+  // cada corrida— tarda más que los 5 s por defecto de `expect`. Un esqueleto no
+  // es un "no cuadra": se espera a que termine de cargar antes de afirmarlo.
+  await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 30_000 });
   await expect(page.getByText('Cuadra', { exact: true })).toBeVisible();
   await expect(page.getByText(/No cuadra/)).toHaveCount(0);
 
   // 3 · Y consolidado a USD también, etiquetado con la tasa que usó.
   await pick(page, 'Moneda', 'Consolidar a USD');
+  await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 30_000 });
   await expect(page.getByText(/Convertido a USD/)).toBeVisible();
   await expect(page.getByText(/1 CRC = 0\.00200000 USD/)).toBeVisible();
   await expect(page.getByText('Cuadra', { exact: true })).toBeVisible();
@@ -489,6 +499,7 @@ test('el consolidado convierte con la tasa cargada, y sin ella dice N/A', async 
   await limpiarTasasCrcUsd(page);
   await page.goto('/finance/balance');
   await pick(page, 'Moneda', 'Consolidar a USD');
+  await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 30_000 });
   await expect(page.getByText(/Sin tipo de cambio para: CRC → N\/A/)).toBeVisible();
   await expect(page.getByText(/NO están sumados en ningún total/)).toBeVisible();
 });

@@ -363,32 +363,29 @@ function PlayOrderSummary({
 
           // La explicación del estado la llevan las SIETE: no ser accionable no
           // la vuelve evidente —"Omitida" sigue necesitando decir que no va a
-          // haber asiento y que eso no es un error—. Lo que cambia es el
-          // disparador: botón donde hay algo que hacer, y un `<span>` focusable
-          // que Radix pone solo donde no lo hay.
+          // haber asiento y que eso no es un error—.
+          //
+          // Sin `asChild`: Radix pone su propio `<button>`, que es focusable,
+          // anunciable y describible por el tooltip. Un `<span tabIndex={0}>`
+          // entra al tab order sin rol ni nombre y el lector de pantalla lo lee
+          // como texto suelto — el mismo criterio que el badge "Sistema" del
+          // árbol de cuentas y que el N/A de las métricas.
+          //
+          // Lo que separa a las tres accionables no es el elemento sino
+          // `aria-pressed` y el `onClick`: prometer un filtro sobre una orden
+          // asentada, donde no hay nada que hacer, sería mentir.
           return (
             <Tooltip key={status}>
-              <TooltipTrigger asChild>
-                {actionable ? (
-                  <button
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => onSelect(active ? undefined : status)}
-                    className={cn(
-                      'focus-visible:ring-ring rounded-xl text-left focus-visible:ring-2 focus-visible:outline-none',
-                      active && 'ring-primary ring-2',
-                    )}
-                  >
-                    {card}
-                  </button>
-                ) : (
-                  <span
-                    tabIndex={0}
-                    className="focus-visible:ring-ring block rounded-xl focus-visible:ring-2 focus-visible:outline-none"
-                  >
-                    {card}
-                  </span>
+              <TooltipTrigger
+                aria-pressed={actionable ? active : undefined}
+                onClick={actionable ? () => onSelect(active ? undefined : status) : undefined}
+                className={cn(
+                  'focus-visible:ring-ring w-full rounded-xl text-left focus-visible:ring-2 focus-visible:outline-none',
+                  actionable && active && 'ring-primary ring-2',
+                  !actionable && 'cursor-default',
                 )}
+              >
+                {card}
               </TooltipTrigger>
               <TooltipContent>{PLAY_ORDER_STATUS_HINTS[status]}</TooltipContent>
             </Tooltip>

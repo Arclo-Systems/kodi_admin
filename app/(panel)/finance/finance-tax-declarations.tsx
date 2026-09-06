@@ -701,8 +701,24 @@ function DeclarationDetail({ id, canWrite }: { id: string; canWrite: boolean }) 
  */
 function offeredTransitions(d: TaxDeclarationDetail): TaxDeclarationStatus[] {
   if (!d.stale) return d.allowedTransitions;
-  return d.status === 'FILED' ? ['REVIEW'] : [];
+  const salida = STALE_TRANSITION[d.status];
+  // Se INTERSECA con lo que el backend permite en vez de afirmarlo: el panel no
+  // reimplementa la máquina de estados, así que si `allowedTransitions` no trae
+  // la vuelta, no se ofrece un botón que iba a terminar en un 409.
+  return salida && d.allowedTransitions.includes(salida) ? [salida] : [];
 }
+
+/**
+ * La ÚNICA transición que tiene sentido desde cada estado cuando la declaración
+ * quedó desactualizada. `null` = no hay ninguna: `DRAFT` y `REVIEW` se arreglan
+ * recalculando, y `CLOSED` es terminal.
+ */
+const STALE_TRANSITION: Record<TaxDeclarationStatus, TaxDeclarationStatus | null> = {
+  DRAFT: null,
+  REVIEW: null,
+  FILED: 'REVIEW',
+  CLOSED: null,
+};
 
 /** El texto del aviso: dice lo que el botón de ese estado ofrece, no otra cosa. */
 const STALE_EXIT: Record<TaxDeclarationStatus, string> = {

@@ -310,8 +310,10 @@ function PackageVersion({
  * y el archivo no se abre nunca, sin ningún error a la vista. Es el mismo
  * camino que el comprobante de un movimiento.
  *
- * Los errores se leen como mensaje —un 409 `PACKAGE_NOT_READY` o un 404— en vez
- * de bajarse al disco con extensión `.pdf`.
+ * Los errores se leen con el `message` DEL BACKEND —el 409 `PACKAGE_NOT_READY`
+ * dice en qué estado quedó el paquete, el 404 dice qué archivos sí existen— en
+ * vez de bajarse al disco con extensión `.pdf` o quedar en un "no se pudo"
+ * genérico.
  */
 function PackageFileButton({
   id,

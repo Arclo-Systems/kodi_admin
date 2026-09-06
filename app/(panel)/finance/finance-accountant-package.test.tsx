@@ -21,10 +21,9 @@ vi.mock('@/hooks/use-finance-tax', async (importOriginal) => ({
   }),
 }));
 
-const openSigned = vi.fn<(path: string) => Promise<void>>();
-vi.mock('@/lib/signed-asset', () => ({
-  openSignedAsset: (path: string) => openSigned(path),
-}));
+// La pestaña que `openSignedAsset` abre en el gesto, para poder afirmar que se
+// navega a la URL firmada y que se cierra cuando el enlace no llega.
+let ventana: { location: { href: string }; close: ReturnType<typeof vi.fn> };
 
 const toastError = vi.fn();
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: (m: string) => toastError(m) } }));
@@ -56,8 +55,15 @@ beforeEach(() => {
   vi.clearAllMocks();
   generate.mockResolvedValue({});
   discard.mockResolvedValue({});
-  openSigned.mockResolvedValue(undefined);
-  vi.stubGlobal('open', vi.fn());
+  ventana = { location: { href: '' }, close: vi.fn() };
+  vi.stubGlobal('open', vi.fn(() => ventana));
+  // El backend responde el enlace firmado; el caso de error lo pone cada test.
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () =>
+      Response.json({ data: { url: 'https://r2.example/firmada', expiresInSeconds: 300 } }),
+    ),
+  );
 });
 
 describe('FinanceAccountantPackage — generar', () => {
@@ -123,30 +129,48 @@ describe('FinanceAccountantPackage — los tres estados', () => {
 });
 
 describe('FinanceAccountantPackage — descargar', () => {
-  it('abre el archivo con openSignedAsset, DENTRO del gesto del click', async () => {
+  it('abre la pestaña EN EL GESTO y recién después la navega al enlace firmado', async () => {
     render(<FinanceAccountantPackage canWrite />);
     fireEvent.click(screen.getByRole('button', { name: /Mayor \(CSV\)/ }));
 
-    // `openSignedAsset` abre la pestaña sincrónicamente y recién después le
-    // asigna la URL firmada. Pedir la URL primero y llamar a `window.open`
-    // después de un `await` lo come el bloqueador de popups, sin ningún error a
-    // la vista: por eso el componente NO puede tocar `window.open` él mismo.
-    await waitFor(() =>
-      expect(openSigned).toHaveBeenCalledWith(
-        '/api/admin/finance/reports/accountant-package/pk2/url?file=mayor.csv',
-      ),
-    );
-    expect(window.open).not.toHaveBeenCalled();
+    // La pestaña se abre sincrónicamente con el click: pedir la URL primero y
+    // abrir después de un `await` lo come el bloqueador de popups, sin ningún
+    // error a la vista.
+    expect(window.open).toHaveBeenCalledWith('about:blank', '_blank');
+    await waitFor(() => expect(ventana.location.href).toBe('https://r2.example/firmada'));
+
+    const [url] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string];
+    expect(url).toBe('/api/admin/finance/reports/accountant-package/pk2/url?file=mayor.csv');
   });
 
-  it('un paquete que no está listo se muestra como mensaje, no se baja al disco', async () => {
-    openSigned.mockRejectedValue(new Error('El paquete todavía no está listo.'));
+  it('un 409 del backend se lee con SU mensaje, y la pestaña se cierra', async () => {
+    // El 409 tal como viaja (`{ error: { code, message } }`), no un rechazo ya
+    // traducido: es justo la traducción lo que se está probando.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        Response.json(
+          {
+            error: {
+              code: 'PACKAGE_NOT_READY',
+              message: 'El paquete está GENERATING: todavía no tiene archivos.',
+            },
+          },
+          { status: 409 },
+        ),
+      ),
+    );
     render(<FinanceAccountantPackage canWrite />);
     fireEvent.click(screen.getByRole('button', { name: /PDF completo/ }));
 
     await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith('El paquete todavía no está listo.'),
+      expect(toastError).toHaveBeenCalledWith(
+        'El paquete está GENERATING: todavía no tiene archivos.',
+      ),
     );
+    // Sin esto queda una pestaña en blanco abierta y el error solo en el toast.
+    expect(ventana.close).toHaveBeenCalled();
+    expect(ventana.location.href).toBe('');
   });
 });
 

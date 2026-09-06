@@ -254,7 +254,7 @@ describe('FinanceTaxDeclarations — desactualizada: cada estado tiene su salida
   });
 
   it('FILED desactualizada no recalcula: ofrece VOLVER A REVISIÓN, que es la salida', () => {
-    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: ['CLOSED'] };
+    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: ['REVIEW'] };
     render(<FinanceTaxDeclarations canWrite />);
     abrirDetalle();
 
@@ -263,6 +263,18 @@ describe('FinanceTaxDeclarations — desactualizada: cada estado tiene su salida
     expect(screen.getByRole('button', { name: 'Volver a revisión' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Cerrar declaración' })).toBeNull();
     expect(screen.getByText(/Volvela a revisión para poder recalcularla/)).toBeInTheDocument();
+  });
+
+  it('si el backend NO permite la vuelta, no se inventa el botón', () => {
+    // La salida sale de intersecar `allowedTransitions` con la del estado: el
+    // panel no reimplementa la máquina de estados ni ofrece lo que el backend
+    // va a rechazar con un 409.
+    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: [] };
+    render(<FinanceTaxDeclarations canWrite />);
+    abrirDetalle();
+
+    expect(screen.queryByRole('button', { name: 'Volver a revisión' })).toBeNull();
+    expect(screen.getByText('Solo lectura')).toBeInTheDocument();
   });
 
   it('CLOSED desactualizada es solo lectura y lo dice con la salida real', () => {
@@ -280,7 +292,7 @@ describe('FinanceTaxDeclarations — desactualizada: cada estado tiene su salida
   });
 
   it('el aviso NUNCA ofrece volver a borrador desde presentada: esa transición no existe', () => {
-    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: ['CLOSED'] };
+    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: ['REVIEW'] };
     render(<FinanceTaxDeclarations canWrite />);
     abrirDetalle();
 
@@ -288,7 +300,7 @@ describe('FinanceTaxDeclarations — desactualizada: cada estado tiene su salida
   });
 
   it('volver a revisión desde presentada EXIGE notas y las manda', async () => {
-    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: ['CLOSED'] };
+    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: ['REVIEW'] };
     render(<FinanceTaxDeclarations canWrite />);
     abrirDetalle();
 
@@ -365,7 +377,7 @@ describe('FinanceTaxDeclarations — declaración desactualizada', () => {
   });
 
   it('con el período reabierto se advierte y NO se ofrece avanzar de estado', () => {
-    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: ['CLOSED'] };
+    detail = { ...DETAIL, status: 'FILED', stale: true, allowedTransitions: ['REVIEW'] };
     render(<FinanceTaxDeclarations canWrite />);
     abrirDetalle();
 
