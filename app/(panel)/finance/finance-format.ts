@@ -128,8 +128,10 @@ export const PLAY_ORDER_STATUS_LABELS: Record<PlayOrderStatus, string> = {
   POSTED: 'Asentada',
   UNSUPPORTED_CURRENCY: 'Moneda sin soporte',
   REVERSED: 'Reversada',
-  FAILED: 'Sin asentar',
-  SKIPPED: 'Sin asiento',
+  // "Sin asentar" y "Sin asiento" decían casi lo mismo para dos estados
+  // opuestos: uno hay que arreglarlo, el otro es un final correcto.
+  FAILED: 'Falló',
+  SKIPPED: 'Omitida',
   NEEDS_REVIEW: 'Por revisar',
 };
 
@@ -179,3 +181,15 @@ export function ledgerHref(params: {
   if (params.to) search.set('to', params.to);
   return `/finance/mayor?${search}`;
 }
+
+// El mismo tono del badge, como color de texto: lo usan el conteo del semáforo y
+// la explicación del detalle. Sin esto un `UNSUPPORTED_CURRENCY` —que es una
+// advertencia— se pintaba con el rojo de un fallo.
+export const STATUS_TONE_TEXT: Record<StatusTone, string> = {
+  success: 'text-success',
+  info: 'text-info',
+  warning: 'text-warning',
+  destructive: 'text-destructive',
+  muted: 'text-muted-foreground',
+  neutral: 'text-foreground',
+};

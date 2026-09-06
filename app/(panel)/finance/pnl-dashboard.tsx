@@ -15,22 +15,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
 import { KpiCard } from '@/components/admin/kpi-card';
-import { useFinancePnl } from '@/hooks/use-finance';
+import { FINANCE_CURRENCIES, useFinancePnl } from '@/hooks/use-finance';
 import { civilDayEndIso, civilDayStartIso } from '@/lib/civil-date';
 import { ACCOUNT_TYPE_LABELS, formatMoney } from './finance-format';
+import {
+  ConsolidationBanner,
+  CurrencyScopeSelect,
+  currencyScopeParams,
+  type CurrencyScopeValue,
+} from './finance-currency-scope';
 import { FinanceReportCsvButton } from './finance-report-csv-button';
 
 const chartConfig = {
@@ -43,15 +42,21 @@ const monthLabel = (m: string) => `${m.slice(5)}/${m.slice(2, 4)}`; // 'YYYY-MM'
 export function PnlDashboard() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
-  const [selected, setSelected] = useState('');
+  const [scope, setScope] = useState<CurrencyScopeValue>(FINANCE_CURRENCIES[0]);
   const range = {
     from: from ? civilDayStartIso(from) : undefined,
     to: to ? civilDayEndIso(to) : undefined,
   };
-  const { data: pnl, isLoading, isError, refetch } = useFinancePnl(range.from, range.to);
+  // El P&L devuelve TODAS las monedas y el panel elige cuál pintar; consolidando,
+  // el backend las colapsa a una sola y ya no hay nada que elegir.
+  const { currency: picked, consolidateTo } = currencyScopeParams(scope);
+  const params = { ...range, consolidateTo };
+  const { data: pnl, isLoading, isError, refetch } = useFinancePnl(params);
 
   const currencies = pnl?.byCurrency.map((c) => c.currency) ?? [];
-  const currency = currencies.includes(selected) ? selected : (currencies[0] ?? '');
+  const currency =
+    consolidateTo ?? (picked && currencies.includes(picked) ? picked : (currencies[0] ?? ''));
+  const sinConvertir = currencies.length === 0 && (pnl?.consolidation?.missing.length ?? 0) > 0;
   const totals = pnl?.byCurrency.find((c) => c.currency === currency);
   // Recharts dibuja píxeles y necesita números: es el único punto donde el importe
   // deja de ser string, y no vuelve de ahí (los rótulos salen del string original).
@@ -75,22 +80,9 @@ export function PnlDashboard() {
           aria-label="Rango de fechas"
           className="w-auto"
         />
-        {currencies.length > 1 && (
-          <Select value={currency} onValueChange={setSelected}>
-            <SelectTrigger className="w-32" size="sm" aria-label="Moneda">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {currencies.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <CurrencyScopeSelect value={scope} onChange={setScope} />
         <span className="text-muted-foreground text-sm">Sin fechas = últimos 12 meses.</span>
-        <FinanceReportCsvButton report="pnl" params={range} className="ml-auto" />
+        <FinanceReportCsvButton report="pnl" params={params} className="ml-auto" />
       </div>
 
       {isError && (
@@ -104,10 +96,14 @@ export function PnlDashboard() {
         </Alert>
       )}
 
+      {pnl?.consolidation && <ConsolidationBanner consolidation={pnl.consolidation} />}
+
       {/* Con el reporte caído no hay monedas, pero eso no significa que el rango
           esté vacío: invitar a cargar gastos ahí manda a inventar movimientos que
-          quizá ya existen. */}
-      {isError ? null : !isLoading && currencies.length === 0 ? (
+          quizá ya existen. Consolidando sin tasa pasa lo mismo: el bloque se
+          vacía porque no se pudo convertir, no porque no haya movimientos —eso lo
+          explica el banner de arriba. */}
+      {isError || sinConvertir ? null : !isLoading && currencies.length === 0 ? (
         <Card>
           <CardContent className="text-muted-foreground py-14 text-center text-sm">
             Sin movimientos en el rango. Cargá gastos/ingresos o ajustá las fechas.

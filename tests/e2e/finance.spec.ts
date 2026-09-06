@@ -34,13 +34,11 @@ async function pick(page: Page, combobox: string, option: string): Promise<void>
 }
 
 // Total de gastos operativos en CRC del dashboard, tal cual se lee en pantalla.
+// `/finance` es el índice de la sección desde 2026-09-06: el P&L vive en su
+// propia ruta.
 async function gastosCrc(page: Page): Promise<string> {
-  await page.goto('/finance');
-  // El selector de moneda solo aparece cuando hay más de una en el rango.
-  const moneda = page.getByRole('combobox', { name: 'Moneda' });
-  if (await moneda.isVisible().catch(() => false)) {
-    await pick(page, 'Moneda', 'CRC');
-  }
+  await page.goto('/finance/dashboard');
+  await pick(page, 'Moneda', 'CRC');
   const card = page.locator('[data-slot="card"]').filter({ hasText: 'Gastos operativos (CRC)' });
   await expect(card).toBeVisible();
   return (await card.locator('[data-slot="card-content"]').innerText()).trim();
@@ -222,14 +220,23 @@ test('renombrar una cuenta con asientos no dispara el 409 de moneda', async ({ p
   } finally {
     // El nombre lo usan los otros specs y una cuenta no se borra: si la assertion
     // de arriba falla, dejar `6900` renombrada rompe la corrida siguiente.
-    await page
-      .locator('table tbody tr')
-      .filter({ hasText: renombrada })
-      .getByRole('button', { name: 'Editar' })
-      .click();
-    await dialog.getByLabel('Nombre').fill(original);
-    await dialog.getByRole('button', { name: 'Guardar' }).click();
-    await expect(page.getByText('Cuenta actualizada')).toBeVisible();
+    //
+    // Y va dentro de su propio try: una restauración que falla porque el test ya
+    // había fallado (la fila renombrada nunca existió) tiraba SU error desde el
+    // `finally`, que reemplaza al original — el reporte terminaba culpando al
+    // botón "Editar" de un fallo que había ocurrido tres líneas antes.
+    try {
+      await page
+        .locator('table tbody tr')
+        .filter({ hasText: renombrada })
+        .getByRole('button', { name: 'Editar' })
+        .click();
+      await dialog.getByLabel('Nombre').fill(original);
+      await dialog.getByRole('button', { name: 'Guardar' }).click();
+      await expect(page.getByText('Cuenta actualizada')).toBeVisible();
+    } catch (e) {
+      console.warn(`No se pudo restaurar el nombre de ${code as string}:`, e);
+    }
   }
 });
 
@@ -252,14 +259,14 @@ test('la cuenta 1900 es del sistema: se marca en el árbol y no se ofrece retira
   await expect(dialog.getByText(/no se retira ni recibe subcuentas/)).toBeVisible();
 });
 
-test('la pestaña Play lista las órdenes de Google con su resumen por estado', async ({ page }) => {
+test('Play lista las órdenes de Google con su resumen por estado', async ({ page }) => {
   await page.goto('/finance/play');
 
   // El resumen se pinta con o sin órdenes: es el que dice cuántas necesitan
   // atención, que es la razón de ser de la pantalla.
   const resumen = page.getByRole('group', { name: 'Órdenes por estado' });
   await expect(resumen).toBeVisible();
-  await expect(resumen.getByRole('button', { name: /Sin asentar/ })).toBeVisible();
+  await expect(resumen.getByRole('button', { name: /Falló/ })).toBeVisible();
 
   // La base e2e puede tener órdenes o no: las dos salidas son válidas. Lo que no
   // puede pasar es que la tabla quede muda, ni que diga "no hay órdenes" porque
@@ -295,4 +302,101 @@ test('una categoría sin cuenta contable no se puede elegir y el aviso dice dón
   await expect(
     page.getByRole('option', { name: FINANCE_FIXTURE.mappedCategory, exact: true }),
   ).not.toHaveAttribute('aria-disabled', 'true');
+});
+
+// El índice reemplazó a la barra de pestañas (decisión del founder, 2026-09-06):
+// es la única navegación de la sección, así que una card rota deja una pantalla
+// sin forma de llegar.
+const INDEX_CARDS = [
+  ['Dashboard', '/finance/dashboard'],
+  ['Movimientos', '/finance/movimientos'],
+  ['Play', '/finance/play'],
+  ['Mayor', '/finance/mayor'],
+  ['Comprobación', '/finance/comprobacion'],
+  ['Balance general', '/finance/balance'],
+  ['Flujo de caja', '/finance/flujo'],
+  ['Cuentas', '/finance/cuentas'],
+  ['Categorías', '/finance/categorias'],
+  ['Tipos de cambio', '/finance/tipos-de-cambio'],
+] as const;
+
+test('el índice de Finanzas lleva a las diez pantallas y se vuelve por el breadcrumb', async ({
+  page,
+}) => {
+  await page.goto('/finance');
+
+  // Por href y no por nombre: el sidebar también dice "Dashboard".
+  for (const [label, href] of INDEX_CARDS) {
+    const card = page.locator(`a[href="${href}"]`);
+    await expect(card).toBeVisible();
+    await expect(card).toContainText(label);
+  }
+
+  await page.locator('a[href="/finance/balance"]').click();
+  await expect(page).toHaveURL(/\/finance\/balance$/);
+  await expect(page.getByRole('heading', { name: 'Balance general' })).toBeVisible();
+
+  // Y la vuelta: el breadcrumb del shell es el enlace al índice (el sidebar
+  // también dice "Finanzas", así que se acota al breadcrumb).
+  const breadcrumb = page.getByRole('navigation', { name: 'breadcrumb' });
+  await breadcrumb.getByRole('link', { name: 'Finanzas', exact: true }).click();
+  await expect(page).toHaveURL(/\/finance$/);
+});
+
+// Deja el par CRC→USD sin tasas: el alta choca con 409 EXCHANGE_RATE_EXISTS si ya
+// hay una del mismo día, y una corrida anterior interrumpida deja la suya.
+async function limpiarTasasCrcUsd(page: Page): Promise<void> {
+  await page.goto('/finance/tipos-de-cambio');
+  await pick(page, 'Filtrar por moneda de origen', 'CRC');
+  await pick(page, 'Filtrar por moneda de destino', 'USD');
+  for (let i = 0; i < 20; i += 1) {
+    const borrar = page.getByRole('button', { name: 'Borrar' }).first();
+    if (!(await borrar.isVisible().catch(() => false))) return;
+    await borrar.click();
+    await page.getByRole('button', { name: 'Borrar tasa' }).click();
+    await expect(page.getByText('Tipo de cambio borrado')).toBeVisible();
+  }
+  throw new Error('Quedan tasas CRC→USD después de 20 borrados.');
+}
+
+test('el consolidado convierte con la tasa cargada, y sin ella dice N/A', async ({ page }) => {
+  // Garantiza que haya plata EN COLONES en el libro: el consolidado solo nombra
+  // en `missing` las monedas que aparecen en los datos.
+  await crearGasto(page, vendorTag('Consolidado'));
+  await limpiarTasasCrcUsd(page);
+
+  // 1 · La tasa se carga a mano, con su fuente.
+  await page.getByRole('button', { name: 'Nueva tasa' }).click();
+  const alta = page.getByRole('dialog');
+  await alta.getByLabel('Tasa').fill('0.002');
+  await alta.getByLabel('Fuente').fill(`E2E BCCR ${Date.now()}`);
+  await alta.getByRole('button', { name: 'Cargar tasa' }).click();
+  await expect(page.getByText('Tipo de cambio cargado')).toBeVisible();
+  await expect(page.locator('table tbody tr').filter({ hasText: 'CRC → USD' })).toBeVisible();
+
+  // 2 · El balance por moneda cuadra.
+  await page.goto('/finance/balance');
+  await expect(page.getByText('Cuadra', { exact: true })).toBeVisible();
+  await expect(page.getByText(/No cuadra/)).toHaveCount(0);
+
+  // 3 · Y consolidado a USD también, etiquetado con la tasa que usó.
+  await pick(page, 'Moneda', 'Consolidar a USD');
+  await expect(page.getByText(/Convertido a USD/)).toBeVisible();
+  await expect(page.getByText(/1 CRC = 0\.00200000 USD/)).toBeVisible();
+  await expect(page.getByText('Cuadra', { exact: true })).toBeVisible();
+  await expect(page.getByText(/N\/A/)).toHaveCount(0);
+
+  // 4 · El flujo de caja lista la caja del plan aunque esté en cero.
+  await page.goto('/finance/flujo');
+  await expect(
+    page.locator('table tbody tr').filter({ hasText: FINANCE_FIXTURE.cashAccount.slice(5) }),
+  ).toBeVisible();
+  await expect(page.getByText('Totales')).toBeVisible();
+
+  // 5 · Sin tasa, el consolidado dice N/A: no suma con factor 1 ni omite en silencio.
+  await limpiarTasasCrcUsd(page);
+  await page.goto('/finance/balance');
+  await pick(page, 'Moneda', 'Consolidar a USD');
+  await expect(page.getByText(/Sin tipo de cambio para: CRC → N\/A/)).toBeVisible();
+  await expect(page.getByText(/NO están sumados en ningún total/)).toBeVisible();
 });

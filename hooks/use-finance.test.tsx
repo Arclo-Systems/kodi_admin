@@ -2,7 +2,14 @@ import type { ReactNode } from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useFinanceLedger, useFinanceTrialBalance, financeReportCsvHref } from './use-finance';
+import {
+  useFinanceBalanceSheet,
+  useFinanceCashFlow,
+  useFinanceLedger,
+  useFinanceTrialBalance,
+  usePlayOrderCounts,
+  financeReportCsvHref,
+} from './use-finance';
 
 // El mayor y la comprobación exigen parámetros que el backend rechaza con 400 si
 // faltan (`accountId`/`currency`): la pantalla arranca sin ellos, así que la
@@ -71,6 +78,77 @@ describe('useFinanceTrialBalance — la moneda es obligatoria', () => {
 
     await waitFor(() => expect(result.current.fetchStatus).toBe('idle'));
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+// El backend responde 400 con las dos juntas ("son dos reportes distintos") y
+// también sin ninguna: la query se queda quieta en vez de gastar el viaje.
+describe('useFinanceBalanceSheet — moneda XOR consolidado', () => {
+  it('sin ninguna de las dos no pega al BFF', async () => {
+    const { result } = renderHook(() => useFinanceBalanceSheet({}), { wrapper });
+
+    await waitFor(() => expect(result.current.fetchStatus).toBe('idle'));
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('con las dos juntas tampoco', async () => {
+    const { result } = renderHook(
+      () => useFinanceBalanceSheet({ currency: 'CRC', consolidateTo: 'USD' }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.fetchStatus).toBe('idle'));
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('consolidando manda consolidateTo y NO currency', async () => {
+    renderHook(() => useFinanceBalanceSheet({ consolidateTo: 'USD' }), { wrapper });
+
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    expect(fetchSpy.mock.calls[0]?.[0]).toBe(
+      '/api/admin/finance/reports/balance-sheet?consolidateTo=USD',
+    );
+  });
+});
+
+describe('useFinanceCashFlow — la moneda es obligatoria', () => {
+  it('sin moneda no pega al BFF', async () => {
+    const { result } = renderHook(() => useFinanceCashFlow({ currency: '' }), { wrapper });
+
+    await waitFor(() => expect(result.current.fetchStatus).toBe('idle'));
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+// Antes eran SIETE consultas (la misma lista con `pageSize: 1`, leyendo solo
+// `total`), que además podían llegar desparejas y dejar el semáforo contando un
+// rango distinto al de la tabla.
+describe('usePlayOrderCounts — el semáforo sale de un solo request', () => {
+  it('pide el resumen agregado una vez, con el rango que se está mirando', async () => {
+    fetchSpy.mockResolvedValue(
+      ok({ counts: { PENDING: 0, POSTED: 12, FAILED: 2 }, needsAttention: 2 }),
+    );
+
+    const { result } = renderHook(
+      () => usePlayOrderCounts({ from: '2026-09-01T00:00:00.000Z' }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.counts.POSTED).toBe(12));
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy.mock.calls[0]?.[0]).toBe(
+      '/api/admin/finance/play-orders/summary?from=2026-09-01T00%3A00%3A00.000Z',
+    );
+    expect(result.current.needsAttention).toBe(2);
+  });
+
+  it('un estado que el backend no nombró queda indefinido, no en cero', async () => {
+    fetchSpy.mockResolvedValue(ok({ counts: { POSTED: 1 }, needsAttention: 0 }));
+
+    const { result } = renderHook(() => usePlayOrderCounts({}), { wrapper });
+
+    await waitFor(() => expect(result.current.counts.POSTED).toBe(1));
+    expect(result.current.counts.SKIPPED).toBeUndefined();
   });
 });
 

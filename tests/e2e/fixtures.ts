@@ -88,4 +88,7 @@ export const FINANCE_FIXTURE = {
   childName: 'E2E Cuenta hija',
   // La siembra el plan con `isSystem`: el panel la marca y no ofrece retirarla.
   systemAccount: '1900 Por clasificar',
+  // Cuenta HOJA colgada de `1100 Efectivo y equivalentes`: es lo que el flujo de
+  // caja llama "caja". Aparece aunque no tenga movimiento (en cero).
+  cashAccount: '1101 Caja colones',
 } as const;

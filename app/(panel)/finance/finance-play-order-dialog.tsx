@@ -9,7 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { PLAY_ORDER_STATUS_HINTS, formatAmount } from './finance-format';
+import { cn } from '@/lib/utils';
+import {
+  PLAY_ORDER_STATUS_BADGE,
+  PLAY_ORDER_STATUS_HINTS,
+  STATUS_TONE_TEXT,
+  formatAmount,
+} from './finance-format';
 import { PlayOrderStatusBadge, playOrderGrossExTax } from './finance-play-order-badges';
 
 function Dato({ label, children }: { label: string; children: ReactNode }) {
@@ -61,12 +67,30 @@ export function FinancePlayOrderDialog({
               <Dato label="Estado del asiento">
                 <PlayOrderStatusBadge status={order.postingStatus} />
               </Dato>
+              {/* El tono sale del mismo mapa que el badge: una moneda sin
+                  soporte es una ADVERTENCIA (hay plata registrada, falta la
+                  moneda), no un fallo, y pintarla de rojo mandaba a tratarla como
+                  si el asiento se hubiera roto. */}
               <Dato label="Qué significa">
-                <span className="font-normal">{PLAY_ORDER_STATUS_HINTS[order.postingStatus]}</span>
+                <span
+                  className={cn(
+                    'font-normal',
+                    STATUS_TONE_TEXT[PLAY_ORDER_STATUS_BADGE[order.postingStatus].tone],
+                  )}
+                >
+                  {PLAY_ORDER_STATUS_HINTS[order.postingStatus]}
+                </span>
               </Dato>
               {order.postingError && (
                 <Dato label="Motivo">
                   <span className="font-normal whitespace-pre-line">{order.postingError}</span>
+                </Dato>
+              )}
+              {/* Es lo único que explica por qué una orden omitida no tiene
+                  asiento y por qué reintentarla no va a cambiar nada. */}
+              {order.refundRequestedAt && (
+                <Dato label="Reembolso solicitado el">
+                  <span className="font-normal">{formatDate(order.refundRequestedAt)}</span>
                 </Dato>
               )}
               <Dato label="Estado en Google">{order.state}</Dato>

@@ -120,6 +120,7 @@ function entry(over: Partial<FinanceEntry> = {}): FinanceEntry {
     date: '2026-07-31T12:00:00.000Z',
     accountId: null,
     counterAccountId: null,
+    counterAmount: null,
     journalEntryId: null,
     voidedAt: null,
     voidedBy: null,
@@ -308,6 +309,82 @@ describe('FinanceEntryForm — una transferencia necesita sus dos cuentas', () =
 
     expect(screen.queryByRole('combobox', { name: 'Cuenta de origen' })).toBeNull();
     expect(screen.getByRole('combobox', { name: 'Contrapartida' })).toBeInTheDocument();
+  });
+});
+
+describe('FinanceEntryForm — transferencia entre monedas distintas', () => {
+  async function transferenciaCrc(page: { destino: string }): Promise<void> {
+    await pickOption('Tipo', 'Transferencia');
+    await pickOption('Moneda', 'CRC');
+    await pickOption('Categoría', CATEGORY.name);
+    fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '500000' } });
+    await pickOption('Cuenta de origen', `${CAJA.code} ${CAJA.name}`);
+    await pickOption('Cuenta de destino', page.destino);
+  }
+
+  it('con las dos cuentas en la misma moneda no pide monto recibido', async () => {
+    render(<FinanceEntryForm />);
+    await transferenciaCrc({ destino: `${BANCO.code} ${BANCO.name}` });
+
+    expect(screen.queryByLabelText(/Monto recibido/)).toBeNull();
+  });
+
+  it('con monedas distintas aparece "Monto recibido" y explica dónde va el diferencial', async () => {
+    render(<FinanceEntryForm />);
+    await transferenciaCrc({ destino: `${CAJA_USD.code} ${CAJA_USD.name}` });
+
+    expect(await screen.findByLabelText('Monto recibido (USD)')).toBeInTheDocument();
+    expect(screen.getByText(/6520 Diferencial cambiario/)).toBeInTheDocument();
+  });
+
+  it('no deja guardar sin el monto recibido, ni con uno en cero', async () => {
+    render(<FinanceEntryForm />);
+    await transferenciaCrc({ destino: `${CAJA_USD.code} ${CAJA_USD.name}` });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
+    expect(await screen.findByText('Requerido')).toBeInTheDocument();
+    expect(create).not.toHaveBeenCalled();
+
+    fireEvent.change(await screen.findByLabelText('Monto recibido (USD)'), {
+      target: { value: '0' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
+    expect(await screen.findByText('Mayor a 0')).toBeInTheDocument();
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('manda counterAmount como string junto al monto que sale', async () => {
+    render(<FinanceEntryForm />);
+    await transferenciaCrc({ destino: `${CAJA_USD.code} ${CAJA_USD.name}` });
+
+    fireEvent.change(await screen.findByLabelText('Monto recibido (USD)'), {
+      target: { value: '950.00' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
+
+    await waitFor(() => expect(create).toHaveBeenCalled());
+    const [input] = create.mock.calls[0] as [
+      { amount: string; currency: string; counterAmount?: string },
+    ];
+    expect(input.amount).toBe('500000');
+    expect(input.currency).toBe('CRC');
+    expect(input.counterAmount).toBe('950.00');
+  });
+
+  it('volver a un destino de la misma moneda no deja el counterAmount viajando', async () => {
+    render(<FinanceEntryForm />);
+    await transferenciaCrc({ destino: `${CAJA_USD.code} ${CAJA_USD.name}` });
+    fireEvent.change(await screen.findByLabelText('Monto recibido (USD)'), {
+      target: { value: '950.00' },
+    });
+
+    await pickOption('Cuenta de destino', `${BANCO.code} ${BANCO.name}`);
+    await waitFor(() => expect(screen.queryByLabelText(/Monto recibido/)).toBeNull());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
+    await waitFor(() => expect(create).toHaveBeenCalled());
+    const [input] = create.mock.calls[0] as [{ counterAmount?: string }];
+    expect(input.counterAmount).toBeUndefined();
   });
 });
 

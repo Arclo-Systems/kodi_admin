@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { toast } from 'sonner';
 import {
   CircleCheckIcon,
@@ -75,6 +75,7 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
   // sobre el árbol completo: la jerarquía se pinta con sangría, sin re-armarla.
   const accounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
   const byId = useMemo(() => new Map(accounts.map((a) => [a.id, a])), [accounts]);
+  const tree = useTreeNavigation(accounts);
 
   // El diálogo arma el payload (es el que sabe qué campos se tocaron); acá solo
   // se elige la mutación. El error sube para que lo muestre quien lo disparó.
@@ -177,7 +178,7 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
                   description="Se siembra con `seed:accounting` en el backend."
                 />
               ) : (
-                accounts.map((account) => (
+                accounts.map((account, index) => (
                   <AccountRow
                     key={account.id}
                     account={account}
@@ -186,6 +187,10 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
                     balancesState={balancesState}
                     canWrite={canWrite}
                     onEdit={() => setTarget({ mode: 'edit', account })}
+                    rowRef={tree.rowRef(index)}
+                    tabIndex={tree.tabIndexFor(index)}
+                    onFocus={() => tree.onFocus(index)}
+                    onKeyDown={(e) => tree.onKeyDown(e, index)}
                   />
                 ))
               )}
@@ -205,9 +210,86 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
 }
 
 /**
- * Retirar una cuenta arrastra a su rama, pero las hijas siguen con
- * `isActive: true` en su propia fila: pintarlas "Activa" a secas dice lo
- * contrario de lo que pasa cuando se las quiere usar.
+ * Navegación de `treegrid`: una sola parada de tabulador para toda la tabla y las
+ * flechas para moverse dentro.
+ *
+ * Con `tabIndex` en cada fila, tabular por el plan de cuentas son 37 pulsaciones
+ * antes de llegar al siguiente control de la página. El patrón ARIA es el
+ * contrario: la tabla ocupa UNA parada y adentro se camina con las flechas.
+ *
+ * El árbol se pinta aplanado y sin plegar, así que ArrowRight/ArrowLeft no
+ * expanden nada: bajan a la primera hija y suben al padre, que es lo que esas
+ * teclas significan cuando el nodo ya está expandido.
+ */
+function useTreeNavigation(accounts: FinanceAccount[]) {
+  const [focused, setFocused] = useState(0);
+  const rows = useRef<(HTMLTableRowElement | null)[]>([]);
+  // El plan puede acortarse (un filtro, una recarga). Se acota al leer y no con
+  // un efecto: un índice fuera de rango dejaría la tabla sin ninguna fila
+  // tabulable, y corregirlo en un efecto pinta un frame con ese estado.
+  const current = focused < accounts.length ? focused : 0;
+
+  const move = useCallback((to: number | undefined) => {
+    if (to === undefined || to < 0) return false;
+    const row = rows.current[to];
+    if (!row) return false;
+    setFocused(to);
+    row.focus();
+    return true;
+  }, []);
+
+  const onKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLTableRowElement>, index: number) => {
+      // Las flechas dentro de un input o un select del cuerpo de la fila son
+      // suyas: mover el foco ahí sería secuestrar el control.
+      if (event.target !== event.currentTarget) return;
+      const account = accounts[index];
+      const target = ((): number | undefined => {
+        switch (event.key) {
+          case 'ArrowDown':
+            return index + 1;
+          case 'ArrowUp':
+            return index - 1;
+          case 'Home':
+            return 0;
+          case 'End':
+            return accounts.length - 1;
+          case 'ArrowLeft':
+            return account?.parentId
+              ? accounts.findIndex((a) => a.id === account.parentId)
+              : undefined;
+          case 'ArrowRight':
+            return account ? accounts.findIndex((a) => a.parentId === account.id) : undefined;
+          default:
+            return undefined;
+        }
+      })();
+      if (move(target)) event.preventDefault();
+    },
+    [accounts, move],
+  );
+
+  return {
+    rowRef: (index: number) => (el: HTMLTableRowElement | null) => {
+      rows.current[index] = el;
+    },
+    // Una sola fila tabulable; el resto se alcanza con las flechas.
+    tabIndexFor: (index: number) => (index === current ? 0 : -1),
+    onFocus: setFocused,
+    onKeyDown,
+  };
+}
+
+/**
+ * Una hija ACTIVA colgando de un padre retirado.
+ *
+ * El backend ya no lo deja pasar: retirar una cuenta con hijas activas es 409
+ * `ACCOUNT_HAS_ACTIVE_CHILDREN` (se retiran de abajo hacia arriba) y reactivar
+ * una hija bajo un padre retirado es 409 `ACCOUNT_PARENT_INACTIVE`. El estado
+ * solo existe en datos LEGACY, anteriores a esas dos comprobaciones — pero ahí
+ * la fila sigue diciendo `isActive: true` mientras el árbol la esconde y
+ * `postable` deja de ofrecerla, así que pintarla "Activa" a secas dice lo
+ * contrario de lo que pasa al querer usarla.
  */
 function hasRetiredAncestor(
   account: FinanceAccount,
@@ -230,6 +312,10 @@ function AccountRow({
   balancesState,
   canWrite,
   onEdit,
+  rowRef,
+  tabIndex,
+  onFocus,
+  onKeyDown,
 }: {
   account: FinanceAccount;
   retiredAncestor: boolean;
@@ -237,9 +323,20 @@ function AccountRow({
   balancesState: QueryState;
   canWrite: boolean;
   onEdit: () => void;
+  rowRef: (el: HTMLTableRowElement | null) => void;
+  tabIndex: number;
+  onFocus: () => void;
+  onKeyDown: (event: KeyboardEvent<HTMLTableRowElement>) => void;
 }) {
   return (
-    <TableRow aria-level={account.depth + 1}>
+    <TableRow
+      ref={rowRef}
+      aria-level={account.depth + 1}
+      tabIndex={tabIndex}
+      onFocus={onFocus}
+      onKeyDown={onKeyDown}
+      className="focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
+    >
       <TableCell>
         <span
           className="flex items-center gap-2"
@@ -251,10 +348,12 @@ function AccountRow({
           </span>
           {account.isSystem && (
             <Tooltip>
-              <TooltipTrigger asChild>
-                <span tabIndex={0}>
-                  <StatusBadge tone="info" icon={LockIcon} label="Sistema" />
-                </span>
+              {/* Sin `asChild`: Radix pone su propio `<button>`, que es focusable,
+                  anunciable y describible por el tooltip. Un `<span tabIndex={0}>`
+                  entra al tab order sin rol ni nombre: el lector de pantalla lo
+                  lee como texto suelto. */}
+              <TooltipTrigger className="focus-visible:ring-ring rounded-md focus-visible:ring-2 focus-visible:outline-none">
+                <StatusBadge tone="info" icon={LockIcon} label="Sistema" />
               </TooltipTrigger>
               <TooltipContent>
                 Cuenta usada por el sistema: no se retira ni recibe subcuentas

@@ -37,6 +37,7 @@ function entry(over: Partial<FinanceEntry> = {}): FinanceEntry {
     date: '2026-07-31T12:00:00.000Z',
     accountId: null,
     counterAccountId: null,
+    counterAmount: null,
     journalEntryId: 'je-1',
     voidedAt: null,
     voidedBy: null,

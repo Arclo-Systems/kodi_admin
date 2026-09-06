@@ -8,13 +8,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -28,17 +21,25 @@ import { TableEmptyRow } from '@/components/admin/empty-state';
 import { StatusBadge } from '@/lib/status-badge';
 import { civilDayEndIso, civilDayStartIso } from '@/lib/civil-date';
 import { ACCOUNT_TYPE_LABELS, formatMoney, ledgerHref } from './finance-format';
+import {
+  ConsolidationBanner,
+  CurrencyScopeSelect,
+  currencyScopeParams,
+  type CurrencyScopeValue,
+} from './finance-currency-scope';
 import { FinanceReportCsvButton } from './finance-report-csv-button';
 
 const COLUMNS = 7;
 
 export function FinanceTrialBalance() {
-  const [currency, setCurrency] = useState<string>(FINANCE_CURRENCIES[0]);
+  const [scope, setScope] = useState<CurrencyScopeValue>(FINANCE_CURRENCIES[0]);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
 
+  const { currency, consolidateTo } = currencyScopeParams(scope);
   const params = {
     currency,
+    consolidateTo,
     from: from ? civilDayStartIso(from) : undefined,
     to: to ? civilDayEndIso(to) : undefined,
   };
@@ -47,18 +48,7 @@ export function FinanceTrialBalance() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Select value={currency} onValueChange={setCurrency}>
-          <SelectTrigger className="w-28" size="sm" aria-label="Moneda">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {FINANCE_CURRENCIES.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <CurrencyScopeSelect value={scope} onChange={setScope} />
         <DateRangePicker
           from={from}
           to={to}
@@ -73,6 +63,16 @@ export function FinanceTrialBalance() {
         <span className="text-muted-foreground text-sm">Sin fechas = últimos 12 meses.</span>
         <FinanceReportCsvButton report="trial-balance" params={params} className="ml-auto" />
       </div>
+
+      {report?.consolidation && (
+        <>
+          <ConsolidationBanner consolidation={report.consolidation} />
+          <p className="text-muted-foreground text-sm">
+            El mayor de una cuenta es de UNA moneda: volvé a una moneda para poder abrirlo desde
+            acá.
+          </p>
+        </>
+      )}
 
       {isError && (
         <Alert variant="destructive">
@@ -145,7 +145,18 @@ export function FinanceTrialBalance() {
                   {report.accounts.map((a) => (
                     <TableRow key={a.accountId}>
                       <TableCell className="tabular-nums">{a.code}</TableCell>
-                      <TableCell className="font-medium">{a.name}</TableCell>
+                      <TableCell>
+                        <span className="font-medium">{a.name}</span>
+                        {/* `1190` es la contrapartida temporal de una conversión,
+                            no plata disponible: sin la etiqueta su saldo se lee
+                            como una caja más. */}
+                        {a.isBridge && (
+                          <span className="text-muted-foreground block text-xs">
+                            Traslados entre monedas: contrapartida de una conversión, no es efectivo
+                            disponible.
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-muted-foreground">
                         {ACCOUNT_TYPE_LABELS[a.type]}
                       </TableCell>
@@ -159,21 +170,26 @@ export function FinanceTrialBalance() {
                         {formatMoney(a.balance)}
                       </TableCell>
                       {/* El saldo dice cuánto; el mayor dice de dónde salió. Se
-                          abre con la misma moneda y el mismo rango. */}
+                          abre con la misma moneda y el mismo rango. Consolidando
+                          no hay una moneda que pasarle —un mayor que mezcla
+                          monedas no es un saldo corrido—, así que el salto no se
+                          ofrece. */}
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" asChild>
-                          <Link
-                            href={ledgerHref({
-                              accountId: a.accountId,
-                              currency,
-                              from: from || undefined,
-                              to: to || undefined,
-                            })}
-                          >
-                            <BookOpenIcon className="size-4" />
-                            Mayor
-                          </Link>
-                        </Button>
+                        {currency && (
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link
+                              href={ledgerHref({
+                                accountId: a.accountId,
+                                currency,
+                                from: from || undefined,
+                                to: to || undefined,
+                              })}
+                            >
+                              <BookOpenIcon className="size-4" />
+                              Mayor
+                            </Link>
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

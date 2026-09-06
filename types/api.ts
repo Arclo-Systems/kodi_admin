@@ -8863,6 +8863,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/play-orders/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["FinanceAdminController_playOrdersSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/finance/play-orders/{orderId}/retry": {
         parameters: {
             query?: never;
@@ -18707,6 +18723,7 @@ export interface components {
                     /** @enum {string} */
                     postingStatus: "PENDING" | "POSTED" | "UNSUPPORTED_CURRENCY" | "REVERSED" | "FAILED" | "SKIPPED" | "NEEDS_REVIEW";
                     postingError: string | null;
+                    refundRequestedAt: string | null;
                     /** Format: uuid */
                     journalEntryId: string | null;
                     journalEntryNumber: string | null;
@@ -18714,6 +18731,14 @@ export interface components {
                 total: number;
                 page: number;
                 pageSize: number;
+            };
+        };
+        PlayOrdersSummaryResponse: {
+            data: {
+                counts: {
+                    [key: string]: number;
+                };
+                needsAttention: number;
             };
         };
         PlayOrderRetryResponse: {
@@ -18851,6 +18876,7 @@ export interface components {
                     name: string;
                     /** @enum {string} */
                     type: "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "COST_OF_REVENUE" | "OPERATING_EXPENSE";
+                    isBridge: boolean;
                     debits: string;
                     credits: string;
                     balance: string;
@@ -18941,6 +18967,10 @@ export interface components {
                         depth: number;
                         isActive: boolean;
                         isSubtotal: boolean;
+                        isBridge: boolean;
+                        computed: boolean;
+                        /** @enum {string} */
+                        valuation: "current" | "historical" | "cta";
                         balance: string;
                     }[];
                     total: string;
@@ -18957,6 +18987,10 @@ export interface components {
                         depth: number;
                         isActive: boolean;
                         isSubtotal: boolean;
+                        isBridge: boolean;
+                        computed: boolean;
+                        /** @enum {string} */
+                        valuation: "current" | "historical" | "cta";
                         balance: string;
                     }[];
                     total: string;
@@ -18973,6 +19007,10 @@ export interface components {
                         depth: number;
                         isActive: boolean;
                         isSubtotal: boolean;
+                        isBridge: boolean;
+                        computed: boolean;
+                        /** @enum {string} */
+                        valuation: "current" | "historical" | "cta";
                         balance: string;
                     }[];
                     total: string;
@@ -33671,6 +33709,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlayOrderListResponse"];
+                };
+            };
+        };
+    };
+    FinanceAdminController_playOrdersSummary: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayOrdersSummaryResponse"];
                 };
             };
         };

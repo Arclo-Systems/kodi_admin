@@ -63,44 +63,70 @@ const ASSET_ONLY_TYPES = new Set<MovementType>([
 // Los tres tipos cuyo asiento se imputa contra la cuenta de la categoría.
 const CATEGORY_ACCOUNT_TYPES = new Set<MovementType>(['INCOME', 'EXPENSE', 'OTHER']);
 
-const FormSchema = z
-  .object({
-    type: z.enum(MOVEMENT_TYPES),
-    categoryId: z.string().min(1, 'Elegí una categoría'),
-    amount: z
-      .string()
-      .min(1, 'Requerido')
-      .regex(AMOUNT_RE, 'Hasta 2 decimales')
-      .refine((v) => Number(v) > 0, 'Mayor a 0'),
-    currency: z.enum(FINANCE_CURRENCIES),
-    date: z.string().min(1, 'Requerido'),
-    accountId: z.string(),
-    counterAccountId: z.string(),
-    vendor: z.string(),
-    note: z.string(),
-  })
-  .superRefine((v, ctx) => {
-    if (v.type !== 'TRANSFER') return;
-    if (!v.accountId)
-      ctx.addIssue({ code: 'custom', path: ['accountId'], message: 'Elegí la cuenta de origen' });
-    if (!v.counterAccountId)
-      ctx.addIssue({
-        code: 'custom',
-        path: ['counterAccountId'],
-        message: 'Elegí la cuenta de destino',
-      });
-    // Transferir una cuenta contra sí misma cuadra el asiento sin que pase nada;
-    // el backend lo corta con 409 TRANSFER_REQUIRES_ASSET_ACCOUNTS, pero decirlo
-    // acá evita el viaje.
-    if (v.accountId && v.accountId === v.counterAccountId)
-      ctx.addIssue({
-        code: 'custom',
-        path: ['counterAccountId'],
-        message: 'La cuenta de destino debe ser distinta de la de origen',
-      });
-  });
+/**
+ * Una transferencia entre cuentas de monedas FIJAS y distintas no mueve el mismo
+ * importe de un lado al otro: lo que sale son colones y lo que llega son dólares.
+ * El backend lo exige (409 `TRANSFER_REQUIRES_COUNTER_AMOUNT`) y necesita saber
+ * la moneda de cada cuenta, que solo se conoce con el plan cargado — de ahí que
+ * el schema sea una función y no una constante.
+ */
+function isCrossCurrency(
+  currencyById: ReadonlyMap<string, string | null>,
+  accountId: string,
+  counterAccountId: string,
+): boolean {
+  const origin = currencyById.get(accountId);
+  const destination = currencyById.get(counterAccountId);
+  return !!origin && !!destination && origin !== destination;
+}
 
-type FormValues = z.infer<typeof FormSchema>;
+function schemaFor(currencyById: ReadonlyMap<string, string | null>) {
+  return z
+    .object({
+      type: z.enum(MOVEMENT_TYPES),
+      categoryId: z.string().min(1, 'Elegí una categoría'),
+      amount: z
+        .string()
+        .min(1, 'Requerido')
+        .regex(AMOUNT_RE, 'Hasta 2 decimales')
+        .refine((v) => Number(v) > 0, 'Mayor a 0'),
+      currency: z.enum(FINANCE_CURRENCIES),
+      date: z.string().min(1, 'Requerido'),
+      accountId: z.string(),
+      counterAccountId: z.string(),
+      counterAmount: z.string(),
+      vendor: z.string(),
+      note: z.string(),
+    })
+    .superRefine((v, ctx) => {
+      if (v.type !== 'TRANSFER') return;
+      if (!v.accountId)
+        ctx.addIssue({ code: 'custom', path: ['accountId'], message: 'Elegí la cuenta de origen' });
+      if (!v.counterAccountId)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['counterAccountId'],
+          message: 'Elegí la cuenta de destino',
+        });
+      // Transferir una cuenta contra sí misma cuadra el asiento sin que pase nada;
+      // el backend lo corta con 409 TRANSFER_REQUIRES_ASSET_ACCOUNTS, pero decirlo
+      // acá evita el viaje.
+      if (v.accountId && v.accountId === v.counterAccountId)
+        ctx.addIssue({
+          code: 'custom',
+          path: ['counterAccountId'],
+          message: 'La cuenta de destino debe ser distinta de la de origen',
+        });
+      if (!isCrossCurrency(currencyById, v.accountId, v.counterAccountId)) return;
+      const issue = (message: string) =>
+        ctx.addIssue({ code: 'custom', path: ['counterAmount'], message });
+      if (!v.counterAmount) issue('Requerido');
+      else if (!AMOUNT_RE.test(v.counterAmount)) issue('Hasta 2 decimales');
+      else if (!(Number(v.counterAmount) > 0)) issue('Mayor a 0');
+    });
+}
+
+type FormValues = z.infer<ReturnType<typeof schemaFor>>;
 
 function toValues(entry: FinanceEntry): FormValues {
   return {
@@ -115,6 +141,7 @@ function toValues(entry: FinanceEntry): FormValues {
     date: isoToCivilDay(entry.date),
     accountId: entry.accountId ?? '',
     counterAccountId: entry.counterAccountId ?? '',
+    counterAmount: entry.counterAmount ?? '',
     vendor: entry.vendor ?? '',
     note: entry.note ?? '',
   };
@@ -128,6 +155,7 @@ const EMPTY: FormValues = {
   date: toYMD(new Date()),
   accountId: '',
   counterAccountId: '',
+  counterAmount: '',
   vendor: '',
   note: '',
 };
@@ -186,21 +214,44 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
   const [receipt, setReceipt] = useState<string | null>(entry?.hasReceipt ? KEEP : null);
 
   const values = useMemo(() => (entry ? toValues(entry) : undefined), [entry]);
-  const form = useForm<FormValues>({
-    resolver: zodResolver(FormSchema),
-    defaultValues: values ?? EMPTY,
-    values, // el movimiento llega async: RHF resetea cuando cambia
-  });
-
-  const type = useWatch({ control: form.control, name: 'type' });
-  const currency = useWatch({ control: form.control, name: 'currency' });
-  const isTransfer = type === 'TRANSFER';
 
   const voided = entry?.status === 'VOIDED';
   // Un movimiento ya asentado no puede cambiar de importe ni de cuentas sin
   // descuadrar el libro: el backend los rechaza con ENTRY_POSTED_IMMUTABLE.
   const posted = !!entry?.journalEntryId;
   const lockAccounting = posted || voided;
+
+  const assets = useFinanceAccounts({ postable: true, type: 'ASSET' });
+  const postable = useFinanceAccounts({ postable: true });
+  const accountsLoading = assets.isLoading || postable.isLoading;
+  const accountsError = assets.isError || postable.isError;
+  const retryAccounts = () => {
+    void assets.refetch();
+    void postable.refetch();
+  };
+
+  // La moneda de cada cuenta decide si la transferencia es una conversión, y eso
+  // lo tiene que saber la validación: el schema se arma con el plan cargado.
+  const currencyById = useMemo(
+    () => new Map([...(assets.data ?? []), ...(postable.data ?? [])].map((a) => [a.id, a.currency])),
+    [assets.data, postable.data],
+  );
+  const schema = useMemo(() => schemaFor(currencyById), [currencyById]);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: values ?? EMPTY,
+    values, // el movimiento llega async: RHF resetea cuando cambia
+  });
+
+  const type = useWatch({ control: form.control, name: 'type' });
+  const currency = useWatch({ control: form.control, name: 'currency' });
+  const accountId = useWatch({ control: form.control, name: 'accountId' });
+  const counterAccountId = useWatch({ control: form.control, name: 'counterAccountId' });
+  const isTransfer = type === 'TRANSFER';
+  const crossCurrency =
+    isTransfer && isCrossCurrency(currencyById, accountId, counterAccountId);
+  const destinationCurrency = currencyById.get(counterAccountId) ?? '';
 
   const { data: categories } = useFinanceCategories(kindForType(type));
   const cats = categories ?? [];
@@ -214,14 +265,6 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
   // 409 CATEGORY_WITHOUT_ACCOUNT al guardar. Se ofrece deshabilitada (para que se
   // vea que existe y por qué no sirve) y el aviso dice dónde se arregla.
   const hasUnmappedCategory = needsCategoryAccount && cats.some((c) => c.isActive && !c.accountId);
-  const assets = useFinanceAccounts({ postable: true, type: 'ASSET' });
-  const postable = useFinanceAccounts({ postable: true });
-  const accountsLoading = assets.isLoading || postable.isLoading;
-  const accountsError = assets.isError || postable.isError;
-  const retryAccounts = () => {
-    void assets.refetch();
-    void postable.refetch();
-  };
 
   const originOptions = useMemo(
     () => matchesCurrency(assets.data ?? [], currency),
@@ -231,8 +274,11 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
     const pool = ASSET_ONLY_TYPES.has(type)
       ? (assets.data ?? [])
       : (postable.data ?? []).filter((a) => a.type === 'ASSET' || a.type === 'LIABILITY');
-    return matchesCurrency(pool, currency);
-  }, [type, currency, assets.data, postable.data]);
+    // El destino de una transferencia SÍ puede estar en otra moneda: es
+    // exactamente el caso que el backend resuelve con `counterAmount`. Filtrarlo
+    // por la moneda del movimiento dejaba la conversión fuera del panel.
+    return isTransfer ? pool : matchesCurrency(pool, currency);
+  }, [type, isTransfer, currency, assets.data, postable.data]);
 
   // Una cuenta en colones no puede recibir una línea en dólares: el backend la
   // rechaza con 409 ACCOUNT_CURRENCY_MISMATCH. Al cambiar la moneda, la cuenta
@@ -254,6 +300,14 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
       }
     }
   }, [validIds, lockAccounting, accountsLoading, accountsError, form]);
+
+  // Dejar de ser una conversión (cambió el destino, o el tipo) no puede dejar el
+  // monto recibido escondido en el estado: el backend responde 409
+  // COUNTER_AMOUNT_NOT_APPLICABLE si viaja donde no corresponde.
+  useEffect(() => {
+    if (lockAccounting || crossCurrency) return;
+    if (form.getValues('counterAmount')) form.setValue('counterAmount', '');
+  }, [crossCurrency, lockAccounting, form]);
 
   async function submit(v: FormValues): Promise<void> {
     try {
@@ -286,6 +340,9 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
           ...accounting,
           ...descriptive,
           accountId: v.accountId || null,
+          // Solo cuando la transferencia cambia de moneda: en cualquier otro
+          // movimiento el backend lo rechaza en vez de ignorarlo.
+          ...(crossCurrency ? { counterAmount: v.counterAmount } : {}),
           receiptKey: receipt === KEEP ? null : receipt,
         };
         await create.mutateAsync(input);
@@ -537,6 +594,36 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                 )}
               />
             </div>
+
+            {crossCurrency && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Controller
+                  name="counterAmount"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="fe-counter-amount">
+                        Monto recibido{destinationCurrency && ` (${destinationCurrency})`}
+                      </FieldLabel>
+                      <Input
+                        {...field}
+                        id="fe-counter-amount"
+                        inputMode="decimal"
+                        autoComplete="off"
+                        disabled={lockAccounting}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      <FieldDescription>
+                        Las dos cuentas están en monedas distintas: el monto de arriba es lo que
+                        SALE y este es lo que LLEGÓ. La diferencia contra el tipo de cambio del día
+                        se registra en 6520 Diferencial cambiario.
+                      </FieldDescription>
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    </Field>
+                  )}
+                />
+              </div>
+            )}
 
             {accountsError && (
               <Alert variant="destructive">

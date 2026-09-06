@@ -395,6 +395,54 @@ describe('FinanceAccountsTree — el árbol se anuncia como árbol', () => {
     expect(padre).toHaveAttribute('aria-level', '1');
     expect(hija).toHaveAttribute('aria-level', '2');
   });
+
+  it('ocupa UNA parada de tabulador: solo la primera fila es tabulable', () => {
+    accounts = [PADRE, HIJA];
+    render(<FinanceAccountsTree canWrite />);
+
+    const filas = screen.getAllByRole('row').filter((r) => r.hasAttribute('aria-level'));
+    expect(filas.map((r) => r.getAttribute('tabindex'))).toEqual(['0', '-1']);
+  });
+
+  it('las flechas bajan, suben y saltan al padre sin salir de la tabla', () => {
+    accounts = [PADRE, HIJA];
+    render(<FinanceAccountsTree canWrite />);
+
+    const padre = screen.getByText('Gastos operativos').closest('tr') as HTMLTableRowElement;
+    const hija = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
+
+    padre.focus();
+    fireEvent.keyDown(padre, { key: 'ArrowDown' });
+    expect(hija).toHaveFocus();
+    // Y la parada del tabulador se mueve con el foco: volver a la tabla la
+    // devuelve donde se dejó, no al principio.
+    expect(hija).toHaveAttribute('tabindex', '0');
+    expect(padre).toHaveAttribute('tabindex', '-1');
+
+    fireEvent.keyDown(hija, { key: 'ArrowUp' });
+    expect(padre).toHaveFocus();
+
+    fireEvent.keyDown(padre, { key: 'ArrowRight' });
+    expect(hija).toHaveFocus();
+
+    fireEvent.keyDown(hija, { key: 'ArrowLeft' });
+    expect(padre).toHaveFocus();
+  });
+
+  it('Home y End van a la primera y a la última cuenta', () => {
+    accounts = [PADRE, HIJA];
+    render(<FinanceAccountsTree canWrite />);
+
+    const padre = screen.getByText('Gastos operativos').closest('tr') as HTMLTableRowElement;
+    const hija = screen.getByText('Otros gastos operativos').closest('tr') as HTMLTableRowElement;
+
+    padre.focus();
+    fireEvent.keyDown(padre, { key: 'End' });
+    expect(hija).toHaveFocus();
+
+    fireEvent.keyDown(hija, { key: 'Home' });
+    expect(padre).toHaveFocus();
+  });
 });
 
 describe('FinanceAccountDialog — colgar una hija le quita los asientos manuales al padre', () => {

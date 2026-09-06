@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Pnl } from '@/hooks/use-finance';
 
 let pnl: Pnl | undefined;
+let consolidado: Pnl | undefined;
 let pnlError = false;
 const refetch = vi.fn();
 
@@ -13,8 +14,11 @@ vi.mock('@/lib/download-report', () => ({
 
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
-  useFinancePnl: () => ({
-    data: pnlError ? undefined : pnl,
+  // Consolidando, el backend COLAPSA byCurrency/byAccount/byMonth a la moneda de
+  // destino y agrega el bloque `consolidation`: el mock replica ese cambio de
+  // forma, que es a lo que la pantalla tiene que reaccionar.
+  useFinancePnl: (params: { consolidateTo?: string }) => ({
+    data: pnlError ? undefined : params.consolidateTo ? consolidado : pnl,
     isLoading: false,
     isError: pnlError,
     refetch,
@@ -35,6 +39,7 @@ import { PnlDashboard } from './pnl-dashboard';
 
 const REPORT: Pnl = {
   range: { from: '2026-06-01T06:00:00.000Z', to: '2026-10-02T05:59:59.999Z' },
+  consolidation: null,
   byCurrency: [
     {
       currency: 'CRC',
@@ -75,10 +80,40 @@ const REPORT: Pnl = {
 const kpi = (label: string) =>
   screen.getByText(label).closest('[data-slot="card"]') as HTMLElement;
 
+// Colapsado a USD a 0,002: los ₡3.000 de ingreso son US$6,00.
+const CONSOLIDADO: Pnl = {
+  ...REPORT,
+  consolidation: {
+    to: 'USD',
+    rates: [{ from: 'CRC', to: 'USD', rate: '0.00200000', date: '2026-06-01', source: 'BCCR' }],
+    missing: [],
+  },
+  byCurrency: [
+    {
+      currency: 'USD',
+      income: '6.00',
+      costOfRevenue: '0.50',
+      operatingExpense: '102.80',
+      net: '-97.30',
+    },
+  ],
+  byAccount: [
+    {
+      currency: 'USD',
+      accountCode: '4110',
+      accountName: 'Ingresos por suscripciones',
+      type: 'INCOME',
+      amount: '6.00',
+    },
+  ],
+  byMonth: [],
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   pnlError = false;
   pnl = REPORT;
+  consolidado = CONSOLIDADO;
 });
 
 describe('PnlDashboard — los KPI salen de byCurrency del mayor', () => {
@@ -117,6 +152,36 @@ describe('PnlDashboard — los KPI salen de byCurrency del mayor', () => {
 
     expect(screen.getByText(/Sin movimientos en el rango/)).toBeInTheDocument();
     expect(screen.queryByText('Ingresos (CRC)')).not.toBeInTheDocument();
+  });
+});
+
+describe('PnlDashboard — consolidado a una moneda', () => {
+  it('etiqueta con qué tasa y de qué fecha convirtió', async () => {
+    render(<PnlDashboard />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Moneda' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Consolidar a USD' }));
+
+    expect(await screen.findByText(/1 CRC = 0.00200000 USD/)).toBeInTheDocument();
+    expect(screen.getByText(/tipo del 2026-06-01 \(BCCR\)/)).toBeInTheDocument();
+    expect(kpi('Ingresos (USD)')).toHaveTextContent('6,00');
+  });
+
+  it('sin tipo de cambio dice N/A, y no que el rango esté vacío', async () => {
+    consolidado = {
+      ...REPORT,
+      consolidation: { to: 'USD', rates: [], missing: ['CRC'] },
+      byCurrency: [],
+      byAccount: [],
+      byMonth: [],
+    };
+    render(<PnlDashboard />);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Moneda' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Consolidar a USD' }));
+
+    expect(await screen.findByText(/Sin tipo de cambio para: CRC → N\/A/)).toBeInTheDocument();
+    expect(screen.queryByText(/Sin movimientos en el rango/)).toBeNull();
   });
 });
 

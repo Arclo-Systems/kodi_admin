@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
-import { RotateCcwIcon, StoreIcon } from 'lucide-react';
+import { CircleAlertIcon, RotateCcwIcon, StoreIcon } from 'lucide-react';
 import {
   PLAY_ORDER_ATTENTION_STATUSES,
   PLAY_ORDER_STATUSES,
@@ -32,8 +32,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { civilDayEndIso, civilDayStartIso } from '@/lib/civil-date';
 import { cn } from '@/lib/utils';
 import {
+  PLAY_ORDER_STATUS_BADGE,
   PLAY_ORDER_STATUS_HINTS,
   PLAY_ORDER_STATUS_LABELS,
+  STATUS_TONE_TEXT,
   formatAmount,
 } from './finance-format';
 import { FinancePlayOrderDialog } from './finance-play-order-dialog';
@@ -73,7 +75,12 @@ export function FinancePlayOrders({ canWrite = false }: { canWrite?: boolean }) 
   };
   const query: PlayOrderListQuery = { ...range, postingStatus: status, page, pageSize };
   const { data, isLoading, isError, error, refetch } = usePlayOrders(query);
-  const { counts, isLoading: countsLoading } = usePlayOrderCounts(range);
+  const {
+    counts,
+    isLoading: countsLoading,
+    isError: countsError,
+    refetch: refetchCounts,
+  } = usePlayOrderCounts(range);
   const retry = useRetryPlayOrder();
 
   const columns = useMemo<ColumnDef<PlayOrder, unknown>[]>(
@@ -179,6 +186,8 @@ export function FinancePlayOrders({ canWrite = false }: { canWrite?: boolean }) 
       <PlayOrderSummary
         counts={counts}
         loading={countsLoading}
+        failed={countsError}
+        onRetry={() => void refetchCounts()}
         selected={status}
         onSelect={(next) => {
           setStatus(next);
@@ -298,11 +307,15 @@ export function FinancePlayOrders({ canWrite = false }: { canWrite?: boolean }) 
 function PlayOrderSummary({
   counts,
   loading,
+  failed,
+  onRetry,
   selected,
   onSelect,
 }: {
   counts: Record<PlayOrderStatus, number | undefined>;
   loading: boolean;
+  failed: boolean;
+  onRetry: () => void;
   selected: PlayOrderStatus | undefined;
   onSelect: (status: PlayOrderStatus | undefined) => void;
 }) {
@@ -313,45 +326,63 @@ function PlayOrderSummary({
 
   return (
     <Card>
-      <CardContent
-        role="group"
-        aria-label="Órdenes por estado"
-        className="flex flex-wrap items-stretch gap-1"
-      >
-        {ordered.map((status) => {
-          const count = counts[status];
-          const attention = RETRYABLE.has(status) && (count ?? 0) > 0;
-          const active = selected === status;
-          return (
-            <Tooltip key={status}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={active ? 'secondary' : 'ghost'}
-                  className="h-auto flex-col items-start gap-0.5 px-3 py-2"
-                  aria-pressed={active}
-                  onClick={() => onSelect(active ? undefined : status)}
-                >
-                  {loading ? (
-                    <Skeleton className="h-6 w-8" />
-                  ) : (
-                    <span
-                      className={cn(
-                        'text-xl font-semibold tabular-nums',
-                        attention && 'text-destructive',
-                      )}
-                    >
-                      {count ?? '—'}
+      <CardContent className="space-y-2">
+        {/* Un conteo que no llegó no es un cero. Sin decirlo, "0 órdenes que
+            fallaron" sobre un endpoint caído se lee como una buena noticia. */}
+        {failed && (
+          <Alert variant="destructive">
+            <AlertDescription className="flex flex-wrap items-center gap-3">
+              <span>No se pudo contar las órdenes por estado.</span>
+              <Button variant="outline" size="sm" onClick={onRetry}>
+                Reintentar
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        <div role="group" aria-label="Órdenes por estado" className="flex flex-wrap items-stretch gap-1">
+          {ordered.map((status) => {
+            const count = counts[status];
+            const attention = RETRYABLE.has(status) && (count ?? 0) > 0;
+            const active = selected === status;
+            return (
+              <Tooltip key={status}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={active ? 'secondary' : 'ghost'}
+                    className="h-auto flex-col items-start gap-0.5 px-3 py-2"
+                    aria-pressed={active}
+                    onClick={() => onSelect(active ? undefined : status)}
+                  >
+                    {loading ? (
+                      <Skeleton className="h-6 w-8" />
+                    ) : failed ? (
+                      // "—" a secas se lee como "ninguna": el icono dice que el
+                      // número falta, no que sea cero.
+                      <span className="text-destructive flex h-7 items-center">
+                        <CircleAlertIcon className="size-5" aria-label="sin dato" />
+                      </span>
+                    ) : (
+                      <span
+                        className={cn(
+                          'text-xl font-semibold tabular-nums',
+                          // El tono del propio estado: una moneda sin soporte es
+                          // una advertencia, no un fallo.
+                          attention && STATUS_TONE_TEXT[PLAY_ORDER_STATUS_BADGE[status].tone],
+                        )}
+                      >
+                        {count ?? '—'}
+                      </span>
+                    )}
+                    <span className="text-muted-foreground text-xs font-normal">
+                      {PLAY_ORDER_STATUS_LABELS[status]}
                     </span>
-                  )}
-                  <span className="text-muted-foreground text-xs font-normal">
-                    {PLAY_ORDER_STATUS_LABELS[status]}
-                  </span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{PLAY_ORDER_STATUS_HINTS[status]}</TooltipContent>
-            </Tooltip>
-          );
-        })}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{PLAY_ORDER_STATUS_HINTS[status]}</TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
       </CardContent>
     </Card>
   );

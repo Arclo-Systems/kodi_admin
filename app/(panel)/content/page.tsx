@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import {
   BarChart3Icon,
   BotIcon,
@@ -11,27 +10,11 @@ import {
   NewspaperIcon,
   SparklesIcon,
 } from 'lucide-react';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SectionIndex, type SectionCard } from '@/components/admin/section-index';
 import { requireAction } from '@/lib/guard';
-import { can, type Action } from '@/lib/permissions';
-import { cn } from '@/lib/utils';
+import { can } from '@/lib/permissions';
 
-const ICON_TONES = [
-  'bg-primary/10 text-primary',
-  'bg-info/10 text-info',
-  'bg-warning/10 text-warning',
-  'bg-success/10 text-success',
-];
-
-type AreaCard = {
-  href: string;
-  label: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
-  action: Action;
-};
-
-const AREAS: AreaCard[] = [
+const AREAS: SectionCard[] = [
   {
     href: '/content/questions',
     label: 'Preguntas',
@@ -125,30 +108,7 @@ export default async function ContentHome() {
         <p className="text-muted-foreground">Gestión del contenido educativo de Kodi</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {areas.map((area, i) => (
-          <Link
-            key={area.href}
-            href={area.href}
-            className="focus-visible:ring-ring rounded-xl focus-visible:ring-2 focus-visible:outline-none"
-          >
-            <Card className="hover:border-primary/40 h-full transition-colors">
-              <CardHeader>
-                <div
-                  className={cn(
-                    'mb-3 flex size-10 items-center justify-center rounded-lg',
-                    ICON_TONES[i % ICON_TONES.length],
-                  )}
-                >
-                  <area.icon className="size-5" aria-hidden />
-                </div>
-                <CardTitle className="text-base">{area.label}</CardTitle>
-                <CardDescription>{area.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-        ))}
-      </div>
+      <SectionIndex cards={areas} />
     </div>
   );
 }

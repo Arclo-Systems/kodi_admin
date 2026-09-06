@@ -8,6 +8,8 @@ let items: PlayOrder[] = [];
 let listError = false;
 const retry = vi.fn();
 const counts: Record<string, number | undefined> = {};
+let countsError = false;
+const refetchCounts = vi.fn();
 
 vi.mock('@/hooks/use-finance', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/hooks/use-finance')>()),
@@ -18,7 +20,13 @@ vi.mock('@/hooks/use-finance', async (importOriginal) => ({
     error: listError ? new Error('Se cayó la lista') : null,
     refetch: vi.fn(),
   }),
-  usePlayOrderCounts: () => ({ isLoading: false, counts }),
+  usePlayOrderCounts: () => ({
+    isLoading: false,
+    isError: countsError,
+    refetch: refetchCounts,
+    counts,
+    needsAttention: undefined,
+  }),
   useRetryPlayOrder: () => ({ mutateAsync: retry, isPending: false }),
 }));
 
@@ -43,6 +51,7 @@ function order(over: Partial<PlayOrder> = {}): PlayOrder {
     commission: '1.69',
     postingStatus: 'POSTED',
     postingError: null,
+    refundRequestedAt: null,
     journalEntryId: '7f3c0000-0000-4000-8000-000000000000',
     journalEntryNumber: '2026-000001',
     ...over,
@@ -78,6 +87,7 @@ beforeEach(() => {
   }
   counts.POSTED = 12;
   counts.FAILED = 2;
+  countsError = false;
 });
 
 describe('FinancePlayOrders — la plata de Google se lee en la moneda del comprador', () => {
@@ -111,7 +121,7 @@ describe('FinancePlayOrders — la plata de Google se lee en la moneda del compr
     render(<FinancePlayOrders />);
 
     expect(fila('o-1')).toHaveTextContent('Por revisar');
-    expect(fila('o-2')).toHaveTextContent('Sin asiento');
+    expect(fila('o-2')).toHaveTextContent('Omitida');
     expect(fila('o-3')).toHaveTextContent('Moneda sin soporte');
   });
 });
@@ -190,6 +200,52 @@ describe('FinancePlayOrders — detalle', () => {
     expect(within(impuesto).getByText('1,69 USD')).toBeInTheDocument();
   });
 
+  // Es lo único que explica por qué una orden omitida no tiene asiento y nunca
+  // lo va a tener, y por qué reintentarla no cambiaría nada.
+  it('muestra cuándo llegó el reembolso, si llegó', async () => {
+    items = [
+      order({
+        orderId: 'o-reembolso',
+        postingStatus: 'SKIPPED',
+        refundRequestedAt: '2026-09-04T15:00:00.000Z',
+      }),
+    ];
+    render(<FinancePlayOrders />);
+
+    fireEvent.click(screen.getByText('o-reembolso'));
+
+    const dialog = await screen.findByRole('dialog');
+    const fila = within(dialog)
+      .getByText('Reembolso solicitado el')
+      .closest('div') as HTMLElement;
+    expect(fila).toHaveTextContent('4/9/2026');
+  });
+
+  it('sin reembolso no inventa la fila', async () => {
+    items = [order()];
+    render(<FinancePlayOrders />);
+
+    fireEvent.click(screen.getByText('GPA.3311-1234-5678-90000'));
+
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).queryByText('Reembolso solicitado el')).toBeNull();
+  });
+
+  // Hay plata registrada y falta la moneda en la contabilidad: es una
+  // advertencia, no un fallo. Pintarla de rojo mandaba a tratarla como un
+  // asiento roto.
+  it('una moneda sin soporte se explica en tono de advertencia, no de error', async () => {
+    items = [order({ orderId: 'o-moneda', postingStatus: 'UNSUPPORTED_CURRENCY' })];
+    render(<FinancePlayOrders />);
+
+    fireEvent.click(screen.getByText('o-moneda'));
+
+    const dialog = await screen.findByRole('dialog');
+    const explicacion = within(dialog).getByText(/falta esa moneda en la contabilidad/);
+    expect(explicacion).toHaveClass('text-warning');
+    expect(explicacion).not.toHaveClass('text-destructive');
+  });
+
   // El `raw` de la orden guarda lo que devolvió Google. No viaja en la lista y el
   // detalle no lo pinta: mostrarlo expondría en pantalla datos del comprador.
   it('no vuelca los datos crudos que devolvió Google', async () => {
@@ -230,7 +286,22 @@ describe('FinancePlayOrders — resumen', () => {
     render(<FinancePlayOrders />);
 
     const resumen = screen.getByRole('group', { name: 'Órdenes por estado' });
-    expect(within(resumen).getByRole('button', { name: /Sin asentar/ })).toHaveTextContent('2');
+    expect(within(resumen).getByRole('button', { name: /Falló/ })).toHaveTextContent('2');
     expect(within(resumen).getByRole('button', { name: /Asentada/ })).toHaveTextContent('12');
+  });
+
+  // Un conteo que no llegó no es un cero: sin señal, "0 órdenes que fallaron"
+  // sobre un endpoint caído se lee como una buena noticia.
+  it('con el conteo caído lo dice y ofrece reintentar, en vez de pintar ceros', () => {
+    countsError = true;
+    render(<FinancePlayOrders />);
+
+    const resumen = screen.getByRole('group', { name: 'Órdenes por estado' });
+    expect(within(resumen).getByRole('button', { name: /Falló/ })).not.toHaveTextContent('2');
+    expect(within(resumen).getAllByLabelText('sin dato').length).toBeGreaterThan(0);
+    expect(screen.getByText('No se pudo contar las órdenes por estado.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }));
+    expect(refetchCounts).toHaveBeenCalled();
   });
 });

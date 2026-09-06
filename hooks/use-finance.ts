@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  keepPreviousData,
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { throwApiError, unwrapData } from '@/lib/bff';
 import { fetchJson } from '@/lib/fetch-json';
 
@@ -98,6 +92,9 @@ export type FinanceEntry = {
   date: string;
   accountId: string | null;
   counterAccountId: string | null;
+  // Lo que LLEGÓ a la cuenta de destino cuando la transferencia cambió de moneda.
+  // `null` en todo lo demás.
+  counterAmount: string | null;
   journalEntryId: string | null; // null = histórico sin asiento (previo al backfill)
   // Los tres solo tienen valor con `status === 'VOIDED'`: son el descargo del
   // asiento de reversión (quién anuló, cuándo y por qué).
@@ -175,11 +172,37 @@ export type AccountBalance = {
 
 export type AccountBalances = { currency: string; asOf: string; accounts: AccountBalance[] };
 
+// ─── Consolidado a una sola moneda ────────────────────────────────────────────
+// Tres reportes (comprobación, P&L y balance general) aceptan `consolidateTo` EN
+// LUGAR de `currency`: mandar los dos es 400. Cuando se consolida, el backend
+// devuelve con qué tasa convirtió cada moneda y —lo importante— cuáles se quedó
+// sin convertir: esas NO están sumadas en ningún total y el panel las muestra
+// como N/A, nunca como cero (criterio 16 del plan).
+export type ConsolidationRate = {
+  from: string;
+  to: string;
+  rate: string;
+  date: string; // día de la tasa usada (la última con `date ≤` corte), no el corte
+  source: string;
+};
+
+export type Consolidation = {
+  to: string;
+  rates: ConsolidationRate[];
+  missing: string[];
+} | null;
+
+/** `currency` XOR `consolidateTo`: la UI los ofrece como un solo selector. */
+export type CurrencyScope = { currency?: string; consolidateTo?: string };
+
 export type TrialBalanceRow = {
   accountId: string;
   code: string;
   name: string;
   type: AccountType;
+  // `1190 Traslados entre monedas`: la contrapartida temporal de una conversión,
+  // no plata disponible. Se etiqueta para que su saldo no se lea como efectivo.
+  isBridge: boolean;
   debits: string;
   credits: string;
   balance: string;
@@ -188,6 +211,7 @@ export type TrialBalanceRow = {
 export type TrialBalance = {
   currency: string;
   range: DateRange;
+  consolidation: Consolidation;
   accounts: TrialBalanceRow[];
   totals: { debits: string; credits: string };
   balanced: boolean;
@@ -196,6 +220,9 @@ export type TrialBalance = {
 
 export type Pnl = {
   range: DateRange;
+  // Consolidado, `byCurrency`/`byAccount`/`byMonth` COLAPSAN a la moneda de
+  // destino: no se agrega un bloque extra, se reemplazan los que había.
+  consolidation: Consolidation;
   byCurrency: {
     currency: string;
     income: string;
@@ -212,6 +239,111 @@ export type Pnl = {
   }[];
   // `expense` = costo de ingresos + gasto operativo.
   byMonth: { currency: string; month: string; income: string; expense: string; net: string }[];
+};
+
+// ─── Balance general ──────────────────────────────────────────────────────────
+/**
+ * Una fila del balance. Casi siempre es una cuenta; las que llevan
+ * `computed: true` (y `accountId`/`code` en `null`) son las líneas CALCULADAS de
+ * patrimonio: "Resultado del período (no cerrado)" siempre, y "Ajuste por
+ * conversión" solo en el consolidado.
+ */
+export type BalanceSheetLine = {
+  accountId: string | null;
+  code: string | null;
+  name: string;
+  parentCode: string | null;
+  depth: number;
+  isActive: boolean;
+  // La fila es una cuenta padre y su `balance` es el de TODA su rama: el panel no
+  // vuelve a sumarla, ya está sumada.
+  isSubtotal: boolean;
+  isBridge: boolean;
+  computed: boolean;
+  // `historical` = el puente `1190`, valorado a la tasa del día de cada conversión
+  // (o sea, cero). `cta` = el ajuste por conversión (NIC 21). El resto, `current`.
+  valuation: 'current' | 'historical' | 'cta';
+  balance: string;
+};
+
+export type BalanceSheetSection = {
+  type: AccountType;
+  lines: BalanceSheetLine[];
+  total: string;
+};
+
+export type BalanceSheet = {
+  currency: string;
+  asOf: string;
+  consolidation: Consolidation;
+  assets: BalanceSheetSection;
+  liabilities: BalanceSheetSection;
+  equity: BalanceSheetSection;
+  totals: { assets: string; liabilities: string; equity: string };
+  // Viajan SIEMPRE, cuadre o no: esconder una diferencia es lo único que un
+  // balance no puede hacer (criterio 13 del plan).
+  balanced: boolean;
+  difference: string;
+};
+
+// ─── Flujo de caja ────────────────────────────────────────────────────────────
+// Solo por moneda: no acepta `consolidateTo`. Un flujo consolidado exigiría
+// decidir a qué tasa se convierte cada movimiento, y eso es otra decisión.
+export type CashFlowAccount = {
+  accountId: string;
+  code: string;
+  name: string;
+  opening: string;
+  inflow: string;
+  outflow: string;
+  closing: string;
+};
+
+export type CashFlow = {
+  currency: string;
+  range: DateRange;
+  // Las cuentas HOJA que cuelgan de `1100 Efectivo y equivalentes` más `1220`.
+  // Una caja sin movimiento aparece en cero; una caja ausente no existe.
+  accounts: CashFlowAccount[];
+  totals: { opening: string; inflow: string; outflow: string; closing: string };
+  byMonth: { month: string; inflow: string; outflow: string; net: string }[];
+};
+
+// ─── Tipos de cambio ──────────────────────────────────────────────────────────
+// Se cargan a mano (no hay proveedor): por eso `source` es obligatorio —"BCCR
+// venta 2026-09-05"— y por eso los reportes usan la ÚLTIMA tasa con fecha ≤ el
+// corte, no la del día exacto.
+export type ExchangeRate = {
+  id: string;
+  date: string; // 'YYYY-MM-DD': la columna es DATE, sin hora
+  fromCurrency: string;
+  toCurrency: string;
+  rate: string; // string con hasta 8 decimales
+  source: string;
+  createdBy: string | null;
+  createdAt: string;
+};
+
+export type ExchangeRateInput = {
+  date: string;
+  fromCurrency: string;
+  toCurrency: string;
+  rate: string;
+  source: string;
+};
+
+export type ExchangeRateListQuery = {
+  fromCurrency?: string;
+  toCurrency?: string;
+  page: number;
+  pageSize: number;
+};
+
+export type ExchangeRatePage = {
+  items: ExchangeRate[];
+  total: number;
+  page: number;
+  pageSize: number;
 };
 
 export type FinanceCategoryInput = {
@@ -237,11 +369,18 @@ export type FinanceEntryInput = {
   // (el PATCH del backend no la lleva — ver `UpdateFinanceEntrySchema`).
   accountId?: string | null;
   counterAccountId: string | null; // null → "1900 Por clasificar"
+  // Solo en una transferencia entre cuentas de monedas DISTINTAS: lo que llega al
+  // destino. El backend deriva la diferencia contra el tipo del día y la manda a
+  // `6520 Diferencial cambiario`. En cualquier otro movimiento es 409
+  // COUNTER_AMOUNT_NOT_APPLICABLE.
+  counterAmount?: string;
   vendor: string | null;
   note: string | null;
   receiptKey: string | null;
 };
-export type FinanceEntryUpdate = Partial<Omit<FinanceEntryInput, 'accountId'>>;
+// `counterAmount` no está: el PATCH del backend no lo lleva (`UpdateFinanceEntrySchema`),
+// y un movimiento asentado ya no cambia de importes.
+export type FinanceEntryUpdate = Partial<Omit<FinanceEntryInput, 'accountId' | 'counterAmount'>>;
 
 const BASE = '/api/admin/finance';
 
@@ -418,7 +557,7 @@ export function useVoidFinanceEntry() {
 }
 
 // ─── Reportes ─────────────────────────────────────────────────────────────────
-export type FinanceReport = 'ledger' | 'trial-balance' | 'pnl';
+export type FinanceReport = 'ledger' | 'trial-balance' | 'pnl' | 'balance-sheet' | 'cash-flow';
 
 type ReportParams = Record<string, string | number | undefined>;
 
@@ -472,25 +611,99 @@ export function useFinanceAccountBalances(currency: string, asOf?: string) {
   });
 }
 
-export function useFinanceTrialBalance(params: {
-  currency?: string;
-  from?: string;
-  to?: string;
-}) {
+export function useFinanceTrialBalance(
+  params: CurrencyScope & {
+    from?: string;
+    to?: string;
+  },
+) {
   return useQuery({
     queryKey: ['finance-trial-balance', params],
-    enabled: !!params.currency,
+    // Sin ninguna de las dos el backend responde 400: no hay reporte que pedir.
+    enabled: !!params.currency !== !!params.consolidateTo,
     queryFn: async (): Promise<TrialBalance | undefined> =>
       fetchJson<TrialBalance>(`${BASE}/reports/trial-balance${reportQuery({ ...params })}`),
   });
 }
 
-export function useFinancePnl(from?: string, to?: string) {
+export function useFinancePnl(params: CurrencyScope & { from?: string; to?: string } = {}) {
   return useQuery({
-    queryKey: ['finance-pnl', from ?? null, to ?? null],
+    queryKey: ['finance-pnl', params],
     queryFn: async (): Promise<Pnl | undefined> =>
-      fetchJson<Pnl>(`${BASE}/reports/pnl${reportQuery({ from, to })}`),
+      fetchJson<Pnl>(`${BASE}/reports/pnl${reportQuery({ ...params })}`),
   });
+}
+
+/**
+ * Balance general a una fecha. `currency` XOR `consolidateTo`: mandar las dos (o
+ * ninguna) es 400, así que la consulta no se dispara hasta que haya exactamente
+ * una.
+ */
+export function useFinanceBalanceSheet(params: CurrencyScope & { asOf?: string }) {
+  return useQuery({
+    queryKey: ['finance-balance-sheet', params],
+    enabled: !!params.currency !== !!params.consolidateTo,
+    queryFn: async (): Promise<BalanceSheet | undefined> =>
+      fetchJson<BalanceSheet>(`${BASE}/reports/balance-sheet${reportQuery({ ...params })}`),
+  });
+}
+
+export function useFinanceCashFlow(params: { currency?: string; from?: string; to?: string }) {
+  return useQuery({
+    queryKey: ['finance-cash-flow', params],
+    enabled: !!params.currency,
+    queryFn: async (): Promise<CashFlow | undefined> =>
+      fetchJson<CashFlow>(`${BASE}/reports/cash-flow${reportQuery({ ...params })}`),
+  });
+}
+
+// ─── Tipos de cambio ──────────────────────────────────────────────────────────
+export function useExchangeRates(query: ExchangeRateListQuery) {
+  return useQuery({
+    queryKey: ['finance-exchange-rates', query],
+    // Sin esto la tabla se vacía en cada cambio de página.
+    placeholderData: keepPreviousData,
+    queryFn: async (): Promise<ExchangeRatePage> =>
+      (await fetchJson<ExchangeRatePage>(`${BASE}/exchange-rates${reportQuery({ ...query })}`)) ?? {
+        items: [],
+        total: 0,
+        page: query.page,
+        pageSize: query.pageSize,
+      },
+  });
+}
+
+/**
+ * Acá SÍ hay DELETE, al revés que en movimientos y cuentas: una tasa no es un
+ * hecho económico y nada la referencia (el asiento de una conversión guarda los
+ * importes ya calculados). Una mal tecleada distorsiona todo consolidado
+ * posterior, y obligar a convivir con ella sería peor.
+ *
+ * Cargar o borrar una tasa cambia lo que dicen los tres reportes consolidados:
+ * se invalidan junto con la lista.
+ */
+export function useExchangeRateMutations() {
+  const qc = useQueryClient();
+  const invalidate = async () => {
+    await Promise.all(
+      [
+        'finance-exchange-rates',
+        'finance-balance-sheet',
+        'finance-trial-balance',
+        'finance-pnl',
+      ].map((key) => qc.invalidateQueries({ queryKey: [key] })),
+    );
+  };
+  return {
+    create: useMutation({
+      mutationFn: (input: ExchangeRateInput) => send(`${BASE}/exchange-rates`, 'POST', input),
+      onSuccess: invalidate,
+    }),
+    remove: useMutation({
+      mutationFn: (id: string) => send(`${BASE}/exchange-rates/${id}`, 'DELETE'),
+      onSuccess: invalidate,
+    }),
+  };
 }
 
 // ─── Órdenes de Google Play ───────────────────────────────────────────────────
@@ -537,6 +750,10 @@ export type PlayOrder = {
   commission: string | null;
   postingStatus: PlayOrderStatus;
   postingError: string | null;
+  // Instante en que llegó el reembolso. Es lo único que explica por qué una orden
+  // `SKIPPED` no tiene asiento y nunca lo va a tener, y por qué reintentarla no
+  // va a cambiar nada.
+  refundRequestedAt: string | null;
   journalEntryId: string | null;
   journalEntryNumber: string | null;
 };
@@ -580,35 +797,40 @@ export function usePlayOrders(query: PlayOrderListQuery) {
   });
 }
 
+/** Los siete conteos del rango, más los que alguien tiene que mirar. */
+export type PlayOrderSummary = {
+  counts: Record<string, number>;
+  needsAttention: number;
+};
+
 /**
- * Conteo por estado del MISMO rango que se está mirando.
+ * Conteo por estado del MISMO rango que se está mirando, en UNA consulta.
  *
- * No hay endpoint de agregados: cada conteo es la misma lista pedida con
- * `pageSize: 1`, de la que solo se lee `total`. Contar sobre la página cargada
- * daría un número que cambia al pasar de página — es decir, un número falso.
+ * El backend agrega con un `groupBy` y devuelve los siete estados siempre,
+ * también los que están en cero. Antes eran siete requests (la misma lista con
+ * `pageSize: 1`, leyendo solo `total`), que además podían llegar desparejas: el
+ * semáforo y la tabla mostraban rangos distintos por un instante.
  */
 export function usePlayOrderCounts(range: { from?: string; to?: string }) {
-  return useQueries({
-    queries: PLAY_ORDER_STATUSES.map((postingStatus) => {
-      const query: PlayOrderListQuery = { ...range, postingStatus, page: 1, pageSize: 1 };
-      return {
-        queryKey: ['play-orders', query],
-        queryFn: async (): Promise<PlayOrderPage> =>
-          (await fetchJson<PlayOrderPage>(playOrdersPath(query))) ?? {
-            items: [],
-            total: 0,
-            page: 1,
-            pageSize: 1,
-          },
-      };
-    }),
-    combine: (results) => ({
-      isLoading: results.some((r) => r.isLoading),
-      counts: Object.fromEntries(
-        PLAY_ORDER_STATUSES.map((status, i) => [status, results[i]?.data?.total]),
-      ) as Record<PlayOrderStatus, number | undefined>,
-    }),
+  const query = useQuery({
+    queryKey: ['play-orders-summary', range],
+    // Sin esto los conteos desaparecen al cambiar el rango y el semáforo parpadea.
+    placeholderData: keepPreviousData,
+    queryFn: async (): Promise<PlayOrderSummary | undefined> =>
+      fetchJson<PlayOrderSummary>(`${BASE}/play-orders/summary${reportQuery({ ...range })}`),
   });
+  const counts = query.data?.counts;
+  return {
+    isLoading: query.isLoading,
+    // Un conteo que no llegó no es un cero: quien mira tiene que poder
+    // distinguirlos, o va a leer "0 sin asentar" sobre un endpoint caído.
+    isError: query.isError,
+    refetch: query.refetch,
+    counts: Object.fromEntries(
+      PLAY_ORDER_STATUSES.map((status) => [status, counts?.[status]]),
+    ) as Record<PlayOrderStatus, number | undefined>,
+    needsAttention: query.data?.needsAttention,
+  };
 }
 
 /**
