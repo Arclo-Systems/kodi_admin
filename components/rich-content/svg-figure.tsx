@@ -28,11 +28,12 @@ export function SvgFigure({ source }: { source: string }) {
     return <span className="text-destructive text-sm">Figura inválida o insegura.</span>;
   }
   return (
+    // Un SVG con solo `viewBox` no trae alto intrínseco: sin techo, el contenedor lo estira.
     // eslint-disable-next-line @next/next/no-img-element -- data-URI SVG inline; next/image no aplica
     <img
       src={`data:image/svg+xml,${encodeURIComponent(source)}`}
       alt={parsed.alt}
-      className="my-2 max-w-full rounded-md"
+      className="mx-auto my-2 block h-auto max-h-[260px] w-auto max-w-full rounded-md object-contain"
     />
   );
 }
