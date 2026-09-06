@@ -135,36 +135,31 @@ async function abrirMayor(page: Page): Promise<number> {
 /**
  * Busca una línea del mayor recorriendo sus páginas hacia adelante.
  *
- * Hace falta porque el mayor ordena por FECHA **sin desempate**: dentro del día
- * de hoy la posición del asiento recién creado no está determinada, y esta base
- * acumula una corrida tras otra sobre la misma cuenta. (Es el mismo hueco que el
- * fix round 1 del backend cerró para la lista de movimientos y que en el mayor
- * sigue abierto: ver el concern del reporte.)
+ * Hace falta porque `kodi_dev` acumula una corrida tras otra sobre la misma
+ * cuenta y el día de hoy ya pasa de doscientas líneas: la recién creada no cae
+ * necesariamente en la primera página de cien. UN solo recorrido alcanza — el
+ * mayor ordena por `date, number, lineNumber`, que es estable, así que `OFFSET`
+ * no repite ni se come filas entre páginas.
  *
  * El avance se espera contra el CONTENIDO de la primera fila y no contra el
  * indicador `n / total`: ese lo pinta el estado local y cambia al instante,
  * mientras `keepPreviousData` deja las filas de la página anterior a la vista.
- *
- * Y el recorrido se repite: con un ORDER BY sin desempate, `OFFSET` puede
- * **repetir una fila y comerse otra** entre páginas, así que un solo barrido
- * puede no ver una línea que SÍ está en el rango. Hoy la cuenta del fixture pasa
- * de 200 líneas en `kodi_dev` (tres páginas de cien) y un barrido único fallaba.
- * Cada barrido vuelve a pedir las páginas desde la primera, con un orden nuevo.
+ * Y se compara `textContent` contra `textContent`: la versión anterior guardaba
+ * `innerText` y lo comparaba con `toHaveText` —que mira `textContent`—, así que
+ * la espera pasaba SIEMPRE, al instante, y el recorrido avanzaba de página sin
+ * que las filas nuevas hubieran llegado.
  */
 async function lineaEnMayor(page: Page, texto: string): Promise<Locator> {
   const linea = page.locator('table tbody tr').filter({ hasText: texto });
   const primera = page.locator('table tbody tr').first();
   const siguiente = page.getByRole('button', { name: 'Página siguiente' });
 
-  for (let barrido = 0; barrido < 4; barrido += 1) {
-    if (barrido > 0) await irAlMayorDeHoy(page);
-    for (let i = 0; i < 20; i += 1) {
-      if ((await linea.count()) > 0) return linea;
-      if (!(await siguiente.isEnabled())) break;
-      const antes = await primera.innerText();
-      await siguiente.click();
-      await expect(primera).not.toHaveText(antes);
-    }
+  for (let i = 0; i < 20; i += 1) {
+    if ((await linea.count()) > 0) return linea;
+    if (!(await siguiente.isEnabled())) break;
+    const antes = await primera.textContent();
+    await siguiente.click();
+    await expect.poll(() => primera.textContent()).not.toBe(antes);
   }
   return linea;
 }
@@ -480,18 +475,32 @@ test('el plan de cuentas se pliega, se despliega y reordena hermanas', async ({ 
     ).filter((l) => l.startsWith('11'));
 
   const antes = await ordenDeCaja();
-  await arrastrar(page, agarradera(segunda as string), cuenta(page, primera as string));
-  await expect(page.getByText('Orden guardado')).toBeVisible();
+  try {
+    await arrastrar(page, agarradera(segunda as string), cuenta(page, primera as string));
+    await expect(page.getByText('Orden guardado')).toBeVisible();
 
-  await page.reload();
-  await expect(cuenta(page, segunda as string)).toBeVisible();
-  const despues = await ordenDeCaja();
-  expect(despues).not.toEqual(antes);
-  expect(despues.indexOf(segunda as string)).toBeLessThan(despues.indexOf(primera as string));
-
-  // Y se restaura, para que la corrida siguiente empiece donde empezó esta.
-  await arrastrar(page, agarradera(primera as string), cuenta(page, segunda as string));
-  await expect(page.getByText('Orden guardado')).toBeVisible();
+    await page.reload();
+    await expect(cuenta(page, segunda as string)).toBeVisible();
+    const despues = await ordenDeCaja();
+    expect(despues).not.toEqual(antes);
+    expect(despues.indexOf(segunda as string)).toBeLessThan(despues.indexOf(primera as string));
+  } finally {
+    // El orden es del plan REAL de esta base y no hay seed que lo devuelva: si
+    // una aserción de arriba falla, dejar `1102` encima de `1101` le cambia el
+    // punto de partida a la corrida siguiente. Va en `finally`, y adentro en su
+    // propio `try`: una restauración que falla porque el test ya había fallado
+    // tiraría SU error desde acá y reemplazaría al original.
+    try {
+      await page.reload();
+      await expect(cuenta(page, primera as string)).toBeVisible();
+      if ((await ordenDeCaja()).join('|') !== antes.join('|')) {
+        await arrastrar(page, agarradera(primera as string), cuenta(page, segunda as string));
+        await expect(page.getByText('Orden guardado')).toBeVisible();
+      }
+    } catch (e) {
+      console.warn('No se pudo restaurar el orden de las cuentas de caja:', e);
+    }
+  }
 });
 
 test('Play lista las órdenes de Google con su resumen por estado', async ({ page }) => {

@@ -465,19 +465,54 @@ export function useFinanceAccountMutations() {
         sendFinanceRequest(`${BASE}/accounts/${id}`, 'PATCH', input),
       onSuccess: invalidate,
     }),
-    // Reordenar entre hermanas. `PATCH /accounts/:id` guarda el `sortOrder` que
-    // recibe y no recalcula el de las demás, así que la posición nueva de CADA
-    // hermana corrida viaja en su propio PATCH. En serie y no en paralelo: son
-    // filas del mismo padre y el orden de escritura es el que queda.
+    /**
+     * Reordenar entre hermanas.
+     *
+     * `PATCH /accounts/:id` guarda el `sortOrder` que recibe y no recalcula el de
+     * las demás, así que la posición nueva de CADA hermana corrida viaja en su
+     * propio PATCH. En serie y no en paralelo: son filas del mismo padre y el
+     * orden de escritura es el que queda.
+     *
+     * Optimista: el árbol se reordena antes de que vuelva el primer PATCH, que
+     * es lo que hace que soltar se sienta instantáneo. Y con rollback, porque la
+     * tanda **puede fallar por la mitad** —si el tercero de cinco revienta, los
+     * dos primeros ya se escribieron— y ahí la caché no puede quedarse con el
+     * orden que el usuario pidió ni con el que tenía: el `onSettled` invalida
+     * SIEMPRE, con error o sin él, y el refetch trae el orden que de verdad
+     * quedó en la base.
+     */
     reorder: useMutation({
       mutationFn: async (positions: { id: string; sortOrder: number }[]) => {
         for (const { id, sortOrder } of positions) {
           await sendFinanceRequest(`${BASE}/accounts/${id}`, 'PATCH', { sortOrder });
         }
       },
+      onMutate: async (positions) => {
+        // Sin cancelar, un refetch en vuelo aterriza DESPUÉS del optimista y lo
+        // pisa con el orden viejo.
+        await qc.cancelQueries({ queryKey: ['finance-accounts'] });
+        const snapshot = qc.getQueriesData<FinanceAccount[]>({
+          queryKey: ['finance-accounts'],
+        });
+        const nuevo = new Map(positions.map((p) => [p.id, p.sortOrder]));
+        for (const [key, data] of snapshot) {
+          if (!data) continue;
+          qc.setQueryData<FinanceAccount[]>(
+            key,
+            data.map((a) => {
+              const sortOrder = nuevo.get(a.id);
+              return sortOrder === undefined ? a : { ...a, sortOrder };
+            }),
+          );
+        }
+        return { snapshot };
+      },
+      onError: (_error, _positions, context) => {
+        for (const [key, data] of context?.snapshot ?? []) qc.setQueryData(key, data);
+      },
       // Solo el plan: cambiar de lugar una cuenta no mueve un céntimo, y el
       // reporte de saldos recorre el mayor entero.
-      onSuccess: () => qc.invalidateQueries({ queryKey: ['finance-accounts'] }),
+      onSettled: () => qc.invalidateQueries({ queryKey: ['finance-accounts'] }),
     }),
   };
 }

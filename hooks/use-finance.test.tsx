@@ -3,12 +3,15 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
+  useFinanceAccountMutations,
+  useFinanceAccounts,
   useFinanceBalanceSheet,
   useFinanceCashFlow,
   useFinanceLedger,
   useFinanceTrialBalance,
   usePlayOrderCounts,
   financeReportCsvHref,
+  type FinanceAccount,
 } from './use-finance';
 
 // El mayor y la comprobación exigen parámetros que el backend rechaza con 400 si
@@ -163,5 +166,147 @@ describe('financeReportCsvHref — los parámetros vacíos no viajan', () => {
     expect(
       financeReportCsvHref('ledger', { accountId: 'a1', currency: 'USD', from: '2026-01-01' }),
     ).toBe('/api/admin/finance/reports/ledger.csv?accountId=a1&currency=USD&from=2026-01-01');
+  });
+});
+
+// ─── Reordenar el plan de cuentas ─────────────────────────────────────────────
+// El reorden manda un PATCH por hermana corrida, en serie, así que la tanda
+// puede fallar POR LA MITAD: las primeras ya se escribieron y las últimas no.
+// Ese es el caso que la caché no puede resolver sola.
+
+function account(over: Partial<FinanceAccount>): FinanceAccount {
+  return {
+    id: 'a',
+    code: '1101',
+    name: 'Caja colones',
+    type: 'ASSET',
+    currency: 'CRC',
+    parentId: 'acc-1100',
+    isActive: true,
+    allowsManualEntry: true,
+    isSystem: false,
+    sortOrder: 0,
+    parentCode: '1100',
+    depth: 1,
+    ancestorCodes: ['1000', '1100'],
+    ...over,
+  };
+}
+
+const PLAN: FinanceAccount[] = [
+  account({ id: 'a1', code: '1101', sortOrder: 0 }),
+  account({ id: 'a2', code: '1102', name: 'Caja dólares', sortOrder: 1 }),
+  account({ id: 'a3', code: '1111', name: 'Banco colones', sortOrder: 2 }),
+];
+
+// Un cliente COMPARTIDO por los dos hooks del test: sin él, la lista y la
+// mutación viven en cachés distintas y el optimista no se puede observar.
+function sharedWrapper() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+  const Wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+  );
+  return Wrapper;
+}
+
+/** Los `sortOrder` del plan tal como los ve la pantalla, por id. */
+const ordenDe = (data: FinanceAccount[] | undefined) =>
+  Object.fromEntries((data ?? []).map((a) => [a.id, a.sortOrder]));
+
+describe('useFinanceAccountMutations.reorder — optimista, con vuelta atrás y refetch', () => {
+  const patchOk = () => ({ ok: true, status: 200, json: async () => ({}) }) as unknown as Response;
+
+  function setup() {
+    const Wrapper = sharedWrapper();
+    return renderHook(
+      () => ({ plan: useFinanceAccounts(), mutations: useFinanceAccountMutations() }),
+      { wrapper: Wrapper },
+    );
+  }
+
+  it('reordena antes de que vuelva el primer PATCH', async () => {
+    fetchSpy.mockResolvedValue(ok(PLAN));
+    const { result } = setup();
+    await waitFor(() => expect(result.current.plan.data).toHaveLength(3));
+
+    // El PATCH queda colgado: lo único que puede haber movido el orden es el
+    // optimista.
+    let resolver!: () => void;
+    fetchSpy.mockImplementation(
+      () => new Promise<Response>((resolve) => (resolver = () => resolve(patchOk()))),
+    );
+    void result.current.mutations.reorder.mutateAsync([
+      { id: 'a2', sortOrder: 0 },
+      { id: 'a1', sortOrder: 1 },
+    ]);
+
+    await waitFor(() => expect(ordenDe(result.current.plan.data).a2).toBe(0));
+    expect(ordenDe(result.current.plan.data).a1).toBe(1);
+    resolver();
+  });
+
+  it('si la tanda falla por la mitad, deshace el optimista y vuelve a pedir el plan', async () => {
+    fetchSpy.mockResolvedValue(ok(PLAN));
+    const { result } = setup();
+    await waitFor(() => expect(result.current.plan.data).toHaveLength(3));
+
+    // Tres PATCH: el tercero revienta. Los dos primeros YA se escribieron, así
+    // que ni el orden viejo ni el que se pidió son ciertos: el único estado
+    // consistente es el que devuelva el servidor.
+    const servidor: FinanceAccount[] = [
+      account({ id: 'a1', code: '1101', sortOrder: 1 }),
+      account({ id: 'a2', code: '1102', name: 'Caja dólares', sortOrder: 0 }),
+      account({ id: 'a3', code: '1111', name: 'Banco colones', sortOrder: 2 }),
+    ];
+    let patches = 0;
+    fetchSpy.mockImplementation(async (_url: string, init?: RequestInit) => {
+      if (init?.method !== 'PATCH') return ok(servidor);
+      patches += 1;
+      if (patches === 3) {
+        return {
+          ok: false,
+          status: 409,
+          json: async () => ({ error: { code: 'ACCOUNT_NOT_FOUND', message: 'No existe' } }),
+        } as unknown as Response;
+      }
+      return patchOk();
+    });
+
+    await expect(
+      result.current.mutations.reorder.mutateAsync([
+        { id: 'a2', sortOrder: 0 },
+        { id: 'a1', sortOrder: 1 },
+        { id: 'a3', sortOrder: 2 },
+      ]),
+    ).rejects.toThrow('No existe');
+
+    // El error no deja el plan con el orden que el usuario pidió: se invalida
+    // SIEMPRE y la pantalla termina mostrando lo que de verdad quedó escrito.
+    await waitFor(() => expect(ordenDe(result.current.plan.data)).toEqual({ a1: 1, a2: 0, a3: 2 }));
+    expect(patches).toBe(3);
+  });
+
+  it('un reorden que sale bien también refresca el plan', async () => {
+    fetchSpy.mockResolvedValue(ok(PLAN));
+    const { result } = setup();
+    await waitFor(() => expect(result.current.plan.data).toHaveLength(3));
+
+    const guardado: FinanceAccount[] = [
+      account({ id: 'a1', code: '1101', sortOrder: 1 }),
+      account({ id: 'a2', code: '1102', name: 'Caja dólares', sortOrder: 0 }),
+      account({ id: 'a3', code: '1111', name: 'Banco colones', sortOrder: 2 }),
+    ];
+    fetchSpy.mockImplementation(async (_url: string, init?: RequestInit) =>
+      init?.method === 'PATCH' ? patchOk() : ok(guardado),
+    );
+
+    await result.current.mutations.reorder.mutateAsync([
+      { id: 'a2', sortOrder: 0 },
+      { id: 'a1', sortOrder: 1 },
+    ]);
+
+    await waitFor(() => expect(ordenDe(result.current.plan.data)).toEqual({ a1: 1, a2: 0, a3: 2 }));
   });
 });

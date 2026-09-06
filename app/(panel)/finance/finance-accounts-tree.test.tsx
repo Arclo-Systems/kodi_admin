@@ -529,6 +529,95 @@ describe('FinanceAccountsTree — el árbol se anuncia como árbol y se camina c
     expect(fila(PADRE)).toHaveAttribute('aria-expanded', 'true');
   });
 
+  // Con los tres controles de la fila tabulables, recorrer el plan eran ~3
+  // paradas POR FILA antes de llegar al siguiente control de la página.
+  it('los controles de la fila salen del orden de tabulación', () => {
+    render(<FinanceAccountsTree canWrite />);
+
+    const tabulables = document.querySelectorAll(
+      '[role="tree"] button:not([tabindex="-1"]), [role="tree"] a, [role="tree"] input',
+    );
+    expect(tabulables).toHaveLength(0);
+    expect(
+      screen.getAllByRole('treeitem').filter((r) => r.getAttribute('tabindex') === '0'),
+    ).toHaveLength(1);
+  });
+
+  it('Enter y Espacio pliegan y despliegan desde la fila', () => {
+    render(<FinanceAccountsTree canWrite />);
+
+    const padre = fila(PADRE);
+    act(() => padre.focus());
+    fireEvent.keyDown(padre, { key: 'Enter' });
+    expect(fila(PADRE)).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.keyDown(fila(PADRE), { key: ' ' });
+    expect(fila(PADRE)).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('la tecla E abre la edición de la cuenta enfocada', async () => {
+    render(<FinanceAccountsTree canWrite />);
+
+    const hija = fila(HIJA);
+    act(() => hija.focus());
+    fireEvent.keyDown(hija, { key: 'e' });
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeNull());
+    expect(within(dialog()).getByLabelText('Código')).toHaveValue(HIJA.code);
+  });
+
+  it('sin permiso de escritura la tecla E no abre nada', () => {
+    render(<FinanceAccountsTree />);
+
+    const hija = fila(HIJA);
+    act(() => hija.focus());
+    fireEvent.keyDown(hija, { key: 'e' });
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('la tecla R toma la agarradera, que es de donde manda el arrastre', () => {
+    accounts = [PADRE, HIJA, HERMANA];
+    render(<FinanceAccountsTree canWrite />);
+
+    const hija = fila(HIJA);
+    act(() => hija.focus());
+    fireEvent.keyDown(hija, { key: 'r' });
+
+    expect(
+      within(fila(HIJA)).getByRole('button', { name: 'Reordenar 6900 Otros gastos operativos' }),
+    ).toHaveFocus();
+  });
+
+  // WCAG 2.2 2.5.8: 24x24 CSS px mínimo. `size-6` son 24.
+  it('el chevron y la agarradera llegan al mínimo táctil', () => {
+    accounts = [PADRE, HIJA, HERMANA];
+    render(<FinanceAccountsTree canWrite />);
+
+    const chevron = within(fila(PADRE)).getByRole('button', { name: 'Plegar Gastos operativos' });
+    const agarradera = within(fila(HIJA)).getByRole('button', {
+      name: 'Reordenar 6900 Otros gastos operativos',
+    });
+    for (const control of [chevron, agarradera]) expect(control).toHaveClass('size-6');
+  });
+
+  // El nombre de la fila es `código nombre`: sin descripción, el lector recorre
+  // el plan sin decir un solo saldo ni si la cuenta está retirada.
+  it('la fila describe su saldo y su estado, y el árbol su mapa de teclas', () => {
+    render(<FinanceAccountsTree canWrite />);
+
+    const described = fila(HIJA).getAttribute('aria-describedby')?.split(' ') ?? [];
+    // El separador de miles es un espacio DURO: se compara el resto del número.
+    const textos = described.map((id) => document.getElementById(id)?.textContent ?? '').join(' ');
+    expect(textos).toContain('400,00');
+    expect(textos).toContain('Activa');
+    expect(textos).toContain('Todas');
+
+    const arbol = screen.getByRole('tree', { name: 'Plan de cuentas' });
+    const teclas = document.getElementById(arbol.getAttribute('aria-describedby') ?? '');
+    expect(teclas?.textContent).toContain('La tecla E abre la edición');
+  });
+
   it('Home y End van a la primera y a la última cuenta visible', () => {
     render(<FinanceAccountsTree canWrite />);
 

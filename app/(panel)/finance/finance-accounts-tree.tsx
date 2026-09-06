@@ -67,6 +67,11 @@ import {
 } from './finance-account-dialog';
 
 const MULTI_CURRENCY = 'Todas';
+// El mapa de teclas se anuncia UNA vez, al entrar al árbol: colgarlo de cada
+// fila haría que el lector lo recitara treinta y siete veces.
+const TREE_KEYS_ID = 'finance-accounts-teclas';
+const TREE_KEYS =
+  'Flechas arriba y abajo para moverse entre cuentas. Flecha derecha para abrir una rama o bajar a la primera subcuenta, flecha izquierda para cerrarla o subir a la cuenta padre. Inicio y Fin para la primera y la última. Enter o Espacio pliega y despliega. La tecla E abre la edición de la cuenta. La tecla R toma la agarradera para reordenar: después, Espacio la levanta, las flechas la mueven entre sus hermanas y Espacio la suelta.';
 // Qué ramas dejó plegadas el que mira. Se guarda lo COLAPSADO y no lo abierto:
 // el plan nace entero a la vista, y una cuenta nueva tiene que aparecer sola.
 const COLLAPSED_KEY = 'kodi.finance.accounts.collapsed';
@@ -276,7 +281,15 @@ export function FinanceAccountsTree({ canWrite = false }: { canWrite?: boolean }
               </div>
               {/* El plan ES un árbol: sin `tree` + `aria-level` la sangría es la
                   única pista de la jerarquía, y una sangría no se lee en voz alta. */}
-              <div role="tree" aria-label="Plan de cuentas" className="flex flex-col">
+              <p id={TREE_KEYS_ID} className="sr-only">
+                {TREE_KEYS}
+              </p>
+              <div
+                role="tree"
+                aria-label="Plan de cuentas"
+                aria-describedby={TREE_KEYS_ID}
+                className="flex flex-col"
+              >
                 <SiblingGroup
                   siblings={tree}
                   level={1}
@@ -445,6 +458,40 @@ function SiblingGroup({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  // Lo que el lector de pantalla dice durante el arrastre. dnd-kit trae las
+  // suyas en inglés y sin nombres: "Draggable item 3 was moved over droppable
+  // area 1" no dice qué cuenta se movió ni a dónde.
+  //
+  // OJO: dnd-kit monta su región viva y sus instrucciones DENTRO de cada
+  // `DndContext` y no expone forma de compartirlas, así que hay una por grupo de
+  // hermanas. No se anuncian solas —las instrucciones se referencian desde la
+  // agarradera de SU grupo con `aria-describedby`, y la región viva de un grupo
+  // solo habla mientras se arrastra en ese grupo—, así que la duplicación es
+  // silenciosa.
+  const nombre = (id: string | number) =>
+    siblings.find((account) => account.id === String(id))?.name ?? 'la cuenta';
+  const posicion = (id: string | number) => ids.indexOf(String(id)) + 1;
+  const accessibility = {
+    screenReaderInstructions: {
+      draggable:
+        'Espacio levanta la cuenta. Las flechas la mueven entre sus hermanas; el orden de las ramas no cambia. Espacio la suelta en su lugar nuevo y Escape cancela.',
+    },
+    announcements: {
+      onDragStart: ({ active }: { active: { id: string | number } }) =>
+        `Levantaste ${nombre(active.id)}, en la posición ${posicion(active.id)} de ${ids.length}.`,
+      onDragOver: ({ active, over }: { active: { id: string | number }; over: { id: string | number } | null }) =>
+        over
+          ? `${nombre(active.id)} está sobre la posición ${posicion(over.id)} de ${ids.length}.`
+          : `${nombre(active.id)} está fuera de sus hermanas.`,
+      onDragEnd: ({ active, over }: { active: { id: string | number }; over: { id: string | number } | null }) =>
+        over
+          ? `Soltaste ${nombre(active.id)} en la posición ${posicion(over.id)} de ${ids.length}.`
+          : `Soltaste ${nombre(active.id)} y quedó donde estaba.`,
+      onDragCancel: ({ active }: { active: { id: string | number } }) =>
+        `Cancelaste el movimiento de ${nombre(active.id)}, que quedó donde estaba.`,
+    },
+  };
+
   function onDragEnd(event: DragEndEvent): void {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -467,7 +514,12 @@ function SiblingGroup({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={onDragEnd}
+      accessibility={accessibility}
+    >
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
         {siblings.map((account) => (
           <SortableAccountTreeItem key={account.id} account={account} level={level} ctx={row} />
@@ -524,8 +576,40 @@ function AccountTreeItem({
   // `aria-label` y no el contenido: un `treeitem` CONTIENE a su grupo, así que
   // el nombre calculado de una rama abierta sería el de todas sus hijas juntas.
   const label = `${account.code} ${account.name}`;
+  const estadoId = `acc-estado-${account.id}`;
+  const detailId = `acc-saldo-${account.id}`;
   const balance = ctx.balances.get(account.id);
   const setRowRef = ctx.nav.rowRef(account.id);
+  // La agarradera sale del orden de tabulación, así que la tecla R la enfoca:
+  // desde ahí manda el `KeyboardSensor` de dnd-kit (Espacio levanta, flechas
+  // mueven, Espacio suelta) y al terminar devuelve el foco solo.
+  const handleRef = useRef<HTMLButtonElement>(null);
+
+  /**
+   * Las teclas que operan la FILA. Van antes que las de navegación porque
+   * comparten teclado: sin ellas, los controles internos quedarían fuera del
+   * alcance de quien no usa el mouse en cuanto salieron del orden de tabulación.
+   */
+  function onRowKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
+    if (event.target === event.currentTarget) {
+      if ((event.key === 'Enter' || event.key === ' ') && hasChildren) {
+        ctx.toggle(account.id, !open);
+        event.preventDefault();
+        return;
+      }
+      if ((event.key === 'e' || event.key === 'E') && ctx.canWrite) {
+        ctx.onEdit(account);
+        event.preventDefault();
+        return;
+      }
+      if ((event.key === 'r' || event.key === 'R') && handleRef.current) {
+        handleRef.current.focus();
+        event.preventDefault();
+        return;
+      }
+    }
+    ctx.nav.onKeyDown(event, account.id);
+  }
 
   return (
     <Collapsible
@@ -544,12 +628,16 @@ function AccountTreeItem({
         aria-expanded={hasChildren ? open : undefined}
         aria-selected={ctx.nav.isCurrent(account.id)}
         aria-label={label}
+        // El nombre es `código nombre`; lo demás de la fila (saldo, estado,
+        // moneda) se anuncia como DESCRIPCIÓN. Sin esto el lector de pantalla
+        // recorre el plan diciendo pares de palabras y ningún número.
+        aria-describedby={`${estadoId} ${detailId}`}
         tabIndex={ctx.nav.tabIndexFor(account.id)}
         // Un `treeitem` CONTIENE a su grupo, y el foco BURBUJEA: sin este filtro,
         // enfocar una hija devolvía la parada del tabulador a su padre —el foco
         // bajaba y el `tabIndex` se quedaba arriba—.
         onFocus={(e) => e.target === e.currentTarget && ctx.nav.onFocus(account.id)}
-        onKeyDown={(e) => ctx.nav.onKeyDown(e, account.id)}
+        onKeyDown={onRowKeyDown}
         style={drag?.style}
         className="focus-visible:ring-ring rounded-md focus-visible:ring-2 focus-visible:outline-none"
       >
@@ -557,27 +645,37 @@ function AccountTreeItem({
           className="hover:bg-muted/50 flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5"
           style={{ paddingLeft: `${0.5 + (level - 1) * 1.25}rem` }}
         >
+          {/* `tabIndex={-1}` en los tres controles de la fila: el árbol ocupa UNA
+              parada de tabulador y adentro se opera con las teclas (ver
+              `TREE_KEYS`). Con ellos tabulables, recorrer el plan eran tres
+              paradas POR FILA antes de llegar al siguiente control de la página.
+              Siguen siendo `<button>` —clicables, con nombre y con foco
+              programable—, solo salen del orden de tabulación.
+              `size-6` = 24 px, el mínimo de blanco táctil (WCAG 2.2 2.5.8). */}
           {hasChildren ? (
             <CollapsibleTrigger
-              className="group text-muted-foreground focus-visible:ring-ring rounded focus-visible:ring-2 focus-visible:outline-none"
+              tabIndex={-1}
+              className="group text-muted-foreground focus-visible:ring-ring flex size-6 shrink-0 items-center justify-center rounded focus-visible:ring-2 focus-visible:outline-none"
               aria-label={open ? `Plegar ${account.name}` : `Desplegar ${account.name}`}
             >
               <ChevronRightIcon className="size-4 transition-transform group-data-[state=open]:rotate-90" />
             </CollapsibleTrigger>
           ) : (
-            <span className="size-4" aria-hidden />
+            <span className="size-6 shrink-0" aria-hidden />
           )}
 
           {/* Hueco de la agarradera donde no hay nada que arrastrar (una rama con
               una sola hermana): sin él la fila se corre y las columnas dejan de
               alinearse con las de al lado. */}
-          {ctx.canWrite && !drag && <span className="size-4" aria-hidden />}
+          {ctx.canWrite && !drag && <span className="size-6 shrink-0" aria-hidden />}
           {drag && (
             <button
               type="button"
-              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring cursor-grab touch-none rounded focus-visible:ring-2 focus-visible:outline-none"
+              ref={handleRef}
+              className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex size-6 shrink-0 cursor-grab touch-none items-center justify-center rounded focus-visible:ring-2 focus-visible:outline-none"
               aria-label={`Reordenar ${label}`}
               {...drag.handle}
+              tabIndex={-1}
             >
               <GripVerticalIcon className="size-4" />
             </button>
@@ -590,9 +688,18 @@ function AccountTreeItem({
             </span>
           </span>
 
-          <AccountBadges account={account} hasChildren={hasChildren} byId={ctx.byId} />
+          <AccountBadges
+            id={estadoId}
+            account={account}
+            hasChildren={hasChildren}
+            byId={ctx.byId}
+          />
 
-          <span data-slot="account-balance" className="w-32 shrink-0 text-right tabular-nums">
+          <span
+            id={detailId}
+            data-slot="account-balance"
+            className="w-32 shrink-0 text-right tabular-nums"
+          >
             {ctx.balancesState === 'loading' ? (
               <Skeleton className="ml-auto h-4 w-20" />
             ) : ctx.balancesState === 'error' ? (
@@ -609,7 +716,12 @@ function AccountTreeItem({
 
           <span className="w-20 shrink-0 text-right">
             {ctx.canWrite && (
-              <Button variant="ghost" size="sm" onClick={() => ctx.onEdit(account)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                tabIndex={-1}
+                onClick={() => ctx.onEdit(account)}
+              >
                 <PencilIcon className="size-4" />
                 Editar
               </Button>
@@ -633,17 +745,22 @@ function AccountTreeItem({
 }
 
 function AccountBadges({
+  id,
   account,
   hasChildren,
   byId,
 }: {
+  id: string;
   account: FinanceAccount;
   hasChildren: boolean;
   byId: Map<string, FinanceAccount>;
 }): ReactNode {
   const retiredAncestor = hasRetiredAncestor(account, byId);
+  // `hidden sm:flex` no lo saca de la descripción: un elemento referenciado por
+  // `aria-describedby` aporta su texto aunque esté oculto, así que en móvil el
+  // lector sigue anunciando estado y moneda aunque no se dibujen.
   return (
-    <span className="hidden shrink-0 items-center gap-1.5 sm:flex">
+    <span id={id} className="hidden shrink-0 items-center gap-1.5 sm:flex">
       {account.isSystem && (
         <Tooltip>
           {/* Sin `asChild`: Radix pone su propio `<button>`, que es focusable,
