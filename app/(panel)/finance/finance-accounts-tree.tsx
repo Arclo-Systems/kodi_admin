@@ -537,6 +537,9 @@ function SortableAccountTreeItem(props: {
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.account.id,
+    // Sin esto dnd-kit anuncia la agarradera como "sortable", en inglés y en
+    // medio de una frase en español.
+    attributes: { roleDescription: 'reordenable' },
   });
   return (
     <AccountTreeItem
@@ -645,10 +648,11 @@ function AccountTreeItem({
           className="hover:bg-muted/50 flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5"
           style={{ paddingLeft: `${0.5 + (level - 1) * 1.25}rem` }}
         >
-          {/* `tabIndex={-1}` en los tres controles de la fila: el árbol ocupa UNA
+          {/* `tabIndex={-1}` en TODOS los controles de la fila —chevron,
+              agarradera, "Editar" y el badge "Sistema"—: el árbol ocupa UNA
               parada de tabulador y adentro se opera con las teclas (ver
-              `TREE_KEYS`). Con ellos tabulables, recorrer el plan eran tres
-              paradas POR FILA antes de llegar al siguiente control de la página.
+              `TREE_KEYS`). Con ellos tabulables, recorrer el plan eran tres o
+              cuatro paradas POR FILA antes del siguiente control de la página.
               Siguen siendo `<button>` —clicables, con nombre y con foco
               programable—, solo salen del orden de tabulación.
               `size-6` = 24 px, el mínimo de blanco táctil (WCAG 2.2 2.5.8). */}
@@ -766,9 +770,15 @@ function AccountBadges({
           {/* Sin `asChild`: Radix pone su propio `<button>`, que es focusable,
               anunciable y describible por el tooltip. Un `<span tabIndex={0}>`
               entra al tab order sin rol ni nombre: el lector de pantalla lo lee
-              como texto suelto. */}
+              como texto suelto.
+              `tabIndex={-1}` por lo mismo que los otros tres controles de la
+              fila: el árbol ocupa UNA parada de tabulador. El tooltip sigue
+              abriéndose con el mouse y con el foco (Radix escucha `focus`, no
+              `Tab`), y el badge "Sistema" además se anuncia como parte de la
+              descripción de la fila. */}
           <TooltipTrigger
             type="button"
+            tabIndex={-1}
             className="focus-visible:ring-ring rounded-md focus-visible:ring-2 focus-visible:outline-none"
           >
             <StatusBadge tone="info" icon={LockIcon} label="Sistema" />

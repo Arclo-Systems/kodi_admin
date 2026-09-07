@@ -15,9 +15,10 @@ import type { AccountBalances, FinanceAccount } from '@/hooks/use-finance';
 // gesto se prueba en Playwright y acá se prueba lo que el gesto termina
 // llamando. `sortableItems` guarda los ids que cada contexto de arrastre conoce,
 // que es exactamente lo que impide soltar una cuenta bajo otro padre.
-const { dragEnds, sortableItems } = vi.hoisted(() => ({
+const { dragEnds, sortableItems, sortableArgs } = vi.hoisted(() => ({
   dragEnds: [] as ((event: { active: { id: string }; over: { id: string } | null }) => void)[],
   sortableItems: [] as string[][],
+  sortableArgs: [] as { attributes?: { roleDescription?: string } }[],
 }));
 
 vi.mock('@dnd-kit/core', () => ({
@@ -44,14 +45,17 @@ vi.mock('@dnd-kit/sortable', async (importOriginal) => ({
     sortableItems.push(items);
     return <>{children}</>;
   },
-  useSortable: () => ({
+  useSortable: (args: { attributes?: { roleDescription?: string } }) => {
+    sortableArgs.push(args);
+    return {
     attributes: {},
     listeners: {},
     setNodeRef: () => {},
     transform: null,
     transition: undefined,
     isDragging: false,
-  }),
+    };
+  },
 }));
 
 const create = vi.fn();
@@ -196,6 +200,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   dragEnds.length = 0;
   sortableItems.length = 0;
+  sortableArgs.length = 0;
   window.localStorage.clear();
   balancesError = false;
   accounts = [PADRE, HIJA];
@@ -529,11 +534,15 @@ describe('FinanceAccountsTree — el árbol se anuncia como árbol y se camina c
     expect(fila(PADRE)).toHaveAttribute('aria-expanded', 'true');
   });
 
-  // Con los tres controles de la fila tabulables, recorrer el plan eran ~3
-  // paradas POR FILA antes de llegar al siguiente control de la página.
+  // Con los controles de la fila tabulables, recorrer el plan eran tres o cuatro
+  // paradas POR FILA antes de llegar al siguiente control de la página. El
+  // fixture incluye una cuenta del sistema: su badge lleva un `<button>` de
+  // Radix que también estaba en el orden de tabulación.
   it('los controles de la fila salen del orden de tabulación', () => {
+    accounts = [PADRE, HIJA, HERMANA, SISTEMA];
     render(<FinanceAccountsTree canWrite />);
 
+    expect(within(fila(SISTEMA)).getByText('Sistema')).toBeInTheDocument();
     const tabulables = document.querySelectorAll(
       '[role="tree"] button:not([tabindex="-1"]), [role="tree"] a, [role="tree"] input',
     );
@@ -541,6 +550,20 @@ describe('FinanceAccountsTree — el árbol se anuncia como árbol y se camina c
     expect(
       screen.getAllByRole('treeitem').filter((r) => r.getAttribute('tabindex') === '0'),
     ).toHaveLength(1);
+  });
+
+  // dnd-kit anuncia la agarradera como "sortable" si no se le dice otra cosa, en
+  // inglés y en medio de una frase en español. Quien pone el
+  // `aria-roledescription` en el DOM es dnd-kit —eso es su contrato, no el
+  // nuestro—: lo que se afirma acá es que se lo pedimos en español.
+  it('le pide a dnd-kit el rol de la agarradera en español', () => {
+    accounts = [PADRE, HIJA, HERMANA];
+    render(<FinanceAccountsTree canWrite />);
+
+    expect(sortableArgs).not.toHaveLength(0);
+    for (const args of sortableArgs) {
+      expect(args.attributes?.roleDescription).toBe('reordenable');
+    }
   });
 
   it('Enter y Espacio pliegan y despliegan desde la fila', () => {
