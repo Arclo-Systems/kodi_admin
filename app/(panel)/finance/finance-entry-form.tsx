@@ -215,10 +215,10 @@ const EMPTY: FormValues = {
   note: '',
 };
 
-// La categoría no la usa el asiento de una transferencia ni de un movimiento de
-// socio, pero el backend la exige en todos los tipos (`CreateFinanceEntrySchema`),
-// así que el selector se muestra siempre. Solo se acota la lista donde el signo
-// importa: un gasto no se imputa a una categoría de ingresos.
+// El signo con el que se acota la lista de categorías. Solo se pregunta donde
+// hay selector —los tres tipos de `CATEGORY_TYPES`— y solo se acota donde el
+// signo importa: un gasto no se imputa a una categoría de ingresos. Un "Otro"
+// no tiene signo propio, así que ve todas.
 function kindForType(type: MovementType): FinanceKind | undefined {
   if (type === 'EXPENSE') return 'expense';
   if (type === 'INCOME') return 'income';
@@ -524,38 +524,36 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                 )}
               />
               {needsCategory && (
-              <Controller
-                name="categoryId"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="fe-category">Categoría</FieldLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={lockAccounting}
-                    >
-                      <SelectTrigger id="fe-category" aria-invalid={fieldState.invalid}>
-                        <SelectValue placeholder="Elegí una categoría" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cats.map((c) => (
-                          <SelectItem
-                            key={c.id}
-                            value={c.id}
-                            disabled={needsCategory && !c.accountId}
-                          >
-                            {needsCategory && !c.accountId
-                              ? `${c.name} — sin cuenta contable`
-                              : c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
+                <Controller
+                  name="categoryId"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor="fe-category">Categoría</FieldLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={lockAccounting}
+                      >
+                        <SelectTrigger id="fe-category" aria-invalid={fieldState.invalid}>
+                          <SelectValue placeholder="Elegí una categoría" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {/* Acá dentro `needsCategory` es siempre true: el bloque
+                              entero solo se renderiza con él. Una categoría sin
+                              cuenta contable no se puede asentar, así que se
+                              ofrece deshabilitada y diciendo por qué. */}
+                          {cats.map((c) => (
+                            <SelectItem key={c.id} value={c.id} disabled={!c.accountId}>
+                              {c.accountId ? c.name : `${c.name} — sin cuenta contable`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                    </Field>
+                  )}
+                />
               )}
               <Controller
                 name="amount"
