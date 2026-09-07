@@ -93,8 +93,11 @@ export function FinanceEntriesTable() {
         header: 'Categoría',
         meta: { label: 'Categoría' },
         enableSorting: false,
+        // Los cinco tipos que no se imputan contra una categoría la traen en
+        // null: el guion dice "no aplica", y el tipo del movimiento —que está en
+        // su propia columna— es lo que de verdad lo describe.
         cell: ({ row }) => (
-          <Voidable entry={row.original}>{row.original.categoryName}</Voidable>
+          <Voidable entry={row.original}>{row.original.categoryName ?? '—'}</Voidable>
         ),
       },
       {

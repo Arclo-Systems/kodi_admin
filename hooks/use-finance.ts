@@ -96,9 +96,12 @@ export type FinanceCategory = {
 
 export type FinanceEntry = {
   id: string;
-  categoryId: string;
-  categoryName: string;
-  kind: FinanceKind;
+  // Los tres son NULL en los cinco tipos que no se imputan contra la cuenta de
+  // una categoría (transferencia, los dos de socio y las dos liquidaciones): ahí
+  // el movimiento se lee por su `type`, que es lo que de verdad lo describe.
+  categoryId: string | null;
+  categoryName: string | null;
+  kind: FinanceKind | null;
   type: MovementType;
   status: FinanceEntryStatus;
   // String y no number: el backend serializa el Decimal con dos decimales fijos
@@ -377,7 +380,11 @@ export type FinanceCategoryUpdate = {
 };
 
 export type FinanceEntryInput = {
-  categoryId: string;
+  // Obligatoria solo en INCOME, EXPENSE y OTHER: es de donde sale la cuenta
+  // contra la que se imputa el asiento. En los otros cinco tipos el backend la
+  // acepta y la guarda, pero la IGNORA para el asiento — así que el panel no la
+  // manda: un dato que no se lee es un dato que se desincroniza.
+  categoryId?: string;
   amount: string;
   currency: string;
   date: string;

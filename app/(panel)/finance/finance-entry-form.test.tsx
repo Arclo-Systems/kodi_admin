@@ -337,7 +337,6 @@ describe('FinanceEntryForm — una transferencia necesita sus dos cuentas', () =
 
     await pickOption('Tipo', 'Transferencia');
     await pickOption('Moneda', 'CRC');
-    await pickOption('Categoría', CATEGORY.name);
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '5000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
 
@@ -351,7 +350,6 @@ describe('FinanceEntryForm — una transferencia necesita sus dos cuentas', () =
 
     await pickOption('Tipo', 'Transferencia');
     await pickOption('Moneda', 'CRC');
-    await pickOption('Categoría', CATEGORY.name);
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '5000' } });
     await pickOption('Cuenta de origen', `${CAJA.code} ${CAJA.name}`);
     await pickOption('Cuenta de destino', `${BANCO.code} ${BANCO.name}`);
@@ -378,7 +376,6 @@ describe('FinanceEntryForm — transferencia entre monedas distintas', () => {
   async function transferenciaCrc(page: { destino: string }): Promise<void> {
     await pickOption('Tipo', 'Transferencia');
     await pickOption('Moneda', 'CRC');
-    await pickOption('Categoría', CATEGORY.name);
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '500000' } });
     await pickOption('Cuenta de origen', `${CAJA.code} ${CAJA.name}`);
     await pickOption('Cuenta de destino', page.destino);
@@ -456,7 +453,6 @@ describe('FinanceEntryForm — origen y destino no pueden ser la misma cuenta', 
 
     await pickOption('Tipo', 'Transferencia');
     await pickOption('Moneda', 'CRC');
-    await pickOption('Categoría', CATEGORY.name);
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '5000' } });
     await pickOption('Cuenta de origen', `${CAJA.code} ${CAJA.name}`);
     await pickOption('Cuenta de destino', `${CAJA.code} ${CAJA.name}`);
@@ -642,23 +638,38 @@ describe('FinanceEntryForm — un movimiento contabilizado no pierde sus cuentas
   });
 });
 
-describe('FinanceEntryForm — la cuenta de la categoría solo la exigen ingreso, gasto y otro', () => {
-  // Una transferencia se asienta entre dos cuentas de activo y un movimiento de
-  // socio contra patrimonio: la categoría queda como etiqueta y el backend no le
-  // pide cuenta. Deshabilitarla ahí bloqueaba un alta que el backend acepta.
-  it('en una transferencia la categoría huérfana se puede elegir y no hay aviso', async () => {
+describe('FinanceEntryForm — la categoría vive donde hay resultado', () => {
+  // El backend la acepta y la guarda en los cinco tipos que no la usan, pero la
+  // IGNORA para el asiento. Pedirla igual invita a explicar el movimiento por la
+  // categoría equivocada y a filtrar por un dato que no describe el asiento.
+  it.each([
+    ['Transferencia'],
+    ['Aporte de socio'],
+    ['Préstamo de socio'],
+    ['Pago de deuda'],
+    ['Cobro'],
+  ])('en "%s" no hay selector de categoría', async (tipo) => {
     categoryList = [CATEGORY, UNMAPPED_CATEGORY];
     render(<FinanceEntryForm />);
 
-    await pickOption('Tipo', 'Transferencia');
+    await pickOption('Tipo', tipo);
 
-    fireEvent.click(await screen.findByRole('combobox', { name: 'Categoría' }));
-    const item = await screen.findByRole('option', { name: 'Viáticos' });
-    expect(item).not.toHaveAttribute('aria-disabled', 'true');
+    await waitFor(() =>
+      expect(screen.queryByRole('combobox', { name: 'Categoría' })).toBeNull(),
+    );
     expect(screen.queryByText('Hay categorías sin cuenta contable.')).toBeNull();
   });
 
-  it('en un "Otro" sigue deshabilitada: ese asiento sí va contra la cuenta', async () => {
+  it.each([['Ingreso'], ['Gasto'], ['Otro']])('en "%s" sí lo hay', async (tipo) => {
+    categoryList = [CATEGORY];
+    render(<FinanceEntryForm />);
+
+    await pickOption('Tipo', tipo);
+
+    expect(await screen.findByRole('combobox', { name: 'Categoría' })).toBeInTheDocument();
+  });
+
+  it('en un "Otro" la huérfana sigue deshabilitada: ese asiento sí va contra la cuenta', async () => {
     categoryList = [CATEGORY, UNMAPPED_CATEGORY];
     render(<FinanceEntryForm />);
 
@@ -724,7 +735,6 @@ describe('FinanceEntryForm — pago de deuda y cobro', () => {
     categoryList = [CATEGORY];
     render(<FinanceEntryForm />);
     await pickOption('Tipo', 'Pago de deuda');
-    await pickOption('Categoría', CATEGORY.name);
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '500000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Crear movimiento' }));
 
@@ -733,11 +743,10 @@ describe('FinanceEntryForm — pago de deuda y cobro', () => {
     expect(create).not.toHaveBeenCalled();
   });
 
-  it('manda el pago con las dos cuentas y sin counterAmount', async () => {
+  it('manda el pago con las dos cuentas, sin counterAmount y SIN categoría', async () => {
     categoryList = [CATEGORY];
     render(<FinanceEntryForm />);
     await pickOption('Tipo', 'Pago de deuda');
-    await pickOption('Categoría', CATEGORY.name);
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '500000' } });
     await pickOption('Moneda', 'CRC');
     await pickOption('Cuenta a pagar', '2110 Cuentas por pagar');
@@ -748,20 +757,21 @@ describe('FinanceEntryForm — pago de deuda y cobro', () => {
     const [input] = create.mock.calls[0] as [Record<string, unknown>];
     expect(input).toMatchObject({
       type: 'LIABILITY_PAYMENT',
-      categoryId: CATEGORY.id,
       amount: '500000',
       currency: 'CRC',
       accountId: PROVEEDORES.id,
       counterAccountId: CAJA.id,
     });
     expect(input).not.toHaveProperty('counterAmount');
+    // El backend la acepta y la guarda, pero la ignora para el asiento: mandarla
+    // sería sembrar un dato que ninguna pantalla vuelve a leer.
+    expect(input).not.toHaveProperty('categoryId');
   });
 
   it('manda el cobro con la cuenta por cobrar y la caja', async () => {
     categoryList = [CATEGORY];
     render(<FinanceEntryForm />);
     await pickOption('Tipo', 'Cobro');
-    await pickOption('Categoría', CATEGORY.name);
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '120000' } });
     await pickOption('Moneda', 'CRC');
     await pickOption('Cuenta por cobrar', '1210 Cuentas por cobrar a sponsors');
@@ -775,6 +785,7 @@ describe('FinanceEntryForm — pago de deuda y cobro', () => {
       accountId: CXC_SPONSORS.id,
       counterAccountId: CAJA.id,
     });
+    expect(input).not.toHaveProperty('categoryId');
   });
 
   // El backend responde 409 con un `message` que dice qué arreglar: mostrarlo tal
@@ -786,7 +797,6 @@ describe('FinanceEntryForm — pago de deuda y cobro', () => {
     );
     render(<FinanceEntryForm />);
     await pickOption('Tipo', 'Pago de deuda');
-    await pickOption('Categoría', CATEGORY.name);
     fireEvent.change(screen.getByLabelText('Monto'), { target: { value: '500000' } });
     await pickOption('Moneda', 'CRC');
     await pickOption('Cuenta a pagar', '2110 Cuentas por pagar');

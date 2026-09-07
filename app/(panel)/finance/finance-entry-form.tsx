@@ -62,8 +62,23 @@ const ASSET_ONLY_TYPES = new Set<MovementType>([
   'PARTNER_LOAN',
 ]);
 
-// Los tres tipos cuyo asiento se imputa contra la cuenta de la categoría.
-const CATEGORY_ACCOUNT_TYPES = new Set<MovementType>(['INCOME', 'EXPENSE', 'OTHER']);
+/**
+ * Los tres tipos cuyo asiento se imputa contra la cuenta de la categoría, que
+ * son exactamente los tres que la NECESITAN.
+ *
+ * En los otros cinco —transferencia, aporte y préstamo de socio, pago de deuda y
+ * cobro— el backend la acepta y la guarda, pero la **ignora** para el asiento
+ * (contrato de F6-A: `categoryId` opcional, y `categoryId`/`categoryName`/`kind`
+ * nullables en la respuesta). El panel directamente no la pide ni la manda: un
+ * campo que el usuario elige y que después no significa nada es peor que no
+ * tenerlo — invita a explicar el movimiento por la categoría equivocada y, en la
+ * lista, a filtrar por un dato que no describe el asiento.
+ *
+ * Se decidió igual para los cinco, no solo para las dos liquidaciones: la regla
+ * es "la categoría vive donde hay resultado", y una transferencia no lo tiene
+ * más que un pago de deuda.
+ */
+const CATEGORY_TYPES = new Set<MovementType>(['INCOME', 'EXPENSE', 'OTHER']);
 
 // Liquidar un saldo ya registrado: las DOS cuentas son obligatorias y ninguna
 // admite la contrapartida por defecto ("1900 Por clasificar"), porque saldar una
@@ -103,7 +118,8 @@ function schemaFor(currencyById: ReadonlyMap<string, string | null>) {
   return z
     .object({
       type: z.enum(MOVEMENT_TYPES),
-      categoryId: z.string().min(1, 'Elegí una categoría'),
+      // Sin `min(1)`: la exige el `superRefine` y solo donde el asiento la usa.
+      categoryId: z.string(),
       amount: z
         .string()
         .min(1, 'Requerido')
@@ -118,6 +134,8 @@ function schemaFor(currencyById: ReadonlyMap<string, string | null>) {
       note: z.string(),
     })
     .superRefine((v, ctx) => {
+      if (CATEGORY_TYPES.has(v.type) && !v.categoryId)
+        ctx.addIssue({ code: 'custom', path: ['categoryId'], message: 'Elegí una categoría' });
       if (SETTLEMENT_TYPES.has(v.type)) {
         const esPago = v.type === 'LIABILITY_PAYMENT';
         if (!v.accountId)
@@ -168,7 +186,7 @@ type FormValues = z.infer<ReturnType<typeof schemaFor>>;
 function toValues(entry: FinanceEntry): FormValues {
   return {
     type: entry.type,
-    categoryId: entry.categoryId,
+    categoryId: entry.categoryId ?? '',
     amount: entry.amount,
     currency: FINANCE_CURRENCIES.includes(entry.currency as (typeof FINANCE_CURRENCIES)[number])
       ? (entry.currency as (typeof FINANCE_CURRENCIES)[number])
@@ -323,16 +341,15 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
 
   const { data: categories } = useFinanceCategories(kindForType(type));
   const cats = categories ?? [];
-  // Solo el asiento de un ingreso, un gasto o un "otro" se imputa contra la cuenta
-  // de la categoría (`requireCategoryAccount`, rama `default` de
-  // `finance-entries.service.ts`). Una transferencia o un movimiento de socio se
-  // asientan entre cuentas de activo/patrimonio y la categoría queda como
-  // etiqueta: deshabilitarla ahí bloqueaba un alta que el backend acepta.
-  const needsCategoryAccount = CATEGORY_ACCOUNT_TYPES.has(type);
+  // El selector solo existe donde el asiento se imputa contra la cuenta de la
+  // categoría (`requireCategoryAccount`, rama `default` de
+  // `finance-entries.service.ts`). En los otros cinco tipos ni se pide ni se
+  // manda: ver `CATEGORY_TYPES`.
+  const needsCategory = CATEGORY_TYPES.has(type);
   // Una categoría sin cuenta no se puede contabilizar: elegirla solo consigue un
   // 409 CATEGORY_WITHOUT_ACCOUNT al guardar. Se ofrece deshabilitada (para que se
   // vea que existe y por qué no sirve) y el aviso dice dónde se arregla.
-  const hasUnmappedCategory = needsCategoryAccount && cats.some((c) => c.isActive && !c.accountId);
+  const hasUnmappedCategory = needsCategory && cats.some((c) => c.isActive && !c.accountId);
 
   const branchOptions = useMemo(() => {
     const postables = postable.data ?? [];
@@ -401,7 +418,9 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
         note: v.note.trim() || null,
       };
       const accounting = {
-        categoryId: v.categoryId,
+        // Solo donde el asiento la usa: mandarla en los otros cinco la guardaría
+        // como un dato que ninguna pantalla vuelve a leer.
+        ...(CATEGORY_TYPES.has(v.type) ? { categoryId: v.categoryId } : {}),
         amount: v.amount,
         currency: v.currency,
         date: civilDayToIso(v.date),
@@ -504,6 +523,7 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                   </Field>
                 )}
               />
+              {needsCategory && (
               <Controller
                 name="categoryId"
                 control={form.control}
@@ -523,24 +543,20 @@ function FinanceEntryFormInner({ entry }: { entry?: FinanceEntry }) {
                           <SelectItem
                             key={c.id}
                             value={c.id}
-                            disabled={needsCategoryAccount && !c.accountId}
+                            disabled={needsCategory && !c.accountId}
                           >
-                            {needsCategoryAccount && !c.accountId
+                            {needsCategory && !c.accountId
                               ? `${c.name} — sin cuenta contable`
                               : c.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {isSettlement && (
-                      <FieldDescription>
-                        Solo etiqueta el movimiento: el asiento sale de las dos cuentas.
-                      </FieldDescription>
-                    )}
                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                   </Field>
                 )}
               />
+              )}
               <Controller
                 name="amount"
                 control={form.control}

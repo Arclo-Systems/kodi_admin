@@ -19040,9 +19040,9 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     /** Format: uuid */
-                    categoryId: string;
-                    categoryName: string;
-                    kind: string;
+                    categoryId: string | null;
+                    categoryName: string | null;
+                    kind: string | null;
                     /** @enum {string} */
                     type: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER" | "LIABILITY_PAYMENT" | "RECEIVABLE_COLLECTION";
                     /** @enum {string} */
@@ -19089,9 +19089,9 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 /** Format: uuid */
-                categoryId: string;
-                categoryName: string;
-                kind: string;
+                categoryId: string | null;
+                categoryName: string | null;
+                kind: string | null;
                 /** @enum {string} */
                 type: "INCOME" | "EXPENSE" | "TRANSFER" | "PARTNER_CONTRIBUTION" | "PARTNER_LOAN" | "OTHER" | "LIABILITY_PAYMENT" | "RECEIVABLE_COLLECTION";
                 /** @enum {string} */
@@ -19120,7 +19120,7 @@ export interface components {
         };
         CreateFinanceEntryDto: {
             /** Format: uuid */
-            categoryId: string;
+            categoryId?: string;
             amount: string;
             /** @enum {string} */
             currency: "CRC" | "USD";

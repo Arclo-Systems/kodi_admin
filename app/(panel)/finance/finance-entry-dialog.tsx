@@ -54,7 +54,9 @@ export function FinanceEntryDialog({
             <DialogHeader>
               <DialogTitle>{entry.vendor ?? 'Movimiento'}</DialogTitle>
               <DialogDescription>
-                {MOVEMENT_TYPE_LABELS[entry.type]} de {entry.categoryName} · {fmtDate(entry.date)}
+                {/* Sin categoría el "de X" sobra: el tipo ya nombra el movimiento. */}
+                {MOVEMENT_TYPE_LABELS[entry.type]}
+                {entry.categoryName ? ` de ${entry.categoryName}` : ''} · {fmtDate(entry.date)}
               </DialogDescription>
             </DialogHeader>
 
@@ -94,7 +96,7 @@ export function FinanceEntryDialog({
                   </Dato>
                 </>
               )}
-              <Dato label="Categoría">{entry.categoryName}</Dato>
+              {entry.categoryName && <Dato label="Categoría">{entry.categoryName}</Dato>}
               <Dato label="Monto">
                 <span className="tabular-nums">{fmtAmount(entry)}</span>
               </Dato>

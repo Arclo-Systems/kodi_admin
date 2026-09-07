@@ -77,6 +77,26 @@ async function gastosCrcRow(page: Page, vendor: string): Promise<Locator> {
   return fila;
 }
 
+/**
+ * La fila de un movimiento buscándolo por su TIPO, no por su signo.
+ *
+ * Un pago de deuda no tiene categoría, así que tampoco tiene `kind`: el filtro
+ * "Filtrar por signo" lo dejaría fuera. Es la contracara de la decisión, y por
+ * eso la tabla trae su propio filtro por tipo.
+ */
+async function filaPorTipo(page: Page, tipo: string, vendor: string): Promise<Locator> {
+  await page.goto('/finance/movimientos');
+  await pick(page, 'Filtrar por tipo', tipo);
+  await pick(page, 'Filtrar por moneda', 'CRC');
+
+  await page.getByRole('combobox').last().click();
+  await page.getByRole('option', { name: '100', exact: true }).click();
+
+  const fila = page.locator('table tbody tr').filter({ hasText: vendor });
+  await expect(fila).toBeVisible();
+  return fila;
+}
+
 async function crearGasto(page: Page, vendor: string): Promise<void> {
   await page.goto('/finance/movimientos/new');
   await pick(page, 'Tipo', 'Gasto');
@@ -420,7 +440,9 @@ test('pago de deuda: el gasto a crédito deja saldo en 2110 y el pago lo devuelv
 
   await page.goto('/finance/movimientos/new');
   await pick(page, 'Tipo', 'Pago de deuda');
-  await pick(page, 'Categoría', FINANCE_FIXTURE.mappedCategory);
+  // Un pago de deuda no lleva categoría: el selector NO está y el alta sale igual
+  // (`categoryId` es opcional en el contrato y el asiento no la usa).
+  await expect(page.getByRole('combobox', { name: 'Categoría' })).toHaveCount(0);
   await page.getByLabel('Monto').fill(AMOUNT);
   await pick(page, 'Moneda', 'CRC');
   await pick(page, 'Cuenta a pagar', FINANCE_FIXTURE.payableAccount);
@@ -436,9 +458,13 @@ test('pago de deuda: el gasto a crédito deja saldo en 2110 y el pago lo devuelv
   // 4 · Y el pago no aparece como gasto: las dos patas son activo y pasivo.
   expect(await gastosCrc(page)).toBe(gastosAntes);
 
-  // 5 · La fila se lee con su etiqueta nueva.
-  const fila = await gastosCrcRow(page, pago);
+  // 5 · La fila se lee con su etiqueta nueva y con un guion donde iría la
+  // categoría: el movimiento se describe por su TIPO, no por una categoría que el
+  // asiento nunca miró. Y se la busca POR TIPO: sin categoría no hay `kind`, así
+  // que el filtro por signo no la trae.
+  const fila = await filaPorTipo(page, 'Pago de deuda', pago);
   await expect(fila).toContainText('Pago de deuda');
+  await expect(fila).toContainText('—');
 });
 
 test('el plan de cuentas se pliega, se despliega y reordena hermanas', async ({ page }) => {

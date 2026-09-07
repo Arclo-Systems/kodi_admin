@@ -258,6 +258,16 @@ describe('FinanceEntriesTable — el detalle de un anulado explica la anulación
   });
 });
 
+/** La celda de `columna` en `fila`, ubicada por el índice de su encabezado. */
+function celda(fila: HTMLElement, columna: string): HTMLElement {
+  const encabezados = Array.from(
+    fila.closest('table')?.querySelectorAll('thead th') ?? [],
+  ).map((th) => th.textContent?.trim());
+  const i = encabezados.indexOf(columna);
+  expect(i).toBeGreaterThanOrEqual(0);
+  return fila.querySelectorAll('td')[i] as HTMLElement;
+}
+
 describe('FinanceEntriesTable — el tipo de movimiento sale del backend', () => {
   it('pinta el tipo contable, no el signo de la categoría', () => {
     items = [entry({ type: 'TRANSFER', kind: 'expense' })];
@@ -265,6 +275,35 @@ describe('FinanceEntriesTable — el tipo de movimiento sale del backend', () =>
 
     expect(within(fila()).getByText('Transferencia')).toBeInTheDocument();
     expect(within(fila()).getByText('Activo')).toBeInTheDocument();
+  });
+
+  // Los cinco tipos que no se imputan contra una categoría la traen en NULL
+  // (contrato de F6-A). Una celda vacía se lee como un dato que falta; el guion
+  // dice "no aplica", y el tipo —que está en su propia columna— lo describe.
+  it('un movimiento sin categoría pinta un guion, no una celda muda', () => {
+    items = [
+      entry({ type: 'LIABILITY_PAYMENT', categoryId: null, categoryName: null, kind: null }),
+    ];
+    renderTable();
+
+    expect(within(fila()).getByText('Pago de deuda')).toBeInTheDocument();
+    // Acotado a SU celda: "Proveedor / fuente" y "Nota" también pintan un guion
+    // cuando vienen vacías, y un `getByText('—')` suelto no distingue cuál es.
+    expect(celda(fila(), 'Categoría')).toHaveTextContent('—');
+  });
+
+  it('el detalle tampoco inventa una categoría que no está', async () => {
+    items = [
+      entry({ type: 'LIABILITY_PAYMENT', categoryId: null, categoryName: null, kind: null }),
+    ];
+    renderTable();
+
+    fireEvent.click(within(fila()).getByText('Pago de deuda'));
+    await waitFor(() => expect(modal()).not.toBeNull());
+    const detalle = modal() as HTMLElement;
+    expect(within(detalle).queryByText('Categoría')).toBeNull();
+    // El encabezado dice el tipo a secas: sin el "de <categoría>" que cuelga.
+    expect(within(detalle).getByText(/^Pago de deuda ·/)).toBeInTheDocument();
   });
 });
 
