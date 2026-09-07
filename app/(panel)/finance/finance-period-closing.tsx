@@ -312,7 +312,9 @@ function CloseButton({ period, onClick }: { period: AccountingPeriod; onClick: (
       <TooltipContent className="max-w-xs">
         <ul className="list-disc space-y-1 pl-4">
           {period.blockers.map((b) => (
-            <li key={b.code}>{b.message}</li>
+            <li key={b.code} className="break-words whitespace-normal">
+              {b.message}
+            </li>
           ))}
         </ul>
       </TooltipContent>
@@ -323,7 +325,10 @@ function CloseButton({ period, onClick }: { period: AccountingPeriod; onClick: (
 function BlockerList({ blockers }: { blockers: PeriodBlocker[] }) {
   if (blockers.length === 0) return <span className="text-success text-sm">Nada. Se puede cerrar.</span>;
   return (
-    <ul className="space-y-1">
+    // `TableCell` trae `whitespace-nowrap`: sin revertirlo, el texto del
+    // bloqueo estira la columna hasta que la tabla entera se scrollea en
+    // horizontal. El ancho máximo la deja envolver en un par de renglones.
+    <ul className="max-w-[32rem] space-y-1">
       {blockers.map((b) => (
         <li
           key={b.code}
@@ -332,7 +337,7 @@ function BlockerList({ blockers }: { blockers: PeriodBlocker[] }) {
           }`}
         >
           <TriangleAlertIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-          <span className="break-words">{b.message}</span>
+          <span className="break-words whitespace-normal">{b.message}</span>
         </li>
       ))}
     </ul>
@@ -390,7 +395,9 @@ function ClosePeriodForm({ period, onDone }: { period: AccountingPeriod; onDone:
             <AlertDescription>
               <ul className="list-disc space-y-1 pl-4">
                 {period.blockers.map((b) => (
-                  <li key={b.code}>{b.message}</li>
+                  <li key={b.code} className="break-words whitespace-normal">
+                    {b.message}
+                  </li>
                 ))}
               </ul>
             </AlertDescription>

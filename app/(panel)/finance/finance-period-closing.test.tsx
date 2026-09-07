@@ -44,15 +44,17 @@ const ABIERTO: AccountingPeriod = {
   blockers: [],
 };
 
+// Los textos exactos que sirve el backend: una frase por bloqueo, porque estos
+// mensajes se leen dentro de una celda de la tabla.
 const DESCUADRE = {
   code: 'PERIOD_UNBALANCED',
-  message: 'La comprobación de CRC no cuadra: faltan 33,33.',
+  message: 'El período no cuadra (débitos − créditos: CRC 33.33).',
   forceable: false,
 };
 
 const ORDENES_PENDIENTES = {
   code: 'PENDING_PLAY_ORDERS',
-  message: 'Hay 3 órdenes de Google Play sin resolver con fecha en el mes.',
+  message: '3 orden(es) de Google Play sin resolver.',
   forceable: true,
 };
 
@@ -115,6 +117,17 @@ describe('FinancePeriodClosing — el botón de cerrar y los bloqueos', () => {
     // El motivo NO vive solo en el tooltip: quien navega con teclado o lector
     // no puede apuntar con el mouse.
     expect(screen.getByText(DESCUADRE.message)).toBeInTheDocument();
+  });
+
+  it('el bloqueo envuelve dentro de la celda en vez de ensanchar la tabla', () => {
+    periods = [{ ...ABIERTO, balanced: false, blockers: [DESCUADRE] }];
+    render(<FinancePeriodClosing canWrite />);
+
+    // `TableCell` trae `whitespace-nowrap`: sin revertirlo acá, el texto del
+    // bloqueo estira la columna y la tabla entera se scrollea en horizontal.
+    const texto = screen.getByText(DESCUADRE.message);
+    expect(texto).toHaveClass('whitespace-normal', 'break-words');
+    expect(texto.closest('ul')).toHaveClass('max-w-[32rem]');
   });
 
   it('con un descuadre Y órdenes pendientes sigue deshabilitado: force no salta el descuadre', () => {
@@ -186,7 +199,7 @@ describe('FinancePeriodClosing — cerrar', () => {
 
   it('el cierre secuencial se muestra con el mes que hay que cerrar primero', async () => {
     close.mockRejectedValue(
-      new Error('Primero cerrá 2026-08: el período anterior sigue abierto.'),
+      new Error('Cerrá primero 08/2026: los meses se cierran en orden.'),
     );
     render(<FinancePeriodClosing canWrite />);
     fireEvent.click(screen.getByRole('button', { name: /Cerrar/ }));
@@ -194,7 +207,7 @@ describe('FinancePeriodClosing — cerrar', () => {
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cerrar período' }));
 
-    expect(await screen.findByText(/Primero cerrá 2026-08/)).toBeInTheDocument();
+    expect(await screen.findByText(/Cerrá primero 08\/2026/)).toBeInTheDocument();
   });
 });
 
