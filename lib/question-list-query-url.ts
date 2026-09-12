@@ -67,6 +67,17 @@ export function serializeQuestionListQuery(query: QuestionListQuery): string {
   return params.toString();
 }
 
+/**
+ * Query del export: los mismos filtros que el listado, sin `page`/`pageSize` —
+ * el CSV trae TODAS las preguntas que cumplen el filtro, no la página visible.
+ */
+export function questionsExportQueryString(query: QuestionListQuery): string {
+  const params = new URLSearchParams(serializeQuestionListQuery(query));
+  params.delete('page');
+  params.delete('pageSize');
+  return params.toString();
+}
+
 export function hasActiveQuestionFilters(query: QuestionListQuery): boolean {
   return (
     !!query.search?.trim() ||

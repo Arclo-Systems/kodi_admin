@@ -4,6 +4,7 @@ import {
   DEFAULT_QUESTION_LIST_QUERY,
   hasActiveQuestionFilters,
   parseQuestionListQuery,
+  questionsExportQueryString,
   serializeQuestionListQuery,
 } from './question-list-query-url';
 
@@ -132,5 +133,35 @@ describe('hasActiveQuestionFilters', () => {
       true,
     );
     expect(hasActiveQuestionFilters({ ...DEFAULT_QUESTION_LIST_QUERY, search: '  ' })).toBe(false);
+  });
+});
+
+describe('questionsExportQueryString', () => {
+  it('arrastra los filtros del listado', () => {
+    expect(
+      questionsExportQueryString({
+        search: 'volcán',
+        moduleId: 'm1',
+        subjectId: 's1',
+        topicId: 't1',
+        status: 'review',
+        difficulty: 'hard',
+        isDemoPool: true,
+        page: 1,
+        pageSize: 20,
+      }),
+    ).toBe(
+      'search=volc%C3%A1n&moduleId=m1&subjectId=s1&topicId=t1&status=review&difficulty=hard&isDemoPool=true',
+    );
+  });
+
+  it('nunca manda page ni pageSize: el CSV no sale paginado', () => {
+    const qs = questionsExportQueryString({ status: 'draft', page: 7, pageSize: 100 });
+    expect(qs).toBe('status=draft');
+    expect(qs).not.toContain('page');
+  });
+
+  it('sin filtros la query va vacía', () => {
+    expect(questionsExportQueryString(DEFAULT_QUESTION_LIST_QUERY)).toBe('');
   });
 });

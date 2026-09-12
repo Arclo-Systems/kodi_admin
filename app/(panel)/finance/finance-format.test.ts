@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   formatAmount,
   formatBytes,
+  formatCompactAmount,
   formatMoney,
   formatRate,
   ratioToPercent,
@@ -90,5 +91,36 @@ describe('formatBytes — el peso de un archivo del paquete', () => {
     expect(formatBytes(4211)).toBe('4,1 KB');
     expect(formatBytes(184320)).toBe('180,0 KB');
     expect(formatBytes(20 * 1024 * 1024)).toBe('20,0 MB');
+  });
+});
+
+// El eje del P&L imprimía el importe entero con un ancho fijo de 48 px: con
+// gastos en millones, la marca quedaba recortada y se leía "000000".
+describe('formatCompactAmount — las marcas del eje de un gráfico', () => {
+  it('acorta miles y millones, y deja los números chicos como están', () => {
+    expect(formatCompactAmount(0)).toBe('0');
+    expect(formatCompactAmount(950)).toBe('950');
+    expect(formatCompactAmount(12_000)).toBe('12 k');
+    expect(formatCompactAmount(1_500)).toBe('1,5 k');
+    expect(formatCompactAmount(1_200_000)).toBe('1,2 M');
+    expect(formatCompactAmount(465_000_000)).toBe('465 M');
+  });
+
+  // El redondeo se hace en cada escala y no después de elegirla: si no, 999 999
+  // se rotulaba "1000 k", cuatro dígitos y un sufijo que ya no corresponde.
+  it('sube de escala cuando el redondeo llega a cuatro dígitos', () => {
+    expect(formatCompactAmount(999_999)).toBe('1 M');
+    expect(formatCompactAmount(999_499)).toBe('999,5 k');
+    expect(formatCompactAmount(999_999_999)).toBe('1000 M');
+  });
+
+  it('el rótulo más largo entra en 7 caracteres', () => {
+    for (const value of [999, 999_000, 999_499, 999_999, 1_234_567, 465_000_000, -2_500]) {
+      expect(formatCompactAmount(value).length).toBeLessThanOrEqual(7);
+    }
+  });
+
+  it('un eje con importes negativos conserva el signo', () => {
+    expect(formatCompactAmount(-2_500)).toBe('-2,5 k');
   });
 });

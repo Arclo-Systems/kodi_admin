@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -14,6 +14,7 @@ import {
   type ExchangeRate,
   type ExchangeRateListQuery,
 } from '@/hooks/use-finance';
+import { readRateDirection } from '@/lib/exchange-rate-direction';
 import { DataTable } from '@/components/admin/data-table';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -38,6 +39,11 @@ import {
 } from '@/components/ui/select';
 
 const ALL = '__all__';
+// Ids estables: el input los referencia con `aria-describedby` para que el
+// lector de pantalla diga POR QUÉ la tasa quedó marcada como inválida. `Field`
+// no cablea nada de esto (es el shadcn vendado, sin contexto ni ids).
+const RATE_PREVIEW_ID = 'er-rate-direction';
+const RATE_WARNING_ID = 'er-rate-direction-warning';
 const PAGE_SIZE = 20;
 
 // El mismo regex que `zRate()` en el backend: hasta 10 enteros y 8 decimales. Con
@@ -289,6 +295,19 @@ function ExchangeRateForm({ onDone }: { onDone: () => void }) {
     },
   });
 
+  const [from, to, rate] = useWatch({
+    control: form.control,
+    name: ['fromCurrency', 'toCurrency', 'rate'],
+  });
+  // Las dos lecturas del número tecleado, en vivo. El aviso NO bloquea el envío:
+  // la autoridad sigue siendo el 400 del backend (`EXCHANGE_RATE_IMPLAUSIBLE`),
+  // esto solo hace que se vea antes de mandarlo.
+  const reading = readRateDirection({ fromCurrency: from, toCurrency: to, rate });
+  const rateDescribedBy =
+    [reading ? RATE_PREVIEW_ID : null, reading?.warning ? RATE_WARNING_ID : null]
+      .filter((id): id is string => id !== null)
+      .join(' ') || undefined;
+
   async function submit(v: FormValues): Promise<void> {
     setConflict(null);
     try {
@@ -386,15 +405,29 @@ function ExchangeRateForm({ onDone }: { onDone: () => void }) {
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="er-rate">Tasa</FieldLabel>
+              {/* La etiqueta es el enunciado completo, con las monedas elegidas: "Tasa"
+                  a secas no dice en qué dirección se lee, y es así como entraron a
+                  producción tres tasas CRC→USD con el valor en colones por dólar. */}
+              <FieldLabel htmlFor="er-rate">{`1 ${from} = ___ ${to}`}</FieldLabel>
               <Input
                 {...field}
                 id="er-rate"
                 inputMode="decimal"
                 autoComplete="off"
                 placeholder="0.00196078"
-                aria-invalid={fieldState.invalid}
+                aria-invalid={fieldState.invalid || !!reading?.warning}
+                aria-describedby={rateDescribedBy}
               />
+              {reading && (
+                <FieldDescription id={RATE_PREVIEW_ID} className="tabular-nums">
+                  {reading.forward} · {reading.inverse}
+                </FieldDescription>
+              )}
+              {reading?.warning && (
+                <FieldDescription id={RATE_WARNING_ID} className="text-destructive">
+                  {reading.warning}
+                </FieldDescription>
+              )}
               <FieldDescription>
                 Hasta 8 decimales. Con dos, el colón contra el dólar se redondearía a cero.
               </FieldDescription>

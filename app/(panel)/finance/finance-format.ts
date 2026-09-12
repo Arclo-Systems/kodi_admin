@@ -113,6 +113,43 @@ export function formatMoney(amount: string): string {
   return `${negative ? '-' : ''}${grouped},${decimals}`;
 }
 
+// Escalas del eje de un gráfico, de menor a mayor. Se formatea a mano y no con
+// `Intl` compacto por lo mismo que `formatMoney`: el ICU de `es-CR` cambia entre
+// el Node del build y el navegador, y ahí devuelve "1,5 K" para mil quinientos
+// pero "12 k" para doce mil. Un eje con dos sufijos distintos se lee como si
+// midieran cosas distintas.
+const COMPACT_SCALES = [
+  { divisor: 1_000, suffix: ' k' },
+  { divisor: 1_000_000, suffix: ' M' },
+] as const;
+
+const COMPACT_MAX = 1_000;
+
+/**
+ * El rótulo de una marca del eje: `465000000` → `'465 M'`.
+ *
+ * Sin esto el eje imprime el número entero y, con cifras grandes, el ancho fijo
+ * del `YAxis` recorta los primeros dígitos: 465.000.000 se veía como "000000".
+ * Es el único formato de finanzas que redondea a propósito — un eje mide, no
+ * rinde cuentas; los importes exactos están en los KPI y en el tooltip.
+ */
+export function formatCompactAmount(value: number): string {
+  if (!Number.isFinite(value)) return '';
+  let scaled = Math.round(value);
+  let suffix = '';
+  // Se redondea en CADA escala y se sube mientras el rótulo llegue a cuatro
+  // dígitos: 999.999 redondeado en miles da "1000 k", que es "1 M". Elegir la
+  // escala antes de redondear era justo lo que dejaba pasar ese rótulo.
+  for (const scale of COMPACT_SCALES) {
+    if (Math.abs(scaled) < COMPACT_MAX) break;
+    scaled = Math.round((value / scale.divisor) * 10) / 10;
+    suffix = scale.suffix;
+  }
+  // Un decimal solo cuando aporta: "1,5 M" sí, "12,0 M" no.
+  const text = Number.isInteger(scaled) ? String(scaled) : scaled.toFixed(1).replace('.', ',');
+  return `${text}${suffix}`;
+}
+
 /** El mismo monto con su moneda, como se lee en una tabla: `'1 234,56 CRC'`. */
 export const formatAmount = (amount: string, currency: string): string =>
   `${formatMoney(amount)} ${currency}`;

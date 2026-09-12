@@ -23,7 +23,7 @@ import {
 import { KpiCard } from '@/components/admin/kpi-card';
 import { FINANCE_CURRENCIES, useFinancePnl } from '@/hooks/use-finance';
 import { civilDayEndIso, civilDayStartIso } from '@/lib/civil-date';
-import { ACCOUNT_TYPE_LABELS, formatMoney } from './finance-format';
+import { ACCOUNT_TYPE_LABELS, formatCompactAmount, formatMoney } from './finance-format';
 import {
   ConsolidationBanner,
   CurrencyScopeSelect,
@@ -169,7 +169,15 @@ export function PnlDashboard() {
                   <BarChart data={months}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="label" tickLine={false} axisLine={false} />
-                    <YAxis width={48} tickLine={false} axisLine={false} />
+                    {/* Compacto y con ancho para 6-7 caracteres: con el importe entero
+                        y `width={48}`, un eje en millones recortaba los primeros
+                        dígitos y la marca se leía "000000". */}
+                    <YAxis
+                      width={56}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={formatCompactAmount}
+                    />
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Bar dataKey="income" fill="var(--color-income)" radius={4} />
                     <Bar dataKey="expense" fill="var(--color-expense)" radius={4} />

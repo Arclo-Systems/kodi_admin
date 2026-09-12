@@ -24,6 +24,7 @@ import { StatusBadge } from '@/lib/status-badge';
 import { QuestionFilters } from './question-filters';
 import { AiGenerateDialog } from './ai-generate-dialog';
 import { QuestionsImportDialog } from './questions-import-dialog';
+import { QuestionsExportButton } from './questions-export-button';
 import { QuestionsBulkBar } from './questions-bulk-bar';
 
 const SOURCE_L: Record<GenerationSource, string> = {
@@ -128,6 +129,9 @@ export function QuestionsTable({ role }: { role: AdminRole }) {
   // Las acciones en lote (bulk-status / bulk-delete) son admin-only en el backend;
   // sin esa capacidad no tiene sentido ofrecer selección.
   const canManage = can(role, 'content:question:activate');
+  // El export baja exactamente lo que el listado muestra: mismo permiso de lectura
+  // que la pantalla (y que el `@RequireRole(admin, editor)` del endpoint).
+  const canExport = can(role, 'view:content');
 
   function clearSelection(): void {
     setSelected([]);
@@ -141,6 +145,13 @@ export function QuestionsTable({ role }: { role: AdminRole }) {
         <div className="flex shrink-0 gap-2">
           <AiGenerateDialog />
           <QuestionsImportDialog />
+          {canExport && (
+            <QuestionsExportButton
+              query={query}
+              total={data?.total ?? 0}
+              loading={isLoading}
+            />
+          )}
           {/* Slot donde el DataTable porta su "Columnas" para compartir esta línea. */}
           <div id="questions-table-toolbar" className="flex items-center gap-2" />
           <Button asChild size="sm">

@@ -44,6 +44,11 @@ async function abrirAlta(): Promise<HTMLElement> {
   return screen.findByRole('dialog');
 }
 
+// La etiqueta del campo es el enunciado con las monedas elegidas ("1 CRC = ___ USD"),
+// así que se busca por su forma y no por un rótulo fijo.
+const campoTasa = (dialog: HTMLElement): HTMLElement =>
+  within(dialog).getByLabelText(/^1 \w+ = ___ \w+$/);
+
 async function elegir(dialog: HTMLElement, combobox: string, option: string): Promise<void> {
   fireEvent.click(within(dialog).getByRole('combobox', { name: combobox }));
   fireEvent.click(await screen.findByRole('option', { name: option }));
@@ -100,12 +105,12 @@ describe('FinanceExchangeRates — el alta valida antes de viajar', () => {
     render(<FinanceExchangeRates canWrite />);
     const dialog = await abrirAlta();
 
-    fireEvent.change(within(dialog).getByLabelText('Tasa'), { target: { value: '0' } });
+    fireEvent.change(campoTasa(dialog), { target: { value: '0' } });
     fireEvent.change(within(dialog).getByLabelText('Fuente'), { target: { value: 'BCCR' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cargar tasa' }));
     expect(await within(dialog).findByText('Mayor a 0')).toBeInTheDocument();
 
-    fireEvent.change(within(dialog).getByLabelText('Tasa'), {
+    fireEvent.change(campoTasa(dialog), {
       target: { value: '0.123456789' },
     });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cargar tasa' }));
@@ -119,7 +124,7 @@ describe('FinanceExchangeRates — el alta valida antes de viajar', () => {
 
     await elegir(dialog, 'De', 'CRC');
     await elegir(dialog, 'A', 'USD');
-    fireEvent.change(within(dialog).getByLabelText('Tasa'), {
+    fireEvent.change(campoTasa(dialog), {
       target: { value: '0.00196078' },
     });
     fireEvent.change(within(dialog).getByLabelText('Fuente'), {
@@ -139,6 +144,71 @@ describe('FinanceExchangeRates — el alta valida antes de viajar', () => {
     );
   });
 
+  // Las tres tasas CRC→USD que entraron a producción con el valor en colones por
+  // dólar (458) pasaron por un campo etiquetado "Tasa", que no dice la dirección.
+  it('la etiqueta dice el enunciado con las monedas elegidas', async () => {
+    render(<FinanceExchangeRates canWrite />);
+    const dialog = await abrirAlta();
+
+    expect(within(dialog).getByText('1 CRC = ___ USD')).toBeInTheDocument();
+
+    await elegir(dialog, 'De', 'USD');
+    await elegir(dialog, 'A', 'CRC');
+    expect(within(dialog).getByText('1 USD = ___ CRC')).toBeInTheDocument();
+  });
+
+  it('muestra las dos lecturas de lo tecleado, con el inverso', async () => {
+    render(<FinanceExchangeRates canWrite />);
+    const dialog = await abrirAlta();
+
+    fireEvent.change(campoTasa(dialog), { target: { value: '0.00218' } });
+    const preview = await within(dialog).findByText('1 CRC = 0.00218 USD · 1 USD = 458.72 CRC');
+    expect(campoTasa(dialog).getAttribute('aria-describedby')).toBe(preview.id);
+  });
+
+  it('avisa en el formulario cuando la tasa está al revés, sin bloquear el envío', async () => {
+    render(<FinanceExchangeRates canWrite />);
+    const dialog = await abrirAlta();
+
+    fireEvent.change(campoTasa(dialog), { target: { value: '458' } });
+    fireEvent.change(within(dialog).getByLabelText('Fuente'), { target: { value: 'BCCR' } });
+
+    const aviso = await within(dialog).findByText(/parece la tasa del par al revés/);
+    expect(aviso).toHaveTextContent('Para CRC→USD cargá 0.00218341 (1/458)');
+    expect(aviso).toHaveClass('text-destructive');
+    expect(campoTasa(dialog)).toHaveAttribute('aria-invalid', 'true');
+    // Marcarlo inválido sin decir por qué deja al lector de pantalla anunciando
+    // "inválido" a secas: el aviso y la vista previa se referencian por id.
+    const descrito = campoTasa(dialog).getAttribute('aria-describedby')?.split(' ') ?? [];
+    expect(descrito).toContain(aviso.id);
+    expect(descrito).toContain('er-rate-direction');
+    expect(aviso.id).toBe('er-rate-direction-warning');
+
+    // La autoridad sigue siendo el backend: el aviso no impide mandarla.
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cargar tasa' }));
+    await waitFor(() =>
+      expect(createRate).toHaveBeenCalledWith(expect.objectContaining({ rate: '458' })),
+    );
+  });
+
+  it('el 400 de dirección invertida se muestra con el mensaje del backend', async () => {
+    createRate.mockRejectedValueOnce(
+      new ApiError(
+        'EXCHANGE_RATE_IMPLAUSIBLE',
+        'La tasa se lee como "1 CRC = 458 USD", que no es plausible: 458 parece la tasa del par al revés (1 USD = 458 CRC). Para CRC→USD cargá 0.00218341 (1/458), o registrá el par USD→CRC con 458.',
+        400,
+      ),
+    );
+    render(<FinanceExchangeRates canWrite />);
+    const dialog = await abrirAlta();
+
+    fireEvent.change(campoTasa(dialog), { target: { value: '458' } });
+    fireEvent.change(within(dialog).getByLabelText('Fuente'), { target: { value: 'BCCR' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cargar tasa' }));
+
+    expect(await screen.findByText(/que no es plausible/)).toBeInTheDocument();
+  });
+
   it('el 409 de duplicado se muestra con el mensaje del backend', async () => {
     createRate.mockRejectedValueOnce(
       new ApiError(
@@ -150,7 +220,7 @@ describe('FinanceExchangeRates — el alta valida antes de viajar', () => {
     render(<FinanceExchangeRates canWrite />);
     const dialog = await abrirAlta();
 
-    fireEvent.change(within(dialog).getByLabelText('Tasa'), { target: { value: '0.002' } });
+    fireEvent.change(campoTasa(dialog), { target: { value: '0.002' } });
     fireEvent.change(within(dialog).getByLabelText('Fuente'), { target: { value: 'BCCR' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cargar tasa' }));
 

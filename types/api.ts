@@ -4778,6 +4778,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/content/questions/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["QuestionsAdminController_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/content/questions/upload-image": {
         parameters: {
             query?: never;
@@ -12595,6 +12611,7 @@ export interface components {
                 scheduled_at: string | null;
                 /** Format: uuid */
                 host_user_id: string | null;
+                ended_reason: string | null;
             }[];
             meta: {
                 page: number;
@@ -12634,6 +12651,7 @@ export interface components {
                 scheduled_at: string | null;
                 /** Format: uuid */
                 host_user_id: string | null;
+                ended_reason: string | null;
                 exam_name: string | null;
                 module_name: string;
                 prizes: {
@@ -27311,6 +27329,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuestionAdminResponse"];
+                };
+            };
+        };
+    };
+    QuestionsAdminController_export: {
+        parameters: {
+            query?: {
+                moduleId?: string;
+                subjectId?: string;
+                topicId?: string;
+                difficulty?: "easy" | "medium" | "hard";
+                status?: "draft" | "review" | "active" | "inactive";
+                isDemoPool?: "true" | "false";
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description CSV descargable con TODAS las preguntas del filtro activo */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": string;
                 };
             };
         };
