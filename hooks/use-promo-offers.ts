@@ -29,7 +29,8 @@ export type PromoOffer = {
   id: string;
   slug: string;
   label: string;
-  country: string;
+  /** null = Default (sin país, precios en USD). */
+  country: string | null;
   priceMode: PriceMode;
   discountPercent: number | null;
   /** Moneda del grid de la oferta; puede diferir de la del grid regular. */
@@ -48,7 +49,7 @@ export type PromoOfferDetail = PromoOffer & { prices: OfferPrice[] };
 export type CreateOfferInput = {
   slug: string;
   label: string;
-  country: string;
+  country: string | null;
   priceMode: PriceMode;
   discountPercent?: number | null;
   currency?: OfferCurrency;

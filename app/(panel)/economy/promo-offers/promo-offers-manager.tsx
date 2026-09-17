@@ -38,11 +38,15 @@ import { OfferPricesEditor } from './offer-prices-editor';
 
 const NO_BADGE = 'NONE';
 
+// Radix <Select> no admite value vacío/null → sentinel para la oferta Default
+// (country=null), igual que en la grilla de precios de suscripción.
+const DEFAULT_COUNTRY = 'DEFAULT';
+
 export const FormSchema = z
   .object({
     slug: z.string().regex(/^[a-z0-9-]+$/, 'Solo minúsculas, números y guiones'),
     label: z.string().min(1, 'Requerido').max(80),
-    country: z.string().min(1),
+    country: z.string().min(1), // sentinel 'DEFAULT' o código de país; se mapea a null al enviar
     priceMode: z.enum(['explicit', 'percent']),
     // NaN/undefined = sin %. El `.or(z.nan())` es obligatorio: zod 4 rechaza
     // NaN en z.number(), y el error caía en un campo oculto en modo tabla —
@@ -81,7 +85,12 @@ const DEFAULTS: FormValues = {
 
 const countryLabel = (code: string) => COUNTRIES.find((c) => c.code === code)?.label ?? code;
 
-export function PromoOffersManager() {
+/**
+ * `canUseDefault`: la oferta Default (sin país) vale en todos los mercados, así que solo
+ * la carga quien tiene scope global — mismo criterio que los precios Default. La autoridad
+ * es el backend; esto evita ofrecer una opción que el servidor va a rechazar.
+ */
+export function PromoOffersManager({ canUseDefault }: { canUseDefault: boolean }) {
   const { data: offers, isLoading, isError } = usePromoOffers();
   const { create, update } = usePromoOfferMutations();
   const badges = useStoreItems({ itemType: 'insignia', page: 1, pageSize: 100 });
@@ -91,6 +100,7 @@ export function PromoOffersManager() {
   const form = useForm<FormValues>({ resolver: zodResolver(FormSchema), defaultValues: DEFAULTS });
 
   const priceMode = useWatch({ control: form.control, name: 'priceMode' });
+  const isDefaultCountry = useWatch({ control: form.control, name: 'country' }) === DEFAULT_COUNTRY;
   const startsAt = useWatch({ control: form.control, name: 'startsAt' });
   const endsAt = useWatch({ control: form.control, name: 'endsAt' });
 
@@ -107,7 +117,7 @@ export function PromoOffersManager() {
       form.reset({
         slug: o.slug,
         label: o.label,
-        country: o.country,
+        country: o.country ?? DEFAULT_COUNTRY,
         priceMode: o.priceMode,
         discountPercent: o.discountPercent ?? NaN,
         currency: o.currency,
@@ -128,7 +138,10 @@ export function PromoOffersManager() {
         header: 'País',
         meta: { label: 'País' },
         enableSorting: false,
-        cell: ({ row }) => `${row.original.country} · ${countryLabel(row.original.country)}`,
+        cell: ({ row }) =>
+          row.original.country
+            ? `${row.original.country} · ${countryLabel(row.original.country)}`
+            : 'Default',
       },
       {
         accessorKey: 'label',
@@ -226,7 +239,11 @@ export function PromoOffersManager() {
         await update.mutateAsync({ id: editing.id, input: common });
         toast.success(`Oferta ${editing.label} actualizada`);
       } else {
-        await create.mutateAsync({ slug: v.slug, country: v.country, ...common });
+        await create.mutateAsync({
+          slug: v.slug,
+          country: v.country === DEFAULT_COUNTRY ? null : v.country,
+          ...common,
+        });
         toast.success(`Oferta ${v.label} creada`);
       }
       cancelEdit();
@@ -241,7 +258,7 @@ export function PromoOffersManager() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <SparklesIcon className="text-primary size-4" />
-            {editing ? `Editar: ${editing.label} (${editing.country})` : 'Nueva oferta'}
+            {editing ? `Editar: ${editing.label} (${editing.country ?? 'Default'})` : 'Nueva oferta'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -275,12 +292,27 @@ export function PromoOffersManager() {
                   control={form.control}
                   render={({ field }) => (
                     <Field>
-                      <FieldLabel>País</FieldLabel>
-                      <Select value={field.value} onValueChange={field.onChange} disabled={!!editing}>
-                        <SelectTrigger>
+                      <FieldLabel htmlFor="o-country">País</FieldLabel>
+                      <Select
+                        name={field.name}
+                        value={field.value}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          // La oferta Default cotiza en USD; forzarla acá (y no con un refine)
+                          // evita que el error caiga en un campo oculto en modo %.
+                          if (value === DEFAULT_COUNTRY) form.setValue('currency', 'USD');
+                        }}
+                        disabled={!!editing}
+                      >
+                        <SelectTrigger id="o-country">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          {canUseDefault && (
+                            <SelectItem value={DEFAULT_COUNTRY}>
+                              Default (todos los países, USD)
+                            </SelectItem>
+                          )}
                           {COUNTRIES.map((c) => (
                             <SelectItem key={c.code} value={c.code}>
                               {c.code} · {c.label}
@@ -317,9 +349,14 @@ export function PromoOffersManager() {
                     control={form.control}
                     render={({ field }) => (
                       <Field>
-                        <FieldLabel>Moneda</FieldLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger>
+                        <FieldLabel htmlFor="o-currency">Moneda</FieldLabel>
+                        <Select
+                          name={field.name}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={isDefaultCountry}
+                        >
+                          <SelectTrigger id="o-currency">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -330,6 +367,9 @@ export function PromoOffersManager() {
                             ))}
                           </SelectContent>
                         </Select>
+                        {isDefaultCountry && (
+                          <FieldDescription>La oferta Default cotiza en USD.</FieldDescription>
+                        )}
                       </Field>
                     )}
                   />

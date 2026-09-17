@@ -1601,7 +1601,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Grid de precios de suscripción del país del usuario */
+        /** Grid de precios de suscripción del país del usuario; en iOS, el grid Default en dólares */
         get: operations["PricingController_getPricing"];
         put?: never;
         post?: never;
@@ -1738,7 +1738,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Oferta activa del país del usuario (o null) */
+        /** Oferta activa del país del usuario (o null); en iOS, la oferta Default en dólares */
         get: operations["OffersController_active"];
         put?: never;
         post?: never;
@@ -11121,6 +11121,9 @@ export interface components {
                     rank: number;
                     group_size: number;
                     xp_this_cycle: number;
+                    /** Format: uuid */
+                    module_id: string;
+                    module_short_name: string | null;
                 } | null;
                 stats: {
                     questions_total: number;
@@ -11274,6 +11277,8 @@ export interface components {
             want_founder: boolean;
             /** @default true */
             want_trial: boolean;
+            /** @enum {string} */
+            platform?: "ios" | "android";
         };
         PurchaseIntentResponse: {
             data: {
@@ -18297,7 +18302,7 @@ export interface components {
                 id: string;
                 slug: string;
                 label: string;
-                country: string;
+                country: string | null;
                 priceMode: string;
                 discountPercent: number | null;
                 currency: string;
@@ -18324,7 +18329,7 @@ export interface components {
                 id: string;
                 slug: string;
                 label: string;
-                country: string;
+                country: string | null;
                 priceMode: string;
                 discountPercent: number | null;
                 currency: string;
@@ -18351,13 +18356,32 @@ export interface components {
                 }[];
             };
         };
+        CreateOfferDto: {
+            slug: string;
+            label: string;
+            /** @enum {string|null} */
+            country: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            /** @enum {string} */
+            priceMode: "explicit" | "percent";
+            discountPercent?: number | null;
+            /** @enum {string} */
+            currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB";
+            slotsTotal: number;
+            /** Format: date-time */
+            startsAt?: string | null;
+            /** Format: date-time */
+            endsAt?: string | null;
+            /** Format: uuid */
+            badgeItemId?: string | null;
+            isActive?: boolean;
+        };
         PromoOfferResponse: {
             data: {
                 /** Format: uuid */
                 id: string;
                 slug: string;
                 label: string;
-                country: string;
+                country: string | null;
                 priceMode: string;
                 discountPercent: number | null;
                 currency: string;
@@ -18374,6 +18398,24 @@ export interface components {
                 updatedAt: string;
             };
         };
+        UpdateOfferDto: {
+            label?: string;
+            /** @enum {string|null} */
+            country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | null;
+            /** @enum {string} */
+            priceMode?: "explicit" | "percent";
+            discountPercent?: number | null;
+            /** @enum {string} */
+            currency?: "USD" | "CRC" | "GTQ" | "HNL" | "PAB";
+            slotsTotal?: number;
+            /** Format: date-time */
+            startsAt?: string | null;
+            /** Format: date-time */
+            endsAt?: string | null;
+            /** Format: uuid */
+            badgeItemId?: string | null;
+            isActive?: boolean;
+        };
         PromoOfferPricesSetResponse: {
             data: {
                 count: number;
@@ -18385,7 +18427,7 @@ export interface components {
                 offerId: string;
                 slug: string;
                 label: string;
-                country: string;
+                country: string | null;
                 isActive: boolean;
                 slotsTotal: number;
                 slotsClaimed: number;
@@ -18407,7 +18449,7 @@ export interface components {
                     /** Format: uuid */
                     offerId: string;
                     offerSlug: string;
-                    country: string;
+                    country: string | null;
                     /** Format: uuid */
                     userId: string;
                     userEmail: string;
@@ -23030,7 +23072,9 @@ export interface operations {
     };
     PricingController_getPricing: {
         parameters: {
-            query?: never;
+            query?: {
+                platform?: "ios" | "android";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -23185,7 +23229,9 @@ export interface operations {
     };
     OffersController_active: {
         parameters: {
-            query?: never;
+            query?: {
+                platform?: "ios" | "android";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -33705,7 +33751,11 @@ export interface operations {
     };
     PromoOffersAdminController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                isActive?: boolean;
+                /** @description `default` = la oferta Default (sin país), solo scope global */
+                country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR" | "default";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -33729,7 +33779,11 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOfferDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {
@@ -33771,7 +33825,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOfferDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
