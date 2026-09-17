@@ -1,14 +1,20 @@
 'use client';
 
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { SaveIcon, GiftIcon } from 'lucide-react';
+import { SaveIcon, GiftIcon, PlusIcon, Trash2Icon, TrophyIcon } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,6 +22,9 @@ import {
   useRewardsConfig,
   useRewardsMutations,
   REWARD_DEFAULTS,
+  RAPIDA_MAX_RANK,
+  rapidaBracketsProblem,
+  type RapidaPrizeBracket,
   type RewardConfigValues,
 } from '@/hooks/use-rewards-config';
 
@@ -23,6 +32,7 @@ import {
 const xp = z.number().int().min(0).max(1000);
 const kolones = z.number().int().min(0).max(1000);
 const kokos = z.number().int().min(0).max(500);
+const rank = z.number().int().min(1).max(RAPIDA_MAX_RANK);
 
 const FormSchema = z.object({
   practiceKolonesPerCorrect: kolones,
@@ -43,9 +53,13 @@ const FormSchema = z.object({
   duelCompletionKokos: kokos,
   duelWinKolones: kolones,
   duelWinKokos: kokos,
-  arenaRapidaKolones: kolones,
-  arenaRapidaKokos: kokos,
-  arenaRapidaXp: xp,
+  arenaRapidaPrizes: z
+    .array(z.object({ minRank: rank, maxRank: rank, kolones, kokos, xp }))
+    .max(RAPIDA_MAX_RANK)
+    .superRefine((brackets, ctx) => {
+      const problem = rapidaBracketsProblem(brackets);
+      if (problem) ctx.addIssue({ code: 'custom', message: problem });
+    }),
   arenaAmigosKolones: kolones,
   arenaAmigosKokos: kokos,
   arenaAmigosXp: xp,
@@ -65,14 +79,20 @@ const FormSchema = z.object({
   flashcardSessionXp: xp,
 });
 type FormValues = z.infer<typeof FormSchema>;
+type NumberField = Exclude<keyof FormValues, 'arenaRapidaPrizes'>;
+type NumberPath = NumberField | `arenaRapidaPrizes.${number}.${keyof RapidaPrizeBracket}`;
 
 const FIELD_NAMES = Object.keys(FormSchema.shape) as (keyof FormValues)[];
 const pick = (data: RewardConfigValues): FormValues =>
-  Object.fromEntries(FIELD_NAMES.map((k) => [k, data[k]])) as FormValues;
+  Object.fromEntries(
+    FIELD_NAMES.map((k) => [k, data[k] ?? REWARD_DEFAULTS[k]]),
+  ) as FormValues;
+
+const NEW_BRACKET = { minRank: 1, maxRank: 1, kolones: 0, kokos: 0, xp: 0 };
 
 // Cada modo tiene su XP + Kolones + Kokos (matriz completa); los XP compartidos entre
 // modos (correcta / modo completado) viven en la sección XP para no duplicarlos.
-const SECTIONS: { title: string; fields: [keyof FormValues, string][] }[] = [
+const SECTIONS: { title: string; fields: [NumberField, string][] }[] = [
   {
     title: 'XP (todo XP suma a la liga)',
     fields: [
@@ -126,11 +146,8 @@ const SECTIONS: { title: string; fields: [keyof FormValues, string][] }[] = [
     ],
   },
   {
-    title: 'Arena al ganador (la Especial premia por tramos en su pantalla)',
+    title: 'Arena Amigos al ganador (la Especial premia por tramos en su pantalla)',
     fields: [
-      ['arenaRapidaKolones', 'Rápida: Kolones'],
-      ['arenaRapidaKokos', 'Rápida: Kokos'],
-      ['arenaRapidaXp', 'Rápida: XP extra'],
       ['arenaAmigosKolones', 'Amigos: Kolones'],
       ['arenaAmigosKokos', 'Amigos: Kokos'],
       ['arenaAmigosXp', 'Amigos: XP extra'],
@@ -167,6 +184,7 @@ export function RewardsConfigForm({ country }: { country: string | null }) {
     resolver: zodResolver(FormSchema),
     values: data ? pick(data) : REWARD_DEFAULTS,
   });
+  const brackets = useFieldArray({ control: form.control, name: 'arenaRapidaPrizes' });
 
   async function onSubmit(v: FormValues): Promise<void> {
     try {
@@ -185,7 +203,7 @@ export function RewardsConfigForm({ country }: { country: string | null }) {
       </Alert>
     );
 
-  const num = (name: keyof FormValues, label: string) => (
+  const num = (name: NumberPath, label: string) => (
     <Controller
       key={name}
       name={name}
@@ -232,6 +250,61 @@ export function RewardsConfigForm({ country }: { country: string | null }) {
                 </div>
               </div>
             ))}
+
+            <Separator />
+            {/* Mismo editor que los tramos de la Especial. Sin mínimo de filas:
+                sin tramos, la Rápida no paga. */}
+            <fieldset
+              className="min-w-0 space-y-3"
+              aria-labelledby="rapida-tramos"
+            >
+              <legend id="rapida-tramos" className="flex items-center gap-2 text-sm font-medium">
+                <TrophyIcon className="text-primary size-4" />
+                Arena Rápida: premios por puesto
+              </legend>
+              {brackets.fields.map((f, i) => (
+                <div key={f.id} className="grid grid-cols-2 items-end gap-2 sm:grid-cols-6">
+                  {num(`arenaRapidaPrizes.${i}.minRank`, 'Puesto desde')}
+                  {num(`arenaRapidaPrizes.${i}.maxRank`, 'Puesto hasta')}
+                  {num(`arenaRapidaPrizes.${i}.kolones`, 'Kolones')}
+                  {num(`arenaRapidaPrizes.${i}.kokos`, 'Kokos')}
+                  {num(`arenaRapidaPrizes.${i}.xp`, 'XP')}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => brackets.remove(i)}
+                  >
+                    <Trash2Icon className="size-4" />
+                    Quitar
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={brackets.fields.length >= RAPIDA_MAX_RANK}
+                onClick={() => brackets.append(NEW_BRACKET)}
+              >
+                <PlusIcon className="size-4" />
+                Agregar tramo
+              </Button>
+              {form.formState.errors.arenaRapidaPrizes?.root?.message ||
+              form.formState.errors.arenaRapidaPrizes?.message ? (
+                <FieldError
+                  errors={[
+                    form.formState.errors.arenaRapidaPrizes.root ??
+                      form.formState.errors.arenaRapidaPrizes,
+                  ]}
+                />
+              ) : null}
+              <FieldDescription>
+                Cada fila paga a los puestos de ese rango (ej.: 1–1, 2–2, 3–3 y 4–{RAPIDA_MAX_RANK}{' '}
+                para «el resto»). Los tramos no pueden solaparse. Los bots no cobran, pero ocupan su
+                puesto. Sin tramos, la Rápida no paga.
+              </FieldDescription>
+            </fieldset>
             <div className="flex justify-end">
               <Button type="submit" disabled={saveRewards.isPending}>
                 <SaveIcon className="size-4" />

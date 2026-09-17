@@ -2,6 +2,31 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/fetch-json';
+import { hasOverlap } from '@/hooks/use-arena-especial';
+
+/** Tramo de premio de la Arena Rápida: "del puesto X al Y". */
+export type RapidaPrizeBracket = {
+  minRank: number;
+  maxRank: number;
+  kolones: number;
+  kokos: number;
+  xp: number;
+};
+
+/** Puestos de una Rápida (tamaño de la sala). Espejo del backend. */
+export const RAPIDA_MAX_RANK = 10;
+
+/** `null` = válidos. Espejo de `rapidaPrizeBracketsProblem` del backend. */
+export function rapidaBracketsProblem(brackets: RapidaPrizeBracket[]): string | null {
+  for (const b of brackets) {
+    if (b.minRank < 1 || b.maxRank < b.minRank)
+      return 'Cada tramo va de un puesto a otro igual o mayor, desde el 1.';
+    if (b.maxRank > RAPIDA_MAX_RANK) return `La Rápida tiene ${RAPIDA_MAX_RANK} puestos.`;
+  }
+  const snake = brackets.map((b) => ({ min_rank: b.minRank, max_rank: b.maxRank }));
+  if (hasOverlap(snake)) return 'Dos tramos se solapan: un puesto cobraría dos veces.';
+  return null;
+}
 
 // Matriz completa (decisión founder 2026-06-10): cada modo tiene XP + Kolones + Kokos,
 // y todo XP acredita a la liga. Campo en 0 = ese premio no aplica.
@@ -24,9 +49,8 @@ export type RewardConfigValues = {
   duelCompletionKokos: number;
   duelWinKolones: number;
   duelWinKokos: number;
-  arenaRapidaKolones: number;
-  arenaRapidaKokos: number;
-  arenaRapidaXp: number;
+  /** Arena Rápida: premios por tramos de puesto. Vacío = no paga. */
+  arenaRapidaPrizes: RapidaPrizeBracket[];
   arenaAmigosKolones: number;
   arenaAmigosKokos: number;
   arenaAmigosXp: number;
@@ -73,9 +97,7 @@ export const REWARD_DEFAULTS: RewardConfigValues = {
   duelCompletionKokos: 0,
   duelWinKolones: 5,
   duelWinKokos: 0,
-  arenaRapidaKolones: 50,
-  arenaRapidaKokos: 30,
-  arenaRapidaXp: 0,
+  arenaRapidaPrizes: [{ minRank: 1, maxRank: 1, kolones: 50, kokos: 30, xp: 0 }],
   arenaAmigosKolones: 0,
   arenaAmigosKokos: 0,
   arenaAmigosXp: 0,
