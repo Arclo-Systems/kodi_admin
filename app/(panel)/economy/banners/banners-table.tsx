@@ -24,15 +24,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { COUNTRIES } from '@/lib/countries';
+import { formatDate } from '@/lib/format-date';
 
 const ALL = '__all__';
 
 function countryLabel(code: string): string {
   return COUNTRIES.find((c) => c.code === code)?.label ?? code;
-}
-
-function fmtDate(d: string): string {
-  return new Date(d).toLocaleDateString('es-CR', { dateStyle: 'short' });
 }
 
 const columns: ColumnDef<Banner, unknown>[] = [
@@ -53,7 +50,7 @@ const columns: ColumnDef<Banner, unknown>[] = [
     header: 'Vigencia',
     cell: ({ row }) => (
       <span className="text-muted-foreground text-xs">
-        {fmtDate(row.original.startsAt)} – {fmtDate(row.original.endsAt)}
+        {formatDate(row.original.startsAt)} – {formatDate(row.original.endsAt)}
       </span>
     ),
   },

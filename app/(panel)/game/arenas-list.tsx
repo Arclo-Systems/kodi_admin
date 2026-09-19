@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { GameTable } from '@/components/game/game-table';
 import { GAME_STATUS_OPTIONS, GameStatusBadge, gameStatusLabel } from '@/lib/game-status';
 import type { ArenaRow } from '@/hooks/use-game';
+import { formatDate } from '@/lib/format-date';
 
-const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('es-CR') : '—');
 
 export function ArenasList({ canSchedule }: { canSchedule?: boolean }) {
   return (
@@ -32,7 +32,7 @@ export function ArenasList({ canSchedule }: { canSchedule?: boolean }) {
           cell: (a) => <GameStatusBadge value={a.status} label={gameStatusLabel('arenas', a.status)} />,
         },
         { header: 'Participantes', cell: (a) => a.participantCount },
-        { header: 'Inicio', cell: (a) => fmt(a.startedAt) },
+        { header: 'Inicio', cell: (a) => formatDate(a.startedAt) },
       ]}
     />
   );

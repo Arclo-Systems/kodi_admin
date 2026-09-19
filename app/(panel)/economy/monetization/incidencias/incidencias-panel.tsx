@@ -24,8 +24,9 @@ import {
   type IncidentStatus,
   type Incidents,
 } from '@/hooks/use-store-monetization';
-import { EventStatusBadge, PayloadDialog, ReasonAction, dateTime } from '../store-shared';
+import { EventStatusBadge, PayloadDialog, ReasonAction } from '../store-shared';
 import { AssignModulesDialog } from './assign-modules-dialog';
+import { formatDateTime } from '@/lib/format-date';
 
 /**
  * Los cinco tipos de incidencia de spec §10. Los cuatro primeros son estados
@@ -156,7 +157,7 @@ export function IncidenciasPanel({
                       <EventStatusBadge status={row.status} />
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {dateTime(row.receivedAt)}
+                      {formatDateTime(row.receivedAt)}
                     </TableCell>
                     <TableCell className="text-muted-foreground max-w-xs truncate text-xs">
                       {row.lastError ?? '—'}

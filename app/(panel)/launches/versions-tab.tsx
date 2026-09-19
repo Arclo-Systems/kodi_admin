@@ -13,10 +13,10 @@ import { can } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
 import { useAppVersions, useVersionMutations, type AppPlatform, type AppVersion } from '@/hooks/use-launches';
 import { VersionFormDialog } from './version-form-dialog';
+import { formatDate } from '@/lib/format-date';
 
 const ALL = 'all';
 const PLATFORM_LABEL: Record<AppPlatform, string> = { ios: 'iOS', android: 'Android' };
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
 export function VersionsTab({ role }: { role: AdminRole }) {
   const [platform, setPlatform] = useState(ALL);
@@ -56,7 +56,7 @@ export function VersionsTab({ role }: { role: AdminRole }) {
       accessorKey: 'releaseDate',
       header: 'Fecha',
       meta: { label: 'Fecha' },
-      cell: ({ row }) => fmtDate(row.original.releaseDate),
+      cell: ({ row }) => formatDate(row.original.releaseDate),
     },
     {
       accessorKey: 'releaseNotes',

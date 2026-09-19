@@ -17,6 +17,7 @@ import {
   formatAmount,
 } from './finance-format';
 import { PlayOrderStatusBadge, playOrderGrossExTax } from './finance-play-order-badges';
+import { formatDate } from '@/lib/format-date';
 
 function Dato({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -44,11 +45,9 @@ function Money({ amount, currency }: { amount: string | null; currency: string }
 export function FinancePlayOrderDialog({
   order,
   onOpenChange,
-  formatDate,
 }: {
   order: PlayOrder | null;
   onOpenChange: (open: boolean) => void;
-  formatDate: (iso: string) => string;
 }) {
   return (
     <Dialog open={!!order} onOpenChange={onOpenChange}>

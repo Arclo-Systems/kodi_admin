@@ -2,6 +2,7 @@ import { ActivityIcon, SparklesIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { adminFetch } from '@/lib/auth';
 import { unwrapData } from '@/lib/bff';
+import { formatDateTime } from '@/lib/format-date';
 
 type Ai = {
   latestPrediction: { computedAt: string } | null;
@@ -24,7 +25,7 @@ export default async function AiTab({ params }: { params: Promise<{ id: string }
         </CardHeader>
         <CardContent className="text-muted-foreground text-sm">
           {ai?.latestPrediction
-            ? new Date(ai.latestPrediction.computedAt).toLocaleString('es')
+            ? formatDateTime(ai.latestPrediction.computedAt)
             : 'Sin predicciones'}
         </CardContent>
       </Card>

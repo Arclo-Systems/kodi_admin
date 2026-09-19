@@ -37,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { formatDate } from '@/lib/format-date';
 
 const ALL = '__all__';
 // Ids estables: el input los referencia con `aria-describedby` para que el
@@ -136,7 +137,7 @@ export function FinanceExchangeRates({ canWrite = false }: { canWrite?: boolean 
         enableSorting: false,
         cell: ({ row }) => (
           <span className="text-muted-foreground text-xs">
-            {new Date(row.original.createdAt).toLocaleDateString('es-CR')}
+            {formatDate(row.original.createdAt)}
             {row.original.createdBy && (
               <span className="ml-2 font-mono break-all">{row.original.createdBy}</span>
             )}

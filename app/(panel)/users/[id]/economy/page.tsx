@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table';
 import { adminFetch } from '@/lib/auth';
 import { unwrapData } from '@/lib/bff';
+import { formatDateTime } from '@/lib/format-date';
 
 type Tx = { id: string; createdAt: string; reason: string; currency: string; amount: number };
 
@@ -42,7 +43,7 @@ export default async function EconomyTab({ params }: { params: Promise<{ id: str
             <TableBody>
               {items.map((t) => (
                 <TableRow key={t.id}>
-                  <TableCell>{new Date(t.createdAt).toLocaleString('es')}</TableCell>
+                  <TableCell>{formatDateTime(t.createdAt)}</TableCell>
                   <TableCell>{t.reason}</TableCell>
                   <TableCell>{t.currency}</TableCell>
                   <TableCell className="text-right font-mono">{t.amount.toLocaleString('es')}</TableCell>

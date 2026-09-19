@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select';
 import { NewsStatusBadge } from '@/lib/news-status';
 import { NewsBulkBar } from './news-bulk-bar';
+import { formatDate } from '@/lib/format-date';
 
 const ALL = '__all__';
 
@@ -66,7 +67,7 @@ const columns: ColumnDef<NewsListItem, unknown>[] = [
     accessorKey: 'publishedAt',
     header: 'Fecha',
     meta: { label: 'Fecha' },
-    cell: ({ row }) => new Date(row.original.publishedAt).toLocaleDateString('es'),
+    cell: ({ row }) => formatDate(row.original.publishedAt),
   },
 ];
 

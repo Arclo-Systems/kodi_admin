@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { adminFetch } from '@/lib/auth';
 import { unwrapData } from '@/lib/bff';
+import { formatDate } from '@/lib/format-date';
 
 type InventoryItem = {
   id: string;
@@ -58,7 +59,7 @@ export default async function InventoryTab({ params }: { params: Promise<{ id: s
                   </TableCell>
                   <TableCell>{it.item.itemType}</TableCell>
                   <TableCell>{it.item.tier ?? '—'}</TableCell>
-                  <TableCell>{new Date(it.acquiredAt).toLocaleDateString('es')}</TableCell>
+                  <TableCell>{formatDate(it.acquiredAt)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

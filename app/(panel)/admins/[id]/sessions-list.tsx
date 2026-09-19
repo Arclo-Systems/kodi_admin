@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { StatusBadge } from '@/lib/status-badge';
 import { unwrapData } from '@/lib/bff';
+import { formatDateTime } from '@/lib/format-date';
 
 type Session = {
   id: string;
@@ -78,7 +79,7 @@ export function SessionsList({ adminId, self = false }: { adminId: string; self?
                 {s.deviceLabel ?? s.userAgent.slice(0, 40)}
               </TableCell>
               <TableCell className="font-mono text-xs">{s.ipAddress}</TableCell>
-              <TableCell>{new Date(s.lastSeenAt).toLocaleString('es')}</TableCell>
+              <TableCell>{formatDateTime(s.lastSeenAt)}</TableCell>
               <TableCell>
                 {s.revokedAt ? (
                   <StatusBadge tone="destructive" icon={BanIcon} label="Revocada" />

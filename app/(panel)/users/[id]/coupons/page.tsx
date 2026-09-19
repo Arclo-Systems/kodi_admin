@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { adminFetch } from '@/lib/auth';
 import { unwrapData } from '@/lib/bff';
+import { formatDate } from '@/lib/format-date';
 
 type UserCoupon = {
   id: string;
@@ -33,7 +34,6 @@ function statusOf(c: UserCoupon): StatusCfg {
   return { v: 'default', l: 'Activo' };
 }
 
-const fmt = (v: string | null) => (v ? new Date(v).toLocaleDateString('es') : '—');
 
 export default async function CouponsTab({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -76,8 +76,8 @@ export default async function CouponsTab({ params }: { params: Promise<{ id: str
                     <TableCell className="text-right tabular-nums">
                       {c.kolonesSpent.toLocaleString('es')}
                     </TableCell>
-                    <TableCell className="tabular-nums">{fmt(c.redeemedAt)}</TableCell>
-                    <TableCell className="tabular-nums">{fmt(c.expiresAt)}</TableCell>
+                    <TableCell className="tabular-nums">{formatDate(c.redeemedAt)}</TableCell>
+                    <TableCell className="tabular-nums">{formatDate(c.expiresAt)}</TableCell>
                     <TableCell>
                       <Badge variant={st.v} title={c.invalidateReason ?? undefined}>
                         {st.l}

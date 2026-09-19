@@ -33,6 +33,7 @@ import {
   type CountryRollout,
 } from '@/hooks/use-launches';
 import { CountryFormDialog } from './country-edit-dialog';
+import { formatDate } from '@/lib/format-date';
 
 // Faro de estado de lanzamiento: Planeado (neutral) · En preparación (cielo) · Live (verde) · Pausado (ámbar).
 const STATUS_META: Record<CountryLaunchStatus, { label: string; Icon: LucideIcon; badge: string }> = {
@@ -57,7 +58,6 @@ function StatusBadge({ status }: { status: CountryLaunchStatus }) {
   );
 }
 
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 const fmt = (n: number) => n.toLocaleString('es-CR');
 
 function CountryCard({
@@ -136,9 +136,9 @@ function CountryCard({
         <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
           <CalendarIcon className="size-3.5 shrink-0" />
           {rollout.launchedAt ? (
-            <span>Lanzado {fmtDate(rollout.launchedAt)}</span>
+            <span>Lanzado {formatDate(rollout.launchedAt)}</span>
           ) : rollout.targetDate ? (
-            <span>Objetivo {fmtDate(rollout.targetDate)}</span>
+            <span>Objetivo {formatDate(rollout.targetDate)}</span>
           ) : (
             <span>Sin fecha</span>
           )}

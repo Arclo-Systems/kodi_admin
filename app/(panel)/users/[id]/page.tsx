@@ -18,6 +18,7 @@ import { ModuleChips } from './module-chips';
 import { ProfileEditForm } from './profile-edit-form';
 import { NotificationsCard } from './notifications-card';
 import { UserExams } from './user-exams';
+import { formatDate } from '@/lib/format-date';
 
 type UserStats = {
   accuracyPct: number;
@@ -52,10 +53,6 @@ const DISCOVERY_LABEL: Record<string, string> = {
   recomendacion: 'Recomendación',
   otro: 'Otro',
 };
-
-function fmtDate(value: string | null): string {
-  return value ? new Date(value).toLocaleDateString('es') : '—';
-}
 
 export default async function UserProfileTab({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -126,7 +123,7 @@ function AccountCard({ user }: { user: UserDetail }) {
           <Field label="Requiere cambio de contraseña">
             {user.requirePasswordChange ? (
               <span className="text-warning">
-                Sí · vence {fmtDate(user.temporaryPasswordExpiresAt)}
+                Sí · vence {formatDate(user.temporaryPasswordExpiresAt)}
               </span>
             ) : (
               'No'

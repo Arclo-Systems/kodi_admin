@@ -58,9 +58,6 @@ export function ReservationStatusBadge({ status }: { status: string }) {
   );
 }
 
-export const dateTime = (iso: string | null): string =>
-  iso ? new Date(iso).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
-
 export const latency = (ms: number | null): string =>
   ms === null ? '—' : ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`;
 

@@ -43,6 +43,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FeatureForm } from './feature-form';
+import { formatDate } from '@/lib/format-date';
 
 // Faro de prioridad: Baja (verde) · Media (ámbar) · Alta (rojo).
 const PRIORITY_BADGE: Record<FeaturePriority, string> = {
@@ -124,7 +125,7 @@ function FeatureCard({
           )}
           <div className="text-muted-foreground mt-1 text-xs">
             {idea.author?.displayName ?? '—'} ·{' '}
-            {new Date(idea.createdAt).toLocaleDateString('es-CR')}
+            {formatDate(idea.createdAt)}
           </div>
         </button>
       </div>
@@ -174,7 +175,7 @@ function FeatureDialog({ idea, onClose }: { idea: FeatureIdea | null; onClose: (
               </div>
               <div className="text-muted-foreground text-xs">
                 {idea.author?.displayName ?? '—'} ·{' '}
-                {new Date(idea.createdAt).toLocaleDateString('es-CR')}
+                {formatDate(idea.createdAt)}
               </div>
               <div className="flex items-center gap-2 border-t pt-3">
                 <Button variant="outline" size="sm" onClick={() => setEditing(true)}>

@@ -35,6 +35,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { COUNTRIES } from '@/lib/countries';
+import { formatDateTime } from '@/lib/format-date';
 
 function countryLabel(code: string): string {
   return COUNTRIES.find((c) => c.code === code)?.label ?? code;
@@ -47,10 +48,6 @@ function Stat({ label, children }: { label: string; children: ReactNode }) {
       <dd className="text-right text-sm font-semibold">{children}</dd>
     </div>
   );
-}
-
-function fmtDateTime(d: string | null): string {
-  return d ? new Date(d).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
 }
 
 export function RaffleDetail({ id }: { id: string }) {
@@ -93,7 +90,7 @@ export function RaffleDetail({ id }: { id: string }) {
         id: 'deliveredAt',
         header: 'Entregado',
         meta: { label: 'Entregado' },
-        cell: ({ row }) => fmtDateTime(row.original.prizeDeliveredAt),
+        cell: ({ row }) => formatDateTime(row.original.prizeDeliveredAt),
       },
       {
         id: 'actions',
@@ -205,9 +202,9 @@ export function RaffleDetail({ id }: { id: string }) {
               <Stat label="Premio">{raffle.prizeDescription}</Stat>
               <Stat label="Sponsor">{raffle.sponsor?.name ?? 'Sin sponsor'}</Stat>
               <Stat label="Cantidad de premios">{raffle.prizesCount}</Stat>
-              <Stat label="Sorteo">{fmtDateTime(raffle.drawAt)}</Stat>
-              <Stat label="Otorgada">{fmtDateTime(raffle.awardedAt)}</Stat>
-              <Stat label="Reversible hasta">{fmtDateTime(raffle.reversibleUntil)}</Stat>
+              <Stat label="Sorteo">{formatDateTime(raffle.drawAt)}</Stat>
+              <Stat label="Otorgada">{formatDateTime(raffle.awardedAt)}</Stat>
+              <Stat label="Reversible hasta">{formatDateTime(raffle.reversibleUntil)}</Stat>
             </dl>
           </CardContent>
         </Card>

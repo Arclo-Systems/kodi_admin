@@ -18,6 +18,7 @@ import { StatusBadge, type StatusTone } from '@/lib/status-badge';
 import { PlanBadge } from '@/lib/plans';
 import type { UserDetail } from '@/lib/user-detail';
 import { UserActions } from './user-actions';
+import { formatDate } from '@/lib/format-date';
 
 const STATUS: Record<string, { label: string; icon: LucideIcon; tone: StatusTone }> = {
   active: { label: 'Activo', icon: CircleCheckIcon, tone: 'success' },
@@ -25,10 +26,6 @@ const STATUS: Record<string, { label: string; icon: LucideIcon; tone: StatusTone
   pending_parental: { label: 'Pendiente parental', icon: ClockIcon, tone: 'warning' },
   deleted: { label: 'Eliminado', icon: CircleDashedIcon, tone: 'muted' },
 };
-
-function fmtDate(value: string | null): string {
-  return value ? new Date(value).toLocaleDateString('es') : '—';
-}
 
 function age(birthDate: string | null): number | null {
   if (!birthDate) return null;
@@ -53,13 +50,13 @@ export function UserHeader({ user }: { user: UserDetail }) {
     <div className="space-y-3">
       {user.bannedUntil && (
         <Banner tone="destructive" icon={<ShieldAlertIcon className="size-4" />}>
-          Baneado hasta {fmtDate(user.bannedUntil)}
+          Baneado hasta {formatDate(user.bannedUntil)}
           {user.banReason ? ` · ${user.banReason}` : ''}
         </Banner>
       )}
       {user.deleteRequestedAt && (
         <Banner tone="warning" icon={<TrashIcon className="size-4" />}>
-          Solicitó eliminar su cuenta el {fmtDate(user.deleteRequestedAt)}
+          Solicitó eliminar su cuenta el {formatDate(user.deleteRequestedAt)}
         </Banner>
       )}
 
@@ -157,10 +154,10 @@ export function UserHeader({ user }: { user: UserDetail }) {
               </Meta>
             )}
             <Meta icon={<CalendarPlusIcon className="text-muted-foreground size-4" />} label="Alta">
-              {fmtDate(user.createdAt)}
+              {formatDate(user.createdAt)}
             </Meta>
             <Meta icon={<ClockIcon className="text-muted-foreground size-4" />} label="Última actividad">
-              {fmtDate(user.lastActiveAt)}
+              {formatDate(user.lastActiveAt)}
             </Meta>
           </div>
         </div>

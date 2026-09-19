@@ -39,11 +39,11 @@ import {
 } from './finance-format';
 import { FinancePlayOrderDialog } from './finance-play-order-dialog';
 import { PlayOrderStatusBadge, playOrderGrossExTax } from './finance-play-order-badges';
+import { formatDate } from '@/lib/format-date';
 
 const ALL = '__all__';
 const PAGE_SIZE = 20;
 
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
 // Reintentar solo tiene sentido donde falta el asiento y la causa se arregla
 // afuera: el plan de cuentas, el período, el enum de monedas. En `POSTED`,
@@ -89,7 +89,7 @@ export function FinancePlayOrders({ canWrite = false }: { canWrite?: boolean }) 
         header: 'Fecha',
         meta: { label: 'Fecha' },
         enableSorting: false,
-        cell: ({ row }) => fmtDate(row.original.createTime),
+        cell: ({ row }) => formatDate(row.original.createTime),
       },
       {
         accessorKey: 'orderId',
@@ -273,7 +273,6 @@ export function FinancePlayOrders({ canWrite = false }: { canWrite?: boolean }) 
       <FinancePlayOrderDialog
         order={detail}
         onOpenChange={(open) => !open && setDetail(null)}
-        formatDate={fmtDate}
       />
 
       <ConfirmDialog

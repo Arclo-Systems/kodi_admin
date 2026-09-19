@@ -63,6 +63,7 @@ import {
   formatPeriod,
   monthName,
 } from './finance-format';
+import { formatDateTime } from '@/lib/format-date';
 
 const ALL = '__all__';
 const PAGE_SIZE = 20;
@@ -517,11 +518,11 @@ function DeclarationDetail({ id, canWrite }: { id: string; canWrite: boolean }) 
             <StatusBadge tone="warning" icon={TriangleAlertIcon} label="Desactualizada" />
           )}
           <span className="text-muted-foreground text-sm">
-            Calculada el {new Date(data.calculatedAt).toLocaleString('es-CR')}
+            Calculada el {formatDateTime(data.calculatedAt)}
           </span>
           {data.filedAt && (
             <span className="text-muted-foreground text-sm">
-              Presentada el {new Date(data.filedAt).toLocaleString('es-CR')}
+              Presentada el {formatDateTime(data.filedAt)}
             </span>
           )}
         </div>

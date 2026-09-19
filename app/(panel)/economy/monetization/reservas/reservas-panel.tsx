@@ -30,7 +30,8 @@ import {
   type Reservation,
   type ReservationStatus,
 } from '@/hooks/use-store-monetization';
-import { ReasonAction, ReservationStatusBadge, dateTime } from '../store-shared';
+import { ReasonAction, ReservationStatusBadge } from '../store-shared';
+import { formatDateTime } from '@/lib/format-date';
 
 const ALL = 'ALL';
 const STATUSES: ReservationStatus[] = ['reserved', 'consumed', 'released'];
@@ -206,7 +207,7 @@ export function ReservasPanel({ allowedCountries }: { allowedCountries: string[]
                         <ReservationStatusBadge status={row.status} />
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
-                        {dateTime(row.expiresAt)}
+                        {formatDateTime(row.expiresAt)}
                       </TableCell>
                       <TableCell className="text-muted-foreground font-mono text-xs">
                         {row.purchaseIntentId?.slice(0, 8) ?? '—'}

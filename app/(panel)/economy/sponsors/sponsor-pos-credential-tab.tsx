@@ -27,13 +27,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatDateTime } from '@/lib/format-date';
 
 const TWO_FA_ACTION = 'rotate_pos_credential';
 const ROTATION_ADVICE_MONTHS = 6;
-
-function fmtDateTime(d: string): string {
-  return new Date(d).toLocaleString('es-CR', { dateStyle: 'long', timeStyle: 'short' });
-}
 
 // Recomendación de higiene, no vencimiento: el backend no la aplica. Una credencial
 // filtrada sigue sirviendo hasta que alguien la rote, así que el panel avisa a los 6 meses.
@@ -141,7 +138,8 @@ export function SponsorPosCredentialTab({
                     <StatusBadge tone="success" icon={CircleCheckIcon} label="POS habilitado" />
                   )}
                   <span className="text-muted-foreground text-sm">
-                    Generada o rotada el {fmtDateTime(rotatedAt)}
+                    Generada o rotada el{' '}
+                    {formatDateTime(rotatedAt, { dateStyle: 'long', timeStyle: 'short' })}
                   </span>
                 </div>
                 {needsRotation && (

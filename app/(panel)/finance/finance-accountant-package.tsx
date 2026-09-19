@@ -35,6 +35,7 @@ import {
   formatBytes,
   monthName,
 } from './finance-format';
+import { formatDateTime } from '@/lib/format-date';
 
 /** El mes anterior al corriente: es el que se le manda al contador. */
 function previousMonth(): { year: number; month: number } {
@@ -242,7 +243,7 @@ function PackageVersion({
           />
         </div>
         <CardDescription>
-          Generado el {new Date(pkg.generatedAt).toLocaleString('es-CR')}
+          Generado el {formatDateTime(pkg.generatedAt)}
           {pkg.generatedBy && <span className="ml-2 font-mono break-all">{pkg.generatedBy}</span>}
         </CardDescription>
       </CardHeader>

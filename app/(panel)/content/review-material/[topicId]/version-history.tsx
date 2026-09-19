@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
 import { useRestoreVersion } from '@/hooks/use-review-material';
+import { formatDate } from '@/lib/format-date';
 
 type HistoryEntry = {
   id: string;
@@ -60,7 +61,7 @@ export function VersionHistory({
                 <div className="flex items-center gap-2">
                   <span className="font-medium">v{entry.version}</span>
                   <span className="text-muted-foreground ml-auto text-xs">
-                    {new Date(entry.createdAt).toLocaleDateString('es')}
+                    {formatDate(entry.createdAt)}
                   </span>
                 </div>
                 <p className="text-muted-foreground mt-1 line-clamp-3">{entry.preview}</p>

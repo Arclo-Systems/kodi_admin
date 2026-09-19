@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { adminFetch } from '@/lib/auth';
 import { unwrapData } from '@/lib/bff';
+import { formatDate } from '@/lib/format-date';
 
 type UserAchievement = {
   id: string;
@@ -59,7 +60,7 @@ export default async function AchievementsTab({ params }: { params: Promise<{ id
                       '—'
                     )}
                   </TableCell>
-                  <TableCell>{new Date(a.earnedAt).toLocaleDateString('es')}</TableCell>
+                  <TableCell>{formatDate(a.earnedAt)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

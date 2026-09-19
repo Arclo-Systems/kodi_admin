@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { formatDate } from '@/lib/format-date';
 
 function Dato({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -31,12 +32,10 @@ function Dato({ label, children }: { label: string; children: ReactNode }) {
 export function FinanceEntryDialog({
   entry,
   onOpenChange,
-  fmtDate,
   fmtAmount,
 }: {
   entry: FinanceEntry | null;
   onOpenChange: (open: boolean) => void;
-  fmtDate: (iso: string) => string;
   fmtAmount: (entry: FinanceEntry) => string;
 }) {
   function verComprobante(): void {
@@ -56,7 +55,7 @@ export function FinanceEntryDialog({
               <DialogDescription>
                 {/* Sin categoría el "de X" sobra: el tipo ya nombra el movimiento. */}
                 {MOVEMENT_TYPE_LABELS[entry.type]}
-                {entry.categoryName ? ` de ${entry.categoryName}` : ''} · {fmtDate(entry.date)}
+                {entry.categoryName ? ` de ${entry.categoryName}` : ''} · {formatDate(entry.date)}
               </DialogDescription>
             </DialogHeader>
 
@@ -78,7 +77,7 @@ export function FinanceEntryDialog({
                   </Dato>
                   <Dato label="Anulado el">
                     {entry.voidedAt ? (
-                      fmtDate(entry.voidedAt)
+                      formatDate(entry.voidedAt)
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
@@ -100,7 +99,7 @@ export function FinanceEntryDialog({
               <Dato label="Monto">
                 <span className="tabular-nums">{fmtAmount(entry)}</span>
               </Dato>
-              <Dato label="Fecha">{fmtDate(entry.date)}</Dato>
+              <Dato label="Fecha">{formatDate(entry.date)}</Dato>
               {/* Explica por qué "Anular" está deshabilitado en los movimientos
                   cargados antes del backfill contable. */}
               <Dato label="Asiento">

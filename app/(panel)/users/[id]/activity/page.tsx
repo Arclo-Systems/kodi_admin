@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table';
 import { adminFetch } from '@/lib/auth';
 import { unwrapData } from '@/lib/bff';
+import { formatDateTime } from '@/lib/format-date';
 
 type Practice = { id: string; startedAt: string; endedAt: string | null; moduleId: string };
 type Match = {
@@ -20,10 +21,6 @@ type Match = {
   endedAt: string | null;
   winnerId: string | null;
 };
-
-function fmt(d: string | null): string {
-  return d ? new Date(d).toLocaleString('es') : '—';
-}
 
 export default async function ActivityTab({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -56,8 +53,8 @@ export default async function ActivityTab({ params }: { params: Promise<{ id: st
               <TableBody>
                 {practice.map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell>{fmt(p.startedAt)}</TableCell>
-                    <TableCell>{fmt(p.endedAt)}</TableCell>
+                    <TableCell>{formatDateTime(p.startedAt)}</TableCell>
+                    <TableCell>{formatDateTime(p.endedAt)}</TableCell>
                     <TableCell className="font-mono text-xs">{p.moduleId}</TableCell>
                   </TableRow>
                 ))}
@@ -92,7 +89,7 @@ export default async function ActivityTab({ params }: { params: Promise<{ id: st
                   <TableRow key={m.id}>
                     <TableCell>{m.mode}</TableCell>
                     <TableCell>{m.status}</TableCell>
-                    <TableCell>{fmt(m.startedAt)}</TableCell>
+                    <TableCell>{formatDateTime(m.startedAt)}</TableCell>
                     <TableCell>{m.winnerId === id ? 'Ganó' : m.winnerId ? 'Perdió' : '—'}</TableCell>
                   </TableRow>
                 ))}

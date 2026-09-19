@@ -14,6 +14,7 @@ import {
   type AiPromptDetail,
   type AiPromptVersion,
 } from '@/hooks/use-ai-prompts';
+import { formatDate } from '@/lib/format-date';
 
 export function PromptVersionHistory({
   prompt,
@@ -44,7 +45,7 @@ export function PromptVersionHistory({
                   <span className="font-medium">v{v.version}</span>
                   {active && <ActivePromptBadge active label="Activa" />}
                   <span className="text-muted-foreground ml-auto text-xs">
-                    {new Date(v.createdAt).toLocaleDateString('es')}
+                    {formatDate(v.createdAt)}
                   </span>
                 </div>
                 {v.note && <p className="text-muted-foreground mt-1 text-xs">{v.note}</p>}

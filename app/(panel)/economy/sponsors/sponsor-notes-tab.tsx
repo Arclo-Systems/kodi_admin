@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
+import { formatDateTime } from '@/lib/format-date';
 
 export function SponsorNotesTab({ sponsorId }: { sponsorId: string }) {
   const { data: notes, isLoading } = useSponsorNotes(sponsorId);
@@ -58,7 +59,7 @@ export function SponsorNotesTab({ sponsorId }: { sponsorId: string }) {
               <p className="text-sm whitespace-pre-wrap">{n.body}</p>
               <div className="mt-2 flex items-center justify-between">
                 <span className="text-muted-foreground text-xs">
-                  {new Date(n.createdAt).toLocaleString('es-CR')}
+                  {formatDateTime(n.createdAt)}
                 </span>
                 <Button
                   size="icon"

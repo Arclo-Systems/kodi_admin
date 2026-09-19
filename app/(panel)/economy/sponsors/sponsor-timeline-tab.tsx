@@ -17,6 +17,7 @@ import {
 import { useSponsorActivities } from '@/hooks/use-sponsors';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { formatDateTime } from '@/lib/format-date';
 
 // Icono + chip tintado por tipo de actividad (los `type` los emite el backend del CRM de sponsors).
 const TYPE_META: Record<string, { icon: LucideIcon; chip: string }> = {
@@ -36,10 +37,6 @@ const FALLBACK = { icon: FileTextIcon, chip: 'bg-muted text-muted-foreground' };
 
 function metaFor(type: string): { icon: LucideIcon; chip: string } {
   return TYPE_META[type] ?? FALLBACK;
-}
-
-function fmtDateTime(d: string): string {
-  return new Date(d).toLocaleString('es-CR', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 export function SponsorTimelineTab({ sponsorId }: { sponsorId: string }) {
@@ -83,7 +80,7 @@ export function SponsorTimelineTab({ sponsorId }: { sponsorId: string }) {
             </div>
             <div className="min-w-0 pb-6">
               <p className="text-sm font-medium">{a.summary}</p>
-              <p className="text-muted-foreground mt-0.5 text-xs">{fmtDateTime(a.createdAt)}</p>
+              <p className="text-muted-foreground mt-0.5 text-xs">{formatDateTime(a.createdAt)}</p>
             </div>
           </li>
         );

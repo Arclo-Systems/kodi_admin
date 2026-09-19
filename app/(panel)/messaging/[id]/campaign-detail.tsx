@@ -10,6 +10,7 @@ import { CampaignForm } from '@/components/admin/campaign-form';
 import { MessagePreview } from '@/components/admin/message-preview';
 import { CampaignStatusBadge } from '@/lib/campaign-status';
 import { useCampaign, type Campaign } from '@/hooks/use-messaging';
+import { formatDateTime } from '@/lib/format-date';
 
 export function CampaignDetail({ id }: { id: string }) {
   const { data: campaign, isLoading, isError, error } = useCampaign(id);
@@ -90,7 +91,7 @@ function ReadOnlyView({ campaign }: { campaign: Campaign }) {
               <span className="tabular-nums">{campaign.failedCount.toLocaleString('es-CR')}</span>{' '}
               fallidos
             </Field>
-            <Field label="Creada">{new Date(campaign.createdAt).toLocaleString('es-CR')}</Field>
+            <Field label="Creada">{formatDateTime(campaign.createdAt)}</Field>
           </dl>
         </CardContent>
       </Card>

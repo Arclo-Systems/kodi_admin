@@ -26,10 +26,10 @@ import {
   EventStatusBadge,
   PayloadDialog,
   ReasonAction,
-  dateTime,
   eventStatusLabel,
   latency,
 } from '../store-shared';
+import { formatDateTime } from '@/lib/format-date';
 
 const ALL = 'ALL';
 const STATUSES = [
@@ -142,7 +142,7 @@ export function ComprasPanel() {
                         )}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
-                        {dateTime(row.receivedAt)}
+                        {formatDateTime(row.receivedAt)}
                       </TableCell>
                       <TableCell className="text-sm tabular-nums">
                         {latency(row.latencyMs)}

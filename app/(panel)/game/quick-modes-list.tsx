@@ -3,8 +3,8 @@
 import { GameTable } from '@/components/game/game-table';
 import { GAME_STATUS_OPTIONS, GameStatusBadge, gameStatusLabel } from '@/lib/game-status';
 import type { QuickModeRow } from '@/hooks/use-game';
+import { formatDate } from '@/lib/format-date';
 
-const fmt = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 const TYPE_LABELS: Record<string, string> = {
   contrarreloj: 'Contrarreloj',
   supervivencia: 'Supervivencia',
@@ -26,7 +26,7 @@ export function QuickModesList() {
           ),
         },
         { header: 'Aciertos', cell: (s) => `${s.questionsCorrect}/${s.questionsAnswered}` },
-        { header: 'Inicio', cell: (s) => fmt(s.startedAt) },
+        { header: 'Inicio', cell: (s) => formatDate(s.startedAt) },
       ]}
     />
   );

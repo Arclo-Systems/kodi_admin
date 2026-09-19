@@ -42,6 +42,7 @@ import {
   type Job,
   type JobState,
 } from '@/hooks/use-jobs';
+import { formatDateTime } from '@/lib/format-date';
 
 const STATE_LABELS: Record<string, string> = {
   waiting: 'En espera',
@@ -79,7 +80,6 @@ const STATE_TONE: Record<string, KpiTone> = {
   delayed: 'amber',
 };
 const fmtCount = (n: number | undefined) => (n ?? 0).toLocaleString('es-CR');
-const fmtTime = (ms: number | null) => (ms ? new Date(ms).toLocaleString('es-CR') : '—');
 
 export function JobsTable() {
   const [state, setState] = useState<JobState>('failed');
@@ -130,7 +130,7 @@ export function JobsTable() {
       meta: { label: 'Procesado' },
       cell: ({ row }) => (
         <span className="text-muted-foreground text-xs">
-          {fmtTime(row.original.finishedOn ?? row.original.processedOn)}
+          {formatDateTime(row.original.finishedOn ?? row.original.processedOn)}
         </span>
       ),
     },
@@ -304,9 +304,9 @@ function JobDetailDialog({ job, onClose }: { job: Job | null; onClose: () => voi
               )}
             </div>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t pt-4 text-xs">
-              <DetailMeta label="Creado">{fmtTime(job.timestamp)}</DetailMeta>
-              <DetailMeta label="Procesado">{fmtTime(job.processedOn)}</DetailMeta>
-              <DetailMeta label="Finalizado">{fmtTime(job.finishedOn)}</DetailMeta>
+              <DetailMeta label="Creado">{formatDateTime(job.timestamp)}</DetailMeta>
+              <DetailMeta label="Procesado">{formatDateTime(job.processedOn)}</DetailMeta>
+              <DetailMeta label="Finalizado">{formatDateTime(job.finishedOn)}</DetailMeta>
               <DetailMeta label="Intentos">{job.attemptsMade}</DetailMeta>
             </dl>
           </div>

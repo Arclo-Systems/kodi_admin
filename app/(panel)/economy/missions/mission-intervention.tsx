@@ -16,6 +16,7 @@ import { StatusBadge } from '@/lib/status-badge';
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { formatDate } from '@/lib/format-date';
 
 type Kind = 'complete' | 'reset' | 'substitute';
 type DialogState = { kind: Kind; mission: UserMission };
@@ -25,10 +26,6 @@ const KIND_LABEL: Record<Kind, string> = {
   reset: 'Reiniciar',
   substitute: 'Sustituir',
 };
-
-function fmtDate(d: string): string {
-  return new Date(d).toLocaleDateString('es-CR', { dateStyle: 'short' });
-}
 
 export function MissionIntervention() {
   const [input, setInput] = useState('');
@@ -45,7 +42,7 @@ export function MissionIntervention() {
         cell: ({ row }) => (
           <div className="flex flex-col">
             <span className="font-medium">{MISSION_TYPE_LABELS[row.original.type]}</span>
-            <span className="text-muted-foreground text-xs">{fmtDate(row.original.date)}</span>
+            <span className="text-muted-foreground text-xs">{formatDate(row.original.date)}</span>
           </div>
         ),
       },
@@ -156,7 +153,7 @@ export function MissionIntervention() {
             if (!open) setDialog(null);
           }}
           title={`${KIND_LABEL[dialog.kind]} misión`}
-          description={`${MISSION_TYPE_LABELS[dialog.mission.type]} — ${fmtDate(dialog.mission.date)}. Requiere un motivo (queda en el audit log).`}
+          description={`${MISSION_TYPE_LABELS[dialog.mission.type]} — ${formatDate(dialog.mission.date)}. Requiere un motivo (queda en el audit log).`}
           requireReason
           reasonMinLength={3}
           confirmLabel={KIND_LABEL[dialog.kind]}

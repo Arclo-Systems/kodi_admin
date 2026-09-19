@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { RoleBadge } from '@/lib/roles';
 import { StatusBadge, type StatusTone } from '@/lib/status-badge';
 import { CreateAdminDialog } from './create-admin-dialog';
+import { formatDateTime } from '@/lib/format-date';
 
 // Estado con la convención de color (Activo = verde, igual que en usuarios).
 const ADMIN_STATUS: Record<string, { label: string; icon: LucideIcon; tone: StatusTone }> = {
@@ -65,7 +66,7 @@ const columns: ColumnDef<AdminListItem, unknown>[] = [
     header: 'Última actividad',
     meta: { label: 'Última actividad' },
     cell: ({ row }) =>
-      row.original.lastActiveAt ? new Date(row.original.lastActiveAt).toLocaleString('es') : '—',
+      formatDateTime(row.original.lastActiveAt),
   },
 ];
 

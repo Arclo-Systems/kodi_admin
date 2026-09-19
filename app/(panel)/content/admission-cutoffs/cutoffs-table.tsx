@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { CutoffStatusBadge } from '@/lib/cutoff-status';
 import { CutoffsUploadDialog } from './cutoffs-upload-dialog';
+import { formatDate } from '@/lib/format-date';
 
 const ALL = '__all__';
 
@@ -51,7 +52,7 @@ const columns: ColumnDef<CutoffUpload, unknown>[] = [
     accessorKey: 'createdAt',
     header: 'Subida',
     meta: { label: 'Subida' },
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('es'),
+    cell: ({ row }) => formatDate(row.original.createdAt),
   },
 ];
 

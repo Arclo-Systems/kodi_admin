@@ -36,6 +36,7 @@ import {
   type Subscription,
   type GrantInput,
 } from '@/hooks/use-subscriptions';
+import { formatDate } from '@/lib/format-date';
 
 const PLANS = ['free', 'basico', 'plus', 'pro'] as const;
 const PERIODS = ['monthly', 'quarterly', 'yearly'] as const;
@@ -43,7 +44,6 @@ const STATUSES = ['trial', 'active', 'cancelled', 'expired', 'grace'] as const;
 const PERIOD_LABELS: Record<string, string> = { monthly: 'Mensual', quarterly: 'Trimestral', yearly: 'Anual' };
 const ALL = 'all';
 const PAGE_SIZE = 20;
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
 export function SubscriptionsTable() {
   const [plan, setPlan] = useState(ALL);
@@ -145,7 +145,7 @@ export function SubscriptionsTable() {
       accessorKey: 'expiresAt',
       header: 'Expira',
       meta: { label: 'Expira' },
-      cell: ({ row }) => fmtDate(row.original.expiresAt),
+      cell: ({ row }) => formatDate(row.original.expiresAt),
     },
     {
       id: 'actions',

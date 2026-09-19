@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { formatDateTime } from '@/lib/format-date';
 
 const ALL = '__all__';
 
@@ -37,12 +38,6 @@ function rowStatus(r: UserCouponRow): UserCouponStatus {
   if (r.invalidatedAt) return 'invalidated';
   if (r.usedAt) return 'used';
   return 'active';
-}
-
-function fmtDateTime(d: string | null): string {
-  return d
-    ? new Date(d).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' })
-    : '—';
 }
 
 type DialogState = { kind: 'regenerate' | 'refund'; row: UserCouponRow };
@@ -71,7 +66,7 @@ export function CouponRedemptions({ couponId, role }: { couponId: string; role: 
           </div>
         ),
       },
-      { id: 'redeemedAt', header: 'Canjeado', cell: ({ row }) => fmtDateTime(row.original.redeemedAt) },
+      { id: 'redeemedAt', header: 'Canjeado', cell: ({ row }) => formatDateTime(row.original.redeemedAt) },
       {
         accessorKey: 'kolonesSpent',
         header: 'Kolones',

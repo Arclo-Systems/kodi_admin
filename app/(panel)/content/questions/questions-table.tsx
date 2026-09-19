@@ -26,6 +26,7 @@ import { AiGenerateDialog } from './ai-generate-dialog';
 import { QuestionsImportDialog } from './questions-import-dialog';
 import { QuestionsExportButton } from './questions-export-button';
 import { QuestionsBulkBar } from './questions-bulk-bar';
+import { formatDate } from '@/lib/format-date';
 
 const SOURCE_L: Record<GenerationSource, string> = {
   manual: 'Manual',
@@ -73,7 +74,7 @@ const columns: ColumnDef<QuestionListItem, unknown>[] = [
     accessorKey: 'createdAt',
     header: 'Creada',
     meta: { label: 'Creada' },
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString('es'),
+    cell: ({ row }) => formatDate(row.original.createdAt),
   },
 ];
 

@@ -3,10 +3,10 @@
 import { GameTable } from '@/components/game/game-table';
 import { GAME_STATUS_OPTIONS, GameStatusBadge, gameStatusLabel } from '@/lib/game-status';
 import type { MatchRow } from '@/hooks/use-game';
+import { formatDate } from '@/lib/format-date';
 
 const player = (p: MatchRow['player1']) =>
   p ? `${p.displayName}${p.isBot ? ' (bot)' : ''}` : '—';
-const fmt = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
 export function MatchesList() {
   return (
@@ -23,7 +23,7 @@ export function MatchesList() {
           header: 'Estado',
           cell: (m) => <GameStatusBadge value={m.status} label={gameStatusLabel('matches', m.status)} />,
         },
-        { header: 'Inicio', cell: (m) => fmt(m.startedAt) },
+        { header: 'Inicio', cell: (m) => formatDate(m.startedAt) },
       ]}
     />
   );

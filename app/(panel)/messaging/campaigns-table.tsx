@@ -25,10 +25,10 @@ import {
   type Campaign,
   type CampaignStatus,
 } from '@/hooks/use-messaging';
+import { formatDate } from '@/lib/format-date';
 
 const ALL = 'all';
 const STATUSES = Object.keys(STATUS_LABELS) as CampaignStatus[];
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
 export function CampaignsTable() {
   const router = useRouter();
@@ -85,7 +85,7 @@ export function CampaignsTable() {
       accessorKey: 'createdAt',
       header: 'Fecha',
       meta: { label: 'Fecha' },
-      cell: ({ row }) => fmtDate(row.original.createdAt),
+      cell: ({ row }) => formatDate(row.original.createdAt),
     },
     {
       id: 'actions',

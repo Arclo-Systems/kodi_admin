@@ -13,6 +13,7 @@ import { adminFetch } from '@/lib/auth';
 import { unwrapData } from '@/lib/bff';
 import { StatusBadge } from '@/lib/status-badge';
 import { SUBSCRIPTION_STATUS } from '@/lib/subscription-status';
+import { formatDate } from '@/lib/format-date';
 
 type Subscription = {
   id: string;
@@ -65,9 +66,9 @@ export default async function SubscriptionsTab({ params }: { params: Promise<{ i
                       );
                     })()}
                   </TableCell>
-                  <TableCell>{new Date(s.startedAt).toLocaleDateString('es')}</TableCell>
+                  <TableCell>{formatDate(s.startedAt)}</TableCell>
                   <TableCell>
-                    {s.expiresAt ? new Date(s.expiresAt).toLocaleDateString('es') : '—'}
+                    {formatDate(s.expiresAt)}
                   </TableCell>
                 </TableRow>
               ))}

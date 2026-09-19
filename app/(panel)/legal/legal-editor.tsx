@@ -20,6 +20,7 @@ import {
   type LegalDocument,
   type LegalSection,
 } from '@/hooks/use-legal';
+import { formatDate } from '@/lib/format-date';
 
 // Publicar no significa lo mismo en los tres documentos: la aceptación del
 // usuario existe solo para los términos, y las bases no salen en la landing ni
@@ -35,11 +36,7 @@ const DOC_PUBLISH_NOTICE: Record<LegalDoc, string> = {
 
 // Fecha como la lee el usuario en la app y en la landing ("4 de agosto de 2026"),
 // no el formato corto de tabla: la vista previa imita el documento publicado.
-const READING_DATE = new Intl.DateTimeFormat('es-CR', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
+const READING_DATE: Intl.DateTimeFormatOptions = { dateStyle: 'long' };
 
 /**
  * Identidad de fila para el editor. Las secciones no tienen id en el backend
@@ -134,7 +131,7 @@ function SectionsForm({
             {sections.length} {sections.length === 1 ? 'sección' : 'secciones'}
           </span>
           {document.updatedAt && (
-            <span>· Última edición {new Date(document.updatedAt).toLocaleDateString('es-CR')}</span>
+            <span>· Última edición {formatDate(document.updatedAt)}</span>
           )}
         </div>
         {canWrite && (
@@ -268,8 +265,6 @@ function DocumentPreview({
   lastUpdated: string;
   sections: DraftSection[];
 }) {
-  const publicado = new Date(lastUpdated);
-
   return (
     <Card className="xl:sticky xl:top-4">
       <CardContent className="max-h-[calc(100vh-8rem)] space-y-6 overflow-y-auto pt-6">
@@ -277,7 +272,7 @@ function DocumentPreview({
           <h2 className="text-xl font-semibold tracking-tight">{DOC_LABELS[doc]}</h2>
           <p className="text-muted-foreground text-xs">
             Última actualización:{' '}
-            {Number.isNaN(publicado.getTime()) ? '—' : READING_DATE.format(publicado)}
+            {formatDate(lastUpdated, READING_DATE)}
           </p>
         </header>
 

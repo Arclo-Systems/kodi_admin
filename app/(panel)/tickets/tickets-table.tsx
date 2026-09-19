@@ -18,11 +18,11 @@ import {
   TicketTypeBadge,
 } from '@/lib/ticket-meta';
 import { TICKETS_PAGE_SIZE, useTickets, type Ticket } from '@/hooks/use-tickets';
+import { formatDate } from '@/lib/format-date';
 
 const ALL = 'all';
 const TYPES = ['question_report', 'suggestion', 'bug_report'] as const;
 const STATUSES = ['open', 'triaging', 'resolved', 'dismissed'] as const;
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
 const columns: ColumnDef<Ticket, unknown>[] = [
   {
@@ -58,7 +58,7 @@ const columns: ColumnDef<Ticket, unknown>[] = [
     accessorKey: 'createdAt',
     header: 'Fecha',
     meta: { label: 'Fecha' },
-    cell: ({ row }) => fmtDate(row.original.createdAt),
+    cell: ({ row }) => formatDate(row.original.createdAt),
   },
 ];
 

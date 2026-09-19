@@ -23,6 +23,7 @@ import { PlacementPreview } from './placement-preview';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatDate } from '@/lib/format-date';
 
 function countryLabel(code: string): string {
   return COUNTRIES.find((c) => c.code === code)?.label ?? code;
@@ -47,10 +48,6 @@ function BackLink() {
       Banners
     </Link>
   );
-}
-
-function fmtDate(d: string): string {
-  return new Date(d).toLocaleDateString('es-CR', { dateStyle: 'medium' });
 }
 
 export function BannerDetail({ id, role }: { id: string; role: AdminRole }) {
@@ -141,7 +138,7 @@ export function BannerDetail({ id, role }: { id: string; role: AdminRole }) {
                 <DetailRow label="Peso">{b.weight}</DetailRow>
                 <DetailRow label="URL destino">{b.clickUrl ?? 'No clickable'}</DetailRow>
                 <DetailRow label="Vigencia">
-                  {fmtDate(b.startsAt)} – {fmtDate(b.endsAt)}
+                  {formatDate(b.startsAt)} – {formatDate(b.endsAt)}
                 </DetailRow>
               </dl>
             ) : (

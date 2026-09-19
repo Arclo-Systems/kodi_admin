@@ -6,13 +6,14 @@ import { useAuditLog, type AuditLogEntry, type AuditLogQuery } from '@/hooks/use
 import { DataTable } from '@/components/admin/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { formatDateTime } from '@/lib/format-date';
 
 const columns: ColumnDef<AuditLogEntry, unknown>[] = [
   {
     accessorKey: 'createdAt',
     header: 'Fecha',
     meta: { label: 'Fecha' },
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleString('es'),
+    cell: ({ row }) => formatDateTime(row.original.createdAt),
   },
   {
     id: 'actor',

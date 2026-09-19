@@ -7,6 +7,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { StatusBadge, type StatusTone } from '@/lib/status-badge';
+import { formatDate } from '@/lib/format-date';
 
 export type UniversityType = 'public' | 'private';
 
@@ -69,7 +70,7 @@ const SPONSORSHIP_META: Record<
 
 const day = (iso: string | null): string | null => {
   const ms = time(iso);
-  return ms === null ? null : new Date(ms).toLocaleDateString('es-CR');
+  return ms === null ? null : formatDate(ms);
 };
 
 /** Vigencia legible: "15/3/2026 → 30/6/2026", "desde …", "hasta …" o null si es abierta. */

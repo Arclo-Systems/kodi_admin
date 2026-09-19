@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { StatusBadge, type StatusTone } from '@/lib/status-badge';
 import { UsersFilters } from './users-filters';
+import { formatDate } from '@/lib/format-date';
 
 const STATUS: Record<string, { label: string; icon: LucideIcon; tone: StatusTone }> = {
   active: { label: 'Activo', icon: CircleCheckIcon, tone: 'success' },
@@ -85,7 +86,7 @@ const columns: ColumnDef<UserListItem, unknown>[] = [
     header: ({ column }) => <DataTableColumnHeader column={column} title="Última actividad" />,
     meta: { label: 'Última actividad' },
     cell: ({ row }) =>
-      row.original.lastActiveAt ? new Date(row.original.lastActiveAt).toLocaleDateString('es') : '—',
+      formatDate(row.original.lastActiveAt),
   },
 ];
 

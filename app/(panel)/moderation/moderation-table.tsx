@@ -23,6 +23,7 @@ import {
   useReports,
   type Report,
 } from '@/hooks/use-moderation';
+import { formatDate } from '@/lib/format-date';
 
 const ALL = 'all';
 const STATUS_LABELS: Record<string, string> = {
@@ -43,7 +44,6 @@ const REASON_LABELS: Record<string, string> = {
 };
 const STATUSES = ['open', 'in_review', 'dismissed', 'actioned', 'escalated'] as const;
 const SEVERITIES = ['low', 'medium', 'high', 'critical'] as const;
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
 const columns: ColumnDef<Report, unknown>[] = [
   {
@@ -89,7 +89,7 @@ const columns: ColumnDef<Report, unknown>[] = [
     accessorKey: 'createdAt',
     header: 'Fecha',
     meta: { label: 'Fecha' },
-    cell: ({ row }) => fmtDate(row.original.createdAt),
+    cell: ({ row }) => formatDate(row.original.createdAt),
   },
 ];
 

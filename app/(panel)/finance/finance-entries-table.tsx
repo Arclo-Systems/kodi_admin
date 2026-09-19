@@ -32,10 +32,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { formatDate } from '@/lib/format-date';
 
 const ALL = '__all__';
 
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 const fmtAmount = (e: FinanceEntry) => formatAmount(e.amount, e.currency);
 
 function viewReceipt(id: string): void {
@@ -71,7 +71,7 @@ export function FinanceEntriesTable() {
         meta: { label: 'Fecha' },
         enableSorting: false,
         cell: ({ row }) => (
-          <Voidable entry={row.original}>{fmtDate(row.original.date)}</Voidable>
+          <Voidable entry={row.original}>{formatDate(row.original.date)}</Voidable>
         ),
       },
       {
@@ -276,7 +276,6 @@ export function FinanceEntriesTable() {
       <FinanceEntryDialog
         entry={detail}
         onOpenChange={(open) => !open && setDetail(null)}
-        fmtDate={fmtDate}
         fmtAmount={fmtAmount}
       />
 

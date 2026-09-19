@@ -29,8 +29,8 @@ import {
 import { civilDayEndIso, civilDayStartIso } from '@/lib/civil-date';
 import { ACCOUNT_TYPE_LABELS, JOURNAL_STATUS_LABELS, formatMoney } from './finance-format';
 import { FinanceReportCsvButton } from './finance-report-csv-button';
+import { formatDate } from '@/lib/format-date';
 
-const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
 const CIVIL_DAY = /^\d{4}-\d{2}-\d{2}$/;
 // `civilDayStartIso` tira ante un día mal formado, y la query viene de la URL:
@@ -94,7 +94,7 @@ export function FinanceLedger() {
         header: 'Fecha',
         meta: { label: 'Fecha' },
         enableSorting: false,
-        cell: ({ row }) => fmtDate(row.original.date),
+        cell: ({ row }) => formatDate(row.original.date),
       },
       {
         accessorKey: 'entryNumber',

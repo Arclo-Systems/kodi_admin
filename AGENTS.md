@@ -62,6 +62,14 @@ dependencias, **`npx knip`** limpio + **`npm audit`** sin críticas/altas. Cero 
 - **204**: el proxy lo maneja; algunos handlers de auth devuelven `{ ok: true }`.
 - **Sentinel `NaN`** para inputs numéricos opcionales en forms; **`DEFAULT`/`KEEP`** como sentinels de
   Select donde Radix no admite valor vacío.
+- **Fechas: el servidor corre en UTC.** Las páginas del panel que son Server Components se renderizan
+  en Vercel, cuyo reloj es UTC, así que un `toLocaleString()` sin `timeZone` ahí pinta seis horas
+  adelante y corre el día. Todo instante se formatea con **`lib/format-date`** (`formatDate`/
+  `formatDateTime`, zona `America/Costa_Rica` fija, `es-CR`, reloj de 24 h) y las variantes se piden
+  por opciones, no con un `toLocaleString` nuevo. La excepción es `formatCivilDay`
+  (`lib/civil-date.ts`), que lee en **UTC a propósito** para los días civiles de columnas `@db.Date`
+  y finanzas; los pickers (`components/ui/date-*`) quedan en hora del navegador porque su contrato
+  es `datetime-local`.
 - **Rangos de fecha en charts**: truncar a la hora (`hourIso`) para estabilizar la `queryKey` y evitar
   refetch en bucle.
 - **recharts es pesado** (~300 KB): cargarlo con `next/dynamic` si está below-the-fold (ver dashboard).

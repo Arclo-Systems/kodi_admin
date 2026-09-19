@@ -2,6 +2,7 @@
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuditTrail } from '@/hooks/use-audit-trail';
+import { formatDateTime } from '@/lib/format-date';
 
 export type AuditTrailProps = {
   resourceType: string;
@@ -26,7 +27,7 @@ export function AuditTrail({ resourceType, resourceId }: AuditTrailProps) {
               {entry.action}
             </code>
             <time className="text-muted-foreground text-xs tabular-nums">
-              {new Date(entry.createdAt).toLocaleString('es')}
+              {formatDateTime(entry.createdAt)}
             </time>
           </div>
           <p className="text-muted-foreground mt-2 text-xs">

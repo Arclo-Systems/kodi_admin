@@ -28,11 +28,10 @@ import {
   type WaitlistSignup,
   type WaitlistStatus,
 } from '@/hooks/use-waitlist';
+import { formatDate, formatDateTime } from '@/lib/format-date';
 
 const TODOS = 'all';
 
-const fmtFecha = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
-const fmtFechaHora = (iso: string) => new Date(iso).toLocaleString('es-CR');
 
 const columns: ColumnDef<WaitlistSignup, unknown>[] = [
   {
@@ -45,7 +44,7 @@ const columns: ColumnDef<WaitlistSignup, unknown>[] = [
     accessorKey: 'createdAt',
     header: 'Se anotó',
     meta: { label: 'Se anotó' },
-    cell: ({ row }) => fmtFechaHora(row.original.createdAt),
+    cell: ({ row }) => formatDateTime(row.original.createdAt),
   },
   {
     accessorKey: 'source',
@@ -59,7 +58,7 @@ const columns: ColumnDef<WaitlistSignup, unknown>[] = [
     meta: { label: 'Aviso' },
     cell: ({ row }) =>
       row.original.notifiedAt ? (
-        <Badge variant="secondary">Avisado {fmtFecha(row.original.notifiedAt)}</Badge>
+        <Badge variant="secondary">Avisado {formatDate(row.original.notifiedAt)}</Badge>
       ) : (
         <span className="text-muted-foreground">Pendiente</span>
       ),

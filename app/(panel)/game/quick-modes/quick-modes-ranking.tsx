@@ -25,6 +25,7 @@ import { TableEmptyRow } from '@/components/admin/empty-state';
 import { COUNTRIES } from '@/lib/countries';
 import { useModulesTree } from '@/hooks/use-modules-tree';
 import { useModeRanking, type ModeRankingRow, type QuickMode } from '@/hooks/use-mode-ranking';
+import { formatDate } from '@/lib/format-date';
 
 const MODES: { value: QuickMode; label: string }[] = [
   { value: 'contrarreloj', label: 'Contrarreloj' },
@@ -34,7 +35,6 @@ const MODES: { value: QuickMode; label: string }[] = [
 const COLUMNS = 5;
 const SKELETON_ROWS = 8;
 
-const fmt = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
 export type RankingTableProps = {
   /** false = todavía falta elegir la tabla que se quiere mirar. */
@@ -118,7 +118,7 @@ export function RankingTable(props: RankingTableProps) {
                 </TableCell>
                 <TableCell className="tabular-nums">{row.bestScore}</TableCell>
                 <TableCell className="tabular-nums">{row.bestCombo}</TableCell>
-                <TableCell>{fmt(row.updatedAt)}</TableCell>
+                <TableCell>{formatDate(row.updatedAt)}</TableCell>
               </TableRow>
             ))
           )}

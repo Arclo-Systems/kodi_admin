@@ -3,8 +3,8 @@
 import { GameTable } from '@/components/game/game-table';
 import { GAME_STATUS_OPTIONS, GameStatusBadge, gameStatusLabel } from '@/lib/game-status';
 import type { SimulacroRow } from '@/hooks/use-game';
+import { formatDate } from '@/lib/format-date';
 
-const fmt = (iso: string) => new Date(iso).toLocaleDateString('es-CR');
 
 export function SimulacrosList() {
   return (
@@ -19,7 +19,7 @@ export function SimulacrosList() {
           cell: (s) => <GameStatusBadge value={s.status} label={gameStatusLabel('simulacros', s.status)} />,
         },
         { header: 'Score', cell: (s) => (s.score != null ? s.score : '—') },
-        { header: 'Inicio', cell: (s) => fmt(s.startedAt) },
+        { header: 'Inicio', cell: (s) => formatDate(s.startedAt) },
       ]}
     />
   );

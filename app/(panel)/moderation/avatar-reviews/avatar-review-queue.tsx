@@ -47,9 +47,7 @@ import {
   type AvatarReviewDecision,
   type AvatarReviewStatus,
 } from '@/hooks/use-avatar-reviews';
-
-const fmtDateTime = (iso: string) =>
-  new Date(iso).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' });
+import { formatDateTime } from '@/lib/format-date';
 
 const reportsLabel = ({ report_count: count }: AvatarReview): string =>
   count === 0 ? 'sin denuncias' : count === 1 ? '1 denuncia' : `${count} denuncias`;
@@ -171,7 +169,7 @@ function buildColumns(handlers: QueueHandlers): ColumnDef<AvatarReview, unknown>
         <div className="space-y-0.5">
           <div className="text-sm">{timeAgo(row.original.waiting_since)}</div>
           <div className="text-muted-foreground text-xs">
-            {fmtDateTime(row.original.waiting_since)}
+            {formatDateTime(row.original.waiting_since)}
           </div>
         </div>
       ),
@@ -187,7 +185,7 @@ function buildColumns(handlers: QueueHandlers): ColumnDef<AvatarReview, unknown>
           <div className="space-y-1">
             <AvatarReviewStatusBadge status={status} />
             {reviewedAt && (
-              <div className="text-muted-foreground text-xs">{fmtDateTime(reviewedAt)}</div>
+              <div className="text-muted-foreground text-xs">{formatDateTime(reviewedAt)}</div>
             )}
             {note && <p className="text-muted-foreground max-w-48 text-xs italic">«{note}»</p>}
           </div>

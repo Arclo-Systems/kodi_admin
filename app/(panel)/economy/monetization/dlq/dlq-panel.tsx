@@ -15,7 +15,8 @@ import {
 import { TableEmptyRow } from '@/components/admin/empty-state';
 import { DataTablePagination } from '@/components/admin/data-table-pagination';
 import { useDlq, useStoreMutations } from '@/hooks/use-store-monetization';
-import { PayloadDialog, ReasonAction, dateTime, eventStatusLabel } from '../store-shared';
+import { PayloadDialog, ReasonAction, eventStatusLabel } from '../store-shared';
+import { formatDateTime } from '@/lib/format-date';
 
 export function DlqPanel() {
   const [page, setPage] = useState(1);
@@ -66,7 +67,7 @@ export function DlqPanel() {
                       <TableCell className="font-mono text-xs">{row.eventType}</TableCell>
                       <TableCell className="text-sm tabular-nums">{row.attempts}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">
-                        {dateTime(row.receivedAt)}
+                        {formatDateTime(row.receivedAt)}
                       </TableCell>
                       <TableCell className="text-muted-foreground max-w-sm truncate text-xs">
                         {row.lastError ?? '—'}

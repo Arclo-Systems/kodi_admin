@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AnnulButton } from './annul-button';
 import { SuspicionPanel } from './suspicion-panel';
-import { MetaStrip, durationLabel, fmtDateTime } from './game-bits';
+import { MetaStrip, durationLabel } from './game-bits';
+import { formatDateTime } from '@/lib/format-date';
 import { GameStatusBadge, gameStatusLabel } from '@/lib/game-status';
 import { useGameDetail, type GameDetail, type GameEntity } from '@/hooks/use-game';
 
@@ -49,7 +50,7 @@ export function GameDetailShell({
           <MetaStrip
             items={[
               { icon: MapPinIcon, label: `${data.module.fullName} · ${data.module.country}` },
-              { icon: CalendarIcon, label: fmtDateTime(data.startedAt) },
+              { icon: CalendarIcon, label: formatDateTime(data.startedAt) },
               ...(duration ? [{ icon: ClockIcon, label: duration }] : []),
             ]}
           />
