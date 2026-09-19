@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import { UploadIcon, XIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { unwrapData } from '@/lib/bff';
+import { throwApiError, unwrapData } from '@/lib/bff';
 
 const TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/avif'];
 
@@ -41,10 +41,7 @@ export function StoreAssetUpload({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ filename: file.name, contentType: file.type, dataBase64 }),
       });
-      if (!res.ok) {
-        const b = (await res.json().catch(() => ({}))) as { message?: string };
-        throw new Error(b.message ?? 'Error subiendo el asset');
-      }
+      if (!res.ok) await throwApiError(res, 'Error subiendo el asset');
       const data = unwrapData<{ url: string }>(await res.json());
       if (data?.url) {
         onChange(data.url);
