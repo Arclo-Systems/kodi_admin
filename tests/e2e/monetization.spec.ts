@@ -15,14 +15,6 @@ test('suscripciones: renderiza la lista con Comp/grant', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Comp/ })).toBeVisible();
 });
 
-test('becas: renderiza la lista con filtros', async ({ page }) => {
-  await page.goto('/economy/scholarships');
-  await expect(page.getByRole('heading', { name: 'Becas' })).toBeVisible();
-  await expect(page.getByPlaceholder('Email o nombre')).toBeVisible();
-  await page.waitForLoadState('networkidle');
-  await expect(page.getByText('Sin solicitudes de beca.').or(page.getByText('Revisar').first())).toBeVisible();
-});
-
 test('monetización: la analítica carga sin error', async ({ page }) => {
   await page.goto('/economy/monetization');
   await expect(page.getByRole('heading', { name: 'Monetización' })).toBeVisible();

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { MISSION_FIXTURE } from './fixtures';
 
 // El globalSetup seedea el template MISSION_FIXTURE. Read-only: no crea ni interviene.
-test('misiones: lista de templates, edición y página de config (read-only)', async ({ page }) => {
+test('misiones: lista de templates, edición y diálogo de config (read-only)', async ({ page }) => {
   // Lista de templates → click en el del fixture → form de edición con el título poblado.
   await page.goto('/economy/missions');
   const row = page.locator('table').getByText(MISSION_FIXTURE.title);
@@ -14,8 +14,12 @@ test('misiones: lista de templates, edición y página de config (read-only)', a
   await expect(page.getByRole('heading', { name: 'Editar template de misión' })).toBeVisible();
   await expect(page.locator('#m-title')).toHaveValue(MISSION_FIXTURE.title);
 
-  // Página de refresh-config renderiza.
-  await page.goto('/economy/missions/config');
-  await expect(page.getByText('Costo de cambiar misión')).toBeVisible();
-  await expect(page.getByLabel('Costo en Kokos')).toBeVisible();
+  // La config de cambio de misión es un diálogo de la lista, no una página.
+  await page.goto('/economy/missions');
+  await page.getByRole('button', { name: 'Refresh config' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(
+    dialog.getByRole('heading', { name: 'Configuración de cambio de misión' }),
+  ).toBeVisible();
+  await expect(dialog.getByLabel('Costo en Kokos')).toBeVisible();
 });

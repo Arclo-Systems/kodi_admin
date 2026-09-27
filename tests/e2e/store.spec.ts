@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { STORE_FIXTURE } from './fixtures';
 
 // El globalSetup seedea el ítem STORE_FIXTURE. Read-only: no crea ni ajusta inventario.
-test('tienda: lista de ítems, edición y página de ajuste de inventario (read-only)', async ({
+test('tienda: lista de ítems, edición y diálogo de ajuste de inventario (read-only)', async ({
   page,
 }) => {
   // Lista → click en el ítem del fixture → form de edición con el nombre poblado.
@@ -14,8 +14,10 @@ test('tienda: lista de ítems, edición y página de ajuste de inventario (read-
   await expect(page.getByRole('heading', { name: 'Editar ítem de tienda' })).toBeVisible();
   await expect(page.locator('#s-name')).toHaveValue(STORE_FIXTURE.name);
 
-  // Página de ajuste de inventario renderiza.
-  await page.goto('/economy/store/inventory');
-  await expect(page.getByRole('heading', { name: 'Ajustar inventario' })).toBeVisible();
-  await expect(page.getByLabel('ID de usuario')).toBeVisible();
+  // El ajuste de inventario es un diálogo de la lista, no una página.
+  await page.goto('/economy/store');
+  await page.getByRole('button', { name: 'Ajustar inventario' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByRole('heading', { name: 'Ajustar inventario' })).toBeVisible();
+  await expect(dialog.getByLabel('Código de amigo')).toBeVisible();
 });
