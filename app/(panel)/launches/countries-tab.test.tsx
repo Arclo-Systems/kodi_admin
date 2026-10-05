@@ -24,7 +24,13 @@ const rollout = (over: Partial<CountryRollout>): CountryRollout => ({
 // El backend manda la lista ya rankeada; la vista solo la respeta.
 const LISTA: CountryRollout[] = [
   rollout({ country: 'CL', name: 'Chile', publicoAnual: 474_000, rank: 1 }),
-  rollout({ country: 'GT', name: 'Guatemala', publicoAnual: 337_199, rank: 2 }),
+  rollout({
+    country: 'GT',
+    name: 'Guatemala',
+    publicoAnual: 337_199,
+    rank: 2,
+    targetDate: '2026-12-01T00:00:00.000Z',
+  }),
   rollout({
     country: 'CR',
     name: 'Costa Rica',
@@ -32,6 +38,7 @@ const LISTA: CountryRollout[] = [
     rank: 3,
     status: 'live',
     registeredUsers: 1_200,
+    launchedAt: '2026-09-27T00:00:00.000Z',
   }),
   rollout({ country: 'HN', name: 'Honduras', status: 'paused', registeredUsers: 5 }),
   rollout({ country: 'CO', name: 'Colombia' }),
@@ -86,6 +93,13 @@ describe('CountriesTab', () => {
     const esperado = (337_199).toLocaleString('es-CR').replace(/\s/g, ' ');
     expect(within(cardDe('Guatemala')).getByText(esperado)).toBeInTheDocument();
     expect(within(cardDe('Colombia')).getByText('Público sin estimar')).toBeInTheDocument();
+  });
+
+  it('las fechas de lanzamiento y objetivo son días civiles: no se corren al día anterior', () => {
+    // Son columnas `@db.Date` (medianoche UTC). En hora de CR eso cae el día anterior.
+    renderTab();
+    expect(within(cardDe('Costa Rica')).getByText('Lanzado 27/9/2026')).toBeInTheDocument();
+    expect(within(cardDe('Guatemala')).getByText('Objetivo 1/12/2026')).toBeInTheDocument();
   });
 
   it('un país LIVE no ofrece eliminar: su fila sostiene el registro del país', () => {

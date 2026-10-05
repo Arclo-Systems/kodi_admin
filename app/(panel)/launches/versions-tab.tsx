@@ -13,7 +13,7 @@ import { can } from '@/lib/permissions';
 import type { AdminRole } from '@/lib/auth';
 import { useAppVersions, useVersionMutations, type AppPlatform, type AppVersion } from '@/hooks/use-launches';
 import { VersionFormDialog } from './version-form-dialog';
-import { formatDate } from '@/lib/format-date';
+import { formatCivilDay } from '@/lib/civil-date';
 
 const ALL = 'all';
 const PLATFORM_LABEL: Record<AppPlatform, string> = { ios: 'iOS', android: 'Android' };
@@ -56,7 +56,7 @@ export function VersionsTab({ role }: { role: AdminRole }) {
       accessorKey: 'releaseDate',
       header: 'Fecha',
       meta: { label: 'Fecha' },
-      cell: ({ row }) => formatDate(row.original.releaseDate),
+      cell: ({ row }) => formatCivilDay(row.original.releaseDate),
     },
     {
       accessorKey: 'releaseNotes',
