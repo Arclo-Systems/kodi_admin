@@ -2,8 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/fetch-json';
+import type { operations } from '@/types/api';
 
-export type TicketType = 'question_report' | 'suggestion' | 'bug_report';
+// Sale del spec generado: un tipo nuevo en el backend rompe el typecheck del mapa de etiquetas
+// en vez de quedar sin filtro ni badge.
+export type TicketType = NonNullable<
+  NonNullable<operations['TicketsAdminController_list']['parameters']['query']>['type']
+>;
 export type TicketStatus = 'open' | 'triaging' | 'resolved' | 'dismissed';
 export type TicketCategory =
   | 'respuesta_incorrecta'

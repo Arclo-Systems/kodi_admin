@@ -7,16 +7,18 @@ import {
   ClockIcon,
   type LucideIcon,
   LightbulbIcon,
+  SparklesIcon,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { StatusBadge, type StatusTone } from '@/lib/status-badge';
+import type { TicketType } from '@/hooks/use-tickets';
 
-// Semáforo de tipo de ticket: Pregunta (cielo) · Sugerencia (verde) · Bug (rojo).
+// Semáforo de tipo de ticket: Pregunta (cielo) · Sugerencia (verde) · Bug (rojo) · Tutor IA (dorado).
 // Solo tokens semánticos → contraste AA en light y dark.
 type TypeMeta = { label: string; Icon: LucideIcon; chip: string; badge: string };
 
-export const TICKET_TYPE_META: Record<string, TypeMeta> = {
+export const TICKET_TYPE_META: Record<TicketType, TypeMeta> = {
   question_report: {
     label: 'Pregunta',
     Icon: CircleHelpIcon,
@@ -35,6 +37,12 @@ export const TICKET_TYPE_META: Record<string, TypeMeta> = {
     chip: 'bg-destructive/10 text-destructive',
     badge: 'border-destructive/40 bg-destructive/15 text-destructive',
   },
+  ai_content_report: {
+    label: 'Tutor IA',
+    Icon: SparklesIcon,
+    chip: 'bg-warning/10 text-warning',
+    badge: 'border-warning/40 bg-warning/15 text-warning',
+  },
 };
 
 export const TICKET_STATUS_META: Record<
@@ -47,8 +55,10 @@ export const TICKET_STATUS_META: Record<
   dismissed: { label: 'Descartado', icon: CircleDashedIcon, tone: 'muted' },
 };
 
-export function TicketTypeBadge({ type }: { type: string }) {
-  const m = TICKET_TYPE_META[type];
+export function TicketTypeBadge({ type }: { type: TicketType }) {
+  // El dato viene de la API: un tipo que el backend agregue antes de regenerar los tipos no tiene
+  // entrada en el mapa hasta entonces.
+  const m: TypeMeta | undefined = TICKET_TYPE_META[type];
   if (!m) return <Badge variant="outline">{type}</Badge>;
   const Icon = m.Icon;
   return (

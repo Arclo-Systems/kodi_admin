@@ -17,11 +17,11 @@ import {
   TicketStatusBadge,
   TicketTypeBadge,
 } from '@/lib/ticket-meta';
-import { TICKETS_PAGE_SIZE, useTickets, type Ticket } from '@/hooks/use-tickets';
+import { TICKETS_PAGE_SIZE, useTickets, type Ticket, type TicketType } from '@/hooks/use-tickets';
 import { formatDate } from '@/lib/format-date';
 
 const ALL = 'all';
-const TYPES = ['question_report', 'suggestion', 'bug_report'] as const;
+const TYPES = Object.keys(TICKET_TYPE_META) as TicketType[];
 const STATUSES = ['open', 'triaging', 'resolved', 'dismissed'] as const;
 
 const columns: ColumnDef<Ticket, unknown>[] = [
@@ -114,7 +114,7 @@ export function TicketsTable() {
               <SelectItem value={ALL}>Todos los tipos</SelectItem>
               {TYPES.map((t) => (
                 <SelectItem key={t} value={t}>
-                  {TICKET_TYPE_META[t]?.label ?? t}
+                  {TICKET_TYPE_META[t].label}
                 </SelectItem>
               ))}
             </SelectContent>
