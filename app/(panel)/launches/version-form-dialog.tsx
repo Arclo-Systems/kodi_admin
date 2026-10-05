@@ -57,18 +57,14 @@ export function VersionFormDialog({
   const form = useForm<FormValues>({ resolver: zodResolver(FormSchema), defaultValues: toDefaults(version) });
 
   async function onSubmit(v: FormValues): Promise<void> {
-    const input = {
-      platform: v.platform,
-      version: v.version,
-      releaseDate: v.releaseDate,
-      releaseNotes: v.releaseNotes || undefined,
-      storeUrl: v.storeUrl || undefined,
-    };
+    const base = { platform: v.platform, version: v.version, releaseDate: v.releaseDate };
     try {
       if (isEdit) {
+        const input = { ...base, releaseNotes: v.releaseNotes || null, storeUrl: v.storeUrl || null };
         await update.mutateAsync({ id: version.id, input });
         toast.success('Versión actualizada');
       } else {
+        const input = { ...base, releaseNotes: v.releaseNotes || undefined, storeUrl: v.storeUrl || undefined };
         await create.mutateAsync(input);
         toast.success('Versión creada');
       }

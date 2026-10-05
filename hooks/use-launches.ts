@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchJson } from '@/lib/fetch-json';
+import type { operations } from '@/types/api';
 
 export type AppPlatform = 'ios' | 'android';
 
@@ -22,6 +23,10 @@ export type AppVersionInput = {
   releaseNotes?: string;
   storeUrl?: string;
 };
+
+// Al editar, `null` borra el opcional; `undefined` lo deja como estaba.
+export type AppVersionUpdateInput =
+  operations['AppVersionsController_update']['requestBody']['content']['application/json'];
 
 export type CountryLaunchStatus = 'planned' | 'in_preparation' | 'live' | 'paused';
 
@@ -93,7 +98,7 @@ export function useVersionMutations() {
       onSuccess: invalidate,
     }),
     update: useMutation({
-      mutationFn: ({ id, input }: { id: string; input: AppVersionInput }) =>
+      mutationFn: ({ id, input }: { id: string; input: AppVersionUpdateInput }) =>
         send(`/api/admin/launches/versions/${id}`, 'PATCH', input),
       onSuccess: invalidate,
     }),
