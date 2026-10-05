@@ -15,7 +15,7 @@ export interface paths {
         put?: never;
         /**
          * Registrar nuevo usuario
-         * @description Crea un User. Si la edad es <13 → accountStatus=pending_parental y requires_parental_consent=true.
+         * @description Crea un User activo. Por debajo de 13 años responde 400 (VALIDATION_ERROR) y no crea la cuenta. `requires_parental_consent` viaja siempre `false`; se mantiene por contrato con las apps instaladas.
          */
         post: operations["AuthController_register"];
         delete?: never;
@@ -55,6 +55,26 @@ export interface paths {
          * @description Mismo body que el login. Si la cuenta está soft-deleted y todavía dentro de la ventana de gracia de 30 días, revierte el borrado y devuelve sesión. Fuera de la ventana o con credenciales incorrectas responde el 401 genérico del login — no confirma si el correo existe.
          */
         post: operations["AuthController_reactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/reactivate/social": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reactivar una cuenta usando el ticket del login social
+         * @description Contraparte de `/auth/reactivate` para quien entró con Apple, Google o Facebook y NO tiene contraseña. El ticket lo emite `POST /auth/social/:provider` cuando responde `pending_deletion`, dura 15 minutos y prueba control de la misma identidad del proveedor. Mismas reglas que la reactivación por contraseña: ventana de 30 días, y un borrado ordenado por moderación no se deshace. Cualquier fallo responde el 401 genérico del login.
+         */
+        post: operations["AuthController_reactivateSocial"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1031,6 +1051,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/store/cosmetic-art": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Arte de los cosméticos de un tipo, para dibujar las caras
+         * @description Índice `item_id → preview_url`. NO es catálogo de venta: incluye los ítems dados de baja a propósito, porque el arte de lo que alguien ya compró no puede depender de que siga en la tienda.
+         */
+        get: operations["StoreController_cosmeticArt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/store/app-icons": {
         parameters: {
             query?: never;
@@ -1271,7 +1311,7 @@ export interface paths {
         };
         /**
          * Estado del crédito pendiente (juego, misión o práctica)
-         * @description Con SSV activo el crédito lo emite el callback firmado de Google, no la app: este endpoint permite esperar a que llegue antes de reintentar. game/mission: hay una impresión acreditada sin consumir. practice: quedan preguntas desbloqueadas sin responder — el mismo predicado que evalúa FreeQuotaGuard para dejar seguir practicando.
+         * @description Con SSV activo el crédito lo emite el callback firmado de Google, no la app: este endpoint permite esperar a que llegue antes de reintentar. game/mission: hay una impresión acreditada sin consumir. practice: quedan preguntas desbloqueadas sin responder — el mismo predicado que evalúa FreeQuotaGuard para dejar seguir practicando. Con module_id mira la cuota de ese módulo (o del activo si no está registrado); sin él, la de la persona.
          */
         get: operations["VideosController_gameCredit"];
         put?: never;
@@ -1530,7 +1570,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Desregistrar módulo */
+        /**
+         * Desregistrar módulo
+         * @description Rate limit propio de 3 bajas cada 24 h por usuario (bucket `module_removal`): cada baja + alta deja la energía del módulo llena. Todo intento cuenta, también los que terminan en 4xx.
+         */
         delete: operations["UserModulesController_unregister"];
         options?: never;
         head?: never;
@@ -1620,7 +1663,7 @@ export interface paths {
         };
         /**
          * Elegibilidad del trial de Plus por módulo
-         * @description Un módulo queda inelegible si el usuario ya tuvo cualquier suscripción en él ("una vez por módulo"). El trial cubre el pack entero, así que solo hay prueba gratis si TODOS los módulos consultados están libres.
+         * @description Un módulo queda inelegible si el usuario ya tuvo cualquier suscripción en él ("una vez por módulo"). El trial cubre el pack entero, así que solo hay prueba gratis si TODOS los módulos consultados están libres. Con platform=ios la regla no aplica: Apple da una oferta introductoria por cuenta y por grupo de suscripción, así que el backend devuelve decided_by="store" y la app le pregunta a StoreKit.
          */
         get: operations["PurchaseIntentController_trialEligibility"];
         put?: never;
@@ -1642,7 +1685,7 @@ export interface paths {
         put?: never;
         /**
          * Emitir el intent de compra antes de abrir la tienda
-         * @description Fija plan, período, pack y módulos, y devuelve el SKU junto a los dos identificadores obfuscados que la app le pasa a la tienda. El intent no concede acceso: el acceso lo concede el evento verificado de la tienda.
+         * @description Fija plan, período, pack y módulos, y devuelve el SKU junto a los dos identificadores obfuscados que la app le pasa a la tienda. El intent no concede acceso: el acceso lo concede el evento verificado de la tienda. Un módulo del pack que el usuario no había agregado se registra en la misma transacción (en admisión, con la primera materia como examen y `onboarding_flags.exam_auto_assigned`); queda registrado aunque la compra se cancele en la tienda.
          */
         post: operations["PurchaseIntentController_create"];
         delete?: never;
@@ -1725,6 +1768,46 @@ export interface paths {
          * @description Recibe el push de Pub/Sub con la notificación de la tienda. Se autentica con el id token OIDC del service account del topic; el estado real de la compra se consulta contra Google, nunca se toma del cuerpo del mensaje.
          */
         post: operations["RtdnController_receive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/subscriptions/purchases/apple-confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirmar una compra recién hecha en el App Store
+         * @description Atajo para no esperar la notificación de Apple: verifica la firma del JWS de StoreKit 2, vuelve a pedirle a Apple el estado actual de la transacción, comprueba que el appAccountToken sea un intent del usuario autenticado y corre el mismo pipeline que el webhook. No concede acceso por su cuenta.
+         */
+        post: operations["AppleConfirmController_confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/subscriptions/apple-notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Notificación del App Store (App Store Server Notifications V2)
+         * @description Recibe el signedPayload firmado por Apple. Se autentica verificando la cadena de certificados contra los root certificates de Apple; el estado real de la compra sale de la transacción firmada, nunca del cuerpo sin verificar. Deduplica por notificationUUID.
+         */
+        post: operations["AppleNotificationsController_receive"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2332,6 +2415,26 @@ export interface paths {
         patch: operations["SimulacroController_complete"];
         trace?: never;
     };
+    "/v1/simulacros/{id}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Releer el resultado de un simulacro completado
+         * @description Misma forma que PATCH /complete, leída de lo guardado. Sirve cuando la respuesta del cierre se perdió.
+         */
+        get: operations["SimulacroController_getResult"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/simulacros/{id}/abandon": {
         parameters: {
             query?: never;
@@ -2679,7 +2782,7 @@ export interface paths {
         };
         /**
          * Examen sorpresa pendiente de hoy (o null)
-         * @description Generado por cron surprise-exam-generate. 5 preguntas, ventana 2h, doble XP si dentro de ventana.
+         * @description Generado por el cron surprise-exam-generate a una hora sorteada por usuario y día dentro de su ventana diurna. La cantidad de preguntas la fija el módulo y el multiplicador de EXP dentro de la ventana de 2 h, la RewardConfig del país.
          */
         get: operations["SurpriseExamController_getToday"];
         put?: never;
@@ -9909,8 +10012,12 @@ export interface components {
                 };
             };
         };
+        ReactivateSocialDto: {
+            reactivation_ticket: string;
+        };
         SocialLoginDto: {
             id_token: string;
+            authorization_code?: string;
         };
         SocialLoginResponse: {
             data: {
@@ -9934,6 +10041,11 @@ export interface components {
                 social_ticket: string;
                 email: string | null;
                 name: string | null;
+            } | {
+                /** @enum {string} */
+                status: "pending_deletion";
+                reactivation_ticket: string;
+                deletes_at: string;
             };
         };
         RefreshDto: {
@@ -10344,6 +10456,8 @@ export interface components {
                 limit: number;
                 videos_used: number;
                 videos_max: number;
+                questions_per_video: number;
+                gated: boolean;
             };
         };
         VideoBoostResponse: {
@@ -10520,7 +10634,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 /** @enum {string} */
-                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena" | "play_duel_turn" | "answer_questions";
                 /** @enum {string} */
                 cadence: "daily" | "weekly";
                 title: string;
@@ -10562,7 +10676,7 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     /** @enum {string} */
-                    type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
+                    type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena" | "play_duel_turn" | "answer_questions";
                     /** @enum {string} */
                     cadence: "daily" | "weekly";
                     title: string;
@@ -10625,6 +10739,13 @@ export interface components {
                 limit: number;
                 total: number;
             };
+        };
+        CosmeticArtResponse: {
+            data: {
+                /** Format: uuid */
+                id: string;
+                preview_url: string;
+            }[];
         };
         AppIconListResponse: {
             data: {
@@ -10942,6 +11063,7 @@ export interface components {
                 presentation_grade: number | null;
                 profile_public: boolean;
                 show_in_rankings: boolean;
+                ai_consent_at: string | null;
                 /** @enum {string} */
                 friend_request_policy: "everyone" | "nobody";
                 reminder_hour: number | null;
@@ -11041,6 +11163,7 @@ export interface components {
             discovery_source?: "tiktok" | "google" | "youtube" | "instagram" | "tv" | "app_store" | "noticias" | "recomendacion" | "otro";
             profile_public?: boolean;
             show_in_rankings?: boolean;
+            ai_consent?: boolean;
             /** @enum {string} */
             friend_request_policy?: "everyone" | "nobody";
             reminder_hour?: number;
@@ -11096,6 +11219,7 @@ export interface components {
                 /** Format: uuid */
                 frame_item_id: string | null;
                 friend_code: string;
+                is_friend: boolean;
             };
         };
         PublicProfileResponse: {
@@ -11115,6 +11239,8 @@ export interface components {
                 created_at: string | null;
                 is_friend: boolean;
                 is_blocked: boolean;
+                /** @enum {string} */
+                friend_request: "none" | "outgoing" | "incoming";
                 league: {
                     /** @enum {string} */
                     level: "aprendiz" | "avanzado" | "experto" | "genio";
@@ -11265,6 +11391,8 @@ export interface components {
                 eligible_module_ids: string[];
                 ineligible_module_ids: string[];
                 trial_available: boolean;
+                /** @enum {string} */
+                decided_by: "backend" | "store";
             };
         };
         PurchaseIntentDto: {
@@ -11277,8 +11405,12 @@ export interface components {
             want_founder: boolean;
             /** @default true */
             want_trial: boolean;
+            /** @default false */
+            founder_rejected_by_store: boolean;
             /** @enum {string} */
             platform?: "ios" | "android";
+            /** @enum {string} */
+            trial_change?: "charge_full_price";
         };
         PurchaseIntentResponse: {
             data: {
@@ -11302,6 +11434,9 @@ export interface components {
                 /** @enum {string} */
                 status: "granted" | "pending_module_selection" | "not_granted";
                 module_ids: string[];
+                trial: boolean;
+                base_plan_id: string | null;
+                is_new_purchase: boolean;
             };
         };
         PendingModulesDto: {
@@ -11325,6 +11460,30 @@ export interface components {
             subscription?: string;
         };
         PlayRtdnResponse: {
+            data: {
+                received: boolean;
+            };
+        };
+        AppleConfirmDto: {
+            /** Format: uuid */
+            intent_id: string;
+            transaction_id: string;
+            signed_transaction: string;
+        };
+        AppleConfirmResponse: {
+            data: {
+                /** @enum {string} */
+                status: "granted" | "pending_module_selection" | "not_granted";
+                module_ids: string[];
+                trial: boolean;
+                base_plan_id: string | null;
+                is_new_purchase: boolean;
+            };
+        };
+        AppleNotificationDto: {
+            signedPayload: string;
+        };
+        AppleNotificationResponse: {
             data: {
                 received: boolean;
             };
@@ -12053,7 +12212,7 @@ export interface components {
             /** Format: uuid */
             user_id?: string;
             /** @enum {string} */
-            source?: "friend_code" | "contacts" | "social" | "post_match";
+            source?: "friend_code" | "contacts" | "social" | "post_match" | "profile";
         };
         FriendRequestSentResponse: {
             data: {
@@ -12064,7 +12223,7 @@ export interface components {
                 /** @enum {string} */
                 status: "pending" | "accepted" | "rejected" | "cancelled";
                 /** @enum {string} */
-                source: "friend_code" | "contacts" | "social" | "post_match";
+                source: "friend_code" | "contacts" | "social" | "post_match" | "profile";
             };
         };
         ContactsMatchDto: {
@@ -12731,6 +12890,8 @@ export interface components {
                 /** Format: uuid */
                 arena_id: string;
                 round: number;
+                /** @description false = ronda cerrada (interludio o cuenta regresiva): `question` es un marcador sin contenido */
+                round_open: boolean;
                 round_ends_at: string | null;
                 question_index: number;
                 total_questions: number;
@@ -12744,6 +12905,24 @@ export interface components {
                     }[];
                     /** @enum {string} */
                     difficulty: "easy" | "medium" | "hard";
+                    /** Format: uuid */
+                    topic_id: string;
+                    topic_name?: string;
+                    subject_name?: string;
+                    subject_color?: string;
+                } | {
+                    /** @enum {string} */
+                    id: "";
+                    /** @enum {string} */
+                    text: "";
+                    options: {
+                        id: string;
+                        text: string;
+                    }[];
+                    /** @enum {string} */
+                    difficulty: "easy" | "medium" | "hard";
+                    /** @enum {string} */
+                    topic_id: "";
                 };
             };
         };
@@ -12813,6 +12992,9 @@ export interface components {
         SessionDebriefResponse: {
             data: {
                 ai_debrief: string | null;
+                daily_used: number;
+                daily_max: number;
+                min_questions: number;
             };
         };
         SimulacroAnalysisResponse: {
@@ -12897,6 +13079,8 @@ export interface components {
             token: string;
             /** @enum {string} */
             platform: "ios" | "android";
+            /** @default null */
+            app_version: string | null;
         };
         PushTokenRegisteredResponse: {
             data: {
@@ -12944,6 +13128,8 @@ export interface components {
                 friend_nudges: boolean;
                 friend_activity: boolean;
                 news_promos: boolean;
+                feature_tips: boolean;
+                motivation: boolean;
             };
         };
         UpdateNotificationSettingsDto: {
@@ -13349,6 +13535,11 @@ export interface components {
                     database: "ok" | "down";
                     /** @enum {string} */
                     redis: "ok" | "down";
+                    /**
+                     * @description stub = arrancó sin ANTHROPIC_API_KEY o con AI_STUB_MODE=true. Informativo: no cambia status.
+                     * @enum {string}
+                     */
+                    ai: "ok" | "stub";
                 };
                 version?: string;
                 commit?: string;
@@ -16503,7 +16694,7 @@ export interface components {
                     /** Format: uuid */
                     id: string;
                     /** @enum {string} */
-                    type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
+                    type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena" | "play_duel_turn" | "answer_questions";
                     /** @enum {string} */
                     cadence: "daily" | "weekly";
                     title: string;
@@ -16535,7 +16726,7 @@ export interface components {
                 /** Format: uuid */
                 id: string;
                 /** @enum {string} */
-                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena" | "play_duel_turn" | "answer_questions";
                 /** @enum {string} */
                 cadence: "daily" | "weekly";
                 title: string;
@@ -16559,7 +16750,7 @@ export interface components {
         };
         CreateMissionTemplateDto: {
             /** @enum {string} */
-            type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
+            type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena" | "play_duel_turn" | "answer_questions";
             /**
              * @default daily
              * @enum {string}
@@ -16634,7 +16825,7 @@ export interface components {
                 moduleId: string;
                 date: string;
                 /** @enum {string} */
-                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena" | "play_duel_turn" | "answer_questions";
                 /** @enum {string} */
                 cadence: "daily" | "weekly";
                 /** Format: uuid */
@@ -16665,7 +16856,7 @@ export interface components {
                 moduleId: string;
                 date: string;
                 /** @enum {string} */
-                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
+                type: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena" | "play_duel_turn" | "answer_questions";
                 /** @enum {string} */
                 cadence: "daily" | "weekly";
                 /** Format: uuid */
@@ -17849,9 +18040,16 @@ export interface components {
                 duelCompletionKokos: number;
                 duelWinKolones: number;
                 duelWinKokos: number;
-                arenaRapidaKolones: number;
-                arenaRapidaKokos: number;
-                arenaRapidaXp: number;
+                arenaRapidaPrizes?: {
+                    minRank: number;
+                    maxRank: number;
+                    kolones: number;
+                    kokos: number;
+                    xp: number;
+                }[];
+                arenaRapidaKolones?: number;
+                arenaRapidaKokos?: number;
+                arenaRapidaXp?: number;
                 arenaAmigosKolones: number;
                 arenaAmigosKokos: number;
                 arenaAmigosXp: number;
@@ -17896,9 +18094,16 @@ export interface components {
             duelCompletionKokos: number;
             duelWinKolones: number;
             duelWinKokos: number;
-            arenaRapidaKolones: number;
-            arenaRapidaKokos: number;
-            arenaRapidaXp: number;
+            arenaRapidaPrizes?: {
+                minRank: number;
+                maxRank: number;
+                kolones: number;
+                kokos: number;
+                xp: number;
+            }[];
+            arenaRapidaKolones?: number;
+            arenaRapidaKokos?: number;
+            arenaRapidaXp?: number;
             arenaAmigosKolones: number;
             arenaAmigosKokos: number;
             arenaAmigosXp: number;
@@ -18592,6 +18797,9 @@ export interface components {
             data: {
                 status: string;
                 moduleIds: string[];
+                trial?: boolean;
+                basePlanId?: string | null;
+                isNewPurchase?: boolean;
             };
         };
         StoreAdminResolveIncidentResponse: {
@@ -18856,9 +19064,9 @@ export interface components {
             platform?: "ios" | "android";
             version?: string;
             releaseDate?: string;
-            releaseNotes?: string;
+            releaseNotes?: string | null;
             /** Format: uri */
-            storeUrl?: string;
+            storeUrl?: string | null;
         };
         AppVersionDeletedResponse: {
             data: {
@@ -20945,6 +21153,13 @@ export interface operations {
                     "application/json": components["schemas"]["RegisterResponse"];
                 };
             };
+            /** @description Datos inválidos, incluida una edad menor a 13 años */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Email ya registrado */
             409: {
                 headers: {
@@ -21029,6 +21244,44 @@ export interface operations {
                 };
             };
             /** @description Credenciales inválidas o fuera de la ventana */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rate limit (10/15min IP) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_reactivateSocial: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactivateSocialDto"];
+            };
+        };
+        responses: {
+            /** @description Cuenta reactivada */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description Ticket inválido, expirado o cuenta fuera de la ventana */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -21183,6 +21436,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Rate limit (10/15 min IP) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     AuthController_changePassword: {
@@ -21217,7 +21477,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Nueva contraseña igual a la actual */
+            /** @description NEW_PASSWORD_SAME_AS_CURRENT: nueva contraseña igual a la actual · PASSWORD_NOT_SET: la cuenta entró con Apple, Google o Facebook y no tiene contraseña */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -22347,6 +22607,27 @@ export interface operations {
             };
         };
     };
+    StoreController_cosmeticArt: {
+        parameters: {
+            query: {
+                item_type: "avatar" | "frame";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmeticArtResponse"];
+                };
+            };
+        };
+    };
     StoreController_listAppIcons: {
         parameters: {
             query?: never;
@@ -22973,7 +23254,7 @@ export interface operations {
                     "application/json": components["schemas"]["UserModuleRegisteredResponse"];
                 };
             };
-            /** @description EXAMS_REQUIRED (admisión con exam_keys vacío, o sin materias publicadas) · EXAM_NOT_IN_MODULE (una llave no es materia del módulo) · MODULE_LIMIT_REACHED · MODULE_NOT_AVAILABLE (módulo despublicado) */
+            /** @description EXAMS_REQUIRED (admisión con exam_keys vacío, o sin materias publicadas) · EXAM_NOT_IN_MODULE (una llave no es materia del módulo) · MODULE_LIMIT_REACHED (techo de seguridad de 10 módulos; no depende del plan) · MODULE_NOT_AVAILABLE (módulo despublicado o de otro país) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -22993,7 +23274,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            204: {
+            /** @description MODULE_HAS_ACTIVE_SUBSCRIPTION (el módulo tiene una suscripción vigente —activa, en prueba, en gracia o cancelada con días pagados— o una que todavía puede volver a cobrarse: en pausa, en retención o en reintento de cobro, hasta 100 días después de vencer) · MODULE_HAS_PENDING_PURCHASE (hay una compra abierta que incluye el módulo) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description RATE_LIMIT_EXCEEDED (más de 3 bajas en 24 h); `details.retry_after_seconds` dice cuándo se libera */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -23095,6 +23384,7 @@ export interface operations {
         parameters: {
             query?: {
                 module_ids?: string[];
+                platform?: "ios" | "android";
             };
             header?: never;
             path?: never;
@@ -23136,6 +23426,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PurchaseIntentResponse"];
                 };
+            };
+            /** @description RESOURCE_NOT_FOUND (algún module_id no existe) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description PACK_SIZE_MISMATCH · MODULE_IDS_DUPLICATED · SKU_UNAVAILABLE · PRICE_UNAVAILABLE · MODULE_NOT_AVAILABLE (módulo inactivo o de otro país) · EXAMS_REQUIRED (módulo de admisión sin materias publicadas) · MODULE_LIMIT_REACHED · TRIAL_PLAN_CHANGE_REQUIRES_UPDATE (Android: subir de plan durante la prueba gratis sin `trial_change`; la app tiene que actualizarse) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -23223,6 +23527,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlayRtdnResponse"];
+                };
+            };
+        };
+    };
+    AppleConfirmController_confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppleConfirmDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppleConfirmResponse"];
+                };
+            };
+        };
+    };
+    AppleNotificationsController_receive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppleNotificationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppleNotificationResponse"];
                 };
             };
         };
@@ -23994,6 +24344,30 @@ export interface operations {
     SimulacroController_complete: {
         parameters: {
             query?: never;
+            header?: {
+                /** @description UUID v4 por simulacro; repetir la clave devuelve el resultado original en vez de SESSION_ALREADY_COMPLETE */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulacroResultResponse"];
+                };
+            };
+        };
+    };
+    SimulacroController_getResult: {
+        parameters: {
+            query?: never;
             header?: never;
             path: {
                 id: string;
@@ -24009,6 +24383,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SimulacroResultResponse"];
                 };
+            };
+            /** @description SIMULACRO_NOT_COMPLETED — details.status dice si sigue activo, se abandonó o se anuló */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -24868,6 +25249,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description ARENA_START_FAILED — no se pudo armar la sala. La sala se cierra y la entrada se devuelve en el acto; si ese cierre también falla, lo hace el barrido de salas en espera */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     ArenaController_joinEspecial: {
@@ -25186,6 +25574,13 @@ export interface operations {
                     "application/json": components["schemas"]["ExplainResponse"];
                 };
             };
+            /** @description AI_CONSENT_REQUIRED — el usuario no dio permiso para que su contenido viaje a Anthropic (o lo revocó en Perfil → Privacidad) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     AIController_getExplainQuota: {
@@ -25206,6 +25601,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ExplainQuotaResponse"];
                 };
+            };
+            /** @description AI_CONSENT_REQUIRED — el usuario no dio permiso para que su contenido viaje a Anthropic (o lo revocó en Perfil → Privacidad) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -25228,6 +25630,13 @@ export interface operations {
                     "application/json": components["schemas"]["WeeklySummaryResponse"];
                 };
             };
+            /** @description AI_CONSENT_REQUIRED — el usuario no dio permiso para que su contenido viaje a Anthropic (o lo revocó en Perfil → Privacidad) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     AIController_getSessionDebrief: {
@@ -25248,6 +25657,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SessionDebriefResponse"];
                 };
+            };
+            /** @description AI_CONSENT_REQUIRED — el usuario no dio permiso para que su contenido viaje a Anthropic (o lo revocó en Perfil → Privacidad) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -25270,6 +25686,13 @@ export interface operations {
                     "application/json": components["schemas"]["SimulacroAnalysisResponse"];
                 };
             };
+            /** @description AI_CONSENT_REQUIRED — el usuario no dio permiso para que su contenido viaje a Anthropic (o lo revocó en Perfil → Privacidad) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     AIController_getDiagnostic: {
@@ -25291,6 +25714,13 @@ export interface operations {
                     "application/json": components["schemas"]["DiagnosticResponse"];
                 };
             };
+            /** @description AI_CONSENT_REQUIRED — el usuario no dio permiso para que su contenido viaje a Anthropic (o lo revocó en Perfil → Privacidad) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     AIController_dismissDiagnostic: {
@@ -25304,7 +25734,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            204: {
+            /** @description AI_CONSENT_REQUIRED — el usuario no dio permiso para que su contenido viaje a Anthropic (o lo revocó en Perfil → Privacidad) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -25433,6 +25864,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SessionDiagnosticResponse"];
                 };
+            };
+            /** @description AI_CONSENT_REQUIRED — el usuario no dio permiso para que su contenido viaje a Anthropic (o lo revocó en Perfil → Privacidad) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -31193,7 +31631,7 @@ export interface operations {
     MissionsAdminController_searchTemplates: {
         parameters: {
             query?: {
-                type?: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena";
+                type?: "answer_correct_in_subject" | "complete_practice_session" | "win_duel" | "complete_simulacro" | "maintain_streak" | "play_with_friend" | "complete_quick_session" | "win_arena" | "play_duel_turn" | "answer_questions";
                 cadence?: "daily" | "weekly";
                 country?: "CR" | "GT" | "SV" | "HN" | "PA" | "CL" | "MX" | "AR";
                 isActive?: boolean;
