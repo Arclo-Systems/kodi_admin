@@ -9,11 +9,10 @@ import { unwrapData } from '@/lib/bff';
 import type { components } from '@/types/api';
 
 // El backend chequea una integración por request (`?service=`), así que el
-// panel pregunta por las tres en paralelo en vez de inventar un endpoint nuevo.
+// panel pregunta por cada una en paralelo en vez de inventar un endpoint nuevo.
 const INTEGRATIONS = [
   { service: 'brevo', label: 'Brevo (email)' },
   { service: 'fcm', label: 'FCM (push)' },
-  { service: 'posthog', label: 'PostHog (analítica)' },
 ] as const;
 
 type IntegrationCheck = components['schemas']['IntegrationCheckResponse']['data'];

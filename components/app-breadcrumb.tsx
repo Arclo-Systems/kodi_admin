@@ -99,7 +99,6 @@ const LABELS: Record<string, string> = {
   activity: 'Actividad',
   social: 'Social',
   ai: 'IA',
-  events: 'Eventos',
 };
 
 // Segmentos que son solo contenedores de ruta (sin página índice propia): se muestran como

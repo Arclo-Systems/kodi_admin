@@ -15,7 +15,6 @@ const TABS = [
   { slug: 'coupons', label: 'Cupones' },
   { slug: 'social', label: 'Social' },
   { slug: 'ai', label: 'IA' },
-  { slug: 'events', label: 'Eventos' },
 ];
 
 export function TabsNav({ userId }: { userId: string }) {
