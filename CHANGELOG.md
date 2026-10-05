@@ -8,6 +8,8 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-05
+
 ### Added
 - ✨ **Material de repaso — generar suma e historial de versiones:** "Generar con IA" en tarjetas
   ahora **agrega al final del mazo** (antes reemplazaba el mazo entero y se llevaba puesto el trabajo
@@ -39,6 +41,22 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
   y el backend valida la matriz completa con un schema estricto, así que **cualquier guardado de
   recompensas salía rechazado**. Entran los dos campos que faltaban (más el EXP de la sesión diaria
   de tarjetas del material de repaso).
+- 🐛 **Fechas que salían un día antes:** la fecha de publicación de una versión, las de lanzamiento
+  y objetivo de cada país y el día de una misión son días civiles; se mostraban en hora de Costa
+  Rica y caían el día anterior. Ahora se leen como día civil, igual que cupones.
+- 🐛 **Mensajería:** "Aprobar" ya no aparece a quien no puede aprobar un broadcast (hace falta
+  alcance global).
+- 🐛 **Lanzamientos:** al editar una versión, vaciar el link a la tienda o las notas los borra. Antes
+  el cambio no se guardaba. Necesita el backend 0.10.0.
+- 🐛 **Usuarios:** el menú de acciones muestra solo lo que el rol puede hacer, y suma **Reset
+  cosmético** (admin) con confirmación. El texto de un reporte de moderación dice dónde está.
+- 🐛 **Tickets:** se ven y se filtran los reportes sobre respuestas del Tutor IA. La lista de tipos
+  sale del contrato generado del backend, así que un tipo nuevo ya no puede quedar afuera sin que
+  falle el typecheck.
+
+### Removed
+- 🔥 **PostHog:** Kodi ya no usa PostHog. Sale la tarjeta "PostHog (analítica)" de Salud →
+  Integraciones y la pestaña "Eventos" del perfil de usuario, que solo era un aviso de PostHog.
 
 ### Added (previo)
 - ✨ SVG inline en preguntas: pegá código SVG (enunciado/explicación y CSV) con render seguro vía data-URI, optimización SVGO y semáforo de peso (bloquea >30 KB).
@@ -109,6 +127,7 @@ desarrollo) quedó archivada en un backup `git bundle` fuera del repositorio.
 - Panel de administración completo (auth + dominios: usuarios, contenido, economía, moderación, mensajería, juego, sistema).
 - Framework de auditoría técnica por fases ([`docs/technical-audit-2026-06-08.md`](./docs/technical-audit-2026-06-08.md)).
 
-[Unreleased]: https://github.com/Arclo-Systems/kodi_admin/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Arclo-Systems/kodi_admin/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Arclo-Systems/kodi_admin/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Arclo-Systems/kodi_admin/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Arclo-Systems/kodi_admin/releases/tag/v0.1.0
