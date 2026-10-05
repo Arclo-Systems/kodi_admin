@@ -183,8 +183,8 @@ export function ReportDetail({ id }: { id: string }) {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-muted-foreground text-sm">
-            Registrá el estado del reporte. Las acciones sobre el usuario (ban, reset) se aplican
-            desde su perfil.
+            Registrá el estado del reporte. Las acciones sobre el usuario (banear, reset cosmético) se
+            aplican desde el menú de acciones de su perfil.
           </p>
           <div className="flex flex-wrap gap-2">
             {TRANSITIONS.map((t) => (

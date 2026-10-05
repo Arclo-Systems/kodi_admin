@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { MoreVerticalIcon } from 'lucide-react';
@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmDialog } from '@/components/admin/confirm-dialog';
+import type { AdminRole } from '@/lib/auth';
+import { canWithScope, type Action } from '@/lib/permissions';
 import type { UserDetail } from '@/lib/user-detail';
 import { BanAction } from './actions/ban-action';
 import { AdjustBalanceAction } from './actions/adjust-balance-action';
@@ -31,11 +33,78 @@ type ActionKey =
   | 'reset-streak'
   | 'send-message'
   | 'parental-approve'
-  | 'parental-reject';
+  | 'parental-reject'
+  | 'reset-cosmetic';
 
-export function UserActions({ user }: { user: Pick<UserDetail, 'id' | 'accountStatus' | 'isBot'> }) {
+type MenuAction = { key: ActionKey; label: string; permission: Action; destructive?: boolean };
+type MenuSection = { label: string; actions: MenuAction[] };
+
+type MenuUser = Pick<UserDetail, 'id' | 'accountStatus' | 'isBot'>;
+
+function menuSections(user: MenuUser): MenuSection[] {
+  return [
+    {
+      label: 'Soporte',
+      actions: [
+        { key: 'reset-password', label: 'Reset password', permission: 'user:reset-password' },
+        { key: 'force-logout', label: 'Forzar logout', permission: 'user:force-logout' },
+        { key: 'adjust-balance', label: 'Ajustar balance', permission: 'user:adjust-balance' },
+        { key: 'reset-streak', label: 'Reset streak', permission: 'user:reset-streak' },
+        { key: 'send-message', label: 'Enviar mensaje', permission: 'messaging:send' },
+      ],
+    },
+    {
+      label: 'Moderación',
+      actions: [
+        user.accountStatus === 'suspended'
+          ? { key: 'unban', label: 'Desbanear', permission: 'user:ban' }
+          : { key: 'ban', label: 'Banear', permission: 'user:ban', destructive: true },
+        ...(user.accountStatus === 'pending_parental'
+          ? ([
+              { key: 'parental-approve', label: 'Aprobar consent parental', permission: 'user:parental-consent' },
+              {
+                key: 'parental-reject',
+                label: 'Rechazar consent parental',
+                permission: 'user:parental-consent',
+                destructive: true,
+              },
+            ] satisfies MenuAction[])
+          : []),
+        { key: 'reset-cosmetic', label: 'Reset cosmético', permission: 'user:reset-cosmetic', destructive: true },
+      ],
+    },
+    {
+      label: 'Admin only',
+      actions: [
+        { key: 'email-change', label: 'Cambiar email', permission: 'user:email-change' },
+        { key: 'delete-account', label: 'Borrar cuenta', permission: 'user:delete', destructive: true },
+      ],
+    },
+  ];
+}
+
+// El menú es gating de UX: muestra solo lo que el backend le aceptaría a este admin.
+function visibleSections(user: MenuUser, role: AdminRole, isGlobalScope: boolean): MenuSection[] {
+  return menuSections(user)
+    .map((section) => ({
+      ...section,
+      actions: section.actions.filter((a) => canWithScope(role, isGlobalScope, a.permission)),
+    }))
+    .filter((section) => section.actions.length > 0);
+}
+
+export function UserActions({
+  user,
+  role,
+  isGlobalScope,
+}: {
+  user: MenuUser;
+  role: AdminRole;
+  isGlobalScope: boolean;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState<ActionKey | null>(null);
+  const sections = visibleSections(user, role, isGlobalScope);
 
   async function simplePost(path: string, body?: object): Promise<void> {
     const res = await fetch(path, {
@@ -53,6 +122,8 @@ export function UserActions({ user }: { user: Pick<UserDetail, 'id' | 'accountSt
 
   const close = (o: boolean) => !o && setOpen(null);
 
+  if (sections.length === 0) return null;
+
   return (
     <>
       <DropdownMenu>
@@ -62,39 +133,21 @@ export function UserActions({ user }: { user: Pick<UserDetail, 'id' | 'accountSt
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>Soporte</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => setOpen('reset-password')}>Reset password</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setOpen('force-logout')}>Forzar logout</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setOpen('adjust-balance')}>Ajustar balance</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setOpen('reset-streak')}>Reset streak</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setOpen('send-message')}>Enviar mensaje</DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>Moderación</DropdownMenuLabel>
-          {user.accountStatus === 'suspended' ? (
-            <DropdownMenuItem onClick={() => setOpen('unban')}>Desbanear</DropdownMenuItem>
-          ) : (
-            <DropdownMenuItem variant="destructive" onClick={() => setOpen('ban')}>
-              Banear
-            </DropdownMenuItem>
-          )}
-          {user.accountStatus === 'pending_parental' && (
-            <>
-              <DropdownMenuItem onClick={() => setOpen('parental-approve')}>
-                Aprobar consent parental
-              </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => setOpen('parental-reject')}>
-                Rechazar consent parental
-              </DropdownMenuItem>
-            </>
-          )}
-
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel>Admin only</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => setOpen('email-change')}>Cambiar email</DropdownMenuItem>
-          <DropdownMenuItem variant="destructive" onClick={() => setOpen('delete-account')}>
-            Borrar cuenta
-          </DropdownMenuItem>
+          {sections.map((section, i) => (
+            <Fragment key={section.label}>
+              {i > 0 && <DropdownMenuSeparator />}
+              <DropdownMenuLabel>{section.label}</DropdownMenuLabel>
+              {section.actions.map((a) => (
+                <DropdownMenuItem
+                  key={a.key}
+                  variant={a.destructive ? 'destructive' : 'default'}
+                  onClick={() => setOpen(a.key)}
+                >
+                  {a.label}
+                </DropdownMenuItem>
+              ))}
+            </Fragment>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -142,6 +195,14 @@ export function UserActions({ user }: { user: Pick<UserDetail, 'id' | 'accountSt
         onConfirm={(p) =>
           simplePost(`/api/admin/users/${user.id}/parental-consent/reject`, { reason: p.reason })
         }
+      />
+      <ConfirmDialog
+        open={open === 'reset-cosmetic'}
+        onOpenChange={close}
+        title="Reset cosmético"
+        description="Vuelve el nombre visible a uno genérico y quita título, avatar, marco y foto de perfil."
+        destructive
+        onConfirm={() => simplePost(`/api/admin/users/${user.id}/reset-cosmetic`)}
       />
       <ConfirmDialog
         open={open === 'delete-account'}

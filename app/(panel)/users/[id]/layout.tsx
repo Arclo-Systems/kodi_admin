@@ -15,14 +15,14 @@ export default async function UserLayout({
   children: ReactNode;
   params: Promise<{ id: string }>;
 }) {
-  await requireAction('user:read');
+  const admin = await requireAction('user:read');
   const { id } = await params;
   const user = await getUserDetail(id);
   if (!user) notFound();
 
   return (
     <div className="space-y-6">
-      <UserHeader user={user} />
+      <UserHeader user={user} role={admin.role} isGlobalScope={admin.isGlobalScope} />
       <TabsNav userId={id} />
       <div>{children}</div>
     </div>

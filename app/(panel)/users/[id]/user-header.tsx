@@ -16,6 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge, type StatusTone } from '@/lib/status-badge';
 import { PlanBadge } from '@/lib/plans';
+import type { AdminRole } from '@/lib/auth';
 import type { UserDetail } from '@/lib/user-detail';
 import { UserActions } from './user-actions';
 import { formatDate } from '@/lib/format-date';
@@ -34,7 +35,15 @@ function age(birthDate: string | null): number | null {
   return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
 }
 
-export function UserHeader({ user }: { user: UserDetail }) {
+export function UserHeader({
+  user,
+  role,
+  isGlobalScope,
+}: {
+  user: UserDetail;
+  role: AdminRole;
+  isGlobalScope: boolean;
+}) {
   const status = STATUS[user.accountStatus];
   const verified = !!user.emailVerifiedAt;
   const years = age(user.birthDate);
@@ -161,7 +170,7 @@ export function UserHeader({ user }: { user: UserDetail }) {
             </Meta>
           </div>
         </div>
-        <UserActions user={user} />
+        <UserActions user={user} role={role} isGlobalScope={isGlobalScope} />
       </div>
     </div>
   );
