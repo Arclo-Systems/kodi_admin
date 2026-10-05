@@ -1,4 +1,5 @@
 import { requireAction } from '@/lib/guard';
+import { canWithScope } from '@/lib/permissions';
 import { CampaignsTable } from './campaigns-table';
 import { MessagingNav } from './messaging-nav';
 
@@ -16,7 +17,7 @@ export default async function MessagingPage() {
         </p>
       </div>
       <MessagingNav role={user.role} isGlobalScope={user.isGlobalScope} />
-      <CampaignsTable />
+      <CampaignsTable canApprove={canWithScope(user.role, user.isGlobalScope, 'messaging:approve')} />
     </div>
   );
 }

@@ -30,7 +30,7 @@ import { formatDate } from '@/lib/format-date';
 const ALL = 'all';
 const STATUSES = Object.keys(STATUS_LABELS) as CampaignStatus[];
 
-export function CampaignsTable() {
+export function CampaignsTable({ canApprove }: { canApprove: boolean }) {
   const router = useRouter();
   const [status, setStatus] = useState(ALL);
   const [page, setPage] = useState(1);
@@ -95,7 +95,7 @@ export function CampaignsTable() {
         const c = row.original;
         return (
           <div className="flex justify-end gap-1">
-            {c.status === 'pending_approval' && (
+            {canApprove && c.status === 'pending_approval' && (
               <Button
                 variant="ghost"
                 size="sm"
