@@ -22,8 +22,7 @@ function createQueryClient(): QueryClient {
     isLeaving = true;
     client.clear();
     toast.error('Tu sesión expiró. Volvé a ingresar.');
-    // Navegación dura a propósito: recarga la app entera y no deja nada del estado de la
-    // sesión vieja (caché de queries, Router Cache de Next) que reviva al re-loguearse.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- recarga completa a propósito: descarta caché de queries y Router Cache de la sesión vieja
     window.location.assign(EXPIRED_URL);
   };
 
