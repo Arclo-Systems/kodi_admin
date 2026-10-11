@@ -8,6 +8,8 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-10
+
 ### Security
 - 🔒️ **Next.js 16.3.5 → 16.3.8:** cierra los avisos del framework que afectaban al panel — ejecución
   remota de código en `next/og`, SSRF en la optimización de imágenes, envenenamiento de caché y fugas
@@ -136,7 +138,8 @@ desarrollo) quedó archivada en un backup `git bundle` fuera del repositorio.
 - Panel de administración completo (auth + dominios: usuarios, contenido, economía, moderación, mensajería, juego, sistema).
 - Framework de auditoría técnica por fases ([`docs/technical-audit-2026-06-08.md`](./docs/technical-audit-2026-06-08.md)).
 
-[Unreleased]: https://github.com/Arclo-Systems/kodi_admin/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Arclo-Systems/kodi_admin/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/Arclo-Systems/kodi_admin/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Arclo-Systems/kodi_admin/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Arclo-Systems/kodi_admin/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Arclo-Systems/kodi_admin/releases/tag/v0.1.0
