@@ -8,6 +8,15 @@ Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/) 
 
 ## [Unreleased]
 
+### Security
+- 🔒️ **Next.js 16.3.5 → 16.3.8:** cierra los avisos del framework que afectaban al panel — ejecución
+  remota de código en `next/og`, SSRF en la optimización de imágenes, envenenamiento de caché y fugas
+  de información en rutas de metadata y `use cache`. `eslint-config-next` acompaña a 16.3.8.
+- 🔒️ **Dependencias transitivas (`npm audit fix`, sin saltos de versión mayor):** `sharp` 0.35.5,
+  `source-map-js` 1.2.2, `brace-expansion`, `dompurify` 3.4.16 (XSS), `fast-uri`, `undici`,
+  `proxy-addr`, `qs` y otras. El gate de auditoría del CI vuelve a verde: sin alertas altas ni
+  críticas en las dependencias de producción.
+
 ## [0.3.0] - 2026-10-05
 
 ### Added
